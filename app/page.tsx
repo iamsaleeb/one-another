@@ -1,65 +1,92 @@
-import Image from "next/image";
+import { Card, CardContent } from "@/components/ui/card";
+import { Bell, Heart, Users } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export default function Home() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div className="flex flex-col min-h-screen">
+      {/* Header */}
+      <header className="flex items-center justify-between px-4 pt-5 pb-4">
+        <div>
+          <p className="text-sm text-muted-foreground">Good morning 👋</p>
+          <h1 className="text-2xl font-bold tracking-tight">Welcome back</h1>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+        <Button variant="ghost" size="icon" className="relative rounded-full">
+          <Bell className="size-5" />
+          <span className="absolute top-1.5 right-1.5 size-2 rounded-full bg-primary" />
+        </Button>
+      </header>
+
+      {/* Body */}
+      <div className="flex flex-col gap-6 px-4 py-2">
+        {/* Featured card */}
+        <Card className="overflow-hidden rounded-2xl border-0 bg-primary text-primary-foreground shadow-md">
+          <CardContent className="flex flex-col gap-3 p-5">
+            <p className="text-xs font-medium uppercase tracking-widest opacity-75">
+              Featured Event
+            </p>
+            <h2 className="text-xl font-bold leading-snug">
+              Sunday Worship Service
+            </h2>
+            <p className="text-sm opacity-80">
+              Join us this Sunday at 10:00 AM for an uplifting time of worship
+              and community.
+            </p>
+            <Button
+              variant="secondary"
+              size="sm"
+              className="mt-1 w-fit rounded-full"
+            >
+              Learn more
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* Quick stats */}
+        <div className="grid grid-cols-2 gap-3">
+          <Card className="rounded-2xl border-0 bg-muted/50 shadow-sm">
+            <CardContent className="flex flex-col items-start gap-2 p-4">
+              <div className="flex size-9 items-center justify-center rounded-full bg-primary/10">
+                <Users className="size-4 text-primary" />
+              </div>
+              <p className="text-2xl font-bold">24</p>
+              <p className="text-xs text-muted-foreground">Churches nearby</p>
+            </CardContent>
+          </Card>
+
+          <Card className="rounded-2xl border-0 bg-muted/50 shadow-sm">
+            <CardContent className="flex flex-col items-start gap-2 p-4">
+              <div className="flex size-9 items-center justify-center rounded-full bg-primary/10">
+                <Heart className="size-4 text-primary" />
+              </div>
+              <p className="text-2xl font-bold">8</p>
+              <p className="text-xs text-muted-foreground">Upcoming events</p>
+            </CardContent>
+          </Card>
         </div>
-      </main>
+
+        {/* Recent Activity */}
+        <section className="flex flex-col gap-3">
+          <h2 className="text-base font-semibold">Recent Activity</h2>
+          {[
+            { title: "Prayer Group", subtitle: "Wednesday · 7:00 PM", tag: "Today" },
+            { title: "Youth Bible Study", subtitle: "Friday · 6:30 PM", tag: "Fri" },
+            { title: "Community Outreach", subtitle: "Saturday · 9:00 AM", tag: "Sat" },
+          ].map((item) => (
+            <Card key={item.title} className="rounded-2xl border-0 bg-muted/40 shadow-sm">
+              <CardContent className="flex items-center justify-between p-4">
+                <div>
+                  <p className="text-sm font-medium">{item.title}</p>
+                  <p className="text-xs text-muted-foreground">{item.subtitle}</p>
+                </div>
+                <span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
+                  {item.tag}
+                </span>
+              </CardContent>
+            </Card>
+          ))}
+        </section>
+      </div>
     </div>
   );
 }

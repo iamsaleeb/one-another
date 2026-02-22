@@ -12,55 +12,8 @@ export default function Home() {
 
       {/* Body */}
       <div className="flex flex-col gap-6 px-4 py-2">
-        {/* Featured card */}
-        <Card className="overflow-hidden rounded-2xl border-0 bg-primary text-primary-foreground shadow-md">
-          <CardContent className="flex flex-col gap-3 p-5">
-            <p className="text-xs font-medium uppercase tracking-widest opacity-75">
-              Featured Event
-            </p>
-            <h2 className="text-xl font-bold leading-snug">
-              Sunday Worship Service
-            </h2>
-            <p className="text-sm opacity-80">
-              Join us this Sunday at 10:00 AM for an uplifting time of worship
-              and community.
-            </p>
-            <Button
-              variant="secondary"
-              size="sm"
-              className="mt-1 w-fit rounded-full"
-            >
-              Learn more
-            </Button>
-          </CardContent>
-        </Card>
 
-        {/* Quick stats */}
-        <div className="grid grid-cols-2 gap-3">
-          <Card className="rounded-2xl border-0 bg-muted/50 shadow-sm">
-            <CardContent className="flex flex-col items-start gap-2 p-4">
-              <div className="flex size-9 items-center justify-center rounded-full bg-primary/10">
-                <Users className="size-4 text-primary" />
-              </div>
-              <p className="text-2xl font-bold">24</p>
-              <p className="text-xs text-muted-foreground">Churches nearby</p>
-            </CardContent>
-          </Card>
-
-          <Card className="rounded-2xl border-0 bg-muted/50 shadow-sm">
-            <CardContent className="flex flex-col items-start gap-2 p-4">
-              <div className="flex size-9 items-center justify-center rounded-full bg-primary/10">
-                <Heart className="size-4 text-primary" />
-              </div>
-              <p className="text-2xl font-bold">8</p>
-              <p className="text-xs text-muted-foreground">Upcoming events</p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Recent Activity */}
         <section className="flex flex-col gap-3">
-          <h2 className="text-base font-semibold">Recent Activity</h2>
           {[
             { title: "Prayer Group", subtitle: "Wednesday · 7:00 PM", tag: "Today" },
             { title: "Youth Bible Study", subtitle: "Friday · 6:30 PM", tag: "Fri" },

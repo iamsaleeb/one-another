@@ -1,8 +1,15 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 
 export function TopNav() {
+  const pathname = usePathname();
+
+  if (pathname.startsWith("/events/")) return null;
+
   return (
     <header className="sticky top-0 z-50 flex h-14 items-center justify-between bg-primary px-4">
       <Link href="/" className="text-xl font-bold tracking-tight text-primary-foreground">

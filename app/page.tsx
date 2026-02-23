@@ -1,5 +1,6 @@
+import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
-
+import { events } from "@/lib/data/events";
 
 export default function Home() {
   return (
@@ -12,40 +13,20 @@ export default function Home() {
       {/* Body */}
       <div className="flex flex-col gap-6 px-4 py-2">
         <section className="flex flex-col gap-3">
-          {[
-            {
-              datetime: "MON, 10 MAY | 7:30 PM",
-              title: "The Cross of Forgiveness",
-              location: "St Mary Church",
-              host: "Fr Dan Fanous",
-              tag: "Bible Study",
-            },
-            {
-              datetime: "FRI, 14 MAY | 6:30 PM",
-              title: "Youth Fellowship",
-              location: "St George Church",
-              host: "Fr Mark Mikhail",
-              tag: "Meeting",
-            },
-            {
-              datetime: "SAT, 15 MAY | 9:00 AM",
-              title: "Community Outreach",
-              location: "Downtown Community Center",
-              host: "Deacon Peter",
-              tag: "Camp",
-            },
-          ].map((item) => (
-            <Card key={item.title} className="rounded-2xl border-0 bg-white py-0 shadow-[4px_4px_10px_0px_#E8E8E866]">
-              <CardContent className="flex flex-col gap-1.5 p-4">
-                <div className="flex items-center justify-between">
-                  <p className="text-xs font-semibold text-primary uppercase tracking-wide">{item.datetime}</p>
-                  <span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary whitespace-nowrap">{item.tag}</span>
-                </div>
-                <p className="text-lg font-bold leading-snug">{item.title}</p>
-                <p className="text-sm text-muted-foreground">{item.location}</p>
-                <p className="text-sm text-muted-foreground">{item.host}</p>
-              </CardContent>
-            </Card>
+          {events.map((item) => (
+            <Link key={item.id} href={`/events/${item.id}`}>
+              <Card className="rounded-2xl border-0 bg-white py-0 shadow-[4px_4px_10px_0px_#E8E8E866]">
+                <CardContent className="flex flex-col gap-1.5 p-4">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-semibold text-primary uppercase tracking-wide">{item.datetime}</p>
+                    <span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary whitespace-nowrap">{item.tag}</span>
+                  </div>
+                  <p className="text-lg font-bold leading-snug">{item.title}</p>
+                  <p className="text-sm text-muted-foreground">{item.location}</p>
+                  <p className="text-sm text-muted-foreground">{item.host}</p>
+                </CardContent>
+              </Card>
+            </Link>
           ))}
         </section>
       </div>

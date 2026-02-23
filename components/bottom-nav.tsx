@@ -15,6 +15,8 @@ const tabs = [
 export function BottomNav() {
   const pathname = usePathname();
 
+  if (pathname.startsWith("/events/")) return null;
+
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white shadow-[0px_-2px_31px_0px_#0000001A]">
       <div className="flex h-16 items-center justify-around px-2">

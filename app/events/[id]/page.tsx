@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { ChevronLeft, Calendar, MapPin, User } from "lucide-react";
-import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { events } from "@/lib/data/events";
 
@@ -45,8 +44,6 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
           <div className="rounded-2xl bg-white shadow-[4px_4px_10px_0px_#E8E8E866] p-5 flex flex-col gap-4">
             <h1 className="text-xl font-bold leading-snug">{event.title}</h1>
 
-            <Separator />
-
             <div className="flex flex-col gap-4">
               <div className="flex items-start gap-3">
                 <User className="w-4 h-4 text-primary mt-0.5 shrink-0" />
@@ -79,15 +76,17 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
             | {event.tag} |
           </p>
 
-          {/* Description */}
-          <p className="text-sm text-muted-foreground leading-relaxed px-1">
-            {event.description}
-          </p>
+          {/* Description card */}
+          <div className="rounded-2xl bg-white shadow-[4px_4px_10px_0px_#E8E8E866] p-5">
+            <p className="text-sm text-foreground leading-relaxed">
+              {event.description}
+            </p>
+          </div>
         </div>
       </div>
 
       {/* Register bar — natural flex item, no fixed/z-index needed */}
-      <div className="shrink-0 px-4 py-4 bg-white border-t border-border flex items-center justify-between gap-4">
+      <div className="shrink-0 px-4 py-4 bg-white shadow-[0px_-2px_31px_0px_#0000001A] flex items-center justify-between gap-4">
         <div className="flex flex-col gap-0.5">
           <p className="text-xs text-muted-foreground">Cost</p>
           <p className="text-base font-bold">Free Event</p>

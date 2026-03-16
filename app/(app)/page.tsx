@@ -1,9 +1,17 @@
 import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { MapPin, SearchX } from "lucide-react";
-import { events } from "@/lib/data/events";
-import { churches } from "@/lib/data/churches";
 import { EventCard } from "@/components/event-card";
+import { getEvents, searchEventsAndChurches } from "@/lib/actions/data";
+
+const CATEGORIES = [
+  { label: "Worship", emoji: "🎵" },
+  { label: "Prayer", emoji: "🙏" },
+  { label: "Youth", emoji: "⚡" },
+  { label: "Outreach", emoji: "🤝" },
+  { label: "Bible Study", emoji: "📖" },
+  { label: "Missions", emoji: "🌍" },
+] as const;
 
 export default async function Home({
   searchParams,
@@ -11,38 +19,16 @@ export default async function Home({
   searchParams: Promise<{ q?: string }>;
 }) {
   const { q } = await searchParams;
-  const query = q?.toLowerCase().trim() ?? "";
+  const query = q?.trim() ?? "";
 
-  const filteredEvents = query
-    ? events.filter(
-        (e) =>
-          e.title.toLowerCase().includes(query) ||
-          e.location.toLowerCase().includes(query) ||
-          e.host.toLowerCase().includes(query) ||
-          e.tag.toLowerCase().includes(query)
-      )
-    : null;
+  const [searchResults, allEvents] = await Promise.all([
+    query ? searchEventsAndChurches(query) : null,
+    query ? null : getEvents(),
+  ]);
 
-  const filteredChurches = query
-    ? churches.filter(
-        (c) =>
-          c.name.toLowerCase().includes(query) ||
-          c.denomination.toLowerCase().includes(query) ||
-          c.address.toLowerCase().includes(query)
-      )
-    : null;
-
-  const hasResults =
-    (filteredEvents?.length ?? 0) > 0 || (filteredChurches?.length ?? 0) > 0;
-
-  const categories = [
-    { label: "Worship", emoji: "🎵" },
-    { label: "Prayer", emoji: "🙏" },
-    { label: "Youth", emoji: "⚡" },
-    { label: "Outreach", emoji: "🤝" },
-    { label: "Bible Study", emoji: "📖" },
-    { label: "Missions", emoji: "🌍" },
-  ];
+  const filteredEvents = searchResults?.events ?? null;
+  const filteredChurches = searchResults?.churches ?? null;
+  const hasResults = (filteredEvents?.length ?? 0) > 0 || (filteredChurches?.length ?? 0) > 0;
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -113,19 +99,17 @@ export default async function Home({
         ) : (
           /* ── Default home content ── */
           <>
-            {/* Upcoming Events */}
             <section className="flex flex-col gap-3">
               <h2 className="text-base font-semibold">Upcoming Events</h2>
-              {events.map((item) => (
+              {allEvents?.map((item) => (
                 <EventCard key={item.id} event={item} />
               ))}
             </section>
 
-            {/* Browse by Category */}
             <section className="flex flex-col gap-3">
               <h2 className="text-base font-semibold">Browse by Category</h2>
               <div className="grid grid-cols-3 gap-2">
-                {categories.map((cat) => (
+                {CATEGORIES.map((cat) => (
                   <Card
                     key={cat.label}
                     className="rounded-2xl border-0 bg-muted/40 shadow-sm cursor-pointer"

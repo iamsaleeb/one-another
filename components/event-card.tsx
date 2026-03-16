@@ -1,9 +1,15 @@
 import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
-import { type Event } from "@/lib/data/events";
 
 interface EventCardProps {
-  event: Event;
+  event: {
+    id: string;
+    datetime: string;
+    title: string;
+    location: string;
+    host: string;
+    tag: string;
+  };
 }
 
 export function EventCard({ event }: EventCardProps) {

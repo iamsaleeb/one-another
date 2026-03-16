@@ -10,7 +10,12 @@
       "mcp__shadcn__get_item_examples_from_registries",
       "mcp__shadcn__get_add_command_for_items",
       "Bash(npx:*)",
-      "Bash(cd:*)"
+      "Bash(cd:*)",
+      "Bash(ls:*)",
+      "Bash(git:*)",
+      "Bash(npm install:*)",
+      "Bash(node:*)",
+      "Bash(cat:*)"
     ]
   },
   "enableAllProjectMcpServers": true,

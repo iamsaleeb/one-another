@@ -7,10 +7,28 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, X, ChevronLeft } from "lucide-react";
-import { events } from "@/lib/data/events";
-import { churches } from "@/lib/data/churches";
 
-function TopNavInner() {
+interface TopNavUser {
+  name?: string | null;
+  email?: string | null;
+  image?: string | null;
+}
+
+function getInitials(user?: TopNavUser): string {
+  if (user?.name) {
+    const parts = user.name.trim().split(/\s+/);
+    if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    return user.name.slice(0, 2).toUpperCase();
+  }
+  if (user?.email) return user.email[0].toUpperCase();
+  return "?";
+}
+
+interface TopNavProps {
+  user?: TopNavUser;
+}
+
+function TopNavInner({ user }: TopNavProps) {
   const pathname = usePathname();
   const router = useRouter();
   const params = useParams();
@@ -22,19 +40,19 @@ function TopNavInner() {
     setQuery(urlQuery);
   }, [urlQuery]);
 
-  const id = params?.id ? Number(params.id) : null;
+  const id = params?.id ?? null;
   const isEventDetail = pathname.startsWith("/events/") && id !== null;
   const isChurchDetail = pathname.startsWith("/churches/") && id !== null;
   const isDetailPage = isEventDetail || isChurchDetail;
 
   let detailTitle = "";
   let backHref = "/";
-  if (isEventDetail && id) {
-    detailTitle = events.find((e) => e.id === id)?.title ?? "Event";
+  if (isEventDetail) {
+    detailTitle = "Event";
     backHref = "/";
   }
-  if (isChurchDetail && id) {
-    detailTitle = churches.find((c) => c.id === id)?.name ?? "Church";
+  if (isChurchDetail) {
+    detailTitle = "Church";
     backHref = "/churches";
   }
 
@@ -73,9 +91,9 @@ function TopNavInner() {
           <Button variant="ghost" size="icon" className="rounded-full hover:bg-primary/80" asChild>
             <span>
               <Avatar className="size-8">
-                <AvatarImage src="" alt="My Profile" />
+                <AvatarImage src={user?.image ?? ""} alt={user?.name ?? "Profile"} />
                 <AvatarFallback className="text-xs font-semibold bg-primary-foreground/20 text-primary-foreground">
-                  ME
+                  {getInitials(user)}
                 </AvatarFallback>
               </Avatar>
             </span>
@@ -84,44 +102,43 @@ function TopNavInner() {
       </div>
 
       {!isDetailPage && (
-      <div className="bg-white px-4 py-2.5 border-b border-border">
-        <form onSubmit={handleSearch} className="flex items-center gap-2">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-            <Input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search events…"
-              className="pl-9 pr-9 rounded-full bg-muted/60 border-0 h-10 text-sm focus-visible:ring-0"
-            />
-            {query && (
-              <button
-                type="button"
-                onClick={handleClear}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-              >
-                <X className="size-4" />
-              </button>
-            )}
-          </div>
-          <button
-            type="submit"
-            className="flex items-center justify-center w-10 h-10 rounded-full bg-primary text-primary-foreground shrink-0"
-          >
-            <Search className="size-4" />
-          </button>
-        </form>
-      </div>
+        <div className="bg-white px-4 py-2.5 border-b border-border">
+          <form onSubmit={handleSearch} className="flex items-center gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+              <Input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search events…"
+                className="pl-9 pr-9 rounded-full bg-muted/60 border-0 h-10 text-sm focus-visible:ring-0"
+              />
+              {query && (
+                <button
+                  type="button"
+                  onClick={handleClear}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  <X className="size-4" />
+                </button>
+              )}
+            </div>
+            <button
+              type="submit"
+              className="flex items-center justify-center w-10 h-10 rounded-full bg-primary text-primary-foreground shrink-0"
+            >
+              <Search className="size-4" />
+            </button>
+          </form>
+        </div>
       )}
     </header>
   );
 }
 
-export function TopNav() {
+export function TopNav({ user }: TopNavProps) {
   return (
     <Suspense>
-      <TopNavInner />
+      <TopNavInner user={user} />
     </Suspense>
   );
 }
-

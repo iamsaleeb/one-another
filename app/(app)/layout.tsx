@@ -1,16 +1,19 @@
-import { BottomNav } from "@/components/bottom-nav"
-import { TopNav } from "@/components/top-nav"
+import { auth } from "@/auth";
+import { BottomNav } from "@/components/bottom-nav";
+import { TopNav } from "@/components/top-nav";
 
-export default function AppLayout({
+export default async function AppLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
+  const session = await auth();
+
   return (
     <div className="min-h-screen">
-      <TopNav />
+      <TopNav user={session?.user} />
       <main className="pb-16">{children}</main>
       <BottomNav />
     </div>
-  )
+  );
 }

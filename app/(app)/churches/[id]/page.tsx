@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import {
   MapPin,
   Phone,
@@ -10,26 +11,26 @@ import {
   Mail,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { churches, getChurchEvents } from "@/lib/data/churches";
+import { getChurchById } from "@/lib/actions/data";
 import { Card, CardContent } from "@/components/ui/card";
 
-export default async function ChurchDetailPage({
-  params,
-}: {
+interface Props {
   params: Promise<{ id: string }>;
-}) {
+}
+
+export async function generateMetadata({ params }: Props) {
   const { id } = await params;
-  const church = churches.find((c) => c.id === Number(id));
+  const church = await getChurchById(id);
+  return { title: church ? `${church.name} — One Another` : "Church Not Found" };
+}
 
-  if (!church) {
-    return (
-      <div className="px-4 pt-5">
-        <p className="text-lg font-semibold">Church not found.</p>
-      </div>
-    );
-  }
+export default async function ChurchDetailPage({ params }: Props) {
+  const { id } = await params;
+  const church = await getChurchById(id);
 
-  const upcomingEvents = getChurchEvents(church);
+  if (!church) notFound();
+
+  const upcomingEvents = church.events;
 
   return (
     <div className="bg-background">
@@ -103,8 +104,8 @@ export default async function ChurchDetailPage({
               Service Times
             </h2>
             <div className="rounded-2xl bg-white shadow-[4px_4px_10px_0px_#E8E8E866] divide-y divide-border overflow-hidden">
-              {church.serviceTimes.map((service, i) => (
-                <div key={i} className="flex items-center gap-3 px-4 py-3">
+              {church.serviceTimes.map((service) => (
+                <div key={service.id} className="flex items-center gap-3 px-4 py-3">
                   <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 shrink-0">
                     <Clock className="w-3.5 h-3.5 text-primary" />
                   </div>

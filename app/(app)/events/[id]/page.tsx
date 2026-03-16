@@ -1,18 +1,23 @@
+import { notFound } from "next/navigation";
 import { Calendar, MapPin, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { events } from "@/lib/data/events";
+import { getEventById } from "@/lib/actions/data";
 
-export default async function EventDetailPage({ params }: { params: Promise<{ id: string }> }) {
+interface Props {
+  params: Promise<{ id: string }>;
+}
+
+export async function generateMetadata({ params }: Props) {
   const { id } = await params;
-  const event = events.find((e) => e.id === Number(id));
+  const event = await getEventById(id);
+  return { title: event ? `${event.title} — One Another` : "Event Not Found" };
+}
 
-  if (!event) {
-    return (
-      <div className="px-4 pt-5">
-        <p className="text-lg font-semibold">Event not found.</p>
-      </div>
-    );
-  }
+export default async function EventDetailPage({ params }: Props) {
+  const { id } = await params;
+  const event = await getEventById(id);
+
+  if (!event) notFound();
 
   return (
     <div className="bg-background">

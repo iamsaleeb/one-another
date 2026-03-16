@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Church } from "lucide-react";
-import { churches } from "@/lib/data/churches";
+import { getChurches } from "@/lib/actions/data";
 
 const gradients = [
   "from-rose-800 via-rose-600 to-orange-400",
@@ -11,7 +11,9 @@ const gradients = [
   "from-stone-700 via-stone-500 to-stone-400",
 ];
 
-export default function ChurchesPage() {
+export default async function ChurchesPage() {
+  const churches = await getChurches();
+
   return (
     <div className="flex flex-col min-h-screen">
       <header className="px-4 pt-5 pb-4">

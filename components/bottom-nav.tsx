@@ -2,12 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Compass, Church, CalendarDays } from "lucide-react";
+import { Home, Church, CalendarDays } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const tabs = [
   { label: "Home", href: "/", icon: Home },
-  { label: "Explore", href: "/explore", icon: Compass },
   { label: "Churches", href: "/churches", icon: Church },
   { label: "My Events", href: "/my-events", icon: CalendarDays },
 ];

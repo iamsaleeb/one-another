@@ -14,7 +14,7 @@ import { redirect } from 'next/navigation'
 import { createSeriesAction } from '@/lib/actions/series'
 import { prisma } from '@/lib/db'
 
-const mockRedirect = redirect as jest.Mock
+const mockRedirect = redirect as unknown as jest.Mock
 const mockSeriesCreate = prisma.series.create as jest.Mock
 
 function makeFormData(fields: Record<string, string>): FormData {

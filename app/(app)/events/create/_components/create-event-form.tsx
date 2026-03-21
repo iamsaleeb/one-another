@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import { Repeat } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -24,8 +25,15 @@ const CATEGORIES = [
 ];
 
 type Church = { id: string; name: string };
+type Series = { id: string; name: string };
 
-export function CreateEventForm({ churches }: { churches: Church[] }) {
+export function CreateEventForm({
+  churches,
+  series,
+}: {
+  churches: Church[];
+  series?: Series;
+}) {
   const [state, action, isPending] = useActionState<CreateEventState, FormData>(
     createEventAction,
     {}
@@ -33,6 +41,16 @@ export function CreateEventForm({ churches }: { churches: Church[] }) {
 
   return (
     <form action={action} className="flex flex-col gap-5">
+      {series && (
+        <div className="flex items-center gap-2 rounded-xl bg-primary/10 px-3 py-2.5">
+          <Repeat className="size-4 text-primary shrink-0" />
+          <p className="text-sm text-primary font-medium">
+            Session for: {series.name}
+          </p>
+          <input type="hidden" name="seriesId" value={series.id} />
+        </div>
+      )}
+
       {state.error && (
         <p className="text-sm text-destructive text-center">{state.error}</p>
       )}
@@ -132,7 +150,7 @@ export function CreateEventForm({ churches }: { churches: Church[] }) {
       )}
 
       <Button type="submit" className="w-full" disabled={isPending}>
-        {isPending ? "Creating..." : "Create Event"}
+        {isPending ? "Creating..." : series ? "Add Session" : "Create Event"}
       </Button>
     </form>
   );

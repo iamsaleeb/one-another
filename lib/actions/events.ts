@@ -22,6 +22,7 @@ export async function createEventAction(
     tag: formData.get("tag"),
     description: formData.get("description"),
     churchId: formData.get("churchId") || undefined,
+    seriesId: formData.get("seriesId") || undefined,
   };
 
   const parsed = createEventSchema.safeParse(raw);
@@ -29,7 +30,7 @@ export async function createEventAction(
     return { fieldErrors: parsed.error.flatten().fieldErrors };
   }
 
-  const { title, date, time, location, host, tag, description, churchId } =
+  const { title, date, time, location, host, tag, description, churchId, seriesId } =
     parsed.data;
 
   const datetime = `${date}T${time}`;
@@ -44,8 +45,9 @@ export async function createEventAction(
       description,
       isPast: false,
       ...(churchId ? { churchId } : {}),
+      ...(seriesId ? { seriesId } : {}),
     },
   });
 
-  redirect("/my-events");
+  redirect(seriesId ? `/series/${seriesId}` : "/my-events");
 }

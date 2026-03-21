@@ -9,6 +9,7 @@ export const createEventSchema = z.object({
   tag: z.string().min(1, "Category is required"),
   description: z.string().min(1, "Description is required"),
   churchId: z.string().optional(),
+  seriesId: z.string().optional(),
 });
 
 export type CreateEventInput = z.infer<typeof createEventSchema>;

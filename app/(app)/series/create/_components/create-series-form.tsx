@@ -31,7 +31,7 @@ const CADENCE_OPTIONS = [
   { value: "CUSTOM", label: "Custom" },
 ];
 
-type Church = { id: string; name: string };
+interface Church { id: string; name: string }
 
 export function CreateSeriesForm({ churches }: { churches: Church[] }) {
   const [state, action, isPending] = useActionState<CreateSeriesState, FormData>(

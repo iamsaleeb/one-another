@@ -1,12 +1,12 @@
-import { Event, events } from "./events";
+import { type Event, events } from "./events";
 
-export type ServiceTime = {
+export interface ServiceTime {
   day: string;
   time: string;
   type: string;
-};
+}
 
-export type Church = {
+export interface Church {
   id: number;
   name: string;
   denomination: string;
@@ -20,7 +20,7 @@ export type Church = {
   totalEvents: number;
   serviceTimes: ServiceTime[];
   eventIds: number[];
-};
+}
 
 export const churches: Church[] = [
   {
@@ -106,5 +106,5 @@ export const churches: Church[] = [
 ];
 
 export function getChurchEvents(church: Church): Event[] {
-  return church.eventIds.map((id) => events.find((e) => e.id === id)!).filter(Boolean);
+  return church.eventIds.map((id) => events.find((e) => e.id === id)).filter((e): e is Event => e !== undefined);
 }

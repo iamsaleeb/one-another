@@ -187,7 +187,7 @@ async function main() {
     },
   });
 
-  console.log("Seed completed successfully.");
+  console.warn("Seed completed successfully.");
 }
 
 main()

@@ -10,7 +10,7 @@ export const createSeriesSchema = z.object({
   churchId:    z.string().optional(),
 });
 
-export type CreateSeriesState = {
+export interface CreateSeriesState {
   error?: string;
   fieldErrors?: Record<string, string[]>;
-};
+}

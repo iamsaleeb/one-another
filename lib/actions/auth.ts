@@ -6,10 +6,10 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db";
 import { loginSchema, registerSchema } from "@/lib/validations/auth";
 
-export type ActionState = {
+export interface ActionState {
   error?: string;
   fieldErrors?: Record<string, string[]>;
-};
+}
 
 export async function loginAction(
   _prevState: ActionState,

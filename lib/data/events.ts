@@ -1,4 +1,4 @@
-export type Event = {
+export interface Event {
   id: number;
   datetime: string;
   title: string;
@@ -6,7 +6,7 @@ export type Event = {
   host: string;
   tag: string;
   description: string;
-};
+}
 
 export const events: Event[] = [
   {

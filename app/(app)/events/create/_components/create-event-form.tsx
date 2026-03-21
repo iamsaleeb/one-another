@@ -24,8 +24,8 @@ const CATEGORIES = [
   "Missions",
 ];
 
-type Church = { id: string; name: string };
-type Series = { id: string; name: string };
+interface Church { id: string; name: string }
+interface Series { id: string; name: string }
 
 export function CreateEventForm({
   churches,

@@ -4,10 +4,10 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { createEventSchema } from "@/lib/validations/event";
 
-export type CreateEventState = {
+export interface CreateEventState {
   error?: string;
   fieldErrors?: Record<string, string[]>;
-};
+}
 
 export async function createEventAction(
   _prevState: CreateEventState,

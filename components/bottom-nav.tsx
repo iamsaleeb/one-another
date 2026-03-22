@@ -2,21 +2,29 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Church, CalendarDays } from "lucide-react";
+import { Home, Church, CalendarDays, Wrench } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useIsDetailPage } from "@/lib/hooks/use-is-detail-page";
 
-const tabs = [
+const baseTabs = [
   { label: "Home", href: "/", icon: Home },
   { label: "Churches", href: "/churches", icon: Church },
   { label: "My Events", href: "/my-events", icon: CalendarDays },
 ];
 
-export function BottomNav() {
+const organiserTab = { label: "Tools", href: "/organiser", icon: Wrench };
+
+interface BottomNavProps {
+  isOrganiser?: boolean;
+}
+
+export function BottomNav({ isOrganiser }: BottomNavProps) {
   const pathname = usePathname();
   const isDetailPage = useIsDetailPage();
 
   if (isDetailPage) return null;
+
+  const tabs = isOrganiser ? [...baseTabs, organiserTab] : baseTabs;
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white shadow-[0px_-2px_31px_0px_#0000001A]">

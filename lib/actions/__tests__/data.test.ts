@@ -21,6 +21,10 @@ import {
   getSeries,
   getSeriesById,
   getSeriesByChurchId,
+  getEventsByCreator,
+  getSeriesByCreator,
+  getEventsNotByCreator,
+  getSeriesNotByCreator,
 } from '@/lib/actions/data'
 import { prisma } from '@/lib/db'
 
@@ -290,5 +294,96 @@ describe('getSeriesByChurchId', () => {
   it('returns empty array when church has no series', async () => {
     mockSeriesFindMany.mockResolvedValue([])
     expect(await getSeriesByChurchId('ch-none')).toEqual([])
+  })
+})
+
+describe('getEventsByCreator', () => {
+  it('returns upcoming events created by the given user', async () => {
+    mockEventFindMany.mockResolvedValue([sampleEvent])
+    const result = await getEventsByCreator('user-1')
+    expect(result).toEqual([sampleEvent])
+    expect(mockEventFindMany).toHaveBeenCalledWith({
+      where: { isPast: false, createdById: 'user-1' },
+      orderBy: { createdAt: 'asc' },
+      include: {
+        series: { select: { name: true } },
+        createdBy: { select: { name: true } },
+      },
+    })
+  })
+
+  it('returns empty array when the user has no events', async () => {
+    mockEventFindMany.mockResolvedValue([])
+    expect(await getEventsByCreator('user-none')).toEqual([])
+  })
+})
+
+describe('getSeriesByCreator', () => {
+  it('returns series created by the given user', async () => {
+    const seriesWithCount = { ...sampleSeries, _count: { events: 2 }, createdBy: { name: 'Alice' } }
+    mockSeriesFindMany.mockResolvedValue([seriesWithCount])
+    const result = await getSeriesByCreator('user-1')
+    expect(result).toEqual([seriesWithCount])
+    expect(mockSeriesFindMany).toHaveBeenCalledWith({
+      where: { createdById: 'user-1' },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        _count: { select: { events: { where: { isPast: false } } } },
+        createdBy: { select: { name: true } },
+      },
+    })
+  })
+
+  it('returns empty array when the user has no series', async () => {
+    mockSeriesFindMany.mockResolvedValue([])
+    expect(await getSeriesByCreator('user-none')).toEqual([])
+  })
+})
+
+describe('getEventsNotByCreator', () => {
+  it('returns upcoming events not created by the given user', async () => {
+    mockEventFindMany.mockResolvedValue([sampleEvent])
+    const result = await getEventsNotByCreator('user-1')
+    expect(result).toEqual([sampleEvent])
+    expect(mockEventFindMany).toHaveBeenCalledWith({
+      where: {
+        isPast: false,
+        OR: [{ createdById: { not: 'user-1' } }, { createdById: null }],
+      },
+      orderBy: { createdAt: 'asc' },
+      include: {
+        series: { select: { name: true } },
+        createdBy: { select: { name: true } },
+      },
+    })
+  })
+
+  it('returns empty array when no other events exist', async () => {
+    mockEventFindMany.mockResolvedValue([])
+    expect(await getEventsNotByCreator('user-1')).toEqual([])
+  })
+})
+
+describe('getSeriesNotByCreator', () => {
+  it('returns series not created by the given user', async () => {
+    const seriesWithCount = { ...sampleSeries, _count: { events: 1 }, createdBy: { name: 'Bob' } }
+    mockSeriesFindMany.mockResolvedValue([seriesWithCount])
+    const result = await getSeriesNotByCreator('user-1')
+    expect(result).toEqual([seriesWithCount])
+    expect(mockSeriesFindMany).toHaveBeenCalledWith({
+      where: {
+        OR: [{ createdById: { not: 'user-1' } }, { createdById: null }],
+      },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        _count: { select: { events: { where: { isPast: false } } } },
+        createdBy: { select: { name: true } },
+      },
+    })
+  })
+
+  it('returns empty array when no other series exist', async () => {
+    mockSeriesFindMany.mockResolvedValue([])
+    expect(await getSeriesNotByCreator('user-1')).toEqual([])
   })
 })

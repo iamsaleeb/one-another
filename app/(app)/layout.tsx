@@ -16,7 +16,7 @@ export default async function AppLayout({
     <div className="min-h-screen">
       <TopNav user={session?.user} />
       <main className="pb-16">{children}</main>
-      <BottomNav />
+      <BottomNav isOrganiser={isOrganiser} />
       <CreateEventFAB isOrganiser={isOrganiser} />
     </div>
   );

@@ -113,3 +113,52 @@ export const getSeriesByChurchId = cache(async function getSeriesByChurchId(chur
     orderBy: { createdAt: "desc" },
   });
 });
+
+export const getEventsByCreator = cache(async function getEventsByCreator(userId: string) {
+  return prisma.event.findMany({
+    where: { isPast: false, createdById: userId },
+    orderBy: { createdAt: "asc" },
+    include: {
+      series: { select: { name: true } },
+      createdBy: { select: { name: true } },
+    },
+  });
+});
+
+export const getSeriesByCreator = cache(async function getSeriesByCreator(userId: string) {
+  return prisma.series.findMany({
+    where: { createdById: userId },
+    orderBy: { createdAt: "desc" },
+    include: {
+      _count: { select: { events: { where: { isPast: false } } } },
+      createdBy: { select: { name: true } },
+    },
+  });
+});
+
+export const getEventsNotByCreator = cache(async function getEventsNotByCreator(userId: string) {
+  return prisma.event.findMany({
+    where: {
+      isPast: false,
+      OR: [{ createdById: { not: userId } }, { createdById: null }],
+    },
+    orderBy: { createdAt: "asc" },
+    include: {
+      series: { select: { name: true } },
+      createdBy: { select: { name: true } },
+    },
+  });
+});
+
+export const getSeriesNotByCreator = cache(async function getSeriesNotByCreator(userId: string) {
+  return prisma.series.findMany({
+    where: {
+      OR: [{ createdById: { not: userId } }, { createdById: null }],
+    },
+    orderBy: { createdAt: "desc" },
+    include: {
+      _count: { select: { events: { where: { isPast: false } } } },
+      createdBy: { select: { name: true } },
+    },
+  });
+});

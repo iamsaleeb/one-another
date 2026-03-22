@@ -10,6 +10,7 @@ interface EventCardProps {
     location: string;
     host: string;
     tag: string;
+    badge: string;
     seriesName?: string | null;
   };
 }
@@ -24,7 +25,7 @@ export function EventCard({ event }: EventCardProps) {
               {event.datetime}
             </p>
             <span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary whitespace-nowrap">
-              {event.tag}
+              {event.badge}
             </span>
           </div>
           <p className="text-base font-bold leading-snug">{event.title}</p>

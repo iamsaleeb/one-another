@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
+import { auth } from "@/auth";
 import { createEventSchema } from "@/lib/validations/event";
 
 export interface CreateEventState {
@@ -14,6 +15,7 @@ export async function createEventAction(
   _prevState: CreateEventState,
   formData: FormData
 ): Promise<CreateEventState> {
+  const session = await auth();
   const raw = {
     title: formData.get("title"),
     date: formData.get("date"),
@@ -47,6 +49,7 @@ export async function createEventAction(
       isPast: false,
       ...(churchId ? { churchId } : {}),
       ...(seriesId ? { seriesId } : {}),
+      ...(session?.user?.id ? { createdById: session.user.id } : {}),
     },
   });
 

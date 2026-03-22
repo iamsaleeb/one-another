@@ -10,12 +10,18 @@ jest.mock('@/lib/db', () => ({
   },
 }))
 
+jest.mock('@/auth', () => ({
+  auth: jest.fn(),
+}))
+
 import { redirect } from 'next/navigation'
 import { createSeriesAction } from '@/lib/actions/series'
 import { prisma } from '@/lib/db'
+import { auth } from '@/auth'
 
 const mockRedirect = redirect as unknown as jest.Mock
 const mockSeriesCreate = prisma.series.create as jest.Mock
+const mockAuth = auth as jest.Mock
 
 function makeFormData(fields: Record<string, string>): FormData {
   const fd = new FormData()
@@ -36,6 +42,7 @@ const validFields = {
 
 beforeEach(() => {
   jest.clearAllMocks()
+  mockAuth.mockResolvedValue({ user: { id: 'user-1' } })
 })
 
 describe('createSeriesAction', () => {

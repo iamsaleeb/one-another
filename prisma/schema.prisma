@@ -29,6 +29,8 @@ model User {
   role          UserRole  @default(ATTENDEE)
   accounts      Account[]
   sessions      Session[]
+  events        Event[]   @relation("UserEvents")
+  series        Series[]  @relation("UserSeries")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -114,6 +116,8 @@ model Series {
   churchId    String?
   church      Church?  @relation(fields: [churchId], references: [id], onDelete: SetNull)
   events      Event[]
+  createdById String?
+  createdBy   User?    @relation("UserSeries", fields: [createdById], references: [id], onDelete: SetNull)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
@@ -131,6 +135,8 @@ model Event {
   church      Church? @relation(fields: [churchId], references: [id], onDelete: SetNull)
   seriesId    String?
   series      Series? @relation(fields: [seriesId], references: [id], onDelete: SetNull)
+  createdById String?
+  createdBy   User?   @relation("UserEvents", fields: [createdById], references: [id], onDelete: SetNull)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

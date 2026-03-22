@@ -77,7 +77,7 @@ export default async function SeriesDetailPage({ params }: Props) {
             <p className="text-sm text-muted-foreground py-4 text-center">No upcoming sessions</p>
           ) : (
             series.events.map((event) => (
-              <EventCard key={event.id} event={{ ...event, seriesName: null }} />
+              <EventCard key={event.id} event={{ ...event, badge: event.tag, seriesName: null }} />
             ))
           )}
         </section>

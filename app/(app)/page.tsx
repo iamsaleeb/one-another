@@ -55,7 +55,7 @@ export default async function Home({
                     <span className="text-sm font-normal text-muted-foreground">({filteredEvents.length})</span>
                   </h2>
                   {filteredEvents.map((event) => (
-                    <EventCard key={event.id} event={{ ...event, seriesName: event.series?.name }} />
+                    <EventCard key={event.id} event={{ ...event, badge: event.tag, seriesName: event.series?.name }} />
                   ))}
                 </section>
               )}
@@ -94,7 +94,7 @@ export default async function Home({
             <section className="flex flex-col gap-3">
               <h2 className="text-base font-semibold">Upcoming Events</h2>
               {allEvents?.map((item) => (
-                <EventCard key={item.id} event={{ ...item, seriesName: item.series?.name }} />
+                <EventCard key={item.id} event={{ ...item, badge: item.tag, seriesName: item.series?.name }} />
               ))}
             </section>
 

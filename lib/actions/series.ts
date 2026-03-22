@@ -3,12 +3,14 @@
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
+import { auth } from "@/auth";
 import { createSeriesSchema, type CreateSeriesState } from "@/lib/validations/series";
 
 export async function createSeriesAction(
   _prevState: CreateSeriesState,
   formData: FormData
 ): Promise<CreateSeriesState> {
+  const session = await auth();
   const raw = {
     name:        formData.get("name"),
     description: formData.get("description"),
@@ -35,6 +37,7 @@ export async function createSeriesAction(
       host,
       tag,
       ...(churchId ? { churchId } : {}),
+      ...(session?.user?.id ? { createdById: session.user.id } : {}),
     },
   });
 

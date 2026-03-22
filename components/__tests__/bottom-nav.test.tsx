@@ -58,4 +58,24 @@ describe('BottomNav', () => {
     render(<BottomNav />)
     expect(screen.getByText('My Events')).toBeInTheDocument()
   })
+
+  it('renders four tabs including Tools when isOrganiser is true', () => {
+    render(<BottomNav isOrganiser={true} />)
+    expect(screen.getByText('Home')).toBeInTheDocument()
+    expect(screen.getByText('Churches')).toBeInTheDocument()
+    expect(screen.getByText('My Events')).toBeInTheDocument()
+    expect(screen.getByText('Tools')).toBeInTheDocument()
+  })
+
+  it('Tools tab links to /organiser', () => {
+    render(<BottomNav isOrganiser={true} />)
+    const links = screen.getAllByRole('link')
+    const organiserLink = links.find((l) => l.getAttribute('href') === '/organiser')
+    expect(organiserLink).toBeDefined()
+  })
+
+  it('does not render Tools tab when isOrganiser is false', () => {
+    render(<BottomNav isOrganiser={false} />)
+    expect(screen.queryByText('Tools')).not.toBeInTheDocument()
+  })
 })

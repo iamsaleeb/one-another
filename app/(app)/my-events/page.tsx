@@ -28,7 +28,7 @@ export default async function MyEventsPage() {
           <h2 className="text-base font-semibold">Upcoming</h2>
           {upcomingEvents.length > 0 ? (
             upcomingEvents.map((event) => (
-              <EventCard key={event.id} event={{ ...event, seriesName: event.series?.name }} />
+              <EventCard key={event.id} event={{ ...event, badge: event.tag, seriesName: event.series?.name }} />
             ))
           ) : (
             <p className="text-sm text-muted-foreground py-4 text-center">
@@ -42,7 +42,7 @@ export default async function MyEventsPage() {
           <h2 className="text-base font-semibold">Past</h2>
           {pastEvents.length > 0 ? (
             pastEvents.map((event) => (
-              <EventCard key={event.id} event={{ ...event, seriesName: event.series?.name }} />
+              <EventCard key={event.id} event={{ ...event, badge: event.tag, seriesName: event.series?.name }} />
             ))
           ) : (
             <p className="text-sm text-muted-foreground py-4 text-center">

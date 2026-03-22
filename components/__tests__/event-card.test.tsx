@@ -8,6 +8,7 @@ const sampleEvent = {
   location: 'Main Hall, Grace Church',
   host: 'Pastor John',
   tag: 'Worship',
+  badge: 'Worship',
 }
 
 describe('EventCard', () => {

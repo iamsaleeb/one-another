@@ -132,13 +132,4 @@
   body {
     @apply bg-background text-foreground;
   }
-  button,
-  a,
-  [role="button"] {
-    /* Prevent Android WebView from absorbing taps as scroll-detection gestures.
-       Without this, <button onClick> elements can appear completely unresponsive
-       on Android while <a href> links still work (they get native tap handling). */
-    touch-action: manipulation;
-    -webkit-tap-highlight-color: transparent;
-  }
 }

@@ -3,6 +3,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
 import { UserRole } from "@prisma/client";
 import { CreateSeriesForm } from "./_components/create-series-form";
+import { PageHeader } from "@/components/ui/page-header";
 
 export default async function CreateSeriesPage() {
   const session = await auth();
@@ -17,10 +18,12 @@ export default async function CreateSeriesPage() {
   });
 
   return (
-    <div className="mx-auto max-w-lg px-4 py-6">
-      <h1 className="mb-6 text-2xl font-bold">Create Series</h1>
-      <div className="rounded-2xl bg-white shadow-card p-5">
-        <CreateSeriesForm churches={churches} />
+    <div className="mx-auto max-w-lg">
+      <PageHeader title="Create Series" />
+      <div className="px-4 pb-6">
+        <div className="rounded-2xl bg-white shadow-card p-5">
+          <CreateSeriesForm churches={churches} />
+        </div>
       </div>
     </div>
   );

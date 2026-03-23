@@ -23,10 +23,11 @@ export default async function EditEventPage({ params }: Props) {
   const [date, time] = event.datetime.split("T");
 
   return (
-    <div className="mx-auto max-w-lg px-4 py-6">
+    <div className="mx-auto max-w-lg">
       <PageHeader title="Edit Event" />
-      <div className="rounded-2xl bg-white shadow-card p-5">
-        <EditEventForm
+      <div className="px-4 pb-6">
+        <div className="rounded-2xl bg-white shadow-card p-5">
+          <EditEventForm
           event={{
             id: event.id,
             title: event.title,
@@ -42,6 +43,7 @@ export default async function EditEventPage({ params }: Props) {
           }}
           churches={churches}
         />
+        </div>
       </div>
     </div>
   );

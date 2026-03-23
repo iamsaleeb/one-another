@@ -3,6 +3,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
 import { CreateEventForm } from "./_components/create-event-form";
 import { UserRole } from "@prisma/client";
+import { PageHeader } from "@/components/ui/page-header";
 
 interface Props {
   searchParams: Promise<{ seriesId?: string }>;
@@ -28,12 +29,12 @@ export default async function CreateEventPage({ searchParams }: Props) {
   ]);
 
   return (
-    <div className="mx-auto max-w-lg px-4 py-6">
-      <h1 className="mb-6 text-2xl font-bold">
-        {series ? "Add Session" : "Create Event"}
-      </h1>
-      <div className="rounded-2xl bg-white shadow-card p-5">
-        <CreateEventForm churches={churches} series={series ?? undefined} />
+    <div className="mx-auto max-w-lg">
+      <PageHeader title={series ? "Add Session" : "Create Event"} />
+      <div className="px-4 pb-6">
+        <div className="rounded-2xl bg-white shadow-card p-5">
+          <CreateEventForm churches={churches} series={series ?? undefined} />
+        </div>
       </div>
     </div>
   );

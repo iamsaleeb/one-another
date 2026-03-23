@@ -21,22 +21,24 @@ export default async function EditSeriesPage({ params }: Props) {
   if (!series) notFound();
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="mx-auto max-w-lg">
       <PageHeader title="Edit Series" />
-      <div className="px-4 py-4">
-        <EditSeriesForm
-          series={{
-            id: series.id,
-            name: series.name,
-            description: series.description,
-            cadence: series.cadence,
-            location: series.location,
-            host: series.host,
-            tag: series.tag,
-            churchId: series.churchId,
-          }}
-          churches={churches}
-        />
+      <div className="px-4 pb-6">
+        <div className="rounded-2xl bg-white shadow-card p-5">
+          <EditSeriesForm
+            series={{
+              id: series.id,
+              name: series.name,
+              description: series.description,
+              cadence: series.cadence,
+              location: series.location,
+              host: series.host,
+              tag: series.tag,
+              churchId: series.churchId,
+            }}
+            churches={churches}
+          />
+        </div>
       </div>
     </div>
   );

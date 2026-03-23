@@ -7,6 +7,7 @@ const validInput = {
   location: 'Room 101',
   host: 'Pastor John',
   tag: 'Bible Study',
+  churchId: 'ch-1',
 }
 
 describe('createSeriesSchema', () => {
@@ -20,9 +21,17 @@ describe('createSeriesSchema', () => {
     }
   })
 
-  it('accepts an optional churchId', () => {
-    const result = createSeriesSchema.safeParse({ ...validInput, churchId: 'ch-1' })
-    expect(result.success).toBe(true)
+  it('requires a churchId', () => {
+    const { churchId: _, ...withoutChurch } = validInput
+    const result = createSeriesSchema.safeParse(withoutChurch)
+    expect(result.success).toBe(false)
+    if (!result.success) expect(result.error.flatten().fieldErrors.churchId).toBeDefined()
+  })
+
+  it('rejects an empty churchId', () => {
+    const result = createSeriesSchema.safeParse({ ...validInput, churchId: '' })
+    expect(result.success).toBe(false)
+    if (!result.success) expect(result.error.flatten().fieldErrors.churchId).toBeDefined()
   })
 
   it('rejects an empty name', () => {

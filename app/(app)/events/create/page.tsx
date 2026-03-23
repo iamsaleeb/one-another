@@ -24,7 +24,7 @@ export default async function CreateEventPage({ searchParams }: Props) {
       orderBy: { name: "asc" },
     }),
     seriesId
-      ? prisma.series.findUnique({ where: { id: seriesId }, select: { id: true, name: true } })
+      ? prisma.series.findUnique({ where: { id: seriesId }, select: { id: true, name: true, church: { select: { id: true, name: true } } } })
       : null,
   ]);
 
@@ -33,7 +33,10 @@ export default async function CreateEventPage({ searchParams }: Props) {
       <PageHeader title={series ? "Add Session" : "Create Event"} />
       <div className="px-4 pb-6">
         <div className="rounded-2xl bg-white shadow-card p-5">
-          <CreateEventForm churches={churches} series={series ?? undefined} />
+          <CreateEventForm
+            churches={churches}
+            series={series ? { id: series.id, name: series.name, churchId: series.church.id, churchName: series.church.name } : undefined}
+          />
         </div>
       </div>
     </div>

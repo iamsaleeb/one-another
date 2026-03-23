@@ -133,23 +133,24 @@ export function EditSeriesForm({
         )}
       </div>
 
-      {churches.length > 0 && (
-        <div className="grid gap-1.5">
-          <Label htmlFor="churchId">Church (optional)</Label>
-          <Select name="churchId" defaultValue={series.churchId ?? ""} disabled={isPending}>
-            <SelectTrigger id="churchId">
-              <SelectValue placeholder="Select a church" />
-            </SelectTrigger>
-            <SelectContent>
-              {churches.map((church) => (
-                <SelectItem key={church.id} value={church.id}>
-                  {church.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      )}
+      <div className="grid gap-1.5">
+        <Label htmlFor="churchId">Church</Label>
+        <Select name="churchId" defaultValue={series.churchId ?? ""} disabled={isPending}>
+          <SelectTrigger id="churchId">
+            <SelectValue placeholder="Select a church" />
+          </SelectTrigger>
+          <SelectContent>
+            {churches.map((church) => (
+              <SelectItem key={church.id} value={church.id}>
+                {church.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        {state.fieldErrors?.churchId && (
+          <p className="text-xs text-destructive">{state.fieldErrors.churchId[0]}</p>
+        )}
+      </div>
 
       <Button type="submit" className="w-full" disabled={isPending}>
         {isPending ? "Saving..." : "Save Changes"}

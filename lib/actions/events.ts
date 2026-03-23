@@ -34,10 +34,19 @@ export async function createEventAction(
     return { fieldErrors: z.flattenError(parsed.error).fieldErrors };
   }
 
-  const { title, date, time, location, host, tag, description, churchId, seriesId } =
-    parsed.data;
+  const { title, date, time, location, host, tag, description, seriesId } = parsed.data;
+  let { churchId } = parsed.data;
 
   const datetime = `${date}T${time}`;
+
+  if (seriesId) {
+    const series = await prisma.series.findUnique({ where: { id: seriesId }, select: { churchId: true } });
+    churchId = series?.churchId;
+  }
+
+  if (!churchId) {
+    return { fieldErrors: { churchId: ["Church is required"] } };
+  }
 
   await prisma.event.create({
     data: {
@@ -48,7 +57,7 @@ export async function createEventAction(
       tag,
       description,
       isPast: false,
-      ...(churchId ? { churchId } : {}),
+      churchId,
       ...(seriesId ? { seriesId } : {}),
       ...(session?.user?.id ? { createdById: session.user.id } : {}),
     },
@@ -82,8 +91,18 @@ export async function updateEventAction(
     return { fieldErrors: z.flattenError(parsed.error).fieldErrors };
   }
 
-  const { title, date, time, location, host, tag, description, churchId, seriesId } = parsed.data;
+  const { title, date, time, location, host, tag, description, seriesId } = parsed.data;
+  let { churchId } = parsed.data;
   const datetime = `${date}T${time}`;
+
+  if (seriesId) {
+    const series = await prisma.series.findUnique({ where: { id: seriesId }, select: { churchId: true } });
+    churchId = series?.churchId;
+  }
+
+  if (!churchId) {
+    return { fieldErrors: { churchId: ["Church is required"] } };
+  }
 
   await prisma.event.update({
     where: { id },
@@ -94,7 +113,7 @@ export async function updateEventAction(
       host,
       tag,
       description,
-      churchId: churchId ?? null,
+      churchId,
       seriesId: seriesId ?? null,
     },
   });

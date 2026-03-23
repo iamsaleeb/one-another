@@ -32,7 +32,8 @@
       "Bash(npm show:*)",
       "Bash(npm --version)",
       "Bash(npm ls:*)",
-      "Bash(java:*)"
+      "Bash(java:*)",
+      "Bash(find /c/code/one-another1 -maxdepth 3 -type f \\\\\\(-name *.prisma -o -name package.json -o -name tsconfig.json \\\\\\))"
     ]
   },
   "enableAllProjectMcpServers": true,

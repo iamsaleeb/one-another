@@ -38,6 +38,7 @@ const validFields = {
   location: 'Room 101',
   host: 'Pastor John',
   tag: 'Bible Study',
+  churchId: 'ch-1',
 }
 
 beforeEach(() => {
@@ -58,18 +59,19 @@ describe('createSeriesAction', () => {
         location: 'Room 101',
         host: 'Pastor John',
         tag: 'Bible Study',
+        churchId: 'ch-1',
       }),
     })
     expect(mockRedirect).toHaveBeenCalledWith('/series/ser-1')
   })
 
   it('includes churchId in the create call when provided', async () => {
-    mockSeriesCreate.mockResolvedValue({ id: 'ser-2', ...validFields, churchId: 'ch-1' })
+    mockSeriesCreate.mockResolvedValue({ id: 'ser-2', ...validFields, churchId: 'ch-99' })
 
-    await createSeriesAction({}, makeFormData({ ...validFields, churchId: 'ch-1' }))
+    await createSeriesAction({}, makeFormData({ ...validFields, churchId: 'ch-99' }))
 
     expect(mockSeriesCreate).toHaveBeenCalledWith({
-      data: expect.objectContaining({ churchId: 'ch-1' }),
+      data: expect.objectContaining({ churchId: 'ch-99' }),
     })
   })
 
@@ -92,12 +94,13 @@ describe('createSeriesAction', () => {
     expect(mockSeriesCreate).not.toHaveBeenCalled()
   })
 
-  it('does not include churchId when the field is empty', async () => {
-    mockSeriesCreate.mockResolvedValue({ id: 'ser-3', ...validFields })
+  it('returns a fieldError when churchId is empty', async () => {
+    const result = await createSeriesAction(
+      {},
+      makeFormData({ ...validFields, churchId: '' })
+    )
 
-    await createSeriesAction({}, makeFormData({ ...validFields, churchId: '' }))
-
-    const callArg = mockSeriesCreate.mock.calls[0][0]
-    expect(callArg.data).not.toHaveProperty('churchId')
+    expect(result.fieldErrors?.churchId).toBeDefined()
+    expect(mockSeriesCreate).not.toHaveBeenCalled()
   })
 })

@@ -19,7 +19,7 @@ export async function createSeriesAction(
     location:    formData.get("location"),
     host:        formData.get("host"),
     tag:         formData.get("tag"),
-    churchId:    formData.get("churchId") || undefined,
+    churchId:    formData.get("churchId") ?? "",
   };
 
   const parsed = createSeriesSchema.safeParse(raw);
@@ -37,7 +37,7 @@ export async function createSeriesAction(
       location,
       host,
       tag,
-      ...(churchId ? { churchId } : {}),
+      churchId,
       ...(session?.user?.id ? { createdById: session.user.id } : {}),
     },
   });
@@ -60,7 +60,7 @@ export async function updateSeriesAction(
     location:    formData.get("location"),
     host:        formData.get("host"),
     tag:         formData.get("tag"),
-    churchId:    formData.get("churchId") || undefined,
+    churchId:    formData.get("churchId") ?? "",
   };
 
   const parsed = createSeriesSchema.safeParse(raw);
@@ -79,7 +79,7 @@ export async function updateSeriesAction(
       location,
       host,
       tag,
-      churchId: churchId ?? null,
+      churchId,
     },
   });
 

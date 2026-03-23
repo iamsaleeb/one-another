@@ -25,7 +25,7 @@ const CATEGORIES = [
 ];
 
 interface Church { id: string; name: string }
-interface Series { id: string; name: string }
+interface Series { id: string; name: string; churchId: string; churchName: string }
 
 export function CreateEventForm({
   churches,
@@ -131,9 +131,21 @@ export function CreateEventForm({
         )}
       </div>
 
-      {churches.length > 0 && (
+      {series ? (
         <div className="grid gap-1.5">
-          <Label htmlFor="churchId">Church (optional)</Label>
+          <Label>Church</Label>
+          <Select value={series.churchId} disabled>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={series.churchId}>{series.churchName}</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      ) : (
+        <div className="grid gap-1.5">
+          <Label htmlFor="churchId">Church</Label>
           <Select name="churchId" disabled={isPending}>
             <SelectTrigger id="churchId">
               <SelectValue placeholder="Select a church" />
@@ -146,6 +158,9 @@ export function CreateEventForm({
               ))}
             </SelectContent>
           </Select>
+          {state.fieldErrors?.churchId && (
+            <p className="text-xs text-destructive">{state.fieldErrors.churchId[0]}</p>
+          )}
         </div>
       )}
 

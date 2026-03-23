@@ -7,6 +7,9 @@ jest.mock('@/lib/db', () => ({
     event: {
       create: jest.fn(),
     },
+    series: {
+      findUnique: jest.fn(),
+    },
   },
 }))
 
@@ -21,6 +24,7 @@ import { auth } from '@/auth'
 
 const mockRedirect = redirect as unknown as jest.Mock
 const mockEventCreate = prisma.event.create as jest.Mock
+const mockSeriesFindUnique = prisma.series.findUnique as jest.Mock
 const mockAuth = auth as jest.Mock
 
 function makeFormData(fields: Record<string, string>): FormData {
@@ -39,6 +43,7 @@ const validFields = {
   host: 'Pastor John',
   tag: 'Worship',
   description: 'Weekly Sunday service',
+  churchId: 'ch-1',
 }
 
 beforeEach(() => {
@@ -61,6 +66,7 @@ describe('createEventAction', () => {
         tag: 'Worship',
         description: 'Weekly Sunday service',
         isPast: false,
+        churchId: 'ch-1',
         createdById: 'user-1',
       }),
     })
@@ -68,33 +74,54 @@ describe('createEventAction', () => {
   })
 
   it('redirects to the series page when seriesId is provided', async () => {
+    mockSeriesFindUnique.mockResolvedValue({ churchId: 'ch-1' })
     mockEventCreate.mockResolvedValue({ id: 'evt-2' })
 
     await createEventAction({}, makeFormData({ ...validFields, seriesId: 'ser-1' }))
 
+    expect(mockSeriesFindUnique).toHaveBeenCalledWith({
+      where: { id: 'ser-1' },
+      select: { churchId: true },
+    })
     expect(mockEventCreate).toHaveBeenCalledWith({
-      data: expect.objectContaining({ seriesId: 'ser-1' }),
+      data: expect.objectContaining({ seriesId: 'ser-1', churchId: 'ch-1' }),
     })
     expect(mockRedirect).toHaveBeenCalledWith('/series/ser-1')
   })
 
-  it('includes churchId when provided', async () => {
+  it('inherits churchId from the series, ignoring any submitted churchId', async () => {
+    mockSeriesFindUnique.mockResolvedValue({ churchId: 'ch-from-series' })
     mockEventCreate.mockResolvedValue({ id: 'evt-3' })
 
-    await createEventAction({}, makeFormData({ ...validFields, churchId: 'ch-1' }))
+    await createEventAction(
+      {},
+      makeFormData({ ...validFields, seriesId: 'ser-1', churchId: 'ch-submitted' })
+    )
 
     expect(mockEventCreate).toHaveBeenCalledWith({
-      data: expect.objectContaining({ churchId: 'ch-1' }),
+      data: expect.objectContaining({ churchId: 'ch-from-series' }),
     })
   })
 
-  it('does not include churchId when the field is empty', async () => {
+  it('includes churchId when provided for a standalone event', async () => {
     mockEventCreate.mockResolvedValue({ id: 'evt-4' })
 
-    await createEventAction({}, makeFormData({ ...validFields, churchId: '' }))
+    await createEventAction({}, makeFormData({ ...validFields, churchId: 'ch-99' }))
 
-    const callArg = mockEventCreate.mock.calls[0][0]
-    expect(callArg.data).not.toHaveProperty('churchId')
+    expect(mockEventCreate).toHaveBeenCalledWith({
+      data: expect.objectContaining({ churchId: 'ch-99' }),
+    })
+  })
+
+  it('returns a fieldError when churchId is empty for a standalone event', async () => {
+    const { churchId: _, ...fieldsWithoutChurch } = validFields
+    const result = await createEventAction(
+      {},
+      makeFormData({ ...fieldsWithoutChurch, churchId: '' })
+    )
+
+    expect(result.fieldErrors?.churchId).toBeDefined()
+    expect(mockEventCreate).not.toHaveBeenCalled()
   })
 
   it('returns fieldErrors when required fields are missing', async () => {

@@ -144,9 +144,25 @@ export function EditEventForm({
         )}
       </div>
 
-      {churches.length > 0 && (
+      {event.seriesId ? (
         <div className="grid gap-1.5">
-          <Label htmlFor="churchId">Church (optional)</Label>
+          <Label>Church</Label>
+          <Select value={event.churchId ?? ""} disabled>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {event.churchId && (
+                <SelectItem value={event.churchId}>
+                  {churches.find((c) => c.id === event.churchId)?.name ?? event.churchId}
+                </SelectItem>
+              )}
+            </SelectContent>
+          </Select>
+        </div>
+      ) : (
+        <div className="grid gap-1.5">
+          <Label htmlFor="churchId">Church</Label>
           <Select name="churchId" defaultValue={event.churchId ?? ""} disabled={isPending}>
             <SelectTrigger id="churchId">
               <SelectValue placeholder="Select a church" />
@@ -159,6 +175,9 @@ export function EditEventForm({
               ))}
             </SelectContent>
           </Select>
+          {state.fieldErrors?.churchId && (
+            <p className="text-xs text-destructive">{state.fieldErrors.churchId[0]}</p>
+          )}
         </div>
       )}
 

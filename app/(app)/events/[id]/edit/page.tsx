@@ -23,9 +23,9 @@ export default async function EditEventPage({ params }: Props) {
   const [date, time] = event.datetime.split("T");
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="mx-auto max-w-lg px-4 py-6">
       <PageHeader title="Edit Event" />
-      <div className="px-4 py-4">
+      <div className="rounded-2xl bg-white shadow-card p-5">
         <EditEventForm
           event={{
             id: event.id,

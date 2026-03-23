@@ -67,7 +67,7 @@ function TopNavInner({ user }: TopNavProps) {
   }
 
   return (
-    <header className="sticky top-0 z-50 bg-primary">
+    <header className="sticky top-0 z-50 bg-primary pt-safe">
       <div className="flex h-14 items-center justify-between px-4">
         {isDetailPage ? (
           <button

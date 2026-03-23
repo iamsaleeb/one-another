@@ -77,14 +77,16 @@ export default async function EventDetailPage({ params }: Props) {
       </div>
 
       {/* Register bar */}
-      <div className="fixed bottom-0 left-0 right-0 z-10 px-4 pt-4 bg-white shadow-[0px_-2px_31px_0px_#0000001A] flex items-center justify-between gap-4" style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))' }}>
-        <div className="flex flex-col gap-0.5">
-          <p className="text-xs text-muted-foreground">Cost</p>
-          <p className="text-base font-bold">Free Event</p>
+      <div className="fixed bottom-0 left-0 right-0 z-10 bg-white shadow-[0px_-2px_31px_0px_#0000001A] pb-safe">
+        <div className="flex items-center justify-between gap-4 px-4 py-4">
+          <div className="flex flex-col gap-0.5">
+            <p className="text-xs text-muted-foreground">Cost</p>
+            <p className="text-base font-bold">Free Event</p>
+          </div>
+          <Button>
+            Register
+          </Button>
         </div>
-        <Button>
-          Register
-        </Button>
       </div>
     </div>
   );

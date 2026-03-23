@@ -15,7 +15,7 @@ export default async function AppLayout({
   return (
     <div className="min-h-screen">
       <TopNav user={session?.user} />
-      <main style={{ paddingBottom: 'calc(4rem + env(safe-area-inset-bottom, 0px))' }}>{children}</main>
+      <main className="pb-nav">{children}</main>
       <BottomNav isOrganiser={isOrganiser} />
       <CreateEventFAB isOrganiser={isOrganiser} />
     </div>

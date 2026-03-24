@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,20 +13,39 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { loginSchema, type LoginInput } from "@/lib/validations/auth";
 import { loginAction } from "@/lib/actions/auth";
 
 export function LoginForm({
   className,
   ...props
 }: React.ComponentProps<"div">) {
-  const [state, action, isPending] = useActionState(loginAction, {});
-  const [fields, setFields] = useState({ email: "", password: "" });
+  const form = useForm<LoginInput>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: { email: "", password: "" },
+  });
 
-  function update(field: keyof typeof fields) {
-    return (e: React.ChangeEvent<HTMLInputElement>) =>
-      setFields((prev) => ({ ...prev, [field]: e.target.value }));
-  }
+  const { isSubmitting } = form.formState;
+
+  const onSubmit = form.handleSubmit(async (data) => {
+    const result = await loginAction(data);
+    if (result?.error) {
+      form.setError("root", { message: result.error });
+    }
+    if (result?.fieldErrors) {
+      Object.entries(result.fieldErrors).forEach(([field, msgs]) =>
+        form.setError(field as keyof LoginInput, { message: msgs[0] })
+      );
+    }
+  });
 
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
@@ -35,72 +55,74 @@ export function LoginForm({
           <CardDescription>Login with your email and password</CardDescription>
         </CardHeader>
         <CardContent>
-          <form action={action}>
-            <div className="grid gap-6">
-              {state.error && (
-                <p className="text-sm text-destructive text-center">
-                  {state.error}
-                </p>
-              )}
+          <Form {...form}>
+            <form onSubmit={onSubmit} noValidate>
               <div className="grid gap-6">
-                <div className="grid gap-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
+                {form.formState.errors.root && (
+                  <p className="text-sm text-destructive text-center">
+                    {form.formState.errors.root.message}
+                  </p>
+                )}
+                <div className="grid gap-6">
+                  <FormField
+                    control={form.control}
                     name="email"
-                    type="email"
-                    placeholder="m@example.com"
-                    required
-                    disabled={isPending}
-                    value={fields.email}
-                    onChange={update("email")}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Email</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="email"
+                            placeholder="m@example.com"
+                            disabled={isSubmitting}
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
                   />
-                  {state.fieldErrors?.email && (
-                    <p className="text-xs text-destructive">
-                      {state.fieldErrors.email[0]}
-                    </p>
-                  )}
-                </div>
-                <div className="grid gap-2">
-                  <div className="flex items-center">
-                    <Label htmlFor="password">Password</Label>
-                    <a
-                      href="#"
-                      className="ml-auto text-sm underline-offset-4 hover:underline"
-                    >
-                      Forgot your password?
-                    </a>
-                  </div>
-                  <Input
-                    id="password"
+                  <FormField
+                    control={form.control}
                     name="password"
-                    type="password"
-                    required
-                    disabled={isPending}
-                    value={fields.password}
-                    onChange={update("password")}
+                    render={({ field }) => (
+                      <FormItem>
+                        <div className="flex items-center">
+                          <FormLabel>Password</FormLabel>
+                          <a
+                            href="#"
+                            className="ml-auto text-sm underline-offset-4 hover:underline"
+                          >
+                            Forgot your password?
+                          </a>
+                        </div>
+                        <FormControl>
+                          <Input
+                            type="password"
+                            disabled={isSubmitting}
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
                   />
-                  {state.fieldErrors?.password && (
-                    <p className="text-xs text-destructive">
-                      {state.fieldErrors.password[0]}
-                    </p>
-                  )}
+                  <Button type="submit" className="w-full" disabled={isSubmitting}>
+                    {isSubmitting ? "Signing in..." : "Login"}
+                  </Button>
                 </div>
-                <Button type="submit" className="w-full" disabled={isPending}>
-                  {isPending ? "Signing in..." : "Login"}
-                </Button>
+                <div className="text-center text-sm">
+                  Don&apos;t have an account?{" "}
+                  <Link
+                    href="/register"
+                    className="underline underline-offset-4 hover:text-primary"
+                  >
+                    Sign up
+                  </Link>
+                </div>
               </div>
-              <div className="text-center text-sm">
-                Don&apos;t have an account?{" "}
-                <Link
-                  href="/register"
-                  className="underline underline-offset-4 hover:text-primary"
-                >
-                  Sign up
-                </Link>
-              </div>
-            </div>
-          </form>
+            </form>
+          </Form>
         </CardContent>
       </Card>
       <div className="text-balance text-center text-xs text-muted-foreground">

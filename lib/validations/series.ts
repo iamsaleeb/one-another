@@ -10,7 +10,4 @@ export const createSeriesSchema = z.object({
   churchId:    z.string().min(1, "Church is required"),
 });
 
-export interface CreateSeriesState {
-  error?: string;
-  fieldErrors?: Record<string, string[]>;
-}
+export type CreateSeriesInput = z.infer<typeof createSeriesSchema>;

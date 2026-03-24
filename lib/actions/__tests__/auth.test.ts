@@ -42,14 +42,6 @@ const mockBcryptHash = bcrypt.hash as jest.Mock
 const mockFindUnique = prisma.user.findUnique as jest.Mock
 const mockCreate = prisma.user.create as jest.Mock
 
-function makeFormData(fields: Record<string, string>): FormData {
-  const fd = new FormData()
-  for (const [key, value] of Object.entries(fields)) {
-    fd.append(key, value)
-  }
-  return fd
-}
-
 beforeEach(() => {
   jest.clearAllMocks()
 })
@@ -59,23 +51,20 @@ beforeEach(() => {
 // ──────────────────────────────────────────────────────────────────────────────
 describe('loginAction', () => {
   it('returns fieldErrors when email is invalid', async () => {
-    const fd = makeFormData({ email: 'bad-email', password: 'pass' })
-    const result = await loginAction({}, fd)
+    const result = await loginAction({ email: 'bad-email', password: 'pass' })
     expect(result.fieldErrors?.email).toBeDefined()
     expect(mockSignIn).not.toHaveBeenCalled()
   })
 
   it('returns fieldErrors when password is empty', async () => {
-    const fd = makeFormData({ email: 'user@example.com', password: '' })
-    const result = await loginAction({}, fd)
+    const result = await loginAction({ email: 'user@example.com', password: '' })
     expect(result.fieldErrors?.password).toBeDefined()
     expect(mockSignIn).not.toHaveBeenCalled()
   })
 
   it('calls signIn with valid credentials and returns empty object on success', async () => {
     mockSignIn.mockResolvedValue(undefined)
-    const fd = makeFormData({ email: 'user@example.com', password: 'hunter2' })
-    const result = await loginAction({}, fd)
+    const result = await loginAction({ email: 'user@example.com', password: 'hunter2' })
     expect(mockSignIn).toHaveBeenCalledWith('credentials', {
       email: 'user@example.com',
       password: 'hunter2',
@@ -87,24 +76,21 @@ describe('loginAction', () => {
   it('returns "Invalid email or password" for CredentialsSignin AuthError', async () => {
     const err = new AuthError('CredentialsSignin')
     mockSignIn.mockRejectedValue(err)
-    const fd = makeFormData({ email: 'user@example.com', password: 'wrong' })
-    const result = await loginAction({}, fd)
+    const result = await loginAction({ email: 'user@example.com', password: 'wrong' })
     expect(result.error).toBe('Invalid email or password.')
   })
 
   it('returns generic error message for other AuthError types', async () => {
     const err = new AuthError('OAuthSignInError')
     mockSignIn.mockRejectedValue(err)
-    const fd = makeFormData({ email: 'user@example.com', password: 'pass123' })
-    const result = await loginAction({}, fd)
+    const result = await loginAction({ email: 'user@example.com', password: 'pass123' })
     expect(result.error).toBe('Something went wrong. Please try again.')
   })
 
   it('re-throws non-AuthError exceptions', async () => {
     const unexpected = new Error('DB down')
     mockSignIn.mockRejectedValue(unexpected)
-    const fd = makeFormData({ email: 'user@example.com', password: 'pass123' })
-    await expect(loginAction({}, fd)).rejects.toThrow('DB down')
+    await expect(loginAction({ email: 'user@example.com', password: 'pass123' })).rejects.toThrow('DB down')
   })
 })
 
@@ -112,24 +98,22 @@ describe('loginAction', () => {
 // registerAction
 // ──────────────────────────────────────────────────────────────────────────────
 describe('registerAction', () => {
-  const validFields = {
+  const validData = {
     name: 'Jane Doe',
     email: 'jane@example.com',
     password: 'securepass',
-    'confirm-password': 'securepass',
+    confirmPassword: 'securepass',
   }
 
   it('returns fieldErrors for invalid registration data', async () => {
-    const fd = makeFormData({ ...validFields, name: 'J' })
-    const result = await registerAction({}, fd)
+    const result = await registerAction({ ...validData, name: 'J' })
     expect(result.fieldErrors?.name).toBeDefined()
     expect(mockFindUnique).not.toHaveBeenCalled()
   })
 
   it('returns email fieldError when user already exists', async () => {
     mockFindUnique.mockResolvedValue({ id: 'existing-id', email: 'jane@example.com' })
-    const fd = makeFormData(validFields)
-    const result = await registerAction({}, fd)
+    const result = await registerAction(validData)
     expect(result.fieldErrors?.email).toContain(
       'An account with this email already exists.'
     )
@@ -142,8 +126,7 @@ describe('registerAction', () => {
     mockCreate.mockResolvedValue({ id: 'new-id' })
     mockSignIn.mockResolvedValue(undefined)
 
-    const fd = makeFormData(validFields)
-    const result = await registerAction({}, fd)
+    const result = await registerAction(validData)
 
     expect(mockBcryptHash).toHaveBeenCalledWith('securepass', 12)
     expect(mockCreate).toHaveBeenCalledWith({
@@ -167,8 +150,7 @@ describe('registerAction', () => {
     mockCreate.mockResolvedValue({ id: 'new-id' })
     mockSignIn.mockRejectedValue(new AuthError('CredentialsSignin'))
 
-    const fd = makeFormData(validFields)
-    const result = await registerAction({}, fd)
+    const result = await registerAction(validData)
 
     expect(result.error).toBe('Account created but sign-in failed. Please log in.')
   })
@@ -179,8 +161,7 @@ describe('registerAction', () => {
     mockCreate.mockResolvedValue({ id: 'new-id' })
     mockSignIn.mockRejectedValue(new Error('Network failure'))
 
-    const fd = makeFormData(validFields)
-    await expect(registerAction({}, fd)).rejects.toThrow('Network failure')
+    await expect(registerAction(validData)).rejects.toThrow('Network failure')
   })
 })
 

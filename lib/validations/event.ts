@@ -11,7 +11,7 @@ export const createEventSchema = z.object({
   churchId: z.string().optional(),
   seriesId: z.string().optional(),
   requiresRegistration: z.boolean().optional(),
-  capacity: z.coerce.number().int().positive().optional(),
+  capacity: z.number().int().positive().optional(),
   collectPhone: z.boolean().optional(),
   collectNotes: z.boolean().optional(),
   price: z.string().optional(),

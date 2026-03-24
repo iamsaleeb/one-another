@@ -2,44 +2,22 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { auth } from "@/auth";
 import { UserRole } from "@prisma/client";
-import { createEventSchema, registerEventSchema } from "@/lib/validations/event";
+import { createEventSchema, registerEventSchema, type CreateEventInput } from "@/lib/validations/event";
 import { canManageChurch } from "@/lib/permissions";
+import type { ActionResult } from "@/lib/actions/auth";
 
-export interface CreateEventState {
-  error?: string;
-  fieldErrors?: Record<string, string[]>;
-}
-
-export async function createEventAction(
-  _prevState: CreateEventState,
-  formData: FormData
-): Promise<CreateEventState> {
+export async function createEventAction(data: CreateEventInput): Promise<ActionResult> {
   const session = await auth();
-  if (session?.user?.role !== UserRole.ORGANISER && session?.user?.role !== UserRole.ADMIN) return { error: "Unauthorised." };
-  const raw = {
-    title: formData.get("title"),
-    date: formData.get("date"),
-    time: formData.get("time"),
-    location: formData.get("location"),
-    host: formData.get("host"),
-    tag: formData.get("tag"),
-    description: formData.get("description"),
-    churchId: formData.get("churchId") || undefined,
-    seriesId: formData.get("seriesId") || undefined,
-    requiresRegistration: formData.get("requiresRegistration") === "true",
-    capacity: formData.get("capacity") || undefined,
-    collectPhone: formData.get("collectPhone") === "true",
-    collectNotes: formData.get("collectNotes") === "true",
-    price: (formData.get("price") as string) || undefined,
-  };
+  if (session?.user?.role !== UserRole.ORGANISER && session?.user?.role !== UserRole.ADMIN) {
+    return { error: "Unauthorised." };
+  }
 
-  const parsed = createEventSchema.safeParse(raw);
+  const parsed = createEventSchema.safeParse(data);
   if (!parsed.success) {
-    return { fieldErrors: z.flattenError(parsed.error).fieldErrors };
+    return { fieldErrors: parsed.error.flatten().fieldErrors };
   }
 
   const { title, date, time, location, host, tag, description, seriesId, requiresRegistration, capacity, collectPhone, collectNotes, price } = parsed.data;
@@ -82,34 +60,13 @@ export async function createEventAction(
   redirect(seriesId ? `/series/${seriesId}` : "/my-events");
 }
 
-export async function updateEventAction(
-  id: string,
-  _prevState: CreateEventState,
-  formData: FormData
-): Promise<CreateEventState> {
+export async function updateEventAction(id: string, data: CreateEventInput): Promise<ActionResult> {
   const session = await auth();
   if (session?.user?.role !== UserRole.ORGANISER && session?.user?.role !== UserRole.ADMIN) redirect("/");
 
-  const raw = {
-    title: formData.get("title"),
-    date: formData.get("date"),
-    time: formData.get("time"),
-    location: formData.get("location"),
-    host: formData.get("host"),
-    tag: formData.get("tag"),
-    description: formData.get("description"),
-    churchId: formData.get("churchId") || undefined,
-    seriesId: formData.get("seriesId") || undefined,
-    requiresRegistration: formData.get("requiresRegistration") === "true",
-    capacity: formData.get("capacity") || undefined,
-    collectPhone: formData.get("collectPhone") === "true",
-    collectNotes: formData.get("collectNotes") === "true",
-    price: (formData.get("price") as string) || undefined,
-  };
-
-  const parsed = createEventSchema.safeParse(raw);
+  const parsed = createEventSchema.safeParse(data);
   if (!parsed.success) {
-    return { fieldErrors: z.flattenError(parsed.error).fieldErrors };
+    return { fieldErrors: parsed.error.flatten().fieldErrors };
   }
 
   const { title, date, time, location, host, tag, description, seriesId, requiresRegistration, capacity, collectPhone, collectNotes, price } = parsed.data;

@@ -61,7 +61,7 @@ function makeFormData(fields: Record<string, string>): FormData {
   return fd
 }
 
-const validFields = {
+const validData = {
   title: 'Sunday Worship',
   date: '2026-04-06',
   time: '09:00',
@@ -82,7 +82,7 @@ describe('createEventAction', () => {
   it('creates an event and redirects to my-events', async () => {
     mockEventCreate.mockResolvedValue({ id: 'evt-1' })
 
-    await createEventAction({}, makeFormData(validFields))
+    await createEventAction(validData)
 
     expect(mockEventCreate).toHaveBeenCalledWith({
       data: expect.objectContaining({
@@ -104,7 +104,7 @@ describe('createEventAction', () => {
     mockSeriesFindUnique.mockResolvedValue({ churchId: 'ch-1' })
     mockEventCreate.mockResolvedValue({ id: 'evt-2' })
 
-    await createEventAction({}, makeFormData({ ...validFields, seriesId: 'ser-1' }))
+    await createEventAction({ ...validData, seriesId: 'ser-1' })
 
     expect(mockSeriesFindUnique).toHaveBeenCalledWith({
       where: { id: 'ser-1' },
@@ -120,10 +120,7 @@ describe('createEventAction', () => {
     mockSeriesFindUnique.mockResolvedValue({ churchId: 'ch-from-series' })
     mockEventCreate.mockResolvedValue({ id: 'evt-3' })
 
-    await createEventAction(
-      {},
-      makeFormData({ ...validFields, seriesId: 'ser-1', churchId: 'ch-submitted' })
-    )
+    await createEventAction({ ...validData, seriesId: 'ser-1', churchId: 'ch-submitted' })
 
     expect(mockEventCreate).toHaveBeenCalledWith({
       data: expect.objectContaining({ churchId: 'ch-from-series' }),
@@ -133,7 +130,7 @@ describe('createEventAction', () => {
   it('includes churchId when provided for a standalone event', async () => {
     mockEventCreate.mockResolvedValue({ id: 'evt-4' })
 
-    await createEventAction({}, makeFormData({ ...validFields, churchId: 'ch-99' }))
+    await createEventAction({ ...validData, churchId: 'ch-99' })
 
     expect(mockEventCreate).toHaveBeenCalledWith({
       data: expect.objectContaining({ churchId: 'ch-99' }),
@@ -141,18 +138,14 @@ describe('createEventAction', () => {
   })
 
   it('returns a fieldError when churchId is empty for a standalone event', async () => {
-    const { churchId: _, ...fieldsWithoutChurch } = validFields
-    const result = await createEventAction(
-      {},
-      makeFormData({ ...fieldsWithoutChurch, churchId: '' })
-    )
+    const result = await createEventAction({ ...validData, churchId: '' })
 
     expect(result.fieldErrors?.churchId).toBeDefined()
     expect(mockEventCreate).not.toHaveBeenCalled()
   })
 
   it('returns fieldErrors when required fields are missing', async () => {
-    const result = await createEventAction({}, makeFormData({ title: '' }))
+    const result = await createEventAction({ ...validData, title: '' })
 
     expect(result.fieldErrors).toBeDefined()
     expect(result.fieldErrors?.title).toBeDefined()
@@ -163,7 +156,7 @@ describe('createEventAction', () => {
   it('returns an unauthorized error when there is no session', async () => {
     mockAuth.mockResolvedValue(null)
 
-    const result = await createEventAction({}, makeFormData(validFields))
+    const result = await createEventAction(validData)
 
     expect(result.error).toBeDefined()
     expect(mockEventCreate).not.toHaveBeenCalled()
@@ -172,7 +165,7 @@ describe('createEventAction', () => {
   it('returns an unauthorized error when the user is not an organiser', async () => {
     mockAuth.mockResolvedValue({ user: { id: 'user-1', role: 'ATTENDEE' } })
 
-    const result = await createEventAction({}, makeFormData(validFields))
+    const result = await createEventAction(validData)
 
     expect(result.error).toBeDefined()
     expect(mockEventCreate).not.toHaveBeenCalled()
@@ -181,16 +174,16 @@ describe('createEventAction', () => {
   it('returns an error when organiser is not assigned to the church', async () => {
     mockCanManageChurch.mockResolvedValue(false)
 
-    const result = await createEventAction({}, makeFormData(validFields))
+    const result = await createEventAction(validData)
 
     expect(result.error).toBe('You are not assigned to this church.')
     expect(mockEventCreate).not.toHaveBeenCalled()
   })
 
-  it('saves requiresRegistration=true when the field is "true"', async () => {
+  it('saves requiresRegistration=true when passed as boolean', async () => {
     mockEventCreate.mockResolvedValue({ id: 'evt-5' })
 
-    await createEventAction({}, makeFormData({ ...validFields, requiresRegistration: 'true' }))
+    await createEventAction({ ...validData, requiresRegistration: true })
 
     expect(mockEventCreate).toHaveBeenCalledWith({
       data: expect.objectContaining({ requiresRegistration: true }),
@@ -200,7 +193,7 @@ describe('createEventAction', () => {
   it('saves requiresRegistration=false when the field is absent', async () => {
     mockEventCreate.mockResolvedValue({ id: 'evt-6' })
 
-    await createEventAction({}, makeFormData(validFields))
+    await createEventAction(validData)
 
     expect(mockEventCreate).toHaveBeenCalledWith({
       data: expect.objectContaining({ requiresRegistration: false }),

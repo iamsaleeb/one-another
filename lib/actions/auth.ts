@@ -5,23 +5,15 @@ import { AuthError } from "next-auth";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
-import { loginSchema, registerSchema } from "@/lib/validations/auth";
+import { loginSchema, registerSchema, type LoginInput, type RegisterInput } from "@/lib/validations/auth";
 
-export interface ActionState {
+export interface ActionResult {
   error?: string;
   fieldErrors?: Record<string, string[]>;
 }
 
-export async function loginAction(
-  _prevState: ActionState,
-  formData: FormData
-): Promise<ActionState> {
-  const raw = {
-    email: formData.get("email"),
-    password: formData.get("password"),
-  };
-
-  const parsed = loginSchema.safeParse(raw);
+export async function loginAction(data: LoginInput): Promise<ActionResult> {
+  const parsed = loginSchema.safeParse(data);
   if (!parsed.success) {
     return { fieldErrors: z.flattenError(parsed.error).fieldErrors };
   }
@@ -47,18 +39,8 @@ export async function loginAction(
   return {};
 }
 
-export async function registerAction(
-  _prevState: ActionState,
-  formData: FormData
-): Promise<ActionState> {
-  const raw = {
-    name: formData.get("name"),
-    email: formData.get("email"),
-    password: formData.get("password"),
-    confirmPassword: formData.get("confirm-password"),
-  };
-
-  const parsed = registerSchema.safeParse(raw);
+export async function registerAction(data: RegisterInput): Promise<ActionResult> {
+  const parsed = registerSchema.safeParse(data);
   if (!parsed.success) {
     return { fieldErrors: z.flattenError(parsed.error).fieldErrors };
   }

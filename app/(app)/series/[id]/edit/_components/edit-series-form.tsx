@@ -1,9 +1,9 @@
 "use client";
 
-import { useActionState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
@@ -12,8 +12,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { createSeriesSchema, type CreateSeriesInput } from "@/lib/validations/series";
 import { updateSeriesAction } from "@/lib/actions/series";
-import type { CreateSeriesState } from "@/lib/validations/series";
 
 const CATEGORIES = [
   "Worship",
@@ -51,110 +59,177 @@ export function EditSeriesForm({
   series: SeriesData;
   churches: Church[];
 }) {
-  const boundAction = updateSeriesAction.bind(null, series.id);
-  const [state, action, isPending] = useActionState<CreateSeriesState, FormData>(
-    boundAction,
-    {}
-  );
+  const form = useForm<CreateSeriesInput>({
+    resolver: zodResolver(createSeriesSchema),
+    defaultValues: {
+      name: series.name,
+      description: series.description,
+      cadence: series.cadence as CreateSeriesInput["cadence"],
+      location: series.location,
+      host: series.host,
+      tag: series.tag,
+      churchId: series.churchId ?? "",
+    },
+  });
+
+  const { isSubmitting } = form.formState;
+
+  const onSubmit = form.handleSubmit(async (data) => {
+    const result = await updateSeriesAction(series.id, data);
+    if (result?.error) {
+      form.setError("root", { message: result.error });
+    }
+    if (result?.fieldErrors) {
+      Object.entries(result.fieldErrors).forEach(([field, msgs]) =>
+        form.setError(field as keyof CreateSeriesInput, { message: msgs[0] })
+      );
+    }
+  });
 
   return (
-    <form action={action} className="flex flex-col gap-5">
-      {state.error && (
-        <p className="text-sm text-destructive text-center">{state.error}</p>
-      )}
-
-      <div className="grid gap-1.5">
-        <Label htmlFor="name">Name</Label>
-        <Input id="name" name="name" defaultValue={series.name} required disabled={isPending} />
-        {state.fieldErrors?.name && (
-          <p className="text-xs text-destructive">{state.fieldErrors.name[0]}</p>
+    <Form {...form}>
+      <form onSubmit={onSubmit} className="flex flex-col gap-5">
+        {form.formState.errors.root && (
+          <p className="text-sm text-destructive text-center">
+            {form.formState.errors.root.message}
+          </p>
         )}
-      </div>
 
-      <div className="grid gap-1.5">
-        <Label htmlFor="description">Description</Label>
-        <Textarea id="description" name="description" rows={3} defaultValue={series.description} required disabled={isPending} />
-        {state.fieldErrors?.description && (
-          <p className="text-xs text-destructive">{state.fieldErrors.description[0]}</p>
-        )}
-      </div>
+        <FormField
+          control={form.control}
+          name="name"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Name</FormLabel>
+              <FormControl>
+                <Input disabled={isSubmitting} {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-      <div className="grid gap-1.5">
-        <Label htmlFor="cadence">Cadence</Label>
-        <Select name="cadence" defaultValue={series.cadence} disabled={isPending}>
-          <SelectTrigger id="cadence">
-            <SelectValue placeholder="Select cadence" />
-          </SelectTrigger>
-          <SelectContent>
-            {CADENCE_OPTIONS.map((opt) => (
-              <SelectItem key={opt.value} value={opt.value}>
-                {opt.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        {state.fieldErrors?.cadence && (
-          <p className="text-xs text-destructive">{state.fieldErrors.cadence[0]}</p>
-        )}
-      </div>
+        <FormField
+          control={form.control}
+          name="description"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Description</FormLabel>
+              <FormControl>
+                <Textarea rows={3} disabled={isSubmitting} {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-      <div className="grid gap-1.5">
-        <Label htmlFor="location">Location</Label>
-        <Input id="location" name="location" defaultValue={series.location} required disabled={isPending} />
-        {state.fieldErrors?.location && (
-          <p className="text-xs text-destructive">{state.fieldErrors.location[0]}</p>
-        )}
-      </div>
+        <FormField
+          control={form.control}
+          name="cadence"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Cadence</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isSubmitting}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select cadence" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {CADENCE_OPTIONS.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-      <div className="grid gap-1.5">
-        <Label htmlFor="host">Host</Label>
-        <Input id="host" name="host" defaultValue={series.host} required disabled={isPending} />
-        {state.fieldErrors?.host && (
-          <p className="text-xs text-destructive">{state.fieldErrors.host[0]}</p>
-        )}
-      </div>
+        <FormField
+          control={form.control}
+          name="location"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Location</FormLabel>
+              <FormControl>
+                <Input disabled={isSubmitting} {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-      <div className="grid gap-1.5">
-        <Label htmlFor="tag">Category</Label>
-        <Select name="tag" defaultValue={series.tag} disabled={isPending}>
-          <SelectTrigger id="tag">
-            <SelectValue placeholder="Select a category" />
-          </SelectTrigger>
-          <SelectContent>
-            {CATEGORIES.map((cat) => (
-              <SelectItem key={cat} value={cat}>
-                {cat}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        {state.fieldErrors?.tag && (
-          <p className="text-xs text-destructive">{state.fieldErrors.tag[0]}</p>
-        )}
-      </div>
+        <FormField
+          control={form.control}
+          name="host"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Host</FormLabel>
+              <FormControl>
+                <Input disabled={isSubmitting} {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-      <div className="grid gap-1.5">
-        <Label htmlFor="churchId">Church</Label>
-        <Select name="churchId" defaultValue={series.churchId ?? ""} disabled={isPending}>
-          <SelectTrigger id="churchId">
-            <SelectValue placeholder="Select a church" />
-          </SelectTrigger>
-          <SelectContent>
-            {churches.map((church) => (
-              <SelectItem key={church.id} value={church.id}>
-                {church.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        {state.fieldErrors?.churchId && (
-          <p className="text-xs text-destructive">{state.fieldErrors.churchId[0]}</p>
-        )}
-      </div>
+        <FormField
+          control={form.control}
+          name="tag"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Category</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isSubmitting}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a category" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {CATEGORIES.map((cat) => (
+                    <SelectItem key={cat} value={cat}>
+                      {cat}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-      <Button type="submit" className="w-full" disabled={isPending}>
-        {isPending ? "Saving..." : "Save Changes"}
-      </Button>
-    </form>
+        <FormField
+          control={form.control}
+          name="churchId"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Church</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isSubmitting}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a church" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {churches.map((church) => (
+                    <SelectItem key={church.id} value={church.id}>
+                      {church.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <Button type="submit" className="w-full" disabled={isSubmitting}>
+          {isSubmitting ? "Saving..." : "Save Changes"}
+        </Button>
+      </form>
+    </Form>
   );
 }

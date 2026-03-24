@@ -1,33 +1,27 @@
-import React, { useActionState } from 'react'
-import { render, screen } from '@testing-library/react'
+import React from 'react'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 
 jest.mock('@/lib/actions/auth', () => ({
-  loginAction: jest.fn(),
   registerAction: jest.fn(),
 }))
 
-const mockDispatch = jest.fn()
-jest.mock('react', () => {
-  const actual = jest.requireActual('react')
-  return {
-    ...actual,
-    useActionState: jest.fn(),
-  }
-})
-
 import { SignupForm } from '@/components/auth/signup-form'
+import { registerAction } from '@/lib/actions/auth'
 
-const mockUseActionState = jest.mocked(useActionState)
-
-function setupState(overrides: Partial<{ error: string; fieldErrors: Record<string, string[]> }> = {}) {
-  mockUseActionState.mockReturnValue([overrides, mockDispatch, false])
-}
+const mockRegisterAction = registerAction as jest.Mock
 
 beforeEach(() => {
   jest.clearAllMocks()
-  setupState()
+  mockRegisterAction.mockResolvedValue({})
 })
+
+async function fillValidForm() {
+  await userEvent.type(screen.getByLabelText(/full name/i), 'Jane Doe')
+  await userEvent.type(screen.getByLabelText(/^email$/i), 'jane@example.com')
+  await userEvent.type(screen.getByLabelText(/^password$/i), 'securepass')
+  await userEvent.type(screen.getByLabelText(/confirm password/i), 'securepass')
+}
 
 describe('SignupForm', () => {
   it('renders all four input fields', () => {
@@ -53,53 +47,69 @@ describe('SignupForm', () => {
     )
   })
 
-  it('shows a global error message from state', () => {
-    setupState({ error: 'Account created but sign-in failed. Please log in.' })
+  it('shows name field error when name is too short', async () => {
     render(<SignupForm />)
-    expect(
-      screen.getByText('Account created but sign-in failed. Please log in.')
-    ).toBeInTheDocument()
+    await userEvent.type(screen.getByLabelText(/full name/i), 'J')
+    await userEvent.click(screen.getByRole('button', { name: /create account/i }))
+    await waitFor(() =>
+      expect(screen.getByText(/at least 2 characters/i)).toBeInTheDocument()
+    )
+    expect(mockRegisterAction).not.toHaveBeenCalled()
   })
 
-  it('shows name field error from state', () => {
-    setupState({ fieldErrors: { name: ['Name must be at least 2 characters'] } })
+  it('shows password mismatch error', async () => {
     render(<SignupForm />)
-    expect(
-      screen.getByText('Name must be at least 2 characters')
-    ).toBeInTheDocument()
+    await userEvent.type(screen.getByLabelText(/full name/i), 'Jane Doe')
+    await userEvent.type(screen.getByLabelText(/^email$/i), 'jane@example.com')
+    await userEvent.type(screen.getByLabelText(/^password$/i), 'securepass')
+    await userEvent.type(screen.getByLabelText(/confirm password/i), 'different')
+    await userEvent.click(screen.getByRole('button', { name: /create account/i }))
+    await waitFor(() =>
+      expect(screen.getByText(/passwords do not match/i)).toBeInTheDocument()
+    )
+    expect(mockRegisterAction).not.toHaveBeenCalled()
   })
 
-  it('shows email field error from state', () => {
-    setupState({
+  it('shows a global error message returned from the server action', async () => {
+    mockRegisterAction.mockResolvedValue({
+      error: 'Account created but sign-in failed. Please log in.',
+    })
+    render(<SignupForm />)
+    await fillValidForm()
+    await userEvent.click(screen.getByRole('button', { name: /create account/i }))
+    await waitFor(() =>
+      expect(
+        screen.getByText('Account created but sign-in failed. Please log in.')
+      ).toBeInTheDocument()
+    )
+  })
+
+  it('shows email field error returned from the server action', async () => {
+    mockRegisterAction.mockResolvedValue({
       fieldErrors: { email: ['An account with this email already exists.'] },
     })
     render(<SignupForm />)
-    expect(
-      screen.getByText('An account with this email already exists.')
-    ).toBeInTheDocument()
+    await fillValidForm()
+    await userEvent.click(screen.getByRole('button', { name: /create account/i }))
+    await waitFor(() =>
+      expect(
+        screen.getByText('An account with this email already exists.')
+      ).toBeInTheDocument()
+    )
   })
 
-  it('shows password field error from state', () => {
-    setupState({
-      fieldErrors: { password: ['Password must be at least 8 characters'] },
-    })
+  it('calls registerAction with typed data on valid submission', async () => {
     render(<SignupForm />)
-    expect(
-      screen.getByText('Password must be at least 8 characters')
-    ).toBeInTheDocument()
-  })
-
-  it('shows confirmPassword field error from state', () => {
-    setupState({ fieldErrors: { confirmPassword: ['Passwords do not match'] } })
-    render(<SignupForm />)
-    expect(screen.getByText('Passwords do not match')).toBeInTheDocument()
-  })
-
-  it('shows "Creating account..." and disables the button while pending', () => {
-    mockUseActionState.mockReturnValue([{}, mockDispatch, true])
-    render(<SignupForm />)
-    const btn = screen.getByRole('button', { name: /creating account/i })
-    expect(btn).toBeDisabled()
+    await fillValidForm()
+    await userEvent.click(screen.getByRole('button', { name: /create account/i }))
+    await waitFor(() =>
+      expect(mockRegisterAction).toHaveBeenCalledWith({
+        name: 'Jane Doe',
+        email: 'jane@example.com',
+        password: 'securepass',
+        confirmPassword: 'securepass',
+      })
+    )
   })
 
   it('updates name field value on change', async () => {

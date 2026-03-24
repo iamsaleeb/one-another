@@ -1,32 +1,22 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { auth } from "@/auth";
 import { UserRole } from "@prisma/client";
-import { createSeriesSchema, type CreateSeriesState } from "@/lib/validations/series";
+import { createSeriesSchema, type CreateSeriesInput } from "@/lib/validations/series";
 import { canManageChurch, isOrganiserForChurch } from "@/lib/permissions";
+import type { ActionResult } from "@/lib/actions/auth";
 
-export async function createSeriesAction(
-  _prevState: CreateSeriesState,
-  formData: FormData
-): Promise<CreateSeriesState> {
+export async function createSeriesAction(data: CreateSeriesInput): Promise<ActionResult> {
   const session = await auth();
-  if (session?.user?.role !== UserRole.ORGANISER && session?.user?.role !== UserRole.ADMIN) return { error: "Unauthorised." };
-  const raw = {
-    name:        formData.get("name"),
-    description: formData.get("description"),
-    cadence:     formData.get("cadence"),
-    location:    formData.get("location"),
-    host:        formData.get("host"),
-    tag:         formData.get("tag"),
-    churchId:    formData.get("churchId") ?? "",
-  };
+  if (session?.user?.role !== UserRole.ORGANISER && session?.user?.role !== UserRole.ADMIN) {
+    return { error: "Unauthorised." };
+  }
 
-  const parsed = createSeriesSchema.safeParse(raw);
+  const parsed = createSeriesSchema.safeParse(data);
   if (!parsed.success) {
-    return { fieldErrors: z.flattenError(parsed.error).fieldErrors };
+    return { fieldErrors: parsed.error.flatten().fieldErrors };
   }
 
   const { name, description, cadence, location, host, tag, churchId } = parsed.data;
@@ -50,27 +40,13 @@ export async function createSeriesAction(
   redirect(`/series/${created.id}`);
 }
 
-export async function updateSeriesAction(
-  id: string,
-  _prevState: CreateSeriesState,
-  formData: FormData
-): Promise<CreateSeriesState> {
+export async function updateSeriesAction(id: string, data: CreateSeriesInput): Promise<ActionResult> {
   const session = await auth();
   if (session?.user?.role !== UserRole.ORGANISER && session?.user?.role !== UserRole.ADMIN) redirect("/");
 
-  const raw = {
-    name:        formData.get("name"),
-    description: formData.get("description"),
-    cadence:     formData.get("cadence"),
-    location:    formData.get("location"),
-    host:        formData.get("host"),
-    tag:         formData.get("tag"),
-    churchId:    formData.get("churchId") ?? "",
-  };
-
-  const parsed = createSeriesSchema.safeParse(raw);
+  const parsed = createSeriesSchema.safeParse(data);
   if (!parsed.success) {
-    return { fieldErrors: z.flattenError(parsed.error).fieldErrors };
+    return { fieldErrors: parsed.error.flatten().fieldErrors };
   }
 
   const { name, description, cadence, location, host, tag, churchId } = parsed.data;
@@ -80,15 +56,7 @@ export async function updateSeriesAction(
 
   await prisma.series.update({
     where: { id },
-    data: {
-      name,
-      description,
-      cadence,
-      location,
-      host,
-      tag,
-      churchId,
-    },
+    data: { name, description, cadence, location, host, tag, churchId },
   });
 
   redirect(`/series/${id}`);

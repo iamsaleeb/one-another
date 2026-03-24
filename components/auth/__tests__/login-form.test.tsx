@@ -1,34 +1,19 @@
-import React, { useActionState } from 'react'
-import { render, screen } from '@testing-library/react'
+import React from 'react'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 
-// Mock server action before importing the component
 jest.mock('@/lib/actions/auth', () => ({
   loginAction: jest.fn(),
-  registerAction: jest.fn(),
 }))
 
-// Mock useActionState so we control the returned state
-const mockDispatch = jest.fn()
-jest.mock('react', () => {
-  const actual = jest.requireActual('react')
-  return {
-    ...actual,
-    useActionState: jest.fn(),
-  }
-})
-
 import { LoginForm } from '@/components/auth/login-form'
+import { loginAction } from '@/lib/actions/auth'
 
-const mockUseActionState = jest.mocked(useActionState)
-
-function setupState(overrides: Partial<{ error: string; fieldErrors: Record<string, string[]> }> = {}) {
-  mockUseActionState.mockReturnValue([overrides, mockDispatch, false])
-}
+const mockLoginAction = loginAction as jest.Mock
 
 beforeEach(() => {
   jest.clearAllMocks()
-  setupState()
+  mockLoginAction.mockResolvedValue({})
 })
 
 describe('LoginForm', () => {
@@ -51,29 +36,48 @@ describe('LoginForm', () => {
     )
   })
 
-  it('shows a global error message from state', () => {
-    setupState({ error: 'Invalid email or password.' })
+  it('shows email field error when email is invalid', async () => {
     render(<LoginForm />)
-    expect(screen.getByText('Invalid email or password.')).toBeInTheDocument()
+    await userEvent.type(screen.getByLabelText(/email/i), 'bad-email')
+    await userEvent.click(screen.getByRole('button', { name: /login/i }))
+    await waitFor(() =>
+      expect(screen.getByText(/invalid email/i)).toBeInTheDocument()
+    )
+    expect(mockLoginAction).not.toHaveBeenCalled()
   })
 
-  it('shows email field error from state', () => {
-    setupState({ fieldErrors: { email: ['Invalid email address'] } })
+  it('shows password field error when password is empty', async () => {
     render(<LoginForm />)
-    expect(screen.getByText('Invalid email address')).toBeInTheDocument()
+    await userEvent.type(screen.getByLabelText(/email/i), 'user@example.com')
+    await userEvent.click(screen.getByRole('button', { name: /login/i }))
+    await waitFor(() =>
+      expect(screen.getByText(/password is required/i)).toBeInTheDocument()
+    )
+    expect(mockLoginAction).not.toHaveBeenCalled()
   })
 
-  it('shows password field error from state', () => {
-    setupState({ fieldErrors: { password: ['Password is required'] } })
+  it('shows a global error message returned from the server action', async () => {
+    mockLoginAction.mockResolvedValue({ error: 'Invalid email or password.' })
     render(<LoginForm />)
-    expect(screen.getByText('Password is required')).toBeInTheDocument()
+    await userEvent.type(screen.getByLabelText(/email/i), 'user@example.com')
+    await userEvent.type(screen.getByLabelText(/password/i), 'wrongpass')
+    await userEvent.click(screen.getByRole('button', { name: /login/i }))
+    await waitFor(() =>
+      expect(screen.getByText('Invalid email or password.')).toBeInTheDocument()
+    )
   })
 
-  it('shows "Signing in..." and disables the button while pending', () => {
-    mockUseActionState.mockReturnValue([{}, mockDispatch, true])
+  it('calls loginAction with typed data on valid submission', async () => {
     render(<LoginForm />)
-    const btn = screen.getByRole('button', { name: /signing in/i })
-    expect(btn).toBeDisabled()
+    await userEvent.type(screen.getByLabelText(/email/i), 'user@example.com')
+    await userEvent.type(screen.getByLabelText(/password/i), 'hunter2')
+    await userEvent.click(screen.getByRole('button', { name: /login/i }))
+    await waitFor(() =>
+      expect(mockLoginAction).toHaveBeenCalledWith({
+        email: 'user@example.com',
+        password: 'hunter2',
+      })
+    )
   })
 
   it('updates email input value on change', async () => {

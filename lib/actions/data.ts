@@ -58,7 +58,7 @@ export const getChurchesByManager = cache(async function getChurchesByManager(us
     }),
   ]);
   const seen = new Set<string>();
-  const churches: { id: string; name: string }[] = [];
+  const churches: Array<{ id: string; name: string }> = [];
   for (const row of [...organiserRows, ...adminRows]) {
     if (!seen.has(row.church.id)) {
       seen.add(row.church.id);

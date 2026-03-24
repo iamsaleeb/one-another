@@ -101,6 +101,10 @@ const eslintConfig = defineConfig([
     "coverage/**",
     // Prisma generated client
     "node_modules/**",
+    // shadcn/ui primitives — third-party generated components, not authored by us
+    "components/ui/**",
+    // Android/native build output
+    "android/**",
   ]),
 ]);
 

@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { CreateEventForm } from "./_components/create-event-form";
 import { UserRole } from "@prisma/client";
 import { PageHeader } from "@/components/ui/page-header";
+import { getChurchesByOrganiser } from "@/lib/actions/data";
 
 interface Props {
   searchParams: Promise<{ seriesId?: string }>;
@@ -19,10 +20,7 @@ export default async function CreateEventPage({ searchParams }: Props) {
   const { seriesId } = await searchParams;
 
   const [churches, series] = await Promise.all([
-    prisma.church.findMany({
-      select: { id: true, name: true },
-      orderBy: { name: "asc" },
-    }),
+    getChurchesByOrganiser(session.user.id),
     seriesId
       ? prisma.series.findUnique({ where: { id: seriesId }, select: { id: true, name: true, church: { select: { id: true, name: true } } } })
       : null,

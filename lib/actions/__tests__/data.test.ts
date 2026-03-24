@@ -8,6 +8,7 @@ jest.mock('@/lib/db', () => ({
     event: { findMany: jest.fn(), findUnique: jest.fn() },
     church: { findMany: jest.fn(), findUnique: jest.fn() },
     series: { findMany: jest.fn(), findUnique: jest.fn() },
+    churchOrganiser: { findMany: jest.fn() },
   },
 }))
 
@@ -17,6 +18,7 @@ import {
   getEventById,
   getChurches,
   getChurchById,
+  getChurchesByOrganiser,
   searchEventsAndChurches,
   getSeries,
   getSeriesById,
@@ -34,6 +36,7 @@ const mockChurchFindMany = prisma.church.findMany as jest.Mock
 const mockChurchFindUnique = prisma.church.findUnique as jest.Mock
 const mockSeriesFindMany = prisma.series.findMany as jest.Mock
 const mockSeriesFindUnique = prisma.series.findUnique as jest.Mock
+const mockChurchOrganiserFindMany = prisma.churchOrganiser.findMany as jest.Mock
 
 const sampleEvent = {
   id: 'evt-1',
@@ -116,6 +119,33 @@ describe('getEventById', () => {
   it('returns null when the event does not exist', async () => {
     mockEventFindUnique.mockResolvedValue(null)
     expect(await getEventById('not-found')).toBeNull()
+  })
+})
+
+describe('getChurchesByOrganiser', () => {
+  it('returns the churches assigned to the organiser ordered by name', async () => {
+    mockChurchOrganiserFindMany.mockResolvedValue([
+      { church: { id: 'ch-1', name: 'Grace Church' } },
+      { church: { id: 'ch-2', name: 'New Life Fellowship' } },
+    ])
+
+    const result = await getChurchesByOrganiser('user-1')
+
+    expect(result).toEqual([
+      { id: 'ch-1', name: 'Grace Church' },
+      { id: 'ch-2', name: 'New Life Fellowship' },
+    ])
+    expect(mockChurchOrganiserFindMany).toHaveBeenCalledWith({
+      where: { userId: 'user-1' },
+      select: { church: { select: { id: true, name: true } } },
+      orderBy: { church: { name: 'asc' } },
+    })
+  })
+
+  it('returns an empty array when the organiser has no assigned churches', async () => {
+    mockChurchOrganiserFindMany.mockResolvedValue([])
+
+    expect(await getChurchesByOrganiser('user-none')).toEqual([])
   })
 })
 

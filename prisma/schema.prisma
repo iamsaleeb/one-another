@@ -31,6 +31,7 @@ model User {
   sessions      Session[]
   events        Event[]   @relation("UserEvents")
   series        Series[]  @relation("UserSeries")
+  churchOrganisers ChurchOrganiser[] @relation("UserChurches")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -91,9 +92,20 @@ model Church {
   serviceTimes ServiceTime[]
   events       Event[]
   series       Series[]
+  organisers   ChurchOrganiser[] @relation("ChurchOrganisers")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model ChurchOrganiser {
+  userId    String
+  churchId  String
+  user      User     @relation("UserChurches", fields: [userId], references: [id], onDelete: Cascade)
+  church    Church   @relation("ChurchOrganisers", fields: [churchId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@id([userId, churchId])
 }
 
 model ServiceTime {

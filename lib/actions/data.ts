@@ -24,6 +24,15 @@ export const getEventById = cache(async function getEventById(id: string) {
   });
 });
 
+export const getChurchesByOrganiser = cache(async function getChurchesByOrganiser(userId: string) {
+  const assignments = await prisma.churchOrganiser.findMany({
+    where: { userId },
+    select: { church: { select: { id: true, name: true } } },
+    orderBy: { church: { name: "asc" } },
+  });
+  return assignments.map((a) => a.church);
+});
+
 export const getChurches = cache(async function getChurches() {
   return prisma.church.findMany({
     include: {

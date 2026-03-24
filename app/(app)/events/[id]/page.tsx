@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { auth } from "@/auth";
 import { UserRole } from "@prisma/client";
 import { getEventById } from "@/lib/actions/data";
+import { isOrganiserForChurch } from "@/lib/permissions";
 import { formatEventDatetime } from "@/lib/utils";
 import { InfoField } from "@/components/ui/info-field";
 import { HeroBanner } from "@/components/ui/hero-banner";
@@ -26,7 +27,9 @@ export default async function EventDetailPage({ params }: Props) {
 
   if (!event) notFound();
 
-  const isOrganiser = session?.user?.role === UserRole.ORGANISER;
+  const isOrganiser =
+    session?.user?.role === UserRole.ORGANISER &&
+    !!(await isOrganiserForChurch(session.user.id, event.churchId));
 
   return (
     <div className="bg-background">

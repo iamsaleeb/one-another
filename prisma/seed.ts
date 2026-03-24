@@ -1,11 +1,15 @@
 import { PrismaClient } from "@prisma/client";
+import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
 
 async function main() {
-  // Clean up existing data
+  // Clean up existing data (order matters due to FK constraints)
   await prisma.event.deleteMany();
+  await prisma.series.deleteMany();
+  await prisma.churchOrganiser.deleteMany();
   await prisma.serviceTime.deleteMany();
+  await prisma.user.deleteMany({ where: { role: "ORGANISER" } });
   await prisma.church.deleteMany();
 
   // Create churches
@@ -185,6 +189,38 @@ async function main() {
       isPast: true,
       churchId: cityLight.id,
     },
+  });
+
+  // Create organiser users and assign them to specific churches
+  const organiser1 = await prisma.user.create({
+    data: {
+      name: "Alice Organiser",
+      email: "organiser1@example.com",
+      password: await bcrypt.hash("password123", 10),
+      role: "ORGANISER",
+    },
+  });
+
+  const organiser2 = await prisma.user.create({
+    data: {
+      name: "Bob Organiser",
+      email: "organiser2@example.com",
+      password: await bcrypt.hash("password123", 10),
+      role: "ORGANISER",
+    },
+  });
+
+  // organiser1 can manage Grace and New Life
+  await prisma.churchOrganiser.createMany({
+    data: [
+      { userId: organiser1.id, churchId: grace.id },
+      { userId: organiser1.id, churchId: newLife.id },
+    ],
+  });
+
+  // organiser2 can only manage Harvest
+  await prisma.churchOrganiser.create({
+    data: { userId: organiser2.id, churchId: harvest.id },
   });
 
   console.warn("Seed completed successfully.");

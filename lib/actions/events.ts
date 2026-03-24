@@ -6,6 +6,7 @@ import { prisma } from "@/lib/db";
 import { auth } from "@/auth";
 import { UserRole } from "@prisma/client";
 import { createEventSchema } from "@/lib/validations/event";
+import { isOrganiserForChurch } from "@/lib/permissions";
 
 export interface CreateEventState {
   error?: string;
@@ -17,6 +18,7 @@ export async function createEventAction(
   formData: FormData
 ): Promise<CreateEventState> {
   const session = await auth();
+  if (session?.user?.role !== UserRole.ORGANISER) return { error: "Unauthorised." };
   const raw = {
     title: formData.get("title"),
     date: formData.get("date"),
@@ -47,6 +49,9 @@ export async function createEventAction(
   if (!churchId) {
     return { fieldErrors: { churchId: ["Church is required"] } };
   }
+
+  const allowed = await isOrganiserForChurch(session.user.id, churchId);
+  if (!allowed) return { error: "You are not assigned to this church." };
 
   await prisma.event.create({
     data: {
@@ -104,6 +109,9 @@ export async function updateEventAction(
     return { fieldErrors: { churchId: ["Church is required"] } };
   }
 
+  const allowed = await isOrganiserForChurch(session.user.id, churchId);
+  if (!allowed) redirect("/");
+
   await prisma.event.update({
     where: { id },
     data: {
@@ -124,6 +132,12 @@ export async function updateEventAction(
 export async function deleteEventAction(id: string): Promise<void> {
   const session = await auth();
   if (session?.user?.role !== UserRole.ORGANISER) redirect("/");
+
+  const event = await prisma.event.findUnique({ where: { id }, select: { churchId: true } });
+  if (!event) redirect("/organiser");
+
+  const allowed = await isOrganiserForChurch(session.user.id, event.churchId);
+  if (!allowed) redirect("/");
 
   await prisma.event.delete({ where: { id } });
   redirect("/organiser");

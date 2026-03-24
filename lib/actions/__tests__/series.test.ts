@@ -6,6 +6,7 @@ jest.mock('@/lib/db', () => ({
   prisma: {
     series: {
       create: jest.fn(),
+      findUnique: jest.fn(),
     },
   },
 }))
@@ -14,14 +15,20 @@ jest.mock('@/auth', () => ({
   auth: jest.fn(),
 }))
 
+jest.mock('@/lib/permissions', () => ({
+  isOrganiserForChurch: jest.fn(),
+}))
+
 import { redirect } from 'next/navigation'
 import { createSeriesAction } from '@/lib/actions/series'
 import { prisma } from '@/lib/db'
 import { auth } from '@/auth'
+import { isOrganiserForChurch } from '@/lib/permissions'
 
 const mockRedirect = redirect as unknown as jest.Mock
 const mockSeriesCreate = prisma.series.create as jest.Mock
 const mockAuth = auth as jest.Mock
+const mockIsOrganiserForChurch = isOrganiserForChurch as jest.Mock
 
 function makeFormData(fields: Record<string, string>): FormData {
   const fd = new FormData()
@@ -43,7 +50,8 @@ const validFields = {
 
 beforeEach(() => {
   jest.clearAllMocks()
-  mockAuth.mockResolvedValue({ user: { id: 'user-1' } })
+  mockAuth.mockResolvedValue({ user: { id: 'user-1', role: 'ORGANISER' } })
+  mockIsOrganiserForChurch.mockResolvedValue(true)
 })
 
 describe('createSeriesAction', () => {
@@ -101,6 +109,33 @@ describe('createSeriesAction', () => {
     )
 
     expect(result.fieldErrors?.churchId).toBeDefined()
+    expect(mockSeriesCreate).not.toHaveBeenCalled()
+  })
+
+  it('returns an unauthorized error when there is no session', async () => {
+    mockAuth.mockResolvedValue(null)
+
+    const result = await createSeriesAction({}, makeFormData(validFields))
+
+    expect(result.error).toBeDefined()
+    expect(mockSeriesCreate).not.toHaveBeenCalled()
+  })
+
+  it('returns an unauthorized error when the user is not an organiser', async () => {
+    mockAuth.mockResolvedValue({ user: { id: 'user-1', role: 'ATTENDEE' } })
+
+    const result = await createSeriesAction({}, makeFormData(validFields))
+
+    expect(result.error).toBeDefined()
+    expect(mockSeriesCreate).not.toHaveBeenCalled()
+  })
+
+  it('returns an error when organiser is not assigned to the church', async () => {
+    mockIsOrganiserForChurch.mockResolvedValue(false)
+
+    const result = await createSeriesAction({}, makeFormData(validFields))
+
+    expect(result.error).toBe('You are not assigned to this church.')
     expect(mockSeriesCreate).not.toHaveBeenCalled()
   })
 })

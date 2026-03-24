@@ -1,7 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { UserRole } from "@prisma/client";
-import { getEventById, getChurches } from "@/lib/actions/data";
+import { getEventById, getChurchesByOrganiser } from "@/lib/actions/data";
 import { PageHeader } from "@/components/ui/page-header";
 import { EditEventForm } from "./_components/edit-event-form";
 
@@ -11,14 +11,12 @@ interface Props {
 
 export default async function EditEventPage({ params }: Props) {
   const { id } = await params;
-  const [event, session, churches] = await Promise.all([
-    getEventById(id),
-    auth(),
-    getChurches(),
-  ]);
+  const [event, session] = await Promise.all([getEventById(id), auth()]);
 
   if (session?.user?.role !== UserRole.ORGANISER) redirect("/");
   if (!event) notFound();
+
+  const churches = await getChurchesByOrganiser(session.user.id);
 
   const [date, time] = event.datetime.split("T");
 

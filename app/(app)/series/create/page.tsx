@@ -1,9 +1,9 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
-import { prisma } from "@/lib/db";
 import { UserRole } from "@prisma/client";
 import { CreateSeriesForm } from "./_components/create-series-form";
 import { PageHeader } from "@/components/ui/page-header";
+import { getChurchesByOrganiser } from "@/lib/actions/data";
 
 export default async function CreateSeriesPage() {
   const session = await auth();
@@ -12,10 +12,7 @@ export default async function CreateSeriesPage() {
     redirect("/");
   }
 
-  const churches = await prisma.church.findMany({
-    select: { id: true, name: true },
-    orderBy: { name: "asc" },
-  });
+  const churches = await getChurchesByOrganiser(session.user.id);
 
   return (
     <div className="mx-auto max-w-lg">

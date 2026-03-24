@@ -34,7 +34,13 @@
       "Bash(npm ls:*)",
       "Bash(java:*)",
       "Bash(find /c/code/one-another1 -maxdepth 3 -type f \\\\\\(-name *.prisma -o -name package.json -o -name tsconfig.json \\\\\\))",
-      "Bash(PRISMA_USER_CONSENT_FOR_DANGEROUS_AI_ACTION=\"yes\" npx prisma migrate reset --force)"
+      "Bash(PRISMA_USER_CONSENT_FOR_DANGEROUS_AI_ACTION=\"yes\" npx prisma migrate reset --force)",
+      "Bash(ls \"C:/code/one-another1/app/\\(app\\)/series/[id]/\")",
+      "Bash(ls \"C:/code/one-another1/app/\\(app\\)/events/[id]/\")",
+      "Bash(ls \"C:/code/one-another1/app/\\(app\\)/events/create/_components/\")",
+      "Bash(ls \"C:/code/one-another1/app/\\(app\\)/events/[id]/edit/_components/\")",
+      "Bash(ls \"C:/code/one-another1/app/\\(app\\)/series/create/_components/\")",
+      "Bash(ls \"C:/code/one-another1/app/\\(app\\)/series/[id]/edit/_components/\")"
     ]
   },
   "enableAllProjectMcpServers": true,

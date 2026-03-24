@@ -6,6 +6,8 @@ jest.mock('@/lib/db', () => ({
   prisma: {
     event: {
       create: jest.fn(),
+      findUnique: jest.fn(),
+      delete: jest.fn(),
     },
     series: {
       findUnique: jest.fn(),
@@ -17,15 +19,22 @@ jest.mock('@/auth', () => ({
   auth: jest.fn(),
 }))
 
+jest.mock('@/lib/permissions', () => ({
+  isOrganiserForChurch: jest.fn(),
+}))
+
 import { redirect } from 'next/navigation'
 import { createEventAction } from '@/lib/actions/events'
 import { prisma } from '@/lib/db'
 import { auth } from '@/auth'
+import { isOrganiserForChurch } from '@/lib/permissions'
 
 const mockRedirect = redirect as unknown as jest.Mock
 const mockEventCreate = prisma.event.create as jest.Mock
+const mockEventFindUnique = prisma.event.findUnique as jest.Mock
 const mockSeriesFindUnique = prisma.series.findUnique as jest.Mock
 const mockAuth = auth as jest.Mock
+const mockIsOrganiserForChurch = isOrganiserForChurch as jest.Mock
 
 function makeFormData(fields: Record<string, string>): FormData {
   const fd = new FormData()
@@ -48,7 +57,8 @@ const validFields = {
 
 beforeEach(() => {
   jest.clearAllMocks()
-  mockAuth.mockResolvedValue({ user: { id: 'user-1' } })
+  mockAuth.mockResolvedValue({ user: { id: 'user-1', role: 'ORGANISER' } })
+  mockIsOrganiserForChurch.mockResolvedValue(true)
 })
 
 describe('createEventAction', () => {
@@ -133,13 +143,30 @@ describe('createEventAction', () => {
     expect(mockRedirect).not.toHaveBeenCalled()
   })
 
-  it('does not include createdById when no session user', async () => {
+  it('returns an unauthorized error when there is no session', async () => {
     mockAuth.mockResolvedValue(null)
-    mockEventCreate.mockResolvedValue({ id: 'evt-5' })
 
-    await createEventAction({}, makeFormData(validFields))
+    const result = await createEventAction({}, makeFormData(validFields))
 
-    const callArg = mockEventCreate.mock.calls[0][0]
-    expect(callArg.data).not.toHaveProperty('createdById')
+    expect(result.error).toBeDefined()
+    expect(mockEventCreate).not.toHaveBeenCalled()
+  })
+
+  it('returns an unauthorized error when the user is not an organiser', async () => {
+    mockAuth.mockResolvedValue({ user: { id: 'user-1', role: 'ATTENDEE' } })
+
+    const result = await createEventAction({}, makeFormData(validFields))
+
+    expect(result.error).toBeDefined()
+    expect(mockEventCreate).not.toHaveBeenCalled()
+  })
+
+  it('returns an error when organiser is not assigned to the church', async () => {
+    mockIsOrganiserForChurch.mockResolvedValue(false)
+
+    const result = await createEventAction({}, makeFormData(validFields))
+
+    expect(result.error).toBe('You are not assigned to this church.')
+    expect(mockEventCreate).not.toHaveBeenCalled()
   })
 })

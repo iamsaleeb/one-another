@@ -4,6 +4,7 @@ import { MapPin, Pencil, Plus, Tag, User } from "lucide-react";
 import { auth } from "@/auth";
 import { UserRole } from "@prisma/client";
 import { getSeriesById } from "@/lib/actions/data";
+import { isOrganiserForChurch } from "@/lib/permissions";
 import { InfoField } from "@/components/ui/info-field";
 import { HeroBanner } from "@/components/ui/hero-banner";
 import { EventCard } from "@/components/event-card";
@@ -33,7 +34,9 @@ export default async function SeriesDetailPage({ params }: Props) {
 
   if (!series) notFound();
 
-  const isOrganiser = session?.user?.role === UserRole.ORGANISER;
+  const isOrganiser =
+    session?.user?.role === UserRole.ORGANISER &&
+    !!(await isOrganiserForChurch(session?.user?.id, series.churchId));
 
   return (
     <div className="bg-background">

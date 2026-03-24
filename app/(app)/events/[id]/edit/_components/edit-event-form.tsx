@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { PriceInput } from "@/components/ui/price-input";
 import {
   Select,
   SelectContent,
@@ -43,6 +44,7 @@ interface EventData {
   capacity?: number | null;
   collectPhone: boolean;
   collectNotes: boolean;
+  price?: string | null;
 }
 
 export function EditEventForm({
@@ -150,6 +152,11 @@ export function EditEventForm({
         {state.fieldErrors?.description && (
           <p className="text-xs text-destructive">{state.fieldErrors.description[0]}</p>
         )}
+      </div>
+
+      <div className="grid gap-1.5">
+        <Label htmlFor="price">Price (optional)</Label>
+        <PriceInput name="price" defaultValue={event.price} disabled={isPending} />
       </div>
 
       {event.seriesId ? (

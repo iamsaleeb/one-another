@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { PriceInput } from "@/components/ui/price-input";
 import {
   Select,
   SelectContent,
@@ -133,6 +134,11 @@ export function CreateEventForm({
             {state.fieldErrors.description[0]}
           </p>
         )}
+      </div>
+
+      <div className="grid gap-1.5">
+        <Label htmlFor="price">Price (optional)</Label>
+        <PriceInput name="price" disabled={isPending} />
       </div>
 
       {series ? (

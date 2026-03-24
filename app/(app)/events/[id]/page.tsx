@@ -96,6 +96,7 @@ export default async function EventDetailPage({ params }: Props) {
         spotsUsed={event._count.attendees}
         collectPhone={event.collectPhone}
         collectNotes={event.collectNotes}
+        price={event.price}
       />
     </div>
   );

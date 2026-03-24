@@ -6,7 +6,7 @@ import { prisma } from "@/lib/db";
 import { auth } from "@/auth";
 import { UserRole } from "@prisma/client";
 import { createSeriesSchema, type CreateSeriesState } from "@/lib/validations/series";
-import { canManageChurch } from "@/lib/permissions";
+import { canManageChurch, isOrganiserForChurch } from "@/lib/permissions";
 
 export async function createSeriesAction(
   _prevState: CreateSeriesState,

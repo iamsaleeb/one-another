@@ -161,6 +161,7 @@ model Event {
   capacity             Int?
   collectPhone         Boolean @default(false)
   collectNotes         Boolean @default(false)
+  price                String?
   churchId             String?
   church               Church? @relation(fields: [churchId], references: [id], onDelete: SetNull)
   seriesId             String?

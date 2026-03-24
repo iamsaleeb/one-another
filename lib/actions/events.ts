@@ -34,6 +34,7 @@ export async function createEventAction(
     capacity: formData.get("capacity") || undefined,
     collectPhone: formData.get("collectPhone") === "true",
     collectNotes: formData.get("collectNotes") === "true",
+    price: (formData.get("price") as string) || undefined,
   };
 
   const parsed = createEventSchema.safeParse(raw);
@@ -41,7 +42,7 @@ export async function createEventAction(
     return { fieldErrors: z.flattenError(parsed.error).fieldErrors };
   }
 
-  const { title, date, time, location, host, tag, description, seriesId, requiresRegistration, capacity, collectPhone, collectNotes } = parsed.data;
+  const { title, date, time, location, host, tag, description, seriesId, requiresRegistration, capacity, collectPhone, collectNotes, price } = parsed.data;
   let { churchId } = parsed.data;
 
   const datetime = new Date(`${date}T${time}`);
@@ -71,6 +72,7 @@ export async function createEventAction(
       capacity: requiresRegistration ? (capacity ?? null) : null,
       collectPhone: requiresRegistration ? (collectPhone ?? false) : false,
       collectNotes: requiresRegistration ? (collectNotes ?? false) : false,
+      price: price ?? null,
       churchId,
       ...(seriesId ? { seriesId } : {}),
       ...(session?.user?.id ? { createdById: session.user.id } : {}),
@@ -102,6 +104,7 @@ export async function updateEventAction(
     capacity: formData.get("capacity") || undefined,
     collectPhone: formData.get("collectPhone") === "true",
     collectNotes: formData.get("collectNotes") === "true",
+    price: (formData.get("price") as string) || undefined,
   };
 
   const parsed = createEventSchema.safeParse(raw);
@@ -109,7 +112,7 @@ export async function updateEventAction(
     return { fieldErrors: z.flattenError(parsed.error).fieldErrors };
   }
 
-  const { title, date, time, location, host, tag, description, seriesId, requiresRegistration, capacity, collectPhone, collectNotes } = parsed.data;
+  const { title, date, time, location, host, tag, description, seriesId, requiresRegistration, capacity, collectPhone, collectNotes, price } = parsed.data;
   let { churchId } = parsed.data;
   const datetime = new Date(`${date}T${time}`);
 
@@ -138,6 +141,7 @@ export async function updateEventAction(
       capacity: requiresRegistration ? (capacity ?? null) : null,
       collectPhone: requiresRegistration ? (collectPhone ?? false) : false,
       collectNotes: requiresRegistration ? (collectNotes ?? false) : false,
+      price: price ?? null,
       churchId,
       seriesId: seriesId ?? null,
     },

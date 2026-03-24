@@ -10,6 +10,17 @@ export const createEventSchema = z.object({
   description: z.string().min(1, "Description is required"),
   churchId: z.string().optional(),
   seriesId: z.string().optional(),
+  requiresRegistration: z.boolean().optional(),
+  capacity: z.coerce.number().int().positive().optional(),
+  collectPhone: z.boolean().optional(),
+  collectNotes: z.boolean().optional(),
 });
 
 export type CreateEventInput = z.infer<typeof createEventSchema>;
+
+export const registerEventSchema = z.object({
+  phone: z.string().optional(),
+  notes: z.string().optional(),
+});
+
+export type RegisterEventInput = z.infer<typeof registerEventSchema>;

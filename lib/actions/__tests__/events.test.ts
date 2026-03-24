@@ -2,6 +2,10 @@ jest.mock('next/navigation', () => ({
   redirect: jest.fn(),
 }))
 
+jest.mock('next/cache', () => ({
+  revalidatePath: jest.fn(),
+}))
+
 jest.mock('@/lib/db', () => ({
   prisma: {
     event: {
@@ -11,6 +15,10 @@ jest.mock('@/lib/db', () => ({
     },
     series: {
       findUnique: jest.fn(),
+    },
+    eventAttendee: {
+      create: jest.fn(),
+      delete: jest.fn(),
     },
   },
 }))
@@ -24,15 +32,24 @@ jest.mock('@/lib/permissions', () => ({
 }))
 
 import { redirect } from 'next/navigation'
-import { createEventAction } from '@/lib/actions/events'
+import { revalidatePath } from 'next/cache'
+import {
+  createEventAction,
+  attendEventAction,
+  unattendEventAction,
+  registerEventAction,
+} from '@/lib/actions/events'
 import { prisma } from '@/lib/db'
 import { auth } from '@/auth'
 import { canManageChurch } from '@/lib/permissions'
 
 const mockRedirect = redirect as unknown as jest.Mock
+const mockRevalidatePath = revalidatePath as jest.Mock
 const mockEventCreate = prisma.event.create as jest.Mock
 const mockEventFindUnique = prisma.event.findUnique as jest.Mock
 const mockSeriesFindUnique = prisma.series.findUnique as jest.Mock
+const mockEventAttendeeCreate = prisma.eventAttendee.create as jest.Mock
+const mockEventAttendeeDelete = prisma.eventAttendee.delete as jest.Mock
 const mockAuth = auth as jest.Mock
 const mockCanManageChurch = canManageChurch as jest.Mock
 
@@ -168,5 +185,138 @@ describe('createEventAction', () => {
 
     expect(result.error).toBe('You are not assigned to this church.')
     expect(mockEventCreate).not.toHaveBeenCalled()
+  })
+
+  it('saves requiresRegistration=true when the field is "true"', async () => {
+    mockEventCreate.mockResolvedValue({ id: 'evt-5' })
+
+    await createEventAction({}, makeFormData({ ...validFields, requiresRegistration: 'true' }))
+
+    expect(mockEventCreate).toHaveBeenCalledWith({
+      data: expect.objectContaining({ requiresRegistration: true }),
+    })
+  })
+
+  it('saves requiresRegistration=false when the field is absent', async () => {
+    mockEventCreate.mockResolvedValue({ id: 'evt-6' })
+
+    await createEventAction({}, makeFormData(validFields))
+
+    expect(mockEventCreate).toHaveBeenCalledWith({
+      data: expect.objectContaining({ requiresRegistration: false }),
+    })
+  })
+})
+
+describe('attendEventAction', () => {
+  it('creates an EventAttendee and revalidates the event path', async () => {
+    mockEventAttendeeCreate.mockResolvedValue({})
+
+    await attendEventAction('evt-1')
+
+    expect(mockEventAttendeeCreate).toHaveBeenCalledWith({
+      data: { eventId: 'evt-1', userId: 'user-1' },
+    })
+    expect(mockRevalidatePath).toHaveBeenCalledWith('/events/evt-1')
+  })
+
+  it('returns an error when the user is not signed in', async () => {
+    mockAuth.mockResolvedValue(null)
+
+    const result = await attendEventAction('evt-1')
+
+    expect(result.error).toBeDefined()
+    expect(mockEventAttendeeCreate).not.toHaveBeenCalled()
+  })
+})
+
+describe('unattendEventAction', () => {
+  it('deletes the EventAttendee and revalidates the event path', async () => {
+    mockEventAttendeeDelete.mockResolvedValue({})
+
+    await unattendEventAction('evt-1')
+
+    expect(mockEventAttendeeDelete).toHaveBeenCalledWith({
+      where: { eventId_userId: { eventId: 'evt-1', userId: 'user-1' } },
+    })
+    expect(mockRevalidatePath).toHaveBeenCalledWith('/events/evt-1')
+  })
+
+  it('returns an error when the user is not signed in', async () => {
+    mockAuth.mockResolvedValue(null)
+
+    const result = await unattendEventAction('evt-1')
+
+    expect(result.error).toBeDefined()
+    expect(mockEventAttendeeDelete).not.toHaveBeenCalled()
+  })
+})
+
+describe('registerEventAction', () => {
+  it('creates an EventAttendee with phone and notes', async () => {
+    mockEventAttendeeCreate.mockResolvedValue({})
+
+    const fd = makeFormData({ phone: '07700000000', notes: 'Vegetarian' })
+    const result = await registerEventAction('evt-1', {}, fd)
+
+    expect(mockEventAttendeeCreate).toHaveBeenCalledWith({
+      data: {
+        eventId: 'evt-1',
+        userId: 'user-1',
+        phone: '07700000000',
+        notes: 'Vegetarian',
+      },
+    })
+    expect(result.success).toBe(true)
+    expect(mockRevalidatePath).toHaveBeenCalledWith('/events/evt-1')
+  })
+
+  it('creates an EventAttendee with no optional fields when form is empty', async () => {
+    mockEventAttendeeCreate.mockResolvedValue({})
+
+    const result = await registerEventAction('evt-1', {}, makeFormData({}))
+
+    expect(mockEventAttendeeCreate).toHaveBeenCalledWith({
+      data: { eventId: 'evt-1', userId: 'user-1', phone: undefined, notes: undefined },
+    })
+    expect(result.success).toBe(true)
+  })
+
+  it('returns an error when the user is not signed in', async () => {
+    mockAuth.mockResolvedValue(null)
+
+    const result = await registerEventAction('evt-1', {}, makeFormData({}))
+
+    expect(result.error).toBeDefined()
+    expect(mockEventAttendeeCreate).not.toHaveBeenCalled()
+  })
+
+  it('allows registration when capacity is not set', async () => {
+    mockEventFindUnique.mockResolvedValue({ capacity: null, _count: { attendees: 10 } })
+    mockEventAttendeeCreate.mockResolvedValue({})
+
+    const result = await registerEventAction('evt-1', {}, makeFormData({}))
+
+    expect(result.success).toBe(true)
+    expect(mockEventAttendeeCreate).toHaveBeenCalled()
+  })
+
+  it('allows registration when spots are still available', async () => {
+    mockEventFindUnique.mockResolvedValue({ capacity: 10, _count: { attendees: 9 } })
+    mockEventAttendeeCreate.mockResolvedValue({})
+
+    const result = await registerEventAction('evt-1', {}, makeFormData({}))
+
+    expect(result.success).toBe(true)
+    expect(mockEventAttendeeCreate).toHaveBeenCalled()
+  })
+
+  it('returns a fully booked error when capacity is reached', async () => {
+    mockEventFindUnique.mockResolvedValue({ capacity: 10, _count: { attendees: 10 } })
+
+    const result = await registerEventAction('evt-1', {}, makeFormData({}))
+
+    expect(result.error).toBe('Sorry, this event is fully booked.')
+    expect(mockEventAttendeeCreate).not.toHaveBeenCalled()
   })
 })

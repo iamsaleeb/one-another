@@ -39,6 +39,10 @@ export default async function EditEventPage({ params }: Props) {
             churchId: event.churchId,
             seriesId: event.seriesId,
             seriesName: event.series?.name,
+            requiresRegistration: event.requiresRegistration,
+            capacity: event.capacity,
+            collectPhone: event.collectPhone,
+            collectNotes: event.collectNotes,
           }}
           churches={churches}
         />

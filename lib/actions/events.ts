@@ -1,11 +1,12 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { auth } from "@/auth";
 import { UserRole } from "@prisma/client";
-import { createEventSchema } from "@/lib/validations/event";
+import { createEventSchema, registerEventSchema } from "@/lib/validations/event";
 import { canManageChurch } from "@/lib/permissions";
 
 export interface CreateEventState {
@@ -29,6 +30,10 @@ export async function createEventAction(
     description: formData.get("description"),
     churchId: formData.get("churchId") || undefined,
     seriesId: formData.get("seriesId") || undefined,
+    requiresRegistration: formData.get("requiresRegistration") === "true",
+    capacity: formData.get("capacity") || undefined,
+    collectPhone: formData.get("collectPhone") === "true",
+    collectNotes: formData.get("collectNotes") === "true",
   };
 
   const parsed = createEventSchema.safeParse(raw);
@@ -36,7 +41,7 @@ export async function createEventAction(
     return { fieldErrors: z.flattenError(parsed.error).fieldErrors };
   }
 
-  const { title, date, time, location, host, tag, description, seriesId } = parsed.data;
+  const { title, date, time, location, host, tag, description, seriesId, requiresRegistration, capacity, collectPhone, collectNotes } = parsed.data;
   let { churchId } = parsed.data;
 
   const datetime = new Date(`${date}T${time}`);
@@ -62,6 +67,10 @@ export async function createEventAction(
       tag,
       description,
       isPast: false,
+      requiresRegistration: requiresRegistration ?? false,
+      capacity: requiresRegistration ? (capacity ?? null) : null,
+      collectPhone: requiresRegistration ? (collectPhone ?? false) : false,
+      collectNotes: requiresRegistration ? (collectNotes ?? false) : false,
       churchId,
       ...(seriesId ? { seriesId } : {}),
       ...(session?.user?.id ? { createdById: session.user.id } : {}),
@@ -89,6 +98,10 @@ export async function updateEventAction(
     description: formData.get("description"),
     churchId: formData.get("churchId") || undefined,
     seriesId: formData.get("seriesId") || undefined,
+    requiresRegistration: formData.get("requiresRegistration") === "true",
+    capacity: formData.get("capacity") || undefined,
+    collectPhone: formData.get("collectPhone") === "true",
+    collectNotes: formData.get("collectNotes") === "true",
   };
 
   const parsed = createEventSchema.safeParse(raw);
@@ -96,7 +109,7 @@ export async function updateEventAction(
     return { fieldErrors: z.flattenError(parsed.error).fieldErrors };
   }
 
-  const { title, date, time, location, host, tag, description, seriesId } = parsed.data;
+  const { title, date, time, location, host, tag, description, seriesId, requiresRegistration, capacity, collectPhone, collectNotes } = parsed.data;
   let { churchId } = parsed.data;
   const datetime = new Date(`${date}T${time}`);
 
@@ -121,6 +134,10 @@ export async function updateEventAction(
       host,
       tag,
       description,
+      requiresRegistration: requiresRegistration ?? false,
+      capacity: requiresRegistration ? (capacity ?? null) : null,
+      collectPhone: requiresRegistration ? (collectPhone ?? false) : false,
+      collectNotes: requiresRegistration ? (collectNotes ?? false) : false,
       churchId,
       seriesId: seriesId ?? null,
     },
@@ -141,4 +158,74 @@ export async function deleteEventAction(id: string): Promise<void> {
 
   await prisma.event.delete({ where: { id } });
   redirect("/organiser");
+}
+
+export interface AttendEventState {
+  error?: string;
+}
+
+export async function attendEventAction(eventId: string): Promise<AttendEventState> {
+  const session = await auth();
+  if (!session?.user?.id) return { error: "You must be signed in." };
+
+  await prisma.eventAttendee.create({
+    data: { eventId, userId: session.user.id },
+  });
+
+  revalidatePath(`/events/${eventId}`);
+  return {};
+}
+
+export async function unattendEventAction(eventId: string): Promise<AttendEventState> {
+  const session = await auth();
+  if (!session?.user?.id) return { error: "You must be signed in." };
+
+  await prisma.eventAttendee.delete({
+    where: { eventId_userId: { eventId, userId: session.user.id } },
+  });
+
+  revalidatePath(`/events/${eventId}`);
+  return {};
+}
+
+export interface RegisterEventState {
+  success?: boolean;
+  error?: string;
+}
+
+export async function registerEventAction(
+  eventId: string,
+  _prevState: RegisterEventState,
+  formData: FormData
+): Promise<RegisterEventState> {
+  const session = await auth();
+  if (!session?.user?.id) return { error: "You must be signed in." };
+
+  const parsed = registerEventSchema.safeParse({
+    phone: formData.get("phone") || undefined,
+    notes: formData.get("notes") || undefined,
+  });
+
+  if (!parsed.success) return { error: "Invalid form data." };
+
+  const event = await prisma.event.findUnique({
+    where: { id: eventId },
+    select: { capacity: true, _count: { select: { attendees: true } } },
+  });
+
+  if (event?.capacity != null && event._count.attendees >= event.capacity) {
+    return { error: "Sorry, this event is fully booked." };
+  }
+
+  await prisma.eventAttendee.create({
+    data: {
+      eventId,
+      userId: session.user.id,
+      phone: parsed.data.phone,
+      notes: parsed.data.notes,
+    },
+  });
+
+  revalidatePath(`/events/${eventId}`);
+  return { success: true };
 }

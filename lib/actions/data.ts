@@ -20,7 +20,11 @@ export const getPastEvents = cache(async function getPastEvents() {
 export const getEventById = cache(async function getEventById(id: string) {
   return prisma.event.findUnique({
     where: { id },
-    include: { series: { select: { id: true, name: true } } },
+    include: {
+      series: { select: { id: true, name: true } },
+      attendees: { select: { userId: true } },
+      _count: { select: { attendees: true } },
+    },
   });
 });
 

@@ -40,7 +40,8 @@
       "Bash(ls \"C:/code/one-another1/app/\\(app\\)/events/create/_components/\")",
       "Bash(ls \"C:/code/one-another1/app/\\(app\\)/events/[id]/edit/_components/\")",
       "Bash(ls \"C:/code/one-another1/app/\\(app\\)/series/create/_components/\")",
-      "Bash(ls \"C:/code/one-another1/app/\\(app\\)/series/[id]/edit/_components/\")"
+      "Bash(ls \"C:/code/one-another1/app/\\(app\\)/series/[id]/edit/_components/\")",
+      "Bash(find . -maxdepth 2 -type f \\\\\\(-name package.json -o -name tsconfig.json -o -name next.config.* -o -name vite.config.* \\\\\\))"
     ]
   },
   "enableAllProjectMcpServers": true,

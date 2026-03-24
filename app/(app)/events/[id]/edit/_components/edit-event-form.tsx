@@ -1,11 +1,12 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { Repeat } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -38,6 +39,10 @@ interface EventData {
   churchId?: string | null;
   seriesId?: string | null;
   seriesName?: string | null;
+  requiresRegistration: boolean;
+  capacity?: number | null;
+  collectPhone: boolean;
+  collectNotes: boolean;
 }
 
 export function EditEventForm({
@@ -52,6 +57,9 @@ export function EditEventForm({
     boundAction,
     {}
   );
+  const [requiresRegistration, setRequiresRegistration] = useState(event.requiresRegistration);
+  const [collectPhone, setCollectPhone] = useState(event.collectPhone);
+  const [collectNotes, setCollectNotes] = useState(event.collectNotes);
 
   return (
     <form action={action} className="flex flex-col gap-5">
@@ -178,6 +186,53 @@ export function EditEventForm({
           {state.fieldErrors?.churchId && (
             <p className="text-xs text-destructive">{state.fieldErrors.churchId[0]}</p>
           )}
+        </div>
+      )}
+
+      <div className="flex items-center justify-between gap-3 rounded-xl border px-4 py-3">
+        <div>
+          <p className="text-sm font-medium">Requires Registration</p>
+          <p className="text-xs text-muted-foreground">Attendees must fill in a registration form</p>
+        </div>
+        <Switch
+          checked={requiresRegistration}
+          onCheckedChange={setRequiresRegistration}
+          disabled={isPending}
+        />
+        <input type="hidden" name="requiresRegistration" value={requiresRegistration ? "true" : "false"} />
+      </div>
+
+      {requiresRegistration && (
+        <div className="flex flex-col gap-3 rounded-xl border px-4 py-3">
+          <p className="text-sm font-medium">Registration options</p>
+
+          <div className="grid gap-1.5">
+            <Label htmlFor="capacity">Spots available (optional)</Label>
+            <Input
+              id="capacity"
+              name="capacity"
+              type="number"
+              min={1}
+              defaultValue={event.capacity ?? ""}
+              placeholder="Unlimited"
+              disabled={isPending}
+            />
+            {state.fieldErrors?.capacity && (
+              <p className="text-xs text-destructive">{state.fieldErrors.capacity[0]}</p>
+            )}
+          </div>
+
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-sm text-muted-foreground">Ask for phone number</p>
+            <Switch checked={collectPhone} onCheckedChange={setCollectPhone} disabled={isPending} />
+            <input type="hidden" name="collectPhone" value={collectPhone ? "true" : "false"} />
+          </div>
+
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-sm text-muted-foreground">Ask for dietary / accessibility needs</p>
+            <Switch checked={collectNotes} onCheckedChange={setCollectNotes} disabled={isPending} />
+            <input type="hidden" name="collectNotes" value={collectNotes ? "true" : "false"} />
+          </div>
         </div>
       )}
 

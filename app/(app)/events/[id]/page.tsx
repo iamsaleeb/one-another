@@ -10,6 +10,7 @@ import { formatEventDatetime } from "@/lib/utils";
 import { InfoField } from "@/components/ui/info-field";
 import { HeroBanner } from "@/components/ui/hero-banner";
 import { DeleteEventButton } from "./_components/delete-event-button";
+import { EventActionBar } from "./_components/event-action-bar";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -29,7 +30,11 @@ export default async function EventDetailPage({ params }: Props) {
 
   const isOrganiser =
     session?.user?.role === UserRole.ORGANISER &&
-    !!(await isOrganiserForChurch(session.user.id, event.churchId));
+    !!(await isOrganiserForChurch(session?.user?.id, event.churchId));
+
+  const isAttending = session?.user?.id
+    ? event.attendees.some((a) => a.userId === session.user.id)
+    : false;
 
   return (
     <div className="bg-background">
@@ -80,18 +85,18 @@ export default async function EventDetailPage({ params }: Props) {
         </div>
       </div>
 
-      {/* Register bar */}
-      <div className="fixed bottom-0 left-0 right-0 z-10 bg-white shadow-[0px_-2px_31px_0px_#0000001A] pb-safe">
-        <div className="flex items-center justify-between gap-4 px-4 py-4">
-          <div className="flex flex-col gap-0.5">
-            <p className="text-xs text-muted-foreground">Cost</p>
-            <p className="text-base font-bold">Free Event</p>
-          </div>
-          <Button>
-            Register
-          </Button>
-        </div>
-      </div>
+      <EventActionBar
+        eventId={event.id}
+        eventTitle={event.title}
+        requiresRegistration={event.requiresRegistration}
+        isAttending={isAttending}
+        userName={session?.user?.name ?? ""}
+        userEmail={session?.user?.email ?? ""}
+        capacity={event.capacity}
+        spotsUsed={event._count.attendees}
+        collectPhone={event.collectPhone}
+        collectNotes={event.collectNotes}
+      />
     </div>
   );
 }

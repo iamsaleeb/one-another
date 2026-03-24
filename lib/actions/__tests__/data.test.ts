@@ -117,7 +117,11 @@ describe('getEventById', () => {
     expect(result).toEqual(sampleEvent)
     expect(mockEventFindUnique).toHaveBeenCalledWith({
       where: { id: 'evt-1' },
-      include: { series: { select: { id: true, name: true } } },
+      include: {
+        series: { select: { id: true, name: true } },
+        attendees: { select: { userId: true } },
+        _count: { select: { attendees: true } },
+      },
     })
   })
 

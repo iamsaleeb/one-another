@@ -15,11 +15,6 @@ export default async function MyEventsPage() {
       <PageHeader
         title="My Events"
         description={`${upcomingEvents.length} upcoming`}
-        actions={
-          <Button size="icon" className="rounded-full size-9">
-            <Plus className="size-4" />
-          </Button>
-        }
       />
 
       <div className="flex flex-col gap-6 px-4 py-2">

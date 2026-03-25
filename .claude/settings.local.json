@@ -48,7 +48,8 @@
       "WebFetch(domain:issuetracker.google.com)",
       "WebFetch(domain:medium.com)",
       "WebFetch(domain:capgo.app)",
-      "Bash(head:*)"
+      "Bash(head:*)",
+      "mcp__shadcn__get_audit_checklist"
     ]
   },
   "enableAllProjectMcpServers": true,

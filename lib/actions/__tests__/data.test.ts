@@ -10,6 +10,7 @@ jest.mock('@/lib/db', () => ({
     series: { findMany: jest.fn(), findUnique: jest.fn() },
     churchOrganiser: { findMany: jest.fn() },
     churchAdmin: { findMany: jest.fn() },
+    churchFollower: { findMany: jest.fn() },
     eventAttendee: { findMany: jest.fn() },
   },
 }))
@@ -275,6 +276,8 @@ describe('getChurchById', () => {
             _count: { select: { events: { where: { isPast: false } } } },
           },
         },
+        followers: { select: { userId: true } },
+        _count: { select: { followers: true } },
       },
     })
   })

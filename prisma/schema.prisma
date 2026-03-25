@@ -33,6 +33,7 @@ model User {
   events        Event[]   @relation("UserEvents")
   series        Series[]  @relation("UserSeries")
   eventAttendances EventAttendee[]
+  churchFollows    ChurchFollower[]
   churchOrganisers ChurchOrganiser[] @relation("UserChurches")
   adminChurches    ChurchAdmin[]     @relation("UserAdminChurches")
 
@@ -89,10 +90,10 @@ model Church {
   description  String
   founded      String
   members      Int
-  followers    Int
   totalEvents  Int
 
   serviceTimes ServiceTime[]
+  followers    ChurchFollower[]
   events       Event[]
   series       Series[]
   organisers   ChurchOrganiser[] @relation("ChurchOrganisers")
@@ -185,4 +186,15 @@ model EventAttendee {
   createdAt DateTime @default(now())
 
   @@unique([eventId, userId])
+}
+
+model ChurchFollower {
+  id        String   @id @default(cuid())
+  churchId  String
+  userId    String
+  church    Church   @relation(fields: [churchId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([churchId, userId])
 }

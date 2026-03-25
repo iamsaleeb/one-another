@@ -129,6 +129,8 @@ export const getChurchById = cache(async function getChurchById(id: string) {
           _count: { select: { events: { where: { isPast: false } } } },
         },
       },
+      followers: { select: { userId: true } },
+      _count: { select: { followers: true } },
     },
   });
 });

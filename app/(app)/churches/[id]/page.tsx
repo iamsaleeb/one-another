@@ -1,11 +1,12 @@
 import { notFound } from "next/navigation";
 import { Globe, MapPin, Facebook, Bell } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { getChurchById } from "@/lib/actions/data";
+import { auth } from "@/auth";
 import { ChurchTabs } from "./_components/church-tabs";
+import { FollowButton } from "./_components/follow-button";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -19,9 +20,13 @@ export async function generateMetadata({ params }: Props) {
 
 export default async function ChurchDetailPage({ params }: Props) {
   const { id } = await params;
-  const church = await getChurchById(id);
+  const [church, session] = await Promise.all([getChurchById(id), auth()]);
 
   if (!church) notFound();
+
+  const isFollowing = session?.user?.id
+    ? church.followers.some((f) => f.userId === session.user.id)
+    : false;
 
   return (
     <div className="bg-muted/20 min-h-screen pb-8">
@@ -77,7 +82,11 @@ export default async function ChurchDetailPage({ params }: Props) {
             </Alert>
 
             {/* Follow Button */}
-            <Button variant="outline">Follow</Button>
+            <FollowButton
+              churchId={church.id}
+              isFollowing={isFollowing}
+              followerCount={church._count.followers}
+            />
           </CardContent>
         </Card>
       </div>

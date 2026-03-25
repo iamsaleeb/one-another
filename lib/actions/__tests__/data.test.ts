@@ -10,6 +10,7 @@ jest.mock('@/lib/db', () => ({
     series: { findMany: jest.fn(), findUnique: jest.fn() },
     churchOrganiser: { findMany: jest.fn() },
     churchAdmin: { findMany: jest.fn() },
+    eventAttendee: { findMany: jest.fn() },
   },
 }))
 
@@ -31,6 +32,7 @@ import {
   getSeriesByCreator,
   getEventsNotByCreator,
   getSeriesNotByCreator,
+  getEventAttendees,
 } from '@/lib/actions/data'
 import { prisma } from '@/lib/db'
 
@@ -42,6 +44,7 @@ const mockSeriesFindMany = prisma.series.findMany as jest.Mock
 const mockSeriesFindUnique = prisma.series.findUnique as jest.Mock
 const mockChurchOrganiserFindMany = prisma.churchOrganiser.findMany as jest.Mock
 const mockChurchAdminFindMany = prisma.churchAdmin.findMany as jest.Mock
+const mockEventAttendeeFindMany = prisma.eventAttendee.findMany as jest.Mock
 
 const sampleEvent = {
   id: 'evt-1',
@@ -532,5 +535,54 @@ describe('getSeriesNotByCreator', () => {
   it('returns empty array when no other series exist', async () => {
     mockSeriesFindMany.mockResolvedValue([])
     expect(await getSeriesNotByCreator('user-1')).toEqual([])
+  })
+})
+
+describe('getEventAttendees', () => {
+  const sampleAttendees = [
+    {
+      id: 'ea-1',
+      eventId: 'evt-1',
+      userId: 'user-1',
+      phone: '+61400000000',
+      notes: 'Vegetarian',
+      createdAt: new Date(),
+      user: { id: 'user-1', name: 'Alice', email: 'alice@example.com' },
+    },
+    {
+      id: 'ea-2',
+      eventId: 'evt-1',
+      userId: 'user-2',
+      phone: null,
+      notes: null,
+      createdAt: new Date(),
+      user: { id: 'user-2', name: 'Bob', email: 'bob@example.com' },
+    },
+  ]
+
+  it('returns attendees for the given event ordered by createdAt asc', async () => {
+    mockEventAttendeeFindMany.mockResolvedValue(sampleAttendees)
+
+    const result = await getEventAttendees('evt-1')
+
+    expect(result).toEqual(sampleAttendees)
+    expect(mockEventAttendeeFindMany).toHaveBeenCalledWith({
+      where: { eventId: 'evt-1' },
+      include: { user: { select: { id: true, name: true, email: true } } },
+      orderBy: { createdAt: 'asc' },
+    })
+  })
+
+  it('returns an empty array when no one has registered', async () => {
+    mockEventAttendeeFindMany.mockResolvedValue([])
+
+    const result = await getEventAttendees('evt-empty')
+
+    expect(result).toEqual([])
+    expect(mockEventAttendeeFindMany).toHaveBeenCalledWith({
+      where: { eventId: 'evt-empty' },
+      include: { user: { select: { id: true, name: true, email: true } } },
+      orderBy: { createdAt: 'asc' },
+    })
   })
 })

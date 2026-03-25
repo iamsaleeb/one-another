@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter, useSearchParams, useParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -22,38 +22,19 @@ interface TopNavProps {
 }
 
 function TopNavInner({ user }: TopNavProps) {
-  const pathname = usePathname();
   const router = useRouter();
-  const params = useParams();
   const searchParams = useSearchParams();
 
   const isDetailPage = useIsDetailPage();
-  const id = params?.id ?? null;
-  const isEventDetail = pathname.startsWith("/events/") && id !== null;
-  const isChurchDetail = pathname.startsWith("/churches/") && id !== null;
-  const isSeriesDetail = pathname.startsWith("/series/") && id !== null;
-  const isEventCreate = pathname === "/events/create";
-  const isSeriesCreate = pathname === "/series/create";
-
-  let backHref = "/";
-  if (isEventDetail || isEventCreate) {
-    backHref = "/";
-  }
-  if (isChurchDetail) {
-    backHref = "/churches";
-  }
-  if (isSeriesDetail || isSeriesCreate) {
-    backHref = "/series";
-  }
 
   return (
     <header className="sticky top-0 z-50 bg-primary pt-safe">
       <div className="flex h-14 items-center justify-between px-4">
         {isDetailPage ? (
           <button
-            onClick={() => router.push(backHref)}
+            onClick={() => router.back()}
             className="flex items-center text-primary-foreground"
-            aria-label={isChurchDetail ? "Back to churches" : isSeriesDetail ? "Back to series" : "Back to home"}
+            aria-label="Go back"
           >
             <ChevronLeft className="w-6 h-6" />
           </button>

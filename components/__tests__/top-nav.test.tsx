@@ -18,6 +18,7 @@ import {
 import { TopNav } from '@/components/top-nav'
 
 const mockPush = jest.fn()
+const mockBack = jest.fn()
 
 function setupNavMocks({
   pathname = '/',
@@ -29,7 +30,7 @@ function setupNavMocks({
   params?: Record<string, string>
 } = {}) {
   ;(usePathname as jest.Mock).mockReturnValue(pathname)
-  ;(useRouter as jest.Mock).mockReturnValue({ push: mockPush })
+  ;(useRouter as jest.Mock).mockReturnValue({ push: mockPush, back: mockBack })
   ;(useSearchParams as jest.Mock).mockReturnValue({
     get: (key: string) => (key === 'q' ? q || null : null),
   })
@@ -94,7 +95,7 @@ describe('TopNav — event detail page', () => {
   it('shows back button instead of brand link', () => {
     setupNavMocks({ pathname: '/events/evt-1', params: { id: 'evt-1' } })
     render(<TopNav />)
-    expect(screen.getByRole('button', { name: /back to home/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /go back/i })).toBeInTheDocument()
     expect(screen.queryByText('1Another')).not.toBeInTheDocument()
   })
 
@@ -106,11 +107,11 @@ describe('TopNav — event detail page', () => {
     ).not.toBeInTheDocument()
   })
 
-  it('navigates to / when the back button is clicked on an event detail', async () => {
+  it('calls router.back() when the back button is clicked on an event detail', async () => {
     setupNavMocks({ pathname: '/events/evt-1', params: { id: 'evt-1' } })
     render(<TopNav />)
-    await userEvent.click(screen.getByRole('button', { name: /back to home/i }))
-    expect(mockPush).toHaveBeenCalledWith('/')
+    await userEvent.click(screen.getByRole('button', { name: /go back/i }))
+    expect(mockBack).toHaveBeenCalled()
   })
 })
 
@@ -118,14 +119,14 @@ describe('TopNav — church detail page', () => {
   it('shows back button on church detail page', () => {
     setupNavMocks({ pathname: '/churches/ch-1', params: { id: 'ch-1' } })
     render(<TopNav />)
-    expect(screen.getByRole('button', { name: /back to churches/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /go back/i })).toBeInTheDocument()
   })
 
-  it('navigates to /churches when back button is clicked', async () => {
+  it('calls router.back() when back button is clicked on church detail', async () => {
     setupNavMocks({ pathname: '/churches/ch-1', params: { id: 'ch-1' } })
     render(<TopNav />)
-    await userEvent.click(screen.getByRole('button', { name: /back to churches/i }))
-    expect(mockPush).toHaveBeenCalledWith('/churches')
+    await userEvent.click(screen.getByRole('button', { name: /go back/i }))
+    expect(mockBack).toHaveBeenCalled()
   })
 })
 

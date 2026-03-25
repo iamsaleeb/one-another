@@ -258,6 +258,14 @@ export const getEventsNotByCreator = cache(async function getEventsNotByCreator(
   });
 });
 
+export const getEventAttendees = cache(async function getEventAttendees(eventId: string) {
+  return prisma.eventAttendee.findMany({
+    where: { eventId },
+    include: { user: { select: { id: true, name: true, email: true } } },
+    orderBy: { createdAt: "asc" },
+  });
+});
+
 export const getSeriesNotByCreator = cache(async function getSeriesNotByCreator(userId: string) {
   return prisma.series.findMany({
     where: {

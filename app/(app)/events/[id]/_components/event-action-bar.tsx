@@ -1,10 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { Check } from "lucide-react";
+import { Check, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AttendButton } from "./attend-button";
 import { RegistrationDrawer } from "./registration-drawer";
+import { AttendeesDrawer } from "./attendees-drawer";
+import type { getEventAttendees } from "@/lib/actions/data";
 
 interface EventActionBarProps {
   eventId: string;
@@ -18,6 +20,7 @@ interface EventActionBarProps {
   collectPhone: boolean;
   collectNotes: boolean;
   price?: string | null;
+  attendees?: Awaited<ReturnType<typeof getEventAttendees>>;
 }
 
 export function EventActionBar({
@@ -32,8 +35,10 @@ export function EventActionBar({
   collectPhone,
   collectNotes,
   price,
+  attendees,
 }: EventActionBarProps) {
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [attendeesDrawerOpen, setAttendeesDrawerOpen] = useState(false);
 
   const spotsLeft = capacity != null ? capacity - spotsUsed : null;
   const isFull = spotsLeft != null && spotsLeft <= 0 && !isAttending;
@@ -64,19 +69,33 @@ export function EventActionBar({
             )}
           </div>
 
-          {requiresRegistration ? (
-            <Button
-              onClick={() => setDrawerOpen(true)}
-              variant={isAttending ? "outline" : "default"}
-              className={isAttending ? "gap-1.5" : ""}
-              disabled={isFull}
-            >
-              {isAttending && <Check className="size-4" />}
-              {isAttending ? "Registered" : isFull ? "Fully booked" : "Register"}
-            </Button>
-          ) : (
-            <AttendButton eventId={eventId} isAttending={isAttending} />
-          )}
+          <div className="flex items-center gap-2">
+            {attendees !== undefined && (
+              <Button
+                variant="outline"
+                size="icon"
+                aria-label="View attendees"
+                className="size-9 shrink-0"
+                onClick={() => setAttendeesDrawerOpen(true)}
+              >
+                <Users className="size-4" />
+              </Button>
+            )}
+
+            {requiresRegistration ? (
+              <Button
+                onClick={() => setDrawerOpen(true)}
+                variant={isAttending ? "outline" : "default"}
+                className={isAttending ? "gap-1.5" : ""}
+                disabled={isFull}
+              >
+                {isAttending && <Check className="size-4" />}
+                {isAttending ? "Registered" : isFull ? "Fully booked" : "Register"}
+              </Button>
+            ) : (
+              <AttendButton eventId={eventId} isAttending={isAttending} />
+            )}
+          </div>
         </div>
       </div>
 
@@ -91,6 +110,17 @@ export function EventActionBar({
           collectNotes={collectNotes}
           open={drawerOpen}
           onOpenChange={setDrawerOpen}
+        />
+      )}
+
+      {attendees !== undefined && (
+        <AttendeesDrawer
+          attendees={attendees}
+          requiresRegistration={requiresRegistration}
+          collectPhone={collectPhone}
+          collectNotes={collectNotes}
+          open={attendeesDrawerOpen}
+          onOpenChange={setAttendeesDrawerOpen}
         />
       )}
     </>

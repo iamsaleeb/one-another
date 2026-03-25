@@ -4,7 +4,7 @@ import { Calendar, MapPin, Pencil, Repeat, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { auth } from "@/auth";
 import { UserRole } from "@prisma/client";
-import { getEventById } from "@/lib/actions/data";
+import { getEventById, getEventAttendees } from "@/lib/actions/data";
 import { isOrganiserForChurch } from "@/lib/permissions";
 import { formatEventDatetime } from "@/lib/utils";
 import { InfoField } from "@/components/ui/info-field";
@@ -28,9 +28,21 @@ export default async function EventDetailPage({ params }: Props) {
 
   if (!event) notFound();
 
-  const isOrganiser =
-    session?.user?.role === UserRole.ORGANISER &&
-    !!(await isOrganiserForChurch(session?.user?.id, event.churchId));
+  const userId = session?.user?.id;
+  const shouldCheckOrganiser = session?.user?.role === UserRole.ORGANISER;
+  const isAdmin = session?.user?.role === UserRole.ADMIN;
+
+  // Pre-fetch attendees in parallel for any organiser/admin; gate the result on actual permission below
+  const [organiserForChurch, attendeesData] = await Promise.all([
+    shouldCheckOrganiser && userId
+      ? isOrganiserForChurch(userId, event.churchId)
+      : Promise.resolve(false),
+    shouldCheckOrganiser || isAdmin ? getEventAttendees(id) : Promise.resolve(undefined),
+  ]);
+
+  const isOrganiser = shouldCheckOrganiser && !!organiserForChurch;
+  const canViewAttendees = !!organiserForChurch || isAdmin;
+  const attendees = canViewAttendees ? attendeesData : undefined;
 
   const isAttending = session?.user?.id
     ? event.attendees.some((a) => a.userId === session.user.id)
@@ -97,6 +109,7 @@ export default async function EventDetailPage({ params }: Props) {
         collectPhone={event.collectPhone}
         collectNotes={event.collectNotes}
         price={event.price}
+        attendees={attendees}
       />
     </div>
   );

@@ -47,7 +47,8 @@
       "WebFetch(domain:github.com)",
       "WebFetch(domain:issuetracker.google.com)",
       "WebFetch(domain:medium.com)",
-      "WebFetch(domain:capgo.app)"
+      "WebFetch(domain:capgo.app)",
+      "Bash(head:*)"
     ]
   },
   "enableAllProjectMcpServers": true,

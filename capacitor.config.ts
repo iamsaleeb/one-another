@@ -9,8 +9,8 @@ const config: CapacitorConfig = {
   server: isDev
     ? {
         // 10.0.2.2 maps to host machine's localhost in the Android emulator.
-        // If using a physical device, replace with your machine's local IP (e.g. 192.168.x.x).
-        url: 'http://10.0.2.2:3000',
+        // 192.168.0.3 is the host machine's local IP for physical devices.
+        url: 'http://192.168.0.3:3000',
         cleartext: true,
       }
     : undefined,

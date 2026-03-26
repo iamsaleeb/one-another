@@ -12,6 +12,7 @@ jest.mock('@/lib/db', () => ({
     event: {
       create: jest.fn(),
       findUnique: jest.fn(),
+      update: jest.fn(),
       delete: jest.fn(),
     },
     series: {
@@ -36,6 +37,8 @@ import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
 import {
   createEventAction,
+  cancelEventAction,
+  uncancelEventAction,
   attendEventAction,
   unattendEventAction,
   registerEventAction,
@@ -47,6 +50,7 @@ import { canManageChurch } from '@/lib/permissions'
 const mockRedirect = redirect as unknown as jest.Mock
 const mockRevalidatePath = revalidatePath as jest.Mock
 const mockEventCreate = prisma.event.create as jest.Mock
+const mockEventUpdate = prisma.event.update as jest.Mock
 const mockEventFindUnique = prisma.event.findUnique as jest.Mock
 const mockSeriesFindUnique = prisma.series.findUnique as jest.Mock
 const mockEventAttendeeCreate = prisma.eventAttendee.create as jest.Mock
@@ -199,6 +203,79 @@ describe('createEventAction', () => {
     expect(mockEventCreate).toHaveBeenCalledWith({
       data: expect.objectContaining({ requiresRegistration: false }),
     })
+  })
+})
+
+describe('cancelEventAction', () => {
+  it('updates the event with cancelledAt and reason, then redirects to event page', async () => {
+    mockEventFindUnique.mockResolvedValue({ churchId: 'ch-1' })
+    mockEventUpdate.mockResolvedValue({})
+
+    await cancelEventAction('evt-1', 'Venue unavailable')
+
+    expect(mockEventUpdate).toHaveBeenCalledWith({
+      where: { id: 'evt-1' },
+      data: expect.objectContaining({ cancellationReason: 'Venue unavailable' }),
+    })
+    expect(mockRedirect).toHaveBeenCalledWith('/events/evt-1')
+    expect(mockRevalidatePath).toHaveBeenCalledWith('/')
+  })
+
+  it('redirects away when the user is not an organiser', async () => {
+    mockAuth.mockResolvedValue({ user: { id: 'user-1', role: 'ATTENDEE' } })
+    mockRedirect.mockImplementationOnce(() => { throw new Error('NEXT_REDIRECT') })
+
+    await expect(cancelEventAction('evt-1', 'reason')).rejects.toThrow('NEXT_REDIRECT')
+
+    expect(mockEventUpdate).not.toHaveBeenCalled()
+    expect(mockRedirect).toHaveBeenCalledWith('/')
+  })
+
+  it('redirects away when the user cannot manage the church', async () => {
+    mockEventFindUnique.mockResolvedValue({ churchId: 'ch-1' })
+    mockCanManageChurch.mockResolvedValue(false)
+    mockRedirect.mockImplementationOnce(() => { throw new Error('NEXT_REDIRECT') })
+
+    await expect(cancelEventAction('evt-1', 'reason')).rejects.toThrow('NEXT_REDIRECT')
+
+    expect(mockEventUpdate).not.toHaveBeenCalled()
+    expect(mockRedirect).toHaveBeenCalledWith('/')
+  })
+
+  it('redirects to /organiser when the event is not found', async () => {
+    mockEventFindUnique.mockResolvedValue(null)
+    mockRedirect.mockImplementationOnce(() => { throw new Error('NEXT_REDIRECT') })
+
+    await expect(cancelEventAction('evt-missing', 'reason')).rejects.toThrow('NEXT_REDIRECT')
+
+    expect(mockEventUpdate).not.toHaveBeenCalled()
+    expect(mockRedirect).toHaveBeenCalledWith('/organiser')
+  })
+})
+
+describe('uncancelEventAction', () => {
+  it('clears cancelledAt and cancellationReason, then redirects to event page', async () => {
+    mockEventFindUnique.mockResolvedValue({ churchId: 'ch-1' })
+    mockEventUpdate.mockResolvedValue({})
+
+    await uncancelEventAction('evt-1')
+
+    expect(mockEventUpdate).toHaveBeenCalledWith({
+      where: { id: 'evt-1' },
+      data: { cancelledAt: null, cancellationReason: null },
+    })
+    expect(mockRedirect).toHaveBeenCalledWith('/events/evt-1')
+    expect(mockRevalidatePath).toHaveBeenCalledWith('/')
+  })
+
+  it('redirects away when the user is not an organiser', async () => {
+    mockAuth.mockResolvedValue({ user: { id: 'user-1', role: 'ATTENDEE' } })
+    mockRedirect.mockImplementationOnce(() => { throw new Error('NEXT_REDIRECT') })
+
+    await expect(uncancelEventAction('evt-1')).rejects.toThrow('NEXT_REDIRECT')
+
+    expect(mockEventUpdate).not.toHaveBeenCalled()
+    expect(mockRedirect).toHaveBeenCalledWith('/')
   })
 })
 

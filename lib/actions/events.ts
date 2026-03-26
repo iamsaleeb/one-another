@@ -109,6 +109,44 @@ export async function updateEventAction(id: string, data: CreateEventInput): Pro
   redirect(`/events/${id}`);
 }
 
+export async function cancelEventAction(id: string, reason: string): Promise<void> {
+  const session = await auth();
+  if (session?.user?.role !== UserRole.ORGANISER && session?.user?.role !== UserRole.ADMIN) redirect("/");
+
+  const event = await prisma.event.findUnique({ where: { id }, select: { churchId: true } });
+  if (!event) redirect("/organiser");
+
+  const allowed = await canManageChurch(session.user.id, session.user.role, event.churchId);
+  if (!allowed) redirect("/");
+
+  await prisma.event.update({
+    where: { id },
+    data: { cancelledAt: new Date(), cancellationReason: reason },
+  });
+
+  revalidatePath("/");
+  redirect(`/events/${id}`);
+}
+
+export async function uncancelEventAction(id: string): Promise<void> {
+  const session = await auth();
+  if (session?.user?.role !== UserRole.ORGANISER && session?.user?.role !== UserRole.ADMIN) redirect("/");
+
+  const event = await prisma.event.findUnique({ where: { id }, select: { churchId: true } });
+  if (!event) redirect("/organiser");
+
+  const allowed = await canManageChurch(session.user.id, session.user.role, event.churchId);
+  if (!allowed) redirect("/");
+
+  await prisma.event.update({
+    where: { id },
+    data: { cancelledAt: null, cancellationReason: null },
+  });
+
+  revalidatePath("/");
+  redirect(`/events/${id}`);
+}
+
 export async function deleteEventAction(id: string): Promise<void> {
   const session = await auth();
   if (session?.user?.role !== UserRole.ORGANISER && session?.user?.role !== UserRole.ADMIN) redirect("/");

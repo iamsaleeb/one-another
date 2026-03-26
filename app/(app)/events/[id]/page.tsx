@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { Calendar, MapPin, Pencil, Repeat, User } from "lucide-react";
+import { AlertTriangle, Calendar, MapPin, Pencil, Repeat, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { auth } from "@/auth";
 import { UserRole } from "@prisma/client";
@@ -10,6 +10,8 @@ import { formatEventDatetime } from "@/lib/utils";
 import { InfoField } from "@/components/ui/info-field";
 import { HeroBanner } from "@/components/ui/hero-banner";
 import { DeleteEventButton } from "./_components/delete-event-button";
+import { CancelEventButton } from "./_components/cancel-event-button";
+import { UncancelEventButton } from "./_components/uncancel-event-button";
 import { EventActionBar } from "./_components/event-action-bar";
 
 interface Props {
@@ -51,6 +53,19 @@ export default async function EventDetailPage({ params }: Props) {
 
       {/* Content */}
       <div className="flex flex-col gap-4 px-4 pt-5 pb-28">
+        {/* Cancellation banner */}
+        {event.cancelledAt && (
+          <div className="rounded-2xl bg-destructive/10 p-4 flex items-start gap-3">
+            <AlertTriangle className="size-5 text-destructive shrink-0 mt-0.5" />
+            <div className="flex flex-col gap-1">
+              <p className="text-sm font-semibold text-destructive">This event has been cancelled.</p>
+              {event.cancellationReason && (
+                <p className="text-sm text-destructive/80">{event.cancellationReason}</p>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Info card */}
         <div className="rounded-2xl bg-white shadow-card p-5 flex flex-col gap-4">
           <div className="flex items-start justify-between gap-2">
@@ -62,6 +77,10 @@ export default async function EventDetailPage({ params }: Props) {
                     <Pencil className="size-4" />
                   </Link>
                 </Button>
+                {event.cancelledAt
+                  ? <UncancelEventButton eventId={id} />
+                  : <CancelEventButton eventId={id} />
+                }
                 <DeleteEventButton eventId={id} />
               </div>
             )}
@@ -106,6 +125,7 @@ export default async function EventDetailPage({ params }: Props) {
         collectPhone={event.collectPhone}
         collectNotes={event.collectNotes}
         price={event.price}
+        isCancelled={!!event.cancelledAt}
         attendees={attendees}
       />
     </div>

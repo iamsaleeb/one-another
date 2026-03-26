@@ -163,6 +163,8 @@ model Event {
   collectPhone         Boolean @default(false)
   collectNotes         Boolean @default(false)
   price                String?
+  cancelledAt          DateTime?
+  cancellationReason   String?
   churchId             String?
   church               Church? @relation(fields: [churchId], references: [id], onDelete: SetNull)
   seriesId             String?

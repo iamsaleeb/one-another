@@ -49,4 +49,18 @@ describe('EventCard', () => {
     expect(screen.getByRole('link')).toHaveAttribute('href', '/events/evt-99')
     expect(screen.getByText('Youth Night')).toBeInTheDocument()
   })
+
+  it('shows a Cancelled badge instead of the tag when cancelledAt is set', () => {
+    const cancelledEvent = { ...sampleEvent, cancelledAt: new Date() }
+    render(<EventCard event={cancelledEvent} />)
+    expect(screen.getByText('Cancelled')).toBeInTheDocument()
+    expect(screen.queryByText('Worship')).not.toBeInTheDocument()
+  })
+
+  it('shows the tag badge when cancelledAt is null', () => {
+    const activeEvent = { ...sampleEvent, cancelledAt: null }
+    render(<EventCard event={activeEvent} />)
+    expect(screen.getByText('Worship')).toBeInTheDocument()
+    expect(screen.queryByText('Cancelled')).not.toBeInTheDocument()
+  })
 })

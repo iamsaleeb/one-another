@@ -20,6 +20,7 @@ interface EventActionBarProps {
   collectPhone: boolean;
   collectNotes: boolean;
   price?: string | null;
+  isCancelled?: boolean;
   attendees?: Awaited<ReturnType<typeof getEventAttendees>>;
 }
 
@@ -35,6 +36,7 @@ export function EventActionBar({
   collectPhone,
   collectNotes,
   price,
+  isCancelled,
   attendees,
 }: EventActionBarProps) {
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -82,7 +84,7 @@ export function EventActionBar({
               </Button>
             )}
 
-            {requiresRegistration ? (
+            {!isCancelled && (requiresRegistration ? (
               <Button
                 onClick={() => setDrawerOpen(true)}
                 variant={isAttending ? "outline" : "default"}
@@ -94,7 +96,7 @@ export function EventActionBar({
               </Button>
             ) : (
               <AttendButton eventId={eventId} isAttending={isAttending} />
-            )}
+            ))}
           </div>
         </div>
       </div>

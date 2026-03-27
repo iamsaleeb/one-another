@@ -10,6 +10,7 @@ import { HeroBanner } from "@/components/ui/hero-banner";
 import { EventCard } from "@/components/event-card";
 import { Button } from "@/components/ui/button";
 import { DeleteSeriesButton } from "./_components/delete-series-button";
+import { FollowSeriesButton } from "./_components/follow-series-button";
 import { CADENCE_LABELS } from "@/types/search";
 
 interface Props {
@@ -32,11 +33,14 @@ export default async function SeriesDetailPage({ params }: Props) {
     session?.user?.role === UserRole.ORGANISER &&
     !!(await isOrganiserForChurch(session?.user?.id, series.churchId));
 
+  const userId = session?.user?.id;
+  const isFollowing = userId ? series.followers.some((f) => f.userId === userId) : false;
+
   return (
     <div className="bg-background">
       <HeroBanner size="sm" />
 
-      <div className="flex flex-col gap-4 px-4 pt-5 pb-6">
+      <div className="flex flex-col gap-4 px-4 pt-5 pb-28">
         {/* Info card */}
         <div className="rounded-2xl bg-white shadow-card p-5 flex flex-col gap-4">
           <div className="flex items-start justify-between gap-2">
@@ -92,6 +96,14 @@ export default async function SeriesDetailPage({ params }: Props) {
           )}
         </section>
       </div>
+
+      {session?.user && (
+        <FollowSeriesButton
+          seriesId={series.id}
+          isFollowing={isFollowing}
+          followerCount={series._count.followers}
+        />
+      )}
     </div>
   );
 }

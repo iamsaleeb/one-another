@@ -208,6 +208,8 @@ export const getSeriesById = cache(async function getSeriesById(id: string) {
         where: { isPast: false },
         orderBy: { datetime: "asc" },
       },
+      followers: { select: { userId: true } },
+      _count: { select: { followers: true } },
     },
   });
 });

@@ -415,6 +415,8 @@ describe('getSeriesById', () => {
           where: { isPast: false },
           orderBy: { datetime: 'asc' },
         },
+        followers: { select: { userId: true } },
+        _count: { select: { followers: true } },
       },
     })
   })

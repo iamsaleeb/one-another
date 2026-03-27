@@ -65,6 +65,28 @@ export async function updateSeriesAction(id: string, data: CreateSeriesInput): P
   redirect(`/series/${id}`);
 }
 
+export async function followSeriesAction(seriesId: string): Promise<void> {
+  const session = await auth();
+  if (!session?.user?.id) return;
+
+  await prisma.seriesFollower.create({
+    data: { seriesId, userId: session.user.id },
+  });
+
+  revalidatePath(`/series/${seriesId}`);
+}
+
+export async function unfollowSeriesAction(seriesId: string): Promise<void> {
+  const session = await auth();
+  if (!session?.user?.id) return;
+
+  await prisma.seriesFollower.delete({
+    where: { seriesId_userId: { seriesId, userId: session.user.id } },
+  });
+
+  revalidatePath(`/series/${seriesId}`);
+}
+
 export async function deleteSeriesAction(id: string): Promise<void> {
   const session = await auth();
   if (session?.user?.role !== UserRole.ORGANISER && session?.user?.role !== UserRole.ADMIN) redirect("/");

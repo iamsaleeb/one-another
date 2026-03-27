@@ -34,6 +34,7 @@ model User {
   series        Series[]  @relation("UserSeries")
   eventAttendances EventAttendee[]
   churchFollows    ChurchFollower[]
+  seriesFollows    SeriesFollower[]
   churchOrganisers ChurchOrganiser[] @relation("UserChurches")
   adminChurches    ChurchAdmin[]     @relation("UserAdminChurches")
 
@@ -143,6 +144,7 @@ model Series {
   churchId    String
   church      Church   @relation(fields: [churchId], references: [id], onDelete: Restrict)
   events      Event[]
+  followers   SeriesFollower[]
   createdById String?
   createdBy   User?    @relation("UserSeries", fields: [createdById], references: [id], onDelete: SetNull)
   createdAt   DateTime @default(now())
@@ -199,4 +201,15 @@ model ChurchFollower {
   createdAt DateTime @default(now())
 
   @@unique([churchId, userId])
+}
+
+model SeriesFollower {
+  id        String   @id @default(cuid())
+  seriesId  String
+  userId    String
+  series    Series   @relation(fields: [seriesId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([seriesId, userId])
 }

@@ -12,6 +12,10 @@ jest.mock('@/lib/db', () => ({
       create: jest.fn(),
       findUnique: jest.fn(),
     },
+    seriesFollower: {
+      create: jest.fn(),
+      delete: jest.fn(),
+    },
   },
 }))
 
@@ -24,13 +28,17 @@ jest.mock('@/lib/permissions', () => ({
 }))
 
 import { redirect } from 'next/navigation'
-import { createSeriesAction } from '@/lib/actions/series'
+import { revalidatePath } from 'next/cache'
+import { createSeriesAction, followSeriesAction, unfollowSeriesAction } from '@/lib/actions/series'
 import { prisma } from '@/lib/db'
 import { auth } from '@/auth'
 import { canManageChurch } from '@/lib/permissions'
 
 const mockRedirect = redirect as unknown as jest.Mock
+const mockRevalidatePath = revalidatePath as jest.Mock
 const mockSeriesCreate = prisma.series.create as jest.Mock
+const mockSeriesFollowerCreate = prisma.seriesFollower.create as jest.Mock
+const mockSeriesFollowerDelete = prisma.seriesFollower.delete as jest.Mock
 const mockAuth = auth as jest.Mock
 const mockCanManageChurch = canManageChurch as jest.Mock
 
@@ -130,5 +138,47 @@ describe('createSeriesAction', () => {
 
     expect(result.error).toBe('You are not assigned to this church.')
     expect(mockSeriesCreate).not.toHaveBeenCalled()
+  })
+})
+
+describe('followSeriesAction', () => {
+  it('creates a series follower record and revalidates the path', async () => {
+    mockSeriesFollowerCreate.mockResolvedValue({})
+
+    await followSeriesAction('ser-1')
+
+    expect(mockSeriesFollowerCreate).toHaveBeenCalledWith({
+      data: { seriesId: 'ser-1', userId: 'user-1' },
+    })
+    expect(mockRevalidatePath).toHaveBeenCalledWith('/series/ser-1')
+  })
+
+  it('does nothing when there is no session', async () => {
+    mockAuth.mockResolvedValue(null)
+
+    await followSeriesAction('ser-1')
+
+    expect(mockSeriesFollowerCreate).not.toHaveBeenCalled()
+  })
+})
+
+describe('unfollowSeriesAction', () => {
+  it('deletes the series follower record and revalidates the path', async () => {
+    mockSeriesFollowerDelete.mockResolvedValue({})
+
+    await unfollowSeriesAction('ser-1')
+
+    expect(mockSeriesFollowerDelete).toHaveBeenCalledWith({
+      where: { seriesId_userId: { seriesId: 'ser-1', userId: 'user-1' } },
+    })
+    expect(mockRevalidatePath).toHaveBeenCalledWith('/series/ser-1')
+  })
+
+  it('does nothing when there is no session', async () => {
+    mockAuth.mockResolvedValue(null)
+
+    await unfollowSeriesAction('ser-1')
+
+    expect(mockSeriesFollowerDelete).not.toHaveBeenCalled()
   })
 })

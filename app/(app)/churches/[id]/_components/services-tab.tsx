@@ -28,10 +28,10 @@ export function ServicesTab({ church }: ServicesTabProps) {
           <p className="text-sm font-semibold text-foreground mb-2">{day}</p>
           <div className="space-y-2">
             {services.slice(0, SHOW_PER_DAY).map((service) => (
-              <Card key={service.id} className="rounded-xl border-0 shadow-none">
-                <CardContent className="px-4 py-3">
+              <Card key={service.id} className="rounded-2xl border-0 bg-white shadow-card">
+                <CardContent className="px-4 py-2 flex items-center justify-between">
+                  <p className="text-sm font-bold text-foreground">{service.type}</p>
                   <p className="text-sm font-semibold text-primary">{service.time}</p>
-                  <p className="text-sm font-bold text-foreground mt-0.5">{service.type}</p>
                 </CardContent>
               </Card>
             ))}

@@ -60,7 +60,8 @@
       "Bash(ls /c/code/one-another1/app/\\\\\\(app\\\\\\)/series/[id]/)",
       "Bash(ls /c/code/one-another1/app/\\\\\\(app\\\\\\)/series/[id]/edit/)",
       "Bash(grep -A 30 if.*result.cacheComponents\\\\\\) node_modules/next/dist/server/config.js)",
-      "Bash(sed 's/^[0-9]* //')"
+      "Bash(sed 's/^[0-9]* //')",
+      "Bash(ls -la /c/code/one-another1/app/\\\\\\(app\\\\\\)/churches/)"
     ]
   },
   "enableAllProjectMcpServers": true,

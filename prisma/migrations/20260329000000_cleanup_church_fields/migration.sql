@@ -1,0 +1,7 @@
+-- AlterTable
+ALTER TABLE "Church" DROP COLUMN "denomination",
+DROP COLUMN "members",
+ALTER COLUMN "address" DROP NOT NULL,
+ALTER COLUMN "phone" DROP NOT NULL,
+ALTER COLUMN "website" DROP NOT NULL,
+ALTER COLUMN "founded" DROP NOT NULL;

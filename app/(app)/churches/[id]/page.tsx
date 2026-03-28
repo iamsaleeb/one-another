@@ -48,26 +48,30 @@ export default async function ChurchDetailPage({ params }: Props) {
 
             {/* Icon Link Buttons */}
             <div className="flex items-center gap-5">
-              <a
-                href={`https://${church.website}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Website"
-              >
-                <div className="flex items-center justify-center w-11 h-11 rounded-full border-2 border-border hover:border-primary transition-colors">
-                  <Globe className="w-5 h-5 text-foreground" />
-                </div>
-              </a>
-              <a
-                href={`https://maps.google.com?q=${encodeURIComponent(church.address)}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Location"
-              >
-                <div className="flex items-center justify-center w-11 h-11 rounded-full border-2 border-border hover:border-primary transition-colors">
-                  <MapPin className="w-5 h-5 text-foreground" />
-                </div>
-              </a>
+              {church.website && (
+                <a
+                  href={`https://${church.website}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Website"
+                >
+                  <div className="flex items-center justify-center w-11 h-11 rounded-full border-2 border-border hover:border-primary transition-colors">
+                    <Globe className="w-5 h-5 text-foreground" />
+                  </div>
+                </a>
+              )}
+              {church.address && (
+                <a
+                  href={`https://maps.google.com?q=${encodeURIComponent(church.address)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Location"
+                >
+                  <div className="flex items-center justify-center w-11 h-11 rounded-full border-2 border-border hover:border-primary transition-colors">
+                    <MapPin className="w-5 h-5 text-foreground" />
+                  </div>
+                </a>
+              )}
               <div className="flex items-center justify-center w-11 h-11 rounded-full border-2 border-border">
                 <Facebook className="w-5 h-5 text-foreground" />
               </div>
@@ -85,7 +89,6 @@ export default async function ChurchDetailPage({ params }: Props) {
             <FollowButton
               churchId={church.id}
               isFollowing={isFollowing}
-              followerCount={church._count.followers}
             />
           </CardContent>
         </Card>

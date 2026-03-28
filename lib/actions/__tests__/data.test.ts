@@ -61,7 +61,6 @@ const sampleEvent = {
 const sampleChurch = {
   id: 'ch-1',
   name: 'Grace Church',
-  denomination: 'Baptist',
   address: '123 Church St',
   serviceTimes: [],
   events: [],
@@ -319,7 +318,7 @@ describe('searchEventsAndChurches', () => {
     )
   })
 
-  it('searches churches across name, denomination, and address fields', async () => {
+  it('searches churches across name and address fields', async () => {
     mockEventFindMany.mockResolvedValue([])
     mockChurchFindMany.mockResolvedValue([])
 
@@ -329,7 +328,6 @@ describe('searchEventsAndChurches', () => {
       where: {
         OR: [
           { name: { contains: 'baptist', mode: 'insensitive' } },
-          { denomination: { contains: 'baptist', mode: 'insensitive' } },
           { address: { contains: 'baptist', mode: 'insensitive' } },
         ],
       },

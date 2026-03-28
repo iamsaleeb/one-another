@@ -86,9 +86,6 @@ export default async function Home({
                               {church.address}
                             </p>
                           </div>
-                          <span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary whitespace-nowrap">
-                            {church.denomination}
-                          </span>
                         </CardContent>
                       </Card>
                     </Link>

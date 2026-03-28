@@ -17,14 +17,12 @@ async function main() {
   const grace = await prisma.church.create({
     data: {
       name: "Grace Community Church",
-      denomination: "Non-denominational",
       address: "123 Main St, Austin, TX",
       phone: "(512) 555-0101",
       website: "gracecommunity.org",
       description:
         "Grace Community Church is a vibrant, Spirit-filled congregation dedicated to knowing God and making Him known. We believe in the transforming power of the Gospel and are committed to building a community of faith, hope, and love. Whether you're just starting your faith journey or have walked with God for years, you'll find a welcoming home here.",
       founded: "1998",
-      members: 850,
       totalEvents: 48,
       serviceTimes: {
         create: [
@@ -39,14 +37,12 @@ async function main() {
   const newLife = await prisma.church.create({
     data: {
       name: "New Life Fellowship",
-      denomination: "Baptist",
       address: "456 Elm Ave, Austin, TX",
       phone: "(512) 555-0182",
       website: "newlifefellowship.org",
       description:
         "New Life Fellowship is a Baptist church rooted in the Word of God and passionate about community transformation. Our mission is to reach the lost, grow the found, and serve the least. We offer ministries for every age and stage of life, from toddlers to seniors.",
       founded: "1985",
-      members: 1200,
       totalEvents: 72,
       serviceTimes: {
         create: [
@@ -61,14 +57,12 @@ async function main() {
   const harvest = await prisma.church.create({
     data: {
       name: "Harvest Church",
-      denomination: "Pentecostal",
       address: "789 Oak Blvd, Austin, TX",
       phone: "(512) 555-0147",
       website: "harvestchurch.com",
       description:
         "Harvest Church is a Pentecostal congregation that believes in the fullness of the Holy Spirit. We worship with passion, preach the Word with boldness, and serve our community with love. Our doors are open to everyone seeking a fresh encounter with God.",
       founded: "2005",
-      members: 620,
       totalEvents: 35,
       serviceTimes: {
         create: [
@@ -82,14 +76,12 @@ async function main() {
   const cityLight = await prisma.church.create({
     data: {
       name: "City Light Church",
-      denomination: "Presbyterian",
       address: "321 Pine Rd, Austin, TX",
       phone: "(512) 555-0193",
       website: "citylightchurch.com",
       description:
         "City Light Church is a Presbyterian congregation committed to being a light in the city. We are a community of believers united by grace, shaped by Scripture, and sent into the world to love and serve. We welcome all people to experience the love of Christ with us.",
       founded: "1952",
-      members: 2400,
       totalEvents: 124,
       serviceTimes: {
         create: [

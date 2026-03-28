@@ -167,8 +167,7 @@ export const searchEventsAndChurches = cache(async function searchEventsAndChurc
   if (query) {
     churchWhere.OR = [
       { name: { contains: query, mode: "insensitive" } },
-      { denomination: { contains: query, mode: "insensitive" } },
-      { address: { contains: query, mode: "insensitive" } },
+{ address: { contains: query, mode: "insensitive" } },
     ];
   }
 

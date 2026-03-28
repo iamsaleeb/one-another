@@ -82,16 +82,14 @@ model VerificationToken {
 }
 
 model Church {
-  id           String @id @default(cuid())
-  name         String
-  denomination String
-  address      String
-  phone        String
-  website      String
-  description  String
-  founded      String
-  members      Int
-  totalEvents  Int
+  id          String  @id @default(cuid())
+  name        String
+  address     String?
+  phone       String?
+  website     String?
+  description String
+  founded     String?
+  totalEvents Int
 
   serviceTimes ServiceTime[]
   followers    ChurchFollower[]

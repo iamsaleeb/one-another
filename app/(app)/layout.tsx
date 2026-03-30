@@ -2,6 +2,7 @@ import { auth } from "@/auth";
 import { BottomNav } from "@/components/bottom-nav";
 import { TopNav } from "@/components/top-nav";
 import { CreateEventFAB } from "@/components/create-event-fab";
+import { PushNotificationProvider } from "@/components/push-notification-provider";
 import { UserRole } from "@prisma/client";
 
 export default async function AppLayout({
@@ -19,6 +20,7 @@ export default async function AppLayout({
       <main className="pb-nav">{children}</main>
       <BottomNav isOrganiser={isOrganiser} isAdmin={isAdmin} />
       <CreateEventFAB isOrganiser={isOrganiser || isAdmin} />
+      <PushNotificationProvider />
     </div>
   );
 }

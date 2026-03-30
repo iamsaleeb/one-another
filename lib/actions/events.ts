@@ -8,6 +8,13 @@ import { UserRole } from "@prisma/client";
 import { createEventSchema, registerEventSchema, type CreateEventInput } from "@/lib/validations/event";
 import { canManageChurch } from "@/lib/permissions";
 import type { ActionResult } from "@/lib/actions/auth";
+import {
+  scheduleEventReminder,
+  cancelEventReminder,
+  cancelAllRemindersForEvent,
+  rescheduleEventReminders,
+} from "@/lib/schedule-notification";
+import { sendPushToUsers } from "@/lib/notifications";
 
 export async function createEventAction(data: CreateEventInput): Promise<ActionResult> {
   const session = await auth();
@@ -37,7 +44,7 @@ export async function createEventAction(data: CreateEventInput): Promise<ActionR
   const allowed = await canManageChurch(session.user.id, session.user.role, churchId);
   if (!allowed) return { error: "You are not assigned to this church." };
 
-  await prisma.event.create({
+  const created = await prisma.event.create({
     data: {
       title,
       datetime,
@@ -55,7 +62,29 @@ export async function createEventAction(data: CreateEventInput): Promise<ActionR
       ...(seriesId ? { seriesId } : {}),
       ...(session?.user?.id ? { createdById: session.user.id } : {}),
     },
+    select: { id: true },
   });
+
+  if (seriesId) {
+    try {
+      const followers = await prisma.seriesFollower.findMany({
+        where: { seriesId },
+        select: { userId: true },
+      });
+      const followerIds = followers.map((f) => f.userId);
+      if (followerIds.length > 0) {
+        await sendPushToUsers(
+          followerIds,
+          "NEW_SERIES_SESSION",
+          "New Session Added",
+          `A new session has been added: ${title}`,
+          { type: "new_session", seriesId, eventId: created.id }
+        );
+      }
+    } catch (err) {
+      console.error("NEW_SERIES_SESSION push failed:", err);
+    }
+  }
 
   revalidatePath("/");
   redirect(seriesId ? `/series/${seriesId}` : "/my-events");
@@ -72,7 +101,7 @@ export async function updateEventAction(id: string, data: CreateEventInput): Pro
 
   const { title, date, time, location, host, tag, description, seriesId, requiresRegistration, capacity, collectPhone, collectNotes, price } = parsed.data;
   let { churchId } = parsed.data;
-  const datetime = new Date(`${date}T${time}`);
+  const newDatetime = new Date(`${date}T${time}`);
 
   if (seriesId) {
     const series = await prisma.series.findUnique({ where: { id: seriesId }, select: { churchId: true } });
@@ -86,11 +115,17 @@ export async function updateEventAction(id: string, data: CreateEventInput): Pro
   const allowed = await canManageChurch(session.user.id, session.user.role, churchId);
   if (!allowed) redirect("/");
 
+  // Read current datetime before updating to detect a reschedule
+  const existing = await prisma.event.findUnique({
+    where: { id },
+    select: { datetime: true, title: true },
+  });
+
   await prisma.event.update({
     where: { id },
     data: {
       title,
-      datetime,
+      datetime: newDatetime,
       location,
       host,
       tag,
@@ -105,6 +140,29 @@ export async function updateEventAction(id: string, data: CreateEventInput): Pro
     },
   });
 
+  if (existing && newDatetime.getTime() !== existing.datetime.getTime()) {
+    try {
+      await rescheduleEventReminders(id, newDatetime);
+
+      const attendees = await prisma.eventAttendee.findMany({
+        where: { eventId: id },
+        select: { userId: true },
+      });
+      const userIds = attendees.map((a) => a.userId);
+      if (userIds.length > 0) {
+        await sendPushToUsers(
+          userIds,
+          "EVENT_POSTPONED",
+          "Event Rescheduled",
+          `${title} has been moved to a new time`,
+          { type: "event_postponed", eventId: id }
+        );
+      }
+    } catch (err) {
+      console.error("EVENT_POSTPONED push failed:", err);
+    }
+  }
+
   revalidatePath("/");
   redirect(`/events/${id}`);
 }
@@ -113,7 +171,10 @@ export async function cancelEventAction(id: string, reason: string): Promise<voi
   const session = await auth();
   if (session?.user?.role !== UserRole.ORGANISER && session?.user?.role !== UserRole.ADMIN) redirect("/");
 
-  const event = await prisma.event.findUnique({ where: { id }, select: { churchId: true } });
+  const event = await prisma.event.findUnique({
+    where: { id },
+    select: { churchId: true, title: true },
+  });
   if (!event) redirect("/organiser");
 
   const allowed = await canManageChurch(session.user.id, session.user.role, event.churchId);
@@ -123,6 +184,27 @@ export async function cancelEventAction(id: string, reason: string): Promise<voi
     where: { id },
     data: { cancelledAt: new Date(), cancellationReason: reason },
   });
+
+  try {
+    await cancelAllRemindersForEvent(id);
+
+    const attendees = await prisma.eventAttendee.findMany({
+      where: { eventId: id },
+      select: { userId: true },
+    });
+    const userIds = attendees.map((a) => a.userId);
+    if (userIds.length > 0) {
+      await sendPushToUsers(
+        userIds,
+        "EVENT_CANCELLED",
+        "Event Cancelled",
+        `${event.title} has been cancelled`,
+        { type: "event_cancelled", eventId: id }
+      );
+    }
+  } catch (err) {
+    console.error("EVENT_CANCELLED push failed:", err);
+  }
 
   revalidatePath("/");
   redirect(`/events/${id}`);
@@ -157,6 +239,12 @@ export async function deleteEventAction(id: string): Promise<void> {
   const allowed = await canManageChurch(session.user.id, session.user.role, event.churchId);
   if (!allowed) redirect("/");
 
+  try {
+    await cancelAllRemindersForEvent(id);
+  } catch (err) {
+    console.error("Failed to cancel reminders before delete:", err);
+  }
+
   await prisma.event.delete({ where: { id } });
   revalidatePath("/");
   redirect("/organiser");
@@ -174,6 +262,19 @@ export async function attendEventAction(eventId: string): Promise<AttendEventSta
     data: { eventId, userId: session.user.id },
   });
 
+  // Schedule an EVENT_REMINDER for this user
+  try {
+    const event = await prisma.event.findUnique({
+      where: { id: eventId },
+      select: { id: true, title: true, datetime: true },
+    });
+    if (event) {
+      await scheduleEventReminder(session.user.id, event);
+    }
+  } catch (err) {
+    console.error("Failed to schedule event reminder:", err);
+  }
+
   revalidatePath(`/events/${eventId}`);
   return {};
 }
@@ -185,6 +286,12 @@ export async function unattendEventAction(eventId: string): Promise<AttendEventS
   await prisma.eventAttendee.delete({
     where: { eventId_userId: { eventId, userId: session.user.id } },
   });
+
+  try {
+    await cancelEventReminder(session.user.id, eventId);
+  } catch (err) {
+    console.error("Failed to cancel event reminder:", err);
+  }
 
   revalidatePath(`/events/${eventId}`);
   return {};
@@ -212,7 +319,7 @@ export async function registerEventAction(
 
   const event = await prisma.event.findUnique({
     where: { id: eventId },
-    select: { capacity: true, _count: { select: { attendees: true } } },
+    select: { id: true, title: true, datetime: true, capacity: true, _count: { select: { attendees: true } } },
   });
 
   if (event?.capacity != null && event._count.attendees >= event.capacity) {
@@ -227,6 +334,19 @@ export async function registerEventAction(
       notes: parsed.data.notes,
     },
   });
+
+  // Schedule an EVENT_REMINDER for this user
+  try {
+    if (event) {
+      await scheduleEventReminder(session.user.id, {
+        id: event.id,
+        title: event.title,
+        datetime: event.datetime,
+      });
+    }
+  } catch (err) {
+    console.error("Failed to schedule event reminder after registration:", err);
+  }
 
   revalidatePath(`/events/${eventId}`);
   return { success: true };

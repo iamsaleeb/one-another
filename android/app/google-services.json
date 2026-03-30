@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "575488789182",
+    "project_id": "another-1edf2",
+    "storage_bucket": "another-1edf2.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:575488789182:android:fef19ae2cf2e4570286cef",
+        "android_client_info": {
+          "package_name": "com.oneanother.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBuVQgk7sBl651MRlaS46jm6PtY0cp-r94"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

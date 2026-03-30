@@ -13,5 +13,6 @@ export function useIsDetailPage(): boolean {
     id !== null;
   const isCreatePage =
     pathname === "/events/create" || pathname === "/series/create";
-  return isDetailPage || isCreatePage;
+  const isProfilePage = pathname.startsWith("/profile");
+  return isDetailPage || isCreatePage || isProfilePage;
 }

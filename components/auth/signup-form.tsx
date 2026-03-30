@@ -155,13 +155,13 @@ export function SignupForm({
       </Card>
       <div className="text-balance text-center text-xs text-muted-foreground">
         By continuing, you agree to our{" "}
-        <a href="#" className="underline underline-offset-4 hover:text-primary">
+        <Link href="/terms" target="_blank" className="underline underline-offset-4 hover:text-primary">
           Terms of Service
-        </a>{" "}
+        </Link>{" "}
         and{" "}
-        <a href="#" className="underline underline-offset-4 hover:text-primary">
+        <Link href="/privacy" target="_blank" className="underline underline-offset-4 hover:text-primary">
           Privacy Policy
-        </a>
+        </Link>
         .
       </div>
     </div>

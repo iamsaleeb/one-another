@@ -79,12 +79,22 @@ export async function updateNotificationPreferenceAction(
     return { error: "Invalid notification type" };
   }
 
-  const jsonConfig = config as Prisma.InputJsonValue | undefined;
-  await prisma.notificationPreference.upsert({
-    where: { userId_type: { userId: session.user.id, type } },
-    update: { enabled, config: jsonConfig },
-    create: { userId: session.user.id, type, enabled, config: jsonConfig },
-  });
+  if (enabled && !config) {
+    // Nothing non-default to persist — delete the row so absence correctly
+    // signals "enabled" (true opt-out model). deleteMany is a no-op when absent.
+    await prisma.notificationPreference.deleteMany({
+      where: { userId: session.user.id, type },
+    });
+  } else {
+    // Disabled, or re-enabled with a custom config (e.g. hoursBeforeEvent) that
+    // needs to be remembered — persist the row.
+    const jsonConfig = config as Prisma.InputJsonValue | undefined;
+    await prisma.notificationPreference.upsert({
+      where: { userId_type: { userId: session.user.id, type } },
+      update: { enabled, config: jsonConfig },
+      create: { userId: session.user.id, type, enabled, config: jsonConfig },
+    });
+  }
 
   // If the user changed their EVENT_REMINDER timing, update pending scheduled notifications
   if (type === "EVENT_REMINDER" && typeof config?.hoursBeforeEvent === "number") {

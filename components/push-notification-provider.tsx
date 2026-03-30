@@ -36,11 +36,15 @@ export function PushNotificationProvider() {
                 ? (await FCM.getToken()).token
                 : nativeToken.value;
 
-            await fetch("/api/push/register-token", {
+            const res = await fetch("/api/push/register-token", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ token: fcmToken, platform }),
             });
+            if (!res.ok) {
+              const body = await res.text().catch(() => "(unreadable)");
+              console.error(`Failed to register push token: ${res.status} ${res.statusText} — ${body}`);
+            }
           } catch (err) {
             console.error("Failed to register push token:", err);
           }

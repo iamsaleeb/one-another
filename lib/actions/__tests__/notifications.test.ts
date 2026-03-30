@@ -11,6 +11,7 @@ jest.mock('@/lib/db', () => ({
     notificationPreference: {
       findMany: jest.fn(),
       upsert: jest.fn(),
+      deleteMany: jest.fn(),
     },
   },
 }))
@@ -31,12 +32,15 @@ import {
 const mockAuth = auth as jest.Mock
 const mockPrefFindMany = prisma.notificationPreference.findMany as jest.Mock
 const mockPrefUpsert = prisma.notificationPreference.upsert as jest.Mock
+const mockPrefDeleteMany = prisma.notificationPreference.deleteMany as jest.Mock
 const mockUpdateReminderSchedule = updateReminderScheduleForUser as jest.Mock
 const mockRevalidatePath = revalidatePath as jest.Mock
 
 beforeEach(() => {
   jest.clearAllMocks()
   mockAuth.mockResolvedValue({ user: { id: 'user-1' } })
+  mockPrefUpsert.mockResolvedValue({})
+  mockPrefDeleteMany.mockResolvedValue({ count: 0 })
 })
 
 describe('getNotificationPreferencesAction', () => {
@@ -86,45 +90,68 @@ describe('getNotificationPreferencesAction', () => {
 })
 
 describe('updateNotificationPreferenceAction', () => {
-  it('upserts a preference and revalidates the notifications path', async () => {
-    mockPrefUpsert.mockResolvedValue({})
+  describe('opt-out model: enabled=true with no config', () => {
+    it('deletes the row (absence means enabled) and revalidates', async () => {
+      const result = await updateNotificationPreferenceAction('EVENT_CANCELLED', true)
 
-    const result = await updateNotificationPreferenceAction('EVENT_CANCELLED', false)
-
-    expect(result).toEqual({})
-    expect(mockPrefUpsert).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: { userId_type: { userId: 'user-1', type: 'EVENT_CANCELLED' } },
-        update: { enabled: false, config: undefined },
-        create: expect.objectContaining({ userId: 'user-1', type: 'EVENT_CANCELLED', enabled: false }),
+      expect(result).toEqual({})
+      expect(mockPrefDeleteMany).toHaveBeenCalledWith({
+        where: { userId: 'user-1', type: 'EVENT_CANCELLED' },
       })
-    )
-    expect(mockRevalidatePath).toHaveBeenCalledWith('/profile/notifications')
+      expect(mockPrefUpsert).not.toHaveBeenCalled()
+      expect(mockRevalidatePath).toHaveBeenCalledWith('/profile/notifications')
+    })
+
+    it('does not call updateReminderScheduleForUser when re-enabling with no config', async () => {
+      await updateNotificationPreferenceAction('EVENT_REMINDER', true)
+
+      expect(mockUpdateReminderSchedule).not.toHaveBeenCalled()
+    })
   })
 
-  it('calls updateReminderScheduleForUser when EVENT_REMINDER hoursBeforeEvent changes', async () => {
-    mockPrefUpsert.mockResolvedValue({})
-    mockUpdateReminderSchedule.mockResolvedValue(undefined)
+  describe('persisted row: disabled or enabled with custom config', () => {
+    it('upserts when disabling a notification type', async () => {
+      const result = await updateNotificationPreferenceAction('EVENT_CANCELLED', false)
 
-    await updateNotificationPreferenceAction('EVENT_REMINDER', true, { hoursBeforeEvent: 4 })
+      expect(result).toEqual({})
+      expect(mockPrefUpsert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { userId_type: { userId: 'user-1', type: 'EVENT_CANCELLED' } },
+          update: { enabled: false, config: undefined },
+          create: expect.objectContaining({ userId: 'user-1', type: 'EVENT_CANCELLED', enabled: false }),
+        })
+      )
+      expect(mockPrefDeleteMany).not.toHaveBeenCalled()
+    })
 
-    expect(mockUpdateReminderSchedule).toHaveBeenCalledWith('user-1', 4)
-  })
+    it('upserts when re-enabling with a custom config', async () => {
+      await updateNotificationPreferenceAction('EVENT_REMINDER', true, { hoursBeforeEvent: 4 })
 
-  it('does not call updateReminderScheduleForUser for non-EVENT_REMINDER types', async () => {
-    mockPrefUpsert.mockResolvedValue({})
+      expect(mockPrefUpsert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          update: { enabled: true, config: { hoursBeforeEvent: 4 } },
+        })
+      )
+      expect(mockPrefDeleteMany).not.toHaveBeenCalled()
+    })
 
-    await updateNotificationPreferenceAction('EVENT_CANCELLED', false)
+    it('calls updateReminderScheduleForUser when EVENT_REMINDER hoursBeforeEvent changes', async () => {
+      await updateNotificationPreferenceAction('EVENT_REMINDER', true, { hoursBeforeEvent: 4 })
 
-    expect(mockUpdateReminderSchedule).not.toHaveBeenCalled()
-  })
+      expect(mockUpdateReminderSchedule).toHaveBeenCalledWith('user-1', 4)
+    })
 
-  it('does not call updateReminderScheduleForUser when config has no hoursBeforeEvent', async () => {
-    mockPrefUpsert.mockResolvedValue({})
+    it('does not call updateReminderScheduleForUser for non-EVENT_REMINDER types', async () => {
+      await updateNotificationPreferenceAction('EVENT_CANCELLED', false)
 
-    await updateNotificationPreferenceAction('EVENT_REMINDER', false)
+      expect(mockUpdateReminderSchedule).not.toHaveBeenCalled()
+    })
 
-    expect(mockUpdateReminderSchedule).not.toHaveBeenCalled()
+    it('does not call updateReminderScheduleForUser when config has no hoursBeforeEvent', async () => {
+      await updateNotificationPreferenceAction('EVENT_REMINDER', false)
+
+      expect(mockUpdateReminderSchedule).not.toHaveBeenCalled()
+    })
   })
 
   it('returns an error when there is no session', async () => {
@@ -134,27 +161,14 @@ describe('updateNotificationPreferenceAction', () => {
 
     expect(result.error).toBe('Unauthorized')
     expect(mockPrefUpsert).not.toHaveBeenCalled()
+    expect(mockPrefDeleteMany).not.toHaveBeenCalled()
   })
 
   it('returns an error for an invalid notification type', async () => {
-    const result = await updateNotificationPreferenceAction(
-      'INVALID_TYPE' as never,
-      true
-    )
+    const result = await updateNotificationPreferenceAction('INVALID_TYPE' as never, true)
 
     expect(result.error).toBe('Invalid notification type')
     expect(mockPrefUpsert).not.toHaveBeenCalled()
-  })
-
-  it('passes config to upsert when provided', async () => {
-    mockPrefUpsert.mockResolvedValue({})
-
-    await updateNotificationPreferenceAction('EVENT_REMINDER', true, { hoursBeforeEvent: 1 })
-
-    expect(mockPrefUpsert).toHaveBeenCalledWith(
-      expect.objectContaining({
-        update: { enabled: true, config: { hoursBeforeEvent: 1 } },
-      })
-    )
+    expect(mockPrefDeleteMany).not.toHaveBeenCalled()
   })
 })

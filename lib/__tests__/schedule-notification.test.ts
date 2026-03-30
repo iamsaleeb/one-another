@@ -4,9 +4,8 @@ jest.mock('@/lib/db', () => ({
       findUnique: jest.fn(),
     },
     scheduledNotification: {
-      findFirst: jest.fn(),
       findMany: jest.fn(),
-      create: jest.fn(),
+      upsert: jest.fn(),
       update: jest.fn(),
       updateMany: jest.fn(),
     },
@@ -23,9 +22,8 @@ import {
 } from '@/lib/schedule-notification'
 
 const mockPrefFindUnique = prisma.notificationPreference.findUnique as jest.Mock
-const mockSnFindFirst = prisma.scheduledNotification.findFirst as jest.Mock
 const mockSnFindMany = prisma.scheduledNotification.findMany as jest.Mock
-const mockSnCreate = prisma.scheduledNotification.create as jest.Mock
+const mockSnUpsert = prisma.scheduledNotification.upsert as jest.Mock
 const mockSnUpdate = prisma.scheduledNotification.update as jest.Mock
 const mockSnUpdateMany = prisma.scheduledNotification.updateMany as jest.Mock
 
@@ -39,28 +37,30 @@ const futureEvent = {
 beforeEach(() => {
   jest.clearAllMocks()
   mockPrefFindUnique.mockResolvedValue(null) // default: no stored preference
-  mockSnFindFirst.mockResolvedValue(null)    // default: no existing reminder
-  mockSnCreate.mockResolvedValue({})
+  mockSnUpsert.mockResolvedValue({})
   mockSnUpdate.mockResolvedValue({})
   mockSnUpdateMany.mockResolvedValue({})
   mockSnFindMany.mockResolvedValue([])
 })
 
 describe('scheduleEventReminder', () => {
-  it('creates a reminder with the default 2-hour timing when no preference exists', async () => {
+  it('upserts a reminder with the default 2-hour timing when no preference exists', async () => {
     await scheduleEventReminder('user-1', futureEvent)
 
-    expect(mockSnCreate).toHaveBeenCalledWith({
-      data: {
+    expect(mockSnUpsert).toHaveBeenCalledWith({
+      where: { userId_type_eventId: { userId: 'user-1', type: 'EVENT_REMINDER', eventId: 'evt-1' } },
+      update: expect.objectContaining({ scheduledFor: expect.any(Date) }),
+      create: expect.objectContaining({
         userId: 'user-1',
         type: 'EVENT_REMINDER',
+        eventId: 'evt-1',
         scheduledFor: expect.any(Date),
         payload: expect.objectContaining({
           title: 'Event Reminder',
           body: 'Sunday Worship starts in 2 hours',
           data: expect.objectContaining({ eventId: 'evt-1' }),
         }),
-      },
+      }),
     })
   })
 
@@ -69,11 +69,13 @@ describe('scheduleEventReminder', () => {
 
     await scheduleEventReminder('user-1', futureEvent)
 
-    expect(mockSnCreate).toHaveBeenCalledWith({
-      data: expect.objectContaining({
-        payload: expect.objectContaining({ body: 'Sunday Worship starts in 4 hours' }),
-      }),
-    })
+    expect(mockSnUpsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        create: expect.objectContaining({
+          payload: expect.objectContaining({ body: 'Sunday Worship starts in 4 hours' }),
+        }),
+      })
+    )
   })
 
   it('uses "1 hour" (singular) when hoursBeforeEvent is 1', async () => {
@@ -81,25 +83,29 @@ describe('scheduleEventReminder', () => {
 
     await scheduleEventReminder('user-1', futureEvent)
 
-    expect(mockSnCreate).toHaveBeenCalledWith({
-      data: expect.objectContaining({
-        payload: expect.objectContaining({ body: 'Sunday Worship starts in 1 hour' }),
-      }),
-    })
+    expect(mockSnUpsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        create: expect.objectContaining({
+          payload: expect.objectContaining({ body: 'Sunday Worship starts in 1 hour' }),
+        }),
+      })
+    )
   })
 
   it('stores the event datetime in the payload data', async () => {
     await scheduleEventReminder('user-1', futureEvent)
 
-    expect(mockSnCreate).toHaveBeenCalledWith({
-      data: expect.objectContaining({
-        payload: expect.objectContaining({
-          data: expect.objectContaining({
-            eventDatetime: futureEvent.datetime.toISOString(),
+    expect(mockSnUpsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        create: expect.objectContaining({
+          payload: expect.objectContaining({
+            data: expect.objectContaining({
+              eventDatetime: futureEvent.datetime.toISOString(),
+            }),
           }),
         }),
-      }),
-    })
+      })
+    )
   })
 
   it('does nothing when the reminder time has already passed', async () => {
@@ -112,23 +118,17 @@ describe('scheduleEventReminder', () => {
 
     await scheduleEventReminder('user-1', soonEvent)
 
-    expect(mockSnCreate).not.toHaveBeenCalled()
-    expect(mockSnUpdate).not.toHaveBeenCalled()
+    expect(mockSnUpsert).not.toHaveBeenCalled()
   })
 
-  it('updates an existing pending reminder instead of creating a duplicate', async () => {
-    mockSnFindFirst.mockResolvedValue({ id: 'sn-existing' })
-
+  it('clears cancelledAt on update so re-attending restores the reminder', async () => {
     await scheduleEventReminder('user-1', futureEvent)
 
-    expect(mockSnUpdate).toHaveBeenCalledWith({
-      where: { id: 'sn-existing' },
-      data: expect.objectContaining({
-        scheduledFor: expect.any(Date),
-        payload: expect.any(Object),
-      }),
-    })
-    expect(mockSnCreate).not.toHaveBeenCalled()
+    expect(mockSnUpsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        update: expect.objectContaining({ cancelledAt: null }),
+      })
+    )
   })
 
   it('falls back to default when stored config has no hoursBeforeEvent', async () => {
@@ -136,11 +136,13 @@ describe('scheduleEventReminder', () => {
 
     await scheduleEventReminder('user-1', futureEvent)
 
-    expect(mockSnCreate).toHaveBeenCalledWith({
-      data: expect.objectContaining({
-        payload: expect.objectContaining({ body: 'Sunday Worship starts in 2 hours' }),
-      }),
-    })
+    expect(mockSnUpsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        create: expect.objectContaining({
+          payload: expect.objectContaining({ body: 'Sunday Worship starts in 2 hours' }),
+        }),
+      })
+    )
   })
 
   it('falls back to default when stored config hoursBeforeEvent is not a number', async () => {
@@ -148,66 +150,33 @@ describe('scheduleEventReminder', () => {
 
     await scheduleEventReminder('user-1', futureEvent)
 
-    expect(mockSnCreate).toHaveBeenCalledWith({
-      data: expect.objectContaining({
-        payload: expect.objectContaining({ body: 'Sunday Worship starts in 2 hours' }),
-      }),
-    })
+    expect(mockSnUpsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        create: expect.objectContaining({
+          payload: expect.objectContaining({ body: 'Sunday Worship starts in 2 hours' }),
+        }),
+      })
+    )
   })
 })
 
 describe('cancelEventReminder', () => {
-  it('does nothing when no pending reminders exist', async () => {
-    mockSnFindMany.mockResolvedValue([])
-    await cancelEventReminder('user-1', 'evt-1')
-    expect(mockSnUpdateMany).not.toHaveBeenCalled()
-  })
-
-  it('sets cancelledAt on pending reminders for the given user and event', async () => {
-    mockSnFindMany.mockResolvedValue([{ id: 'sn-1' }, { id: 'sn-2' }])
-
+  it('sets cancelledAt using the eventId column filter', async () => {
     await cancelEventReminder('user-1', 'evt-1')
 
-    expect(mockSnFindMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: expect.objectContaining({
-          userId: 'user-1',
-          type: 'EVENT_REMINDER',
-          sentAt: null,
-          cancelledAt: null,
-        }),
-      })
-    )
     expect(mockSnUpdateMany).toHaveBeenCalledWith({
-      where: { id: { in: ['sn-1', 'sn-2'] } },
+      where: { userId: 'user-1', type: 'EVENT_REMINDER', eventId: 'evt-1', sentAt: null, cancelledAt: null },
       data: { cancelledAt: expect.any(Date) },
     })
   })
 })
 
 describe('cancelAllRemindersForEvent', () => {
-  it('does nothing when no pending reminders exist', async () => {
-    mockSnFindMany.mockResolvedValue([])
-    await cancelAllRemindersForEvent('evt-1')
-    expect(mockSnUpdateMany).not.toHaveBeenCalled()
-  })
-
-  it('sets cancelledAt on all pending reminders for the event', async () => {
-    mockSnFindMany.mockResolvedValue([{ id: 'sn-3' }])
-
+  it('sets cancelledAt for all attendees using the eventId column filter', async () => {
     await cancelAllRemindersForEvent('evt-1')
 
-    expect(mockSnFindMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: expect.objectContaining({
-          type: 'EVENT_REMINDER',
-          sentAt: null,
-          cancelledAt: null,
-        }),
-      })
-    )
     expect(mockSnUpdateMany).toHaveBeenCalledWith({
-      where: { id: { in: ['sn-3'] } },
+      where: { type: 'EVENT_REMINDER', eventId: 'evt-1', sentAt: null, cancelledAt: null },
       data: { cancelledAt: expect.any(Date) },
     })
   })
@@ -223,7 +192,7 @@ describe('rescheduleEventReminders', () => {
         payload: {
           title: 'Event Reminder',
           body: 'Sunday Worship starts in 2 hours',
-          data: { type: 'event_reminder', eventId: 'evt-1', eventDatetime: new Date().toISOString() },
+          data: { type: 'event_reminder', eventId: 'evt-1', eventTitle: 'Sunday Worship', eventDatetime: new Date().toISOString() },
         },
       },
     ])
@@ -232,6 +201,11 @@ describe('rescheduleEventReminders', () => {
 
     await rescheduleEventReminders('evt-1', newDatetime)
 
+    expect(mockSnFindMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ eventId: 'evt-1' }),
+      })
+    )
     expect(mockSnUpdate).toHaveBeenCalledWith({
       where: { id: 'sn-1' },
       data: expect.objectContaining({
@@ -261,7 +235,7 @@ describe('updateReminderScheduleForUser', () => {
         payload: {
           title: 'Event Reminder',
           body: 'My Event starts in 2 hours',
-          data: { eventDatetime: eventDatetime.toISOString() },
+          data: { eventTitle: 'My Event', eventDatetime: eventDatetime.toISOString() },
         },
       },
     ])
@@ -287,7 +261,7 @@ describe('updateReminderScheduleForUser', () => {
         payload: {
           title: 'Event Reminder',
           body: 'My Event starts in 2 hours',
-          data: { eventDatetime: eventDatetime.toISOString() },
+          data: { eventTitle: 'My Event', eventDatetime: eventDatetime.toISOString() },
         },
       },
     ])
@@ -311,7 +285,7 @@ describe('updateReminderScheduleForUser', () => {
         payload: {
           title: 'Event Reminder',
           body: 'My Event starts in 2 hours',
-          data: { eventDatetime: eventDatetime.toISOString() },
+          data: { eventTitle: 'My Event', eventDatetime: eventDatetime.toISOString() },
         },
       },
     ])
@@ -319,6 +293,30 @@ describe('updateReminderScheduleForUser', () => {
     await updateReminderScheduleForUser('user-1', 4)
 
     expect(mockSnUpdate).not.toHaveBeenCalled()
+  })
+
+  it('builds the new body from eventTitle in payload.data, not the old body string', async () => {
+    const eventDatetime = new Date(Date.now() + 48 * 60 * 60 * 1000)
+    mockSnFindMany.mockResolvedValue([
+      {
+        id: 'sn-1',
+        payload: {
+          title: 'Event Reminder',
+          body: 'stale or malformed body text',
+          data: { eventTitle: 'Evening Prayer', eventDatetime: eventDatetime.toISOString() },
+        },
+      },
+    ])
+
+    await updateReminderScheduleForUser('user-1', 3)
+
+    expect(mockSnUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          payload: expect.objectContaining({ body: 'Evening Prayer starts in 3 hours' }),
+        }),
+      })
+    )
   })
 
   it('does nothing when there are no pending reminders', async () => {

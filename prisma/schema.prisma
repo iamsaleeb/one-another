@@ -222,12 +222,15 @@ model PushToken {
   platform  String
   updatedAt DateTime @updatedAt
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, platform])
 }
 
 model ScheduledNotification {
   id           String    @id @default(cuid())
   userId       String
   type         String
+  eventId      String?
   scheduledFor DateTime
   sentAt       DateTime?
   cancelledAt  DateTime?
@@ -235,6 +238,7 @@ model ScheduledNotification {
   user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt    DateTime  @default(now())
 
+  @@unique([userId, type, eventId])
   @@index([scheduledFor, sentAt, cancelledAt])
 }
 

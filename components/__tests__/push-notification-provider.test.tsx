@@ -207,6 +207,32 @@ describe('PushNotificationProvider', () => {
     )
   })
 
+  it('logs an error with status and body when token registration returns a non-ok response', async () => {
+    const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {})
+    Capacitor.isNativePlatform.mockReturnValue(true)
+    Capacitor.getPlatform.mockReturnValue('android')
+    mockCheckPermissions.mockResolvedValue({ receive: 'granted' })
+    mockRegister.mockResolvedValue(undefined)
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: false,
+      status: 401,
+      statusText: 'Unauthorized',
+      text: jest.fn().mockResolvedValue('{"error":"Unauthorized"}'),
+    } as unknown as Response)
+
+    render(<PushNotificationProvider />)
+    await new Promise((resolve) => setTimeout(resolve, 0))
+
+    const registrationCall = mockAddListener.mock.calls.find(([event]) => event === 'registration')
+    const callback = registrationCall?.[1] as (t: { value: string }) => Promise<void>
+    await callback({ value: 'android-fcm-token' })
+
+    expect(consoleSpy).toHaveBeenCalledWith(
+      expect.stringContaining('401')
+    )
+    consoleSpy.mockRestore()
+  })
+
   it('shows a toast when a foreground notification is received', async () => {
     const { toast } = jest.requireMock('sonner') as { toast: jest.Mock }
     Capacitor.isNativePlatform.mockReturnValue(true)

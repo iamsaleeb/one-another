@@ -8,10 +8,19 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const body = await request.json();
-  const { token, platform } = body;
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+  const { token, platform } = body as Record<string, unknown>;
 
-  if (!token || !platform || !["android", "ios"].includes(platform)) {
+  if (
+    typeof token !== "string" ||
+    typeof platform !== "string" ||
+    !["android", "ios"].includes(platform)
+  ) {
     return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
   }
 

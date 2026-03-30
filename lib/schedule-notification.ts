@@ -27,7 +27,8 @@ async function getHoursBeforeEvent(userId: string): Promise<number> {
 
 /**
  * Schedule an EVENT_REMINDER for a user attending an event.
- * Upserts by (userId, eventId) so attending twice never creates duplicates.
+ * The unique constraint on (userId, type, eventId) guarantees exactly one
+ * pending reminder per user per event — attending twice is safe.
  * Does nothing if the reminder time has already passed.
  */
 export async function scheduleEventReminder(userId: string, event: EventRef): Promise<void> {
@@ -39,40 +40,23 @@ export async function scheduleEventReminder(userId: string, event: EventRef): Pr
     return;
   }
 
-  // Upsert: find an existing pending reminder for this user+event and update it,
-  // or create a new one. We identify the record via the eventId stored in payload.
-  const existing = await prisma.scheduledNotification.findFirst({
-    where: {
-      userId,
-      type: "EVENT_REMINDER",
-      sentAt: null,
-      cancelledAt: null,
-      payload: { path: ["data", "eventId"], equals: event.id },
-    },
-    select: { id: true },
-  });
-
   const payload = {
     title: "Event Reminder",
     body: `${event.title} starts in ${hoursBeforeEvent === 1 ? "1 hour" : `${hoursBeforeEvent} hours`}`,
     data: {
       type: "event_reminder",
       eventId: event.id,
+      eventTitle: event.title,
       // Store the raw event datetime so preferences can recalculate scheduledFor later
       eventDatetime: event.datetime.toISOString(),
     },
   };
 
-  if (existing) {
-    await prisma.scheduledNotification.update({
-      where: { id: existing.id },
-      data: { scheduledFor, payload },
-    });
-  } else {
-    await prisma.scheduledNotification.create({
-      data: { userId, type: "EVENT_REMINDER", scheduledFor, payload },
-    });
-  }
+  await prisma.scheduledNotification.upsert({
+    where: { userId_type_eventId: { userId, type: "EVENT_REMINDER", eventId: event.id } },
+    update: { scheduledFor, payload, cancelledAt: null },
+    create: { userId, type: "EVENT_REMINDER", eventId: event.id, scheduledFor, payload },
+  });
 }
 
 /**
@@ -80,21 +64,8 @@ export async function scheduleEventReminder(userId: string, event: EventRef): Pr
  * Called when a user unattends an event.
  */
 export async function cancelEventReminder(userId: string, eventId: string): Promise<void> {
-  // findMany + updateMany by id: JSON path filters are not reliably supported
-  // in Prisma's updateMany where clause, so we resolve ids first.
-  const matching = await prisma.scheduledNotification.findMany({
-    where: {
-      userId,
-      type: "EVENT_REMINDER",
-      sentAt: null,
-      cancelledAt: null,
-      payload: { path: ["data", "eventId"], equals: eventId },
-    },
-    select: { id: true },
-  });
-  if (matching.length === 0) return;
   await prisma.scheduledNotification.updateMany({
-    where: { id: { in: matching.map((n) => n.id) } },
+    where: { userId, type: "EVENT_REMINDER", eventId, sentAt: null, cancelledAt: null },
     data: { cancelledAt: new Date() },
   });
 }
@@ -104,18 +75,8 @@ export async function cancelEventReminder(userId: string, eventId: string): Prom
  * Called when an event is cancelled or deleted.
  */
 export async function cancelAllRemindersForEvent(eventId: string): Promise<void> {
-  const matching = await prisma.scheduledNotification.findMany({
-    where: {
-      type: "EVENT_REMINDER",
-      sentAt: null,
-      cancelledAt: null,
-      payload: { path: ["data", "eventId"], equals: eventId },
-    },
-    select: { id: true },
-  });
-  if (matching.length === 0) return;
   await prisma.scheduledNotification.updateMany({
-    where: { id: { in: matching.map((n) => n.id) } },
+    where: { type: "EVENT_REMINDER", eventId, sentAt: null, cancelledAt: null },
     data: { cancelledAt: new Date() },
   });
 }
@@ -127,12 +88,7 @@ export async function cancelAllRemindersForEvent(eventId: string): Promise<void>
  */
 export async function rescheduleEventReminders(eventId: string, newDatetime: Date): Promise<void> {
   const pending = await prisma.scheduledNotification.findMany({
-    where: {
-      type: "EVENT_REMINDER",
-      sentAt: null,
-      cancelledAt: null,
-      payload: { path: ["data", "eventId"], equals: eventId },
-    },
+    where: { type: "EVENT_REMINDER", eventId, sentAt: null, cancelledAt: null },
     select: { id: true, userId: true, payload: true },
   });
 
@@ -196,7 +152,7 @@ export async function updateReminderScheduleForUser(userId: string, newHoursBefo
         scheduledFor: newScheduledFor,
         payload: {
           ...payload,
-          body: `${payload.body.split(" starts")[0]} starts in ${newHoursBeforeEvent === 1 ? "1 hour" : `${newHoursBeforeEvent} hours`}`,
+          body: `${payload.data.eventTitle} starts in ${newHoursBeforeEvent === 1 ? "1 hour" : `${newHoursBeforeEvent} hours`}`,
         },
       },
     });

@@ -18,7 +18,18 @@ const mockGetApps = getApps as jest.Mock
 const mockGetApp = getApp as jest.Mock
 const mockGetMessaging = getMessaging as jest.Mock
 
-beforeEach(() => jest.clearAllMocks())
+beforeEach(() => {
+  jest.clearAllMocks()
+  process.env.FIREBASE_PROJECT_ID = 'test-project'
+  process.env.FIREBASE_CLIENT_EMAIL = 'test@test.iam.gserviceaccount.com'
+  process.env.FIREBASE_PRIVATE_KEY = 'test-private-key'
+})
+
+afterEach(() => {
+  delete process.env.FIREBASE_PROJECT_ID
+  delete process.env.FIREBASE_CLIENT_EMAIL
+  delete process.env.FIREBASE_PRIVATE_KEY
+})
 
 describe('getFirebaseAdmin', () => {
   it('initializes the Firebase app when no apps exist', () => {
@@ -42,5 +53,16 @@ describe('getFirebaseAdmin', () => {
 
     expect(mockInitializeApp).not.toHaveBeenCalled()
     expect(mockGetMessaging).toHaveBeenCalledWith(mockApp)
+  })
+
+  it('throws a clear error listing missing env vars when credentials are absent', () => {
+    mockGetApps.mockReturnValue([])
+    delete process.env.FIREBASE_PROJECT_ID
+    delete process.env.FIREBASE_CLIENT_EMAIL
+
+    expect(() => getFirebaseAdmin()).toThrow(
+      'Firebase Admin SDK is missing required environment variables: FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL'
+    )
+    expect(mockInitializeApp).not.toHaveBeenCalled()
   })
 })

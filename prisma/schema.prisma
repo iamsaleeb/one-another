@@ -37,6 +37,9 @@ model User {
   seriesFollows    SeriesFollower[]
   churchOrganisers ChurchOrganiser[] @relation("UserChurches")
   adminChurches    ChurchAdmin[]     @relation("UserAdminChurches")
+  pushTokens              PushToken[]
+  scheduledNotifications  ScheduledNotification[]
+  notificationPreferences NotificationPreference[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -210,4 +213,38 @@ model SeriesFollower {
   createdAt DateTime @default(now())
 
   @@unique([seriesId, userId])
+}
+
+model PushToken {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  platform  String
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model ScheduledNotification {
+  id           String    @id @default(cuid())
+  userId       String
+  type         String
+  scheduledFor DateTime
+  sentAt       DateTime?
+  cancelledAt  DateTime?
+  payload      Json
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt    DateTime  @default(now())
+
+  @@index([scheduledFor, sentAt, cancelledAt])
+}
+
+model NotificationPreference {
+  id      String  @id @default(cuid())
+  userId  String
+  type    String
+  enabled Boolean @default(true)
+  config  Json?
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, type])
 }

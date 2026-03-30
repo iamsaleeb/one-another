@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { auth } from "@/auth";
 import { signOutAction } from "@/lib/actions/auth";
 import { Button } from "@/components/ui/button";
-import { LogOut, Mail, User } from "lucide-react";
+import { Bell, ChevronRight, LogOut, Mail, User } from "lucide-react";
 import { getInitials } from "@/lib/utils";
 import { InfoField } from "@/components/ui/info-field";
 import { HeroBanner } from "@/components/ui/hero-banner";
@@ -46,6 +47,19 @@ export default async function ProfilePage() {
             </InfoField>
           </div>
         </div>
+
+        {/* Notification settings */}
+        <Link href="/profile/notifications">
+          <div className="rounded-2xl bg-white shadow-card overflow-hidden mb-6">
+            <div className="px-4 py-3 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Bell className="w-3.5 h-3.5 text-primary" />
+                <span className="text-sm font-medium">Notification Settings</span>
+              </div>
+              <ChevronRight className="w-4 h-4 text-muted-foreground" />
+            </div>
+          </div>
+        </Link>
 
         {/* Sign out */}
         <form action={signOutAction}>

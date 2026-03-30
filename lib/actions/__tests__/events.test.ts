@@ -21,8 +21,34 @@ jest.mock('@/lib/db', () => ({
     eventAttendee: {
       create: jest.fn(),
       delete: jest.fn(),
+      findMany: jest.fn(),
+    },
+    seriesFollower: {
+      findMany: jest.fn(),
+    },
+    scheduledNotification: {
+      findFirst: jest.fn(),
+      findMany: jest.fn(),
+      create: jest.fn(),
+      update: jest.fn(),
+      updateMany: jest.fn(),
+    },
+    notificationPreference: {
+      findUnique: jest.fn(),
+      findMany: jest.fn(),
     },
   },
+}))
+
+jest.mock('@/lib/schedule-notification', () => ({
+  scheduleEventReminder: jest.fn(),
+  cancelEventReminder: jest.fn(),
+  cancelAllRemindersForEvent: jest.fn(),
+  rescheduleEventReminders: jest.fn(),
+}))
+
+jest.mock('@/lib/notifications', () => ({
+  sendPushToUsers: jest.fn(),
 }))
 
 jest.mock('@/auth', () => ({
@@ -89,19 +115,21 @@ describe('createEventAction', () => {
 
     await createEventAction(validData)
 
-    expect(mockEventCreate).toHaveBeenCalledWith({
-      data: expect.objectContaining({
-        title: 'Sunday Worship',
-        datetime: new Date('2026-04-06T09:00'),
-        location: 'Main Hall',
-        host: 'Pastor John',
-        tag: 'Worship',
-        description: 'Weekly Sunday service',
-        isPast: false,
-        churchId: 'ch-1',
-        createdById: 'user-1',
-      }),
-    })
+    expect(mockEventCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          title: 'Sunday Worship',
+          datetime: new Date('2026-04-06T09:00'),
+          location: 'Main Hall',
+          host: 'Pastor John',
+          tag: 'Worship',
+          description: 'Weekly Sunday service',
+          isPast: false,
+          churchId: 'ch-1',
+          createdById: 'user-1',
+        }),
+      })
+    )
     expect(mockRedirect).toHaveBeenCalledWith('/my-events')
   })
 
@@ -115,9 +143,11 @@ describe('createEventAction', () => {
       where: { id: 'ser-1' },
       select: { churchId: true },
     })
-    expect(mockEventCreate).toHaveBeenCalledWith({
-      data: expect.objectContaining({ seriesId: 'ser-1', churchId: 'ch-1' }),
-    })
+    expect(mockEventCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ seriesId: 'ser-1', churchId: 'ch-1' }),
+      })
+    )
     expect(mockRedirect).toHaveBeenCalledWith('/series/ser-1')
   })
 
@@ -127,9 +157,11 @@ describe('createEventAction', () => {
 
     await createEventAction({ ...validData, seriesId: 'ser-1', churchId: 'ch-submitted' })
 
-    expect(mockEventCreate).toHaveBeenCalledWith({
-      data: expect.objectContaining({ churchId: 'ch-from-series' }),
-    })
+    expect(mockEventCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ churchId: 'ch-from-series' }),
+      })
+    )
   })
 
   it('includes churchId when provided for a standalone event', async () => {
@@ -137,9 +169,11 @@ describe('createEventAction', () => {
 
     await createEventAction({ ...validData, churchId: 'ch-99' })
 
-    expect(mockEventCreate).toHaveBeenCalledWith({
-      data: expect.objectContaining({ churchId: 'ch-99' }),
-    })
+    expect(mockEventCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ churchId: 'ch-99' }),
+      })
+    )
   })
 
   it('returns a fieldError when churchId is empty for a standalone event', async () => {
@@ -190,9 +224,11 @@ describe('createEventAction', () => {
 
     await createEventAction({ ...validData, requiresRegistration: true })
 
-    expect(mockEventCreate).toHaveBeenCalledWith({
-      data: expect.objectContaining({ requiresRegistration: true }),
-    })
+    expect(mockEventCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ requiresRegistration: true }),
+      })
+    )
   })
 
   it('saves requiresRegistration=false when the field is absent', async () => {
@@ -200,9 +236,11 @@ describe('createEventAction', () => {
 
     await createEventAction(validData)
 
-    expect(mockEventCreate).toHaveBeenCalledWith({
-      data: expect.objectContaining({ requiresRegistration: false }),
-    })
+    expect(mockEventCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ requiresRegistration: false }),
+      })
+    )
   })
 })
 

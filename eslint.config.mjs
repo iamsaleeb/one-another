@@ -87,6 +87,16 @@ const eslintConfig = defineConfig([
     },
   },
 
+  // ── Script overrides ────────────────────────────────────────────────────────
+  // Node.js scripts (cron workers, seeder, etc.) legitimately write to stdout
+  // and run outside the browser bundle, so console.log is appropriate here.
+  {
+    files: ["scripts/**"],
+    rules: {
+      "no-console": "off",
+    },
+  },
+
   // ── Ignored paths ────────────────────────────────────────────────────────────
   // Override default ignores of eslint-config-next.
   globalIgnores([

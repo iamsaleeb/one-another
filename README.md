@@ -96,9 +96,13 @@ app/
     organiser/    # Organiser dashboard
     series/       # Event series
     admin/        # Admin panel
-    profile/      # User profile
+    profile/
+      notifications/   # User notification preferences page
   (auth)/         # Unauthenticated routes (login, register)
-  api/auth/       # Auth.js route handler
+  api/
+    auth/         # Auth.js route handler
+    push/
+      register-token/  # POST — upsert device FCM token for authenticated user
 components/
   push-notification-provider.tsx  # Capacitor permission + FCM token registration
   notification-settings.tsx       # Per-user notification preference UI
@@ -108,16 +112,10 @@ lib/
   data/           # Data fetching helpers
   hooks/          # Custom React hooks
   validations/    # Zod schemas
-  firebase-admin.ts       # Firebase Admin SDK singleton
-  notifications.ts        # FCM multicast send + stale token cleanup
+  firebase-admin.ts        # Firebase Admin SDK singleton
+  notifications.ts         # FCM multicast send + stale token cleanup
   schedule-notification.ts # Schedule / cancel ScheduledNotification rows
-  notification-types.ts   # Notification type keys and metadata
-app/
-  api/push/
-    register-token/  # POST — upsert device token for authenticated user
-    unregister-token/# POST — remove token on sign-out
-  (app)/profile/
-    notifications/   # User notification preferences page
+  notification-types.ts    # Notification type keys and metadata
 scripts/
   event-reminders-cron.ts  # Standalone cron worker (runs outside Next.js)
 prisma/
@@ -140,10 +138,10 @@ Push notifications are delivered via [Firebase Cloud Messaging (FCM)](https://fi
 
 | Type | When sent |
 |---|---|
-| `EVENT_REMINDER_24H` | 24 hours before the event starts |
-| `EVENT_REMINDER_1H` | 1 hour before the event starts |
-| `EVENT_CANCELLED` | When an organiser cancels an event |
-| `EVENT_UPDATED` | When an organiser edits key event details |
+| `EVENT_REMINDER` | Before an event the user is attending (configurable: 1h, 2h, 4h, or 24h — default 2h) |
+| `NEW_SERIES_SESSION` | When a new session is added to a series the user follows |
+| `EVENT_CANCELLED` | When an event the user is attending is cancelled |
+| `EVENT_POSTPONED` | When an event the user is attending is rescheduled |
 
 ### Firebase setup
 
@@ -169,7 +167,7 @@ In production, run it as a separate process or systemd service alongside the Nex
 
 ### User preferences
 
-Users can opt out of individual notification types at **Profile → Notifications**. The opt-out model means all notifications are enabled by default; a `NotificationPreference` row is only written when the user disables a type. The cron worker checks preferences at send time, so changes take effect immediately even for already-scheduled notifications.
+Users can opt out of individual notification types at **Profile → Notifications**. All notifications are enabled by default (opt-out model). A `NotificationPreference` row is only written when the user disables a type or saves a custom config (e.g. a non-default `EVENT_REMINDER` lead time); re-enabling with no custom config deletes the row. The cron worker checks preferences at send time, so changes take effect immediately even for already-scheduled notifications.
 
 ## Mobile (Capacitor)
 

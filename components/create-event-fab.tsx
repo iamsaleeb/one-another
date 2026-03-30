@@ -24,7 +24,7 @@ export function CreateEventFAB({ isOrganiser }: { isOrganiser: boolean }) {
   if (!isOrganiser || isDetailPage) return null;
 
   return (
-    <div ref={containerRef} className="fixed bottom-20 right-4 z-50 flex flex-col items-end gap-3">
+    <div ref={containerRef} className="fixed bottom-nav-fab right-4 z-50 flex flex-col items-end gap-3">
       {open && (
         <>
           <Link

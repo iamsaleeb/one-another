@@ -138,6 +138,16 @@
   padding-bottom: calc(4rem + env(safe-area-inset-bottom, 0px));
 }
 
+/* Padding-bottom that combines a 1rem base with safe area (for drawer footers etc.) */
+@utility pb-safe-4 {
+  padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+}
+
+/* Bottom position above the bottom nav (4rem) + 1rem gap + safe area */
+@utility bottom-nav-fab {
+  bottom: calc(5rem + env(safe-area-inset-bottom, 0px));
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

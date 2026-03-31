@@ -3,9 +3,10 @@ import Link from "next/link";
 import { auth } from "@/auth";
 import { signOutAction } from "@/lib/actions/auth";
 import { Button } from "@/components/ui/button";
-import { Bell, ChevronRight, LogOut, Mail, User } from "lucide-react";
+import { Bell, ChevronRight, LogOut, Mail, Shield, User } from "lucide-react";
 import { getInitials } from "@/lib/utils";
 import { InfoField } from "@/components/ui/info-field";
+import { Badge } from "@/components/ui/badge";
 
 export const metadata: Metadata = {
   title: "Profile — One Another",
@@ -26,6 +27,12 @@ export default async function ProfilePage() {
           <div className="min-w-0">
             <h1 className="text-lg font-bold truncate">{user?.name ?? "User"}</h1>
             <p className="text-sm text-muted-foreground truncate">{user?.email}</p>
+            {(user?.role === "ORGANISER" || user?.role === "ADMIN") && (
+              <Badge variant="secondary" className="mt-1 gap-1">
+                <Shield className="w-3 h-3" />
+                {user.role === "ADMIN" ? "Admin" : "Organiser"}
+              </Badge>
+            )}
           </div>
         </div>
 

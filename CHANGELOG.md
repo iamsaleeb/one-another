@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.1](https://github.com/iamsaleeb/one-another/compare/one-another-v0.4.0...one-another-v0.4.1) (2026-03-31)
+
+
+### Bug Fixes
+
+* added badge ([#26](https://github.com/iamsaleeb/one-another/issues/26)) ([11caf60](https://github.com/iamsaleeb/one-another/commit/11caf608d91be7ea9a13fc580b34889acb4e9336))
+
 ## [0.4.0](https://github.com/iamsaleeb/one-another/compare/one-another-v0.3.0...one-another-v0.4.0) (2026-03-30)
 
 

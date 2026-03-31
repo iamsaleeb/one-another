@@ -3,9 +3,8 @@ import Link from "next/link";
 import { AlertTriangle, Calendar, MapPin, Pencil, Repeat, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { auth } from "@/auth";
-import { UserRole } from "@prisma/client";
 import { getEventById, getEventAttendees } from "@/lib/actions/data";
-import { isOrganiserForChurch } from "@/lib/permissions";
+import { canManageChurch } from "@/lib/permissions";
 import { formatEventDatetime } from "@/lib/utils";
 import { InfoField } from "@/components/ui/info-field";
 import { HeroBanner } from "@/components/ui/hero-banner";
@@ -30,18 +29,8 @@ export default async function EventDetailPage({ params }: Props) {
 
   if (!event) notFound();
 
-  const userId = session?.user?.id;
-  const shouldCheckOrganiser = session?.user?.role === UserRole.ORGANISER;
-  const isAdmin = session?.user?.role === UserRole.ADMIN;
-
-  const organiserForChurch =
-    shouldCheckOrganiser && userId
-      ? await isOrganiserForChurch(userId, event.churchId)
-      : false;
-
-  const isOrganiser = shouldCheckOrganiser && !!organiserForChurch;
-  const canViewAttendees = !!organiserForChurch || isAdmin;
-  const attendees = canViewAttendees ? await getEventAttendees(id) : undefined;
+  const canManage = await canManageChurch(session?.user?.id, session?.user?.role, event.churchId);
+  const attendees = canManage ? await getEventAttendees(id) : undefined;
 
   const isAttending = session?.user?.id
     ? event.attendees.some((a) => a.userId === session.user.id)
@@ -70,7 +59,7 @@ export default async function EventDetailPage({ params }: Props) {
         <div className="rounded-2xl bg-white shadow-card p-5 flex flex-col gap-4">
           <div className="flex items-start justify-between gap-2">
             <h1 className="text-xl font-bold leading-snug">{event.title}</h1>
-            {isOrganiser && (
+            {canManage && (
               <div className="flex items-center gap-2 shrink-0">
                 <Button asChild variant="outline" size="icon" className="size-9">
                   <Link href={`/events/${id}/edit`}>

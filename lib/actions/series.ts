@@ -6,7 +6,7 @@ import { prisma } from "@/lib/db";
 import { auth } from "@/auth";
 import { UserRole } from "@prisma/client";
 import { createSeriesSchema, type CreateSeriesInput } from "@/lib/validations/series";
-import { canManageChurch, isOrganiserForChurch } from "@/lib/permissions";
+import { canManageChurch } from "@/lib/permissions";
 import type { ActionResult } from "@/lib/actions/auth";
 
 export async function createSeriesAction(data: CreateSeriesInput): Promise<ActionResult> {
@@ -53,8 +53,16 @@ export async function updateSeriesAction(id: string, data: CreateSeriesInput): P
 
   const { name, description, cadence, location, host, tag, churchId } = parsed.data;
 
-  const allowed = await canManageChurch(session.user.id, session.user.role, churchId);
-  if (!allowed) redirect("/");
+  const existing = await prisma.series.findUnique({ where: { id }, select: { churchId: true } });
+  if (!existing) redirect("/organiser");
+
+  const allowedOriginal = await canManageChurch(session.user.id, session.user.role, existing.churchId);
+  if (!allowedOriginal) redirect("/");
+
+  if (churchId !== existing.churchId) {
+    const allowedNew = await canManageChurch(session.user.id, session.user.role, churchId);
+    if (!allowedNew) redirect("/");
+  }
 
   await prisma.series.update({
     where: { id },
@@ -94,7 +102,7 @@ export async function deleteSeriesAction(id: string): Promise<void> {
   const series = await prisma.series.findUnique({ where: { id }, select: { churchId: true } });
   if (!series) redirect("/organiser");
 
-  const allowed = await isOrganiserForChurch(session.user.id, series.churchId);
+  const allowed = await canManageChurch(session.user.id, session.user.role, series.churchId);
   if (!allowed) redirect("/");
 
   await prisma.series.delete({ where: { id } });

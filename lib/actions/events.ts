@@ -112,14 +112,20 @@ export async function updateEventAction(id: string, data: CreateEventInput): Pro
     return { fieldErrors: { churchId: ["Church is required"] } };
   }
 
-  const allowed = await canManageChurch(session.user.id, session.user.role, churchId);
-  if (!allowed) redirect("/");
-
-  // Read current datetime before updating to detect a reschedule
+  // Fetch existing event to verify permission on the original church and detect reschedule
   const existing = await prisma.event.findUnique({
     where: { id },
-    select: { datetime: true, title: true },
+    select: { churchId: true, datetime: true, title: true },
   });
+  if (!existing) redirect("/organiser");
+
+  const allowedOriginal = await canManageChurch(session.user.id, session.user.role, existing.churchId);
+  if (!allowedOriginal) redirect("/");
+
+  if (churchId !== existing.churchId) {
+    const allowedNew = await canManageChurch(session.user.id, session.user.role, churchId);
+    if (!allowedNew) redirect("/");
+  }
 
   await prisma.event.update({
     where: { id },

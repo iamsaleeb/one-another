@@ -2,9 +2,8 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { MapPin, Pencil, Plus, Tag, User } from "lucide-react";
 import { auth } from "@/auth";
-import { UserRole } from "@prisma/client";
 import { getSeriesById } from "@/lib/actions/data";
-import { isOrganiserForChurch } from "@/lib/permissions";
+import { canManageChurch } from "@/lib/permissions";
 import { InfoField } from "@/components/ui/info-field";
 import { HeroBanner } from "@/components/ui/hero-banner";
 import { EventCard } from "@/components/event-card";
@@ -29,11 +28,8 @@ export default async function SeriesDetailPage({ params }: Props) {
 
   if (!series) notFound();
 
-  const isOrganiser =
-    session?.user?.role === UserRole.ORGANISER &&
-    !!(await isOrganiserForChurch(session?.user?.id, series.churchId));
-
   const userId = session?.user?.id;
+  const canManage = await canManageChurch(session?.user?.id, session?.user?.role, series.churchId);
   const isFollowing = userId ? series.followers.some((f) => f.userId === userId) : false;
 
   return (
@@ -49,7 +45,7 @@ export default async function SeriesDetailPage({ params }: Props) {
               <span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary whitespace-nowrap">
                 {CADENCE_LABELS[series.cadence] ?? series.cadence}
               </span>
-              {isOrganiser && (
+              {canManage && (
                 <>
                   <Button asChild variant="outline" size="icon" className="size-9">
                     <Link href={`/series/${series.id}/edit`}>
@@ -78,7 +74,7 @@ export default async function SeriesDetailPage({ params }: Props) {
         <section className="flex flex-col gap-3">
           <div className="flex items-center justify-between">
             <h2 className="text-base font-semibold">Upcoming Sessions</h2>
-            {isOrganiser && (
+            {canManage && (
               <Button asChild size="sm" variant="outline" className="gap-1.5">
                 <Link href={`/events/create?seriesId=${series.id}`}>
                   <Plus className="size-3.5" />

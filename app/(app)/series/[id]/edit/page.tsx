@@ -1,7 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { UserRole } from "@prisma/client";
-import { getSeriesById, getChurchesByOrganiser } from "@/lib/actions/data";
+import { getSeriesById, getChurchesByManager } from "@/lib/actions/data";
 import { PageHeader } from "@/components/ui/page-header";
 import { EditSeriesForm } from "./_components/edit-series-form";
 
@@ -13,10 +13,11 @@ export default async function EditSeriesPage({ params }: Props) {
   const { id } = await params;
   const [series, session] = await Promise.all([getSeriesById(id), auth()]);
 
-  if (session?.user?.role !== UserRole.ORGANISER) redirect("/");
+  if (session?.user?.role !== UserRole.ORGANISER && session?.user?.role !== UserRole.ADMIN) redirect("/");
   if (!series) notFound();
 
-  const churches = await getChurchesByOrganiser(session.user.id);
+  const churches = await getChurchesByManager(session.user.id);
+  if (!churches.some((c) => c.id === series.churchId)) notFound();
 
   return (
     <div className="mx-auto max-w-lg">

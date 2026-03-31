@@ -61,7 +61,15 @@
       "Bash(ls /c/code/one-another1/app/\\\\\\(app\\\\\\)/series/[id]/edit/)",
       "Bash(grep -A 30 if.*result.cacheComponents\\\\\\) node_modules/next/dist/server/config.js)",
       "Bash(sed 's/^[0-9]* //')",
-      "Bash(ls -la /c/code/one-another1/app/\\\\\\(app\\\\\\)/churches/)"
+      "Bash(ls -la /c/code/one-another1/app/\\\\\\(app\\\\\\)/churches/)",
+      "WebFetch(domain:authjs.dev)",
+      "WebFetch(domain:clerk.com)",
+      "WebFetch(domain:www.jigz.dev)",
+      "WebFetch(domain:www.robinwieruch.de)",
+      "WebFetch(domain:www.descope.com)",
+      "Bash(ls /c/code/one-another1/app/\\\\\\(app\\\\\\)/organiser)",
+      "Bash(ls /c/code/one-another1/app/\\\\\\(app\\\\\\)/events/create)",
+      "Bash(ls /c/code/one-another1/app/\\\\\\(app\\\\\\)/series/create)"
     ]
   },
   "enableAllProjectMcpServers": true,

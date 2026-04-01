@@ -161,6 +161,7 @@ model Event {
   tag                  String
   description          String
   isPast               Boolean @default(false)
+  isDraft              Boolean @default(false)
   requiresRegistration Boolean @default(false)
   capacity             Int?
   collectPhone         Boolean @default(false)

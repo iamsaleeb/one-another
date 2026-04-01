@@ -13,6 +13,7 @@ interface EventCardProps {
     tag: string;
     badge: string;
     cancelledAt?: Date | null;
+    isDraft?: boolean;
     seriesName?: string | null;
   };
 }
@@ -26,7 +27,11 @@ export function EventCard({ event }: EventCardProps) {
             <p className="text-xs font-semibold text-primary uppercase tracking-wide">
               {formatEventDatetime(event.datetime)}
             </p>
-            {event.cancelledAt ? (
+            {event.isDraft ? (
+              <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-medium text-amber-700 whitespace-nowrap">
+                Draft
+              </span>
+            ) : event.cancelledAt ? (
               <span className="rounded-full bg-destructive/10 px-2.5 py-1 text-xs font-medium text-destructive whitespace-nowrap">
                 Cancelled
               </span>

@@ -15,6 +15,7 @@ export const createEventSchema = z.object({
   collectPhone: z.boolean().optional(),
   collectNotes: z.boolean().optional(),
   price: z.string().optional(),
+  isDraft: z.boolean().optional(),
 });
 
 export type CreateEventInput = z.infer<typeof createEventSchema>;

@@ -69,7 +69,9 @@
       "WebFetch(domain:www.descope.com)",
       "Bash(ls /c/code/one-another1/app/\\\\\\(app\\\\\\)/organiser)",
       "Bash(ls /c/code/one-another1/app/\\\\\\(app\\\\\\)/events/create)",
-      "Bash(ls /c/code/one-another1/app/\\\\\\(app\\\\\\)/series/create)"
+      "Bash(ls /c/code/one-another1/app/\\\\\\(app\\\\\\)/series/create)",
+      "Bash(gh pr:*)",
+      "Bash(gh api:*)"
     ]
   },
   "enableAllProjectMcpServers": true,

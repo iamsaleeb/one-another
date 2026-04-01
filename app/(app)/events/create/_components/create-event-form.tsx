@@ -62,6 +62,7 @@ export function CreateEventForm({
       collectPhone: false,
       collectNotes: false,
       price: undefined,
+      isDraft: false,
     },
   });
 
@@ -71,14 +72,21 @@ export function CreateEventForm({
   const onSubmit = form.handleSubmit(async (data) => {
     const result = await createEventAction(data);
     if (result?.error) {
+      form.setValue("isDraft", false);
       form.setError("root", { message: result.error });
     }
     if (result?.fieldErrors) {
+      form.setValue("isDraft", false);
       Object.entries(result.fieldErrors).forEach(([field, msgs]) =>
         form.setError(field as keyof CreateEventInput, { message: msgs[0] })
       );
     }
   });
+
+  const onSaveAsDraft = () => {
+    form.setValue("isDraft", true);
+    onSubmit();
+  };
 
   return (
     <Form {...form}>
@@ -343,9 +351,14 @@ export function CreateEventForm({
           </div>
         )}
 
-        <Button type="submit" className="w-full" disabled={isSubmitting}>
-          {isSubmitting ? "Creating..." : series ? "Add Session" : "Create Event"}
-        </Button>
+        <div className="flex flex-col gap-2">
+          <Button type="submit" className="w-full" disabled={isSubmitting}>
+            {isSubmitting ? "Creating..." : series ? "Add Session" : "Create Event"}
+          </Button>
+          <Button type="button" variant="outline" className="w-full" disabled={isSubmitting} onClick={onSaveAsDraft}>
+            Save as Draft
+          </Button>
+        </div>
       </form>
     </Form>
   );

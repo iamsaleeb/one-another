@@ -27,7 +27,7 @@ export async function createEventAction(data: CreateEventInput): Promise<ActionR
     return { fieldErrors: parsed.error.flatten().fieldErrors };
   }
 
-  const { title, date, time, location, host, tag, description, seriesId, requiresRegistration, capacity, collectPhone, collectNotes, price } = parsed.data;
+  const { title, date, time, location, host, tag, description, seriesId, requiresRegistration, capacity, collectPhone, collectNotes, price, isDraft } = parsed.data;
   let { churchId } = parsed.data;
 
   const datetime = new Date(`${date}T${time}`);
@@ -53,6 +53,7 @@ export async function createEventAction(data: CreateEventInput): Promise<ActionR
       tag,
       description,
       isPast: false,
+      isDraft: isDraft ?? false,
       requiresRegistration: requiresRegistration ?? false,
       capacity: requiresRegistration ? (capacity ?? null) : null,
       collectPhone: requiresRegistration ? (collectPhone ?? false) : false,
@@ -65,7 +66,7 @@ export async function createEventAction(data: CreateEventInput): Promise<ActionR
     select: { id: true },
   });
 
-  if (seriesId) {
+  if (!isDraft && seriesId) {
     try {
       const followers = await prisma.seriesFollower.findMany({
         where: { seriesId },
@@ -87,7 +88,7 @@ export async function createEventAction(data: CreateEventInput): Promise<ActionR
   }
 
   revalidatePath("/");
-  redirect(seriesId ? `/series/${seriesId}` : "/my-events");
+  redirect(isDraft ? "/organiser" : seriesId ? `/series/${seriesId}` : "/my-events");
 }
 
 export async function updateEventAction(id: string, data: CreateEventInput): Promise<ActionResult> {
@@ -115,7 +116,7 @@ export async function updateEventAction(id: string, data: CreateEventInput): Pro
   // Fetch existing event to verify permission on the original church and detect reschedule
   const existing = await prisma.event.findUnique({
     where: { id },
-    select: { churchId: true, datetime: true, title: true },
+    select: { churchId: true, datetime: true, title: true, isDraft: true },
   });
   if (!existing) redirect("/organiser");
 
@@ -146,7 +147,7 @@ export async function updateEventAction(id: string, data: CreateEventInput): Pro
     },
   });
 
-  if (existing && newDatetime.getTime() !== existing.datetime.getTime()) {
+  if (existing && !existing.isDraft && newDatetime.getTime() !== existing.datetime.getTime()) {
     try {
       await rescheduleEventReminders(id, newDatetime);
 
@@ -235,6 +236,90 @@ export async function uncancelEventAction(id: string): Promise<void> {
   redirect(`/events/${id}`);
 }
 
+export async function publishEventAction(id: string): Promise<ActionResult> {
+  const session = await auth();
+  if (session?.user?.role !== UserRole.ORGANISER && session?.user?.role !== UserRole.ADMIN) {
+    return { error: "Unauthorised." };
+  }
+
+  const event = await prisma.event.findUnique({
+    where: { id },
+    select: { churchId: true, seriesId: true, title: true, isDraft: true, datetime: true },
+  });
+  if (!event) redirect("/organiser");
+
+  const allowed = await canManageChurch(session.user.id, session.user.role, event.churchId);
+  if (!allowed) return { error: "You are not assigned to this church." };
+
+  if (!event.isDraft) {
+    redirect(`/events/${id}`);
+  }
+
+  await prisma.event.update({ where: { id }, data: { isDraft: false } });
+
+  try {
+    const attendees = await prisma.eventAttendee.findMany({
+      where: { eventId: id },
+      select: { userId: true },
+    });
+    await Promise.all(
+      attendees.map((a) =>
+        scheduleEventReminder(a.userId, { id, title: event.title, datetime: event.datetime })
+      )
+    );
+  } catch (err) {
+    console.error("Failed to schedule reminders on publish:", err);
+  }
+
+  if (event.seriesId) {
+    try {
+      const followers = await prisma.seriesFollower.findMany({
+        where: { seriesId: event.seriesId },
+        select: { userId: true },
+      });
+      const followerIds = followers.map((f) => f.userId);
+      if (followerIds.length > 0) {
+        await sendPushToUsers(
+          followerIds,
+          "NEW_SERIES_SESSION",
+          "New Session Added",
+          `A new session has been added: ${event.title}`,
+          { type: "new_session", seriesId: event.seriesId, eventId: id }
+        );
+      }
+    } catch (err) {
+      console.error("NEW_SERIES_SESSION push failed:", err);
+    }
+  }
+
+  revalidatePath("/");
+  redirect(`/events/${id}`);
+}
+
+export async function unpublishEventAction(id: string): Promise<ActionResult> {
+  const session = await auth();
+  if (session?.user?.role !== UserRole.ORGANISER && session?.user?.role !== UserRole.ADMIN) {
+    return { error: "Unauthorised." };
+  }
+
+  const event = await prisma.event.findUnique({ where: { id }, select: { churchId: true } });
+  if (!event) redirect("/organiser");
+
+  const allowed = await canManageChurch(session.user.id, session.user.role, event.churchId);
+  if (!allowed) return { error: "You are not assigned to this church." };
+
+  await prisma.event.update({ where: { id }, data: { isDraft: true } });
+
+  try {
+    await cancelAllRemindersForEvent(id);
+  } catch (err) {
+    console.error("Failed to cancel reminders on unpublish:", err);
+  }
+
+  revalidatePath("/");
+  redirect(`/events/${id}`);
+}
+
 export async function deleteEventAction(id: string): Promise<void> {
   const session = await auth();
   if (session?.user?.role !== UserRole.ORGANISER && session?.user?.role !== UserRole.ADMIN) redirect("/");
@@ -264,19 +349,18 @@ export async function attendEventAction(eventId: string): Promise<AttendEventSta
   const session = await auth();
   if (!session?.user?.id) return { error: "You must be signed in." };
 
+  const event = await prisma.event.findUnique({
+    where: { id: eventId },
+    select: { id: true, title: true, datetime: true, isDraft: true },
+  });
+  if (!event || event.isDraft) return { error: "Event not found." };
+
   await prisma.eventAttendee.create({
     data: { eventId, userId: session.user.id },
   });
 
-  // Schedule an EVENT_REMINDER for this user
   try {
-    const event = await prisma.event.findUnique({
-      where: { id: eventId },
-      select: { id: true, title: true, datetime: true },
-    });
-    if (event) {
-      await scheduleEventReminder(session.user.id, event);
-    }
+    await scheduleEventReminder(session.user.id, event);
   } catch (err) {
     console.error("Failed to schedule event reminder:", err);
   }
@@ -325,10 +409,12 @@ export async function registerEventAction(
 
   const event = await prisma.event.findUnique({
     where: { id: eventId },
-    select: { id: true, title: true, datetime: true, capacity: true, _count: { select: { attendees: true } } },
+    select: { id: true, title: true, datetime: true, isDraft: true, capacity: true, _count: { select: { attendees: true } } },
   });
 
-  if (event?.capacity != null && event._count.attendees >= event.capacity) {
+  if (!event || event.isDraft) return { error: "Event not found." };
+
+  if (event.capacity != null && event._count.attendees >= event.capacity) {
     return { error: "Sorry, this event is fully booked." };
   }
 
@@ -341,15 +427,12 @@ export async function registerEventAction(
     },
   });
 
-  // Schedule an EVENT_REMINDER for this user
   try {
-    if (event) {
-      await scheduleEventReminder(session.user.id, {
-        id: event.id,
-        title: event.title,
-        datetime: event.datetime,
-      });
-    }
+    await scheduleEventReminder(session.user.id, {
+      id: event.id,
+      title: event.title,
+      datetime: event.datetime,
+    });
   } catch (err) {
     console.error("Failed to schedule event reminder after registration:", err);
   }

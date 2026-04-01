@@ -33,7 +33,7 @@ function getDateRange(when: WhenFilter): { gte: Date; lte: Date } {
 
 export const getEvents = cache(async function getEvents() {
   return prisma.event.findMany({
-    where: { isPast: false },
+    where: { isPast: false, isDraft: false },
     orderBy: { createdAt: "asc" },
     include: { series: { select: { name: true } } },
   });
@@ -41,7 +41,7 @@ export const getEvents = cache(async function getEvents() {
 
 export const getPastEvents = cache(async function getPastEvents() {
   return prisma.event.findMany({
-    where: { isPast: true },
+    where: { isPast: true, isDraft: false },
     orderBy: { createdAt: "asc" },
     include: { series: { select: { name: true } } },
   });
@@ -111,7 +111,7 @@ export const getChurches = cache(async function getChurches() {
   return prisma.church.findMany({
     include: {
       serviceTimes: true,
-      events: { where: { isPast: false } },
+      events: { where: { isPast: false, isDraft: false } },
     },
     orderBy: { name: "asc" },
   });
@@ -122,11 +122,11 @@ export const getChurchById = cache(async function getChurchById(id: string) {
     where: { id },
     include: {
       serviceTimes: true,
-      events: { where: { isPast: false } },
+      events: { where: { isPast: false, isDraft: false } },
       series: {
         orderBy: { createdAt: "desc" },
         include: {
-          _count: { select: { events: { where: { isPast: false } } } },
+          _count: { select: { events: { where: { isPast: false, isDraft: false } } } },
         },
       },
       followers: { select: { userId: true } },
@@ -145,7 +145,7 @@ export const searchEventsAndChurches = cache(async function searchEventsAndChurc
   const shouldFetchChurches = type === "all" || type === "churches";
 
   // Build event where clause
-  const eventWhere: Prisma.EventWhereInput = { isPast: false };
+  const eventWhere: Prisma.EventWhereInput = { isPast: false, isDraft: false };
   if (query) {
     eventWhere.OR = [
       { title: { contains: query, mode: "insensitive" } },
@@ -192,7 +192,7 @@ export const getSeries = cache(async function getSeries() {
     orderBy: { createdAt: "desc" },
     include: {
       _count: {
-        select: { events: { where: { isPast: false } } },
+        select: { events: { where: { isPast: false, isDraft: false } } },
       },
     },
   });
@@ -204,7 +204,7 @@ export const getSeriesById = cache(async function getSeriesById(id: string) {
     include: {
       church: { select: { id: true, name: true } },
       events: {
-        where: { isPast: false },
+        where: { isPast: false, isDraft: false },
         orderBy: { datetime: "asc" },
       },
       followers: { select: { userId: true } },
@@ -218,7 +218,7 @@ export const getSeriesByChurchId = cache(async function getSeriesByChurchId(chur
     where: { churchId },
     include: {
       _count: {
-        select: { events: { where: { isPast: false } } },
+        select: { events: { where: { isPast: false, isDraft: false } } },
       },
     },
     orderBy: { createdAt: "desc" },
@@ -241,7 +241,7 @@ export const getSeriesByCreator = cache(async function getSeriesByCreator(userId
     where: { createdById: userId },
     orderBy: { createdAt: "desc" },
     include: {
-      _count: { select: { events: { where: { isPast: false } } } },
+      _count: { select: { events: { where: { isPast: false, isDraft: false } } } },
       createdBy: { select: { name: true } },
     },
   });
@@ -251,6 +251,7 @@ export const getEventsNotByCreator = cache(async function getEventsNotByCreator(
   return prisma.event.findMany({
     where: {
       isPast: false,
+      isDraft: false,
       OR: [{ createdById: { not: userId } }, { createdById: null }],
     },
     orderBy: { createdAt: "asc" },
@@ -276,7 +277,7 @@ export const getSeriesNotByCreator = cache(async function getSeriesNotByCreator(
     },
     orderBy: { createdAt: "desc" },
     include: {
-      _count: { select: { events: { where: { isPast: false } } } },
+      _count: { select: { events: { where: { isPast: false, isDraft: false } } } },
       createdBy: { select: { name: true } },
     },
   });

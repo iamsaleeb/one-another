@@ -28,7 +28,7 @@ export function MyContentTab({ events, series }: MyContentTabProps) {
           </div>
         ) : (
           events.map((event) => (
-            <EventCard key={event.id} event={{ ...event, badge: event.tag, seriesName: event.series?.name }} />
+            <EventCard key={event.id} event={{ ...event, badge: event.tag, seriesName: event.series?.name, isDraft: event.isDraft }} />
           ))
         )}
       </section>

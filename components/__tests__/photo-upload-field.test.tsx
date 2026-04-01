@@ -22,10 +22,21 @@ jest.mock('@/lib/uploadthing', () => ({
   ),
 }))
 
-import { render, screen, fireEvent } from '@testing-library/react'
+jest.mock('@/lib/actions/upload', () => ({
+  deleteUploadedFileAction: jest.fn().mockResolvedValue(undefined),
+}))
+
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { PhotoUploadField } from '@/components/photo-upload-field'
+import { deleteUploadedFileAction } from '@/lib/actions/upload'
+
+const mockDeleteUploadedFileAction = deleteUploadedFileAction as jest.Mock
 
 describe('PhotoUploadField', () => {
+  beforeEach(() => {
+    jest.clearAllMocks()
+  })
+
   it('renders the dropzone when no value is provided', () => {
     render(<PhotoUploadField value={undefined} onChange={jest.fn()} />)
     expect(screen.getByTestId('upload-dropzone')).toBeInTheDocument()
@@ -47,11 +58,20 @@ describe('PhotoUploadField', () => {
     expect(screen.queryByTestId('upload-dropzone')).not.toBeInTheDocument()
   })
 
-  it('calls onChange with undefined when the remove button is clicked', () => {
+  it('calls onChange with undefined and deletes from the server when remove is clicked', async () => {
     const onChange = jest.fn()
     render(<PhotoUploadField value="https://utfs.io/f/photo.jpg" onChange={onChange} />)
     fireEvent.click(screen.getByRole('button'))
     expect(onChange).toHaveBeenCalledWith(undefined)
+    await waitFor(() => {
+      expect(mockDeleteUploadedFileAction).toHaveBeenCalledWith('https://utfs.io/f/photo.jpg')
+    })
+  })
+
+  it('switches to the dropzone immediately when remove is clicked', () => {
+    render(<PhotoUploadField value="https://utfs.io/f/photo.jpg" onChange={jest.fn()} />)
+    fireEvent.click(screen.getByRole('button'))
+    expect(screen.getByTestId('upload-dropzone')).toBeInTheDocument()
   })
 
   it('calls onChange with the uploaded URL on successful upload', () => {

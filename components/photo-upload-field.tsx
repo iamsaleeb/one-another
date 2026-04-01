@@ -5,6 +5,7 @@ import { X } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { UploadDropzone } from "@/lib/uploadthing";
+import { deleteUploadedFileAction } from "@/lib/actions/upload";
 
 interface PhotoUploadFieldProps {
   value: string | undefined;
@@ -12,13 +13,25 @@ interface PhotoUploadFieldProps {
 }
 
 export function PhotoUploadField({ value, onChange }: PhotoUploadFieldProps) {
+  const [localUrl, setLocalUrl] = useState(value);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
-  if (value) {
+  const handleRemove = async () => {
+    if (!localUrl) return;
+    const urlToDelete = localUrl;
+    setLocalUrl(undefined);
+    onChange(undefined);
+    setIsDeleting(true);
+    await deleteUploadedFileAction(urlToDelete);
+    setIsDeleting(false);
+  };
+
+  if (localUrl) {
     return (
       <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-muted">
         <Image
-          src={value}
+          src={localUrl}
           alt="Cover photo"
           fill
           className="object-cover"
@@ -29,7 +42,8 @@ export function PhotoUploadField({ value, onChange }: PhotoUploadFieldProps) {
           variant="outline"
           size="icon"
           className="absolute top-2 right-2 size-8 bg-white/90 hover:bg-white"
-          onClick={() => onChange(undefined)}
+          onClick={handleRemove}
+          disabled={isDeleting}
         >
           <X className="size-4" />
         </Button>
@@ -43,6 +57,7 @@ export function PhotoUploadField({ value, onChange }: PhotoUploadFieldProps) {
         endpoint="coverPhoto"
         onClientUploadComplete={(res) => {
           setUploadError(null);
+          setLocalUrl(res[0].ufsUrl);
           onChange(res[0].ufsUrl);
         }}
         onUploadError={(error) => {

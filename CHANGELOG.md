@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.5.0](https://github.com/iamsaleeb/one-another/compare/one-another-v0.4.1...one-another-v0.5.0) (2026-04-01)
+
+
+### Features
+
+* added new drafts system ([#35](https://github.com/iamsaleeb/one-another/issues/35)) ([b86ea0b](https://github.com/iamsaleeb/one-another/commit/b86ea0bca658a3f180abe9bfb6e10c8de2a3d825))
+
+
+### Bug Fixes
+
+* fixed ui issues ([#38](https://github.com/iamsaleeb/one-another/issues/38)) ([5e1e101](https://github.com/iamsaleeb/one-another/commit/5e1e101555218dbd74afd34b43bfb0184cbe66b7))
+
 ## [0.4.1](https://github.com/iamsaleeb/one-another/compare/one-another-v0.4.0...one-another-v0.4.1) (2026-03-31)
 
 

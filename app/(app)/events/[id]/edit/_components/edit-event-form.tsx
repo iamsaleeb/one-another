@@ -24,7 +24,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { createEventSchema, type CreateEventInput } from "@/lib/validations/event";
-import { updateEventAction } from "@/lib/actions/events";
+import { updateEventAction, publishEventAction, unpublishEventAction } from "@/lib/actions/events";
 
 const CATEGORIES = [
   "Worship",
@@ -54,6 +54,7 @@ interface EventData {
   collectPhone: boolean;
   collectNotes: boolean;
   price?: string | null;
+  isDraft: boolean;
 }
 
 export function EditEventForm({
@@ -97,6 +98,16 @@ export function EditEventForm({
       );
     }
   });
+
+  const handlePublish = async () => {
+    const result = await publishEventAction(event.id);
+    if (result?.error) form.setError("root", { message: result.error });
+  };
+
+  const handleUnpublish = async () => {
+    const result = await unpublishEventAction(event.id);
+    if (result?.error) form.setError("root", { message: result.error });
+  };
 
   return (
     <Form {...form}>
@@ -365,9 +376,25 @@ export function EditEventForm({
           </div>
         )}
 
-        <Button type="submit" className="w-full" disabled={isSubmitting}>
-          {isSubmitting ? "Saving..." : "Save Changes"}
-        </Button>
+        {event.isDraft ? (
+          <div className="flex flex-col gap-2">
+            <Button type="submit" className="w-full" disabled={isSubmitting}>
+              {isSubmitting ? "Saving..." : "Save Draft"}
+            </Button>
+            <Button type="button" variant="outline" className="w-full" disabled={isSubmitting} onClick={handlePublish}>
+              Publish Event
+            </Button>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-2">
+            <Button type="submit" className="w-full" disabled={isSubmitting}>
+              {isSubmitting ? "Saving..." : "Save Changes"}
+            </Button>
+            <Button type="button" variant="outline" className="w-full text-muted-foreground" disabled={isSubmitting} onClick={handleUnpublish}>
+              Revert to Draft
+            </Button>
+          </div>
+        )}
       </form>
     </Form>
   );

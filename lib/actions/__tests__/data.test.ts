@@ -87,7 +87,7 @@ describe('getEvents', () => {
     const result = await getEvents()
     expect(result).toEqual([sampleEvent])
     expect(mockEventFindMany).toHaveBeenCalledWith({
-      where: { isPast: false },
+      where: { isPast: false, isDraft: false },
       orderBy: { createdAt: 'asc' },
       include: { series: { select: { name: true } } },
     })
@@ -106,7 +106,7 @@ describe('getPastEvents', () => {
     const result = await getPastEvents()
     expect(result).toEqual([pastEvent])
     expect(mockEventFindMany).toHaveBeenCalledWith({
-      where: { isPast: true },
+      where: { isPast: true, isDraft: false },
       orderBy: { createdAt: 'asc' },
       include: { series: { select: { name: true } } },
     })
@@ -252,7 +252,7 @@ describe('getChurches', () => {
     expect(mockChurchFindMany).toHaveBeenCalledWith({
       include: {
         serviceTimes: true,
-        events: { where: { isPast: false } },
+        events: { where: { isPast: false, isDraft: false } },
       },
       orderBy: { name: 'asc' },
     })
@@ -268,11 +268,11 @@ describe('getChurchById', () => {
       where: { id: 'ch-1' },
       include: {
         serviceTimes: true,
-        events: { where: { isPast: false } },
+        events: { where: { isPast: false, isDraft: false } },
         series: {
           orderBy: { createdAt: 'desc' },
           include: {
-            _count: { select: { events: { where: { isPast: false } } } },
+            _count: { select: { events: { where: { isPast: false, isDraft: false } } } },
           },
         },
         followers: { select: { userId: true } },
@@ -381,7 +381,7 @@ describe('getSeries', () => {
       orderBy: { createdAt: 'desc' },
       include: {
         _count: {
-          select: { events: { where: { isPast: false } } },
+          select: { events: { where: { isPast: false, isDraft: false } } },
         },
       },
     })
@@ -410,7 +410,7 @@ describe('getSeriesById', () => {
       include: {
         church: { select: { id: true, name: true } },
         events: {
-          where: { isPast: false },
+          where: { isPast: false, isDraft: false },
           orderBy: { datetime: 'asc' },
         },
         followers: { select: { userId: true } },
@@ -437,7 +437,7 @@ describe('getSeriesByChurchId', () => {
       where: { churchId: 'ch-1' },
       include: {
         _count: {
-          select: { events: { where: { isPast: false } } },
+          select: { events: { where: { isPast: false, isDraft: false } } },
         },
       },
       orderBy: { createdAt: 'desc' },
@@ -481,7 +481,7 @@ describe('getSeriesByCreator', () => {
       where: { createdById: 'user-1' },
       orderBy: { createdAt: 'desc' },
       include: {
-        _count: { select: { events: { where: { isPast: false } } } },
+        _count: { select: { events: { where: { isPast: false, isDraft: false } } } },
         createdBy: { select: { name: true } },
       },
     })
@@ -501,6 +501,7 @@ describe('getEventsNotByCreator', () => {
     expect(mockEventFindMany).toHaveBeenCalledWith({
       where: {
         isPast: false,
+        isDraft: false,
         OR: [{ createdById: { not: 'user-1' } }, { createdById: null }],
       },
       orderBy: { createdAt: 'asc' },
@@ -529,7 +530,7 @@ describe('getSeriesNotByCreator', () => {
       },
       orderBy: { createdAt: 'desc' },
       include: {
-        _count: { select: { events: { where: { isPast: false } } } },
+        _count: { select: { events: { where: { isPast: false, isDraft: false } } } },
         createdBy: { select: { name: true } },
       },
     })

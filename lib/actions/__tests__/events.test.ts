@@ -65,6 +65,8 @@ import {
   createEventAction,
   cancelEventAction,
   uncancelEventAction,
+  publishEventAction,
+  unpublishEventAction,
   attendEventAction,
   unattendEventAction,
   registerEventAction,
@@ -241,6 +243,30 @@ describe('createEventAction', () => {
         data: expect.objectContaining({ requiresRegistration: false }),
       })
     )
+  })
+
+  it('saves isDraft=true and redirects to the edit page when saving as draft', async () => {
+    mockEventCreate.mockResolvedValue({ id: 'evt-draft' })
+
+    await createEventAction({ ...validData, isDraft: true })
+
+    expect(mockEventCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ isDraft: true }),
+      })
+    )
+    expect(mockRedirect).toHaveBeenCalledWith('/organiser')
+  })
+
+  it('does not send series push notification when saving as draft', async () => {
+    const mockSendPush = jest.requireMock('@/lib/notifications').sendPushToUsers as jest.Mock
+    mockSeriesFindUnique.mockResolvedValue({ churchId: 'ch-1' })
+    mockEventCreate.mockResolvedValue({ id: 'evt-draft-series' })
+
+    await createEventAction({ ...validData, seriesId: 'ser-1', isDraft: true })
+
+    expect(mockSendPush).not.toHaveBeenCalled()
+    expect(mockRedirect).toHaveBeenCalledWith('/organiser')
   })
 })
 
@@ -427,5 +453,75 @@ describe('registerEventAction', () => {
 
     expect(result.error).toBe('Sorry, this event is fully booked.')
     expect(mockEventAttendeeCreate).not.toHaveBeenCalled()
+  })
+})
+
+describe('publishEventAction', () => {
+  it('sets isDraft to false and redirects to the event page', async () => {
+    mockEventFindUnique.mockResolvedValue({ churchId: 'ch-1', seriesId: null, title: 'Test' })
+    mockEventUpdate.mockResolvedValue({})
+
+    await publishEventAction('evt-1')
+
+    expect(mockEventUpdate).toHaveBeenCalledWith({
+      where: { id: 'evt-1' },
+      data: { isDraft: false },
+    })
+    expect(mockRevalidatePath).toHaveBeenCalledWith('/')
+    expect(mockRedirect).toHaveBeenCalledWith('/events/evt-1')
+  })
+
+  it('returns an unauthorised error when the user is not an organiser', async () => {
+    mockAuth.mockResolvedValue({ user: { id: 'user-1', role: 'ATTENDEE' } })
+
+    const result = await publishEventAction('evt-1')
+
+    expect(result?.error).toBeDefined()
+    expect(mockEventUpdate).not.toHaveBeenCalled()
+  })
+
+  it('returns an error when the organiser cannot manage the church', async () => {
+    mockEventFindUnique.mockResolvedValue({ churchId: 'ch-1', seriesId: null, title: 'Test' })
+    mockCanManageChurch.mockResolvedValue(false)
+
+    const result = await publishEventAction('evt-1')
+
+    expect(result?.error).toBeDefined()
+    expect(mockEventUpdate).not.toHaveBeenCalled()
+  })
+})
+
+describe('unpublishEventAction', () => {
+  it('sets isDraft to true and redirects to the event page', async () => {
+    mockEventFindUnique.mockResolvedValue({ churchId: 'ch-1' })
+    mockEventUpdate.mockResolvedValue({})
+
+    await unpublishEventAction('evt-1')
+
+    expect(mockEventUpdate).toHaveBeenCalledWith({
+      where: { id: 'evt-1' },
+      data: { isDraft: true },
+    })
+    expect(mockRevalidatePath).toHaveBeenCalledWith('/')
+    expect(mockRedirect).toHaveBeenCalledWith('/events/evt-1')
+  })
+
+  it('returns an unauthorised error when the user is not an organiser', async () => {
+    mockAuth.mockResolvedValue({ user: { id: 'user-1', role: 'ATTENDEE' } })
+
+    const result = await unpublishEventAction('evt-1')
+
+    expect(result?.error).toBeDefined()
+    expect(mockEventUpdate).not.toHaveBeenCalled()
+  })
+
+  it('returns an error when the organiser cannot manage the church', async () => {
+    mockEventFindUnique.mockResolvedValue({ churchId: 'ch-1' })
+    mockCanManageChurch.mockResolvedValue(false)
+
+    const result = await unpublishEventAction('evt-1')
+
+    expect(result?.error).toBeDefined()
+    expect(mockEventUpdate).not.toHaveBeenCalled()
   })
 })

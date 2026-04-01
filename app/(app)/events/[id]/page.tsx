@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { AlertTriangle, Calendar, MapPin, Pencil, Repeat, User } from "lucide-react";
+import { AlertTriangle, Calendar, FileEdit, MapPin, Pencil, Repeat, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { auth } from "@/auth";
 import { getEventById, getEventAttendees } from "@/lib/actions/data";
@@ -30,6 +30,8 @@ export default async function EventDetailPage({ params }: Props) {
   if (!event) notFound();
 
   const canManage = await canManageChurch(session?.user?.id, session?.user?.role, event.churchId);
+
+  if (event.isDraft && !canManage) notFound();
   const attendees = canManage ? await getEventAttendees(id) : undefined;
 
   const isAttending = session?.user?.id
@@ -42,6 +44,17 @@ export default async function EventDetailPage({ params }: Props) {
 
       {/* Content */}
       <div className="flex flex-col gap-4 px-4 pt-5 pb-28">
+        {/* Draft banner */}
+        {event.isDraft && (
+          <div className="rounded-2xl bg-amber-50 p-4 flex items-start gap-3">
+            <FileEdit className="size-5 text-amber-600 shrink-0 mt-0.5" />
+            <div className="flex flex-col gap-1">
+              <p className="text-sm font-semibold text-amber-700">This event is a draft.</p>
+              <p className="text-sm text-amber-600/80">Only organisers can see this page.</p>
+            </div>
+          </div>
+        )}
+
         {/* Cancellation banner */}
         {event.cancelledAt && (
           <div className="rounded-2xl bg-destructive/10 p-4 flex items-start gap-3">
@@ -115,6 +128,7 @@ export default async function EventDetailPage({ params }: Props) {
         collectNotes={event.collectNotes}
         price={event.price}
         isCancelled={!!event.cancelledAt}
+        isDraft={event.isDraft}
         attendees={attendees}
       />
     </div>

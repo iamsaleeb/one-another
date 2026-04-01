@@ -21,6 +21,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { loginSchema, type LoginInput } from "@/lib/validations/auth";
 import { loginAction } from "@/lib/actions/auth";
 
@@ -59,9 +60,9 @@ export function LoginForm({
             <form onSubmit={onSubmit} noValidate>
               <div className="grid gap-6">
                 {form.formState.errors.root && (
-                  <p className="text-sm text-destructive text-center">
-                    {form.formState.errors.root.message}
-                  </p>
+                  <Alert variant="destructive">
+                    <AlertDescription>{form.formState.errors.root.message}</AlertDescription>
+                  </Alert>
                 )}
                 <div className="grid gap-6">
                   <FormField

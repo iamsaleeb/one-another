@@ -21,6 +21,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { registerSchema, type RegisterInput } from "@/lib/validations/auth";
 import { registerAction } from "@/lib/actions/auth";
 
@@ -61,9 +62,9 @@ export function SignupForm({
             <form onSubmit={onSubmit} noValidate>
               <div className="grid gap-6">
                 {form.formState.errors.root && (
-                  <p className="text-sm text-destructive text-center">
-                    {form.formState.errors.root.message}
-                  </p>
+                  <Alert variant="destructive">
+                    <AlertDescription>{form.formState.errors.root.message}</AlertDescription>
+                  </Alert>
                 )}
                 <div className="grid gap-6">
                   <FormField

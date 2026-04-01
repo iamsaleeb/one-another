@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { AlertTriangle, Calendar, FileEdit, MapPin, Pencil, Repeat, User } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { auth } from "@/auth";
 import { getEventById, getEventAttendees } from "@/lib/actions/data";
@@ -51,26 +52,22 @@ export default async function EventDetailPage({ params }: Props) {
       <div className="flex flex-col gap-4 px-4 pt-5 pb-28">
         {/* Draft banner */}
         {event.isDraft && (
-          <div className="rounded-2xl bg-amber-50 p-4 flex items-start gap-3">
-            <FileEdit className="size-5 text-amber-600 shrink-0 mt-0.5" />
-            <div className="flex flex-col gap-1">
-              <p className="text-sm font-semibold text-amber-700">This event is a draft.</p>
-              <p className="text-sm text-amber-600/80">Only organisers can see this page.</p>
-            </div>
-          </div>
+          <Alert className="border-amber-200 bg-amber-50 text-amber-700 [&>svg]:text-amber-600">
+            <FileEdit className="size-4" />
+            <AlertTitle>This event is a draft.</AlertTitle>
+            <AlertDescription className="text-amber-600/80">Only organisers can see this page.</AlertDescription>
+          </Alert>
         )}
 
         {/* Cancellation banner */}
         {event.cancelledAt && (
-          <div className="rounded-2xl bg-destructive/10 p-4 flex items-start gap-3">
-            <AlertTriangle className="size-5 text-destructive shrink-0 mt-0.5" />
-            <div className="flex flex-col gap-1">
-              <p className="text-sm font-semibold text-destructive">This event has been cancelled.</p>
-              {event.cancellationReason && (
-                <p className="text-sm text-destructive/80">{event.cancellationReason}</p>
-              )}
-            </div>
-          </div>
+          <Alert variant="destructive">
+            <AlertTriangle className="size-4" />
+            <AlertTitle>This event has been cancelled.</AlertTitle>
+            {event.cancellationReason && (
+              <AlertDescription>{event.cancellationReason}</AlertDescription>
+            )}
+          </Alert>
         )}
 
         {/* Info card */}

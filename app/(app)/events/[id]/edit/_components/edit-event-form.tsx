@@ -24,6 +24,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { createEventSchema, type CreateEventInput } from "@/lib/validations/event";
 import { updateEventAction, publishEventAction, unpublishEventAction } from "@/lib/actions/events";
 import { PhotoUploadField } from "@/components/photo-upload-field";
@@ -131,9 +132,9 @@ export function EditEventForm({
         )}
 
         {form.formState.errors.root && (
-          <p className="text-sm text-destructive text-center">
-            {form.formState.errors.root.message}
-          </p>
+          <Alert variant="destructive">
+            <AlertDescription>{form.formState.errors.root.message}</AlertDescription>
+          </Alert>
         )}
 
         <FormField

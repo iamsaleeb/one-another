@@ -2,6 +2,7 @@
 
 import { useActionState, useTransition, useEffect } from "react";
 import { Check } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -77,7 +78,9 @@ export function RegistrationDrawer({
           ) : (
             <form action={formAction} className="flex flex-col gap-4">
               {state.error && (
-                <p className="text-sm text-destructive text-center">{state.error}</p>
+                <Alert variant="destructive">
+                  <AlertDescription>{state.error}</AlertDescription>
+                </Alert>
               )}
 
               <div className="grid gap-1.5">

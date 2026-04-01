@@ -20,6 +20,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { createSeriesSchema, type CreateSeriesInput } from "@/lib/validations/series";
 import { createSeriesAction } from "@/lib/actions/series";
 import { PhotoUploadField } from "@/components/photo-upload-field";
@@ -75,9 +76,9 @@ export function CreateSeriesForm({ churches }: { churches: Church[] }) {
     <Form {...form}>
       <form onSubmit={onSubmit} className="flex flex-col gap-5">
         {form.formState.errors.root && (
-          <p className="text-sm text-destructive text-center">
-            {form.formState.errors.root.message}
-          </p>
+          <Alert variant="destructive">
+            <AlertDescription>{form.formState.errors.root.message}</AlertDescription>
+          </Alert>
         )}
 
         <FormField

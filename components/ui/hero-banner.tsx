@@ -12,7 +12,7 @@ export function HeroBanner({ size = "md", photoUrl, className }: HeroBannerProps
   return (
     <div
       className={cn(
-        "relative w-full overflow-hidden",
+        "relative mx-4 mt-4 overflow-hidden rounded-2xl shadow-card",
         !photoUrl && "bg-gradient-to-br from-primary/80 via-primary to-primary/60",
         isSm ? "h-40" : "h-52",
         className

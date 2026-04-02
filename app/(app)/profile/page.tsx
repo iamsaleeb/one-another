@@ -3,10 +3,11 @@ import Link from "next/link";
 import { auth } from "@/auth";
 import { signOutAction } from "@/lib/actions/auth";
 import { Button } from "@/components/ui/button";
-import { Bell, ChevronRight, LogOut, Mail, User } from "lucide-react";
+import { Bell, ChevronRight, Info, LogOut, Mail, Tag, User } from "lucide-react";
 import { getInitials } from "@/lib/utils";
 import { InfoField } from "@/components/ui/info-field";
 import { RoleBadge } from "./_components/role-badge";
+import { version } from "@/package.json";
 
 export const metadata: Metadata = {
   title: "Profile — One Another",
@@ -59,6 +60,27 @@ export default async function ProfilePage() {
             </div>
           </div>
         </Link>
+
+        {/* About */}
+        <div className="rounded-2xl bg-white shadow-card overflow-hidden">
+          <div className="px-4 py-3 flex items-center gap-2 border-b border-border">
+            <Info className="w-3.5 h-3.5 text-primary" />
+            <span className="text-sm font-semibold">About</span>
+          </div>
+          <div className="px-4 py-3 flex flex-col gap-3">
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              One Another is a church event discovery and management platform. Browse events from
+              local churches, RSVP, follow churches, and manage recurring event series — available
+              as a web app and on Android &amp; iOS.
+            </p>
+            <div className="flex items-center gap-2">
+              <Tag className="w-3.5 h-3.5 text-primary shrink-0" />
+              <span className="text-xs text-muted-foreground">
+                Version <span className="font-medium text-foreground">{version}</span>
+              </span>
+            </div>
+          </div>
+        </div>
 
         {/* Sign out */}
         <form action={signOutAction}>

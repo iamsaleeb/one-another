@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.0](https://github.com/iamsaleeb/one-another/compare/one-another-v0.6.0...one-another-v0.7.0) (2026-04-02)
+
+
+### Features
+
+* added onboarding setup ([#43](https://github.com/iamsaleeb/one-another/issues/43)) ([69e4781](https://github.com/iamsaleeb/one-another/commit/69e4781ba6041c5f14dd39aa6b47c6d694c0e870))
+
 ## [0.6.0](https://github.com/iamsaleeb/one-another/compare/one-another-v0.5.0...one-another-v0.6.0) (2026-04-02)
 
 

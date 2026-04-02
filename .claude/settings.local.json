@@ -72,7 +72,8 @@
       "Bash(ls /c/code/one-another1/app/\\\\\\(app\\\\\\)/series/create)",
       "Bash(gh pr:*)",
       "Bash(gh api:*)",
-      "WebFetch(domain:api.github.com)"
+      "WebFetch(domain:api.github.com)",
+      "Bash(2>&1)"
     ]
   },
   "enableAllProjectMcpServers": true,

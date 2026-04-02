@@ -16,7 +16,7 @@ export default async function ChurchesPage() {
   const churches = await getChurches();
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col">
       <PageHeader title="Churches" description={`${churches.length} churches in your area`} />
 
       <div className="grid grid-cols-4 gap-3 px-4 py-2 pb-24">

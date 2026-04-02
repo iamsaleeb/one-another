@@ -2,7 +2,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export default function HomeLoading() {
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col">
       <div className="flex flex-col gap-6 px-4 py-2">
         <section className="flex flex-col gap-3">
           <Skeleton className="h-5 w-36" />

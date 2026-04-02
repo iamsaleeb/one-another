@@ -1,6 +1,6 @@
 "use server";
 
-import { signIn, signOut } from "@/auth";
+import { auth, signIn, signOut } from "@/auth";
 import { AuthError } from "next-auth";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
@@ -75,5 +75,20 @@ export async function registerAction(data: RegisterInput): Promise<ActionResult>
 }
 
 export async function signOutAction() {
+  await signOut({ redirectTo: "/login" });
+}
+
+export async function deleteAccountAction(): Promise<void> {
+  const session = await auth();
+  if (!session?.user?.id) {
+    await signOut({ redirectTo: "/login" });
+    return;
+  }
+
+  // Delete the user – all related data cascades (sessions, accounts, attendances, follows, tokens, etc.)
+  // Events and series created by the user are preserved but their createdById is set to null (SetNull)
+  await prisma.user.delete({ where: { id: session.user.id } });
+
+  // Sign out to clear the session cookie and redirect to login
   await signOut({ redirectTo: "/login" });
 }

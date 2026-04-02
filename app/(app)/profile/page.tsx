@@ -5,10 +5,11 @@ import { prisma } from "@/lib/db";
 import { signOutAction } from "@/lib/actions/auth";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Bell, CalendarDays, ChevronRight, Info, LogOut, Mail, Phone, Tag, User } from "lucide-react";
+import { Bell, CalendarDays, ChevronRight, Info, KeyRound, LogOut, Phone, ScrollText, Settings, Shield, Tag, UserPen } from "lucide-react";
 import { getInitials } from "@/lib/utils";
 import { InfoField } from "@/components/ui/info-field";
 import { RoleBadge } from "./_components/role-badge";
+import { DeleteAccountButton } from "./_components/delete-account-button";
 import { version } from "@/package.json";
 import { format } from "date-fns";
 
@@ -28,7 +29,7 @@ export default async function ProfilePage() {
     : null;
 
   return (
-    <div className="bg-background min-h-screen">
+    <div className="bg-background">
       <div className="flex flex-col gap-4 px-4 pt-6 pb-28">
         {/* Profile header card */}
         <div className="rounded-2xl bg-white shadow-card p-5 flex items-center gap-4">
@@ -47,46 +48,85 @@ export default async function ProfilePage() {
           </div>
         </div>
 
-        {/* Info card */}
-        <div className="rounded-2xl bg-white shadow-card divide-y divide-border overflow-hidden">
-          <div className="px-4 py-3">
-            <InfoField icon={User} label="Name" iconClassName="w-3.5 h-3.5 text-primary">
-              {user?.name ?? "—"}
-            </InfoField>
+        {/* Info card — only shown when supplementary details exist */}
+        {(dbUser?.phone || dbUser?.dateOfBirth) && (
+          <div className="rounded-2xl bg-white shadow-card divide-y divide-border overflow-hidden">
+            {dbUser.phone && (
+              <div className="px-4 py-3">
+                <InfoField icon={Phone} label="Phone" iconClassName="w-3.5 h-3.5 text-primary">
+                  {dbUser.phone}
+                </InfoField>
+              </div>
+            )}
+            {dbUser.dateOfBirth && (
+              <div className="px-4 py-3">
+                <InfoField icon={CalendarDays} label="Date of birth" iconClassName="w-3.5 h-3.5 text-primary">
+                  {format(dbUser.dateOfBirth, "d MMMM yyyy")}
+                </InfoField>
+              </div>
+            )}
           </div>
-          <div className="px-4 py-3">
-            <InfoField icon={Mail} label="Email" iconClassName="w-3.5 h-3.5 text-primary">
-              {user?.email ?? "—"}
-            </InfoField>
-          </div>
-          {dbUser?.phone && (
-            <div className="px-4 py-3">
-              <InfoField icon={Phone} label="Phone" iconClassName="w-3.5 h-3.5 text-primary">
-                {dbUser.phone}
-              </InfoField>
-            </div>
-          )}
-          {dbUser?.dateOfBirth && (
-            <div className="px-4 py-3">
-              <InfoField icon={CalendarDays} label="Date of birth" iconClassName="w-3.5 h-3.5 text-primary">
-                {format(dbUser.dateOfBirth, "d MMMM yyyy")}
-              </InfoField>
-            </div>
-          )}
-        </div>
+        )}
 
-        {/* Notification settings */}
-        <Link href="/profile/notifications">
-          <div className="rounded-2xl bg-white shadow-card overflow-hidden">
+        {/* Settings */}
+        <div className="rounded-2xl bg-white shadow-card divide-y divide-border overflow-hidden">
+          <div className="px-4 py-3 flex items-center gap-2">
+            <Settings className="w-3.5 h-3.5 text-primary" />
+            <span className="text-sm font-semibold">Settings</span>
+          </div>
+          {/* Edit Profile — placeholder */}
+          <div className="px-4 py-3 flex items-center justify-between opacity-50">
+            <div className="flex items-center gap-3">
+              <UserPen className="w-3.5 h-3.5 text-primary" />
+              <span className="text-sm font-medium">Edit Profile</span>
+            </div>
+            <span className="text-xs text-muted-foreground font-medium">Soon</span>
+          </div>
+          {/* Change Password — placeholder */}
+          <div className="px-4 py-3 flex items-center justify-between opacity-50">
+            <div className="flex items-center gap-3">
+              <KeyRound className="w-3.5 h-3.5 text-primary" />
+              <span className="text-sm font-medium">Change Password</span>
+            </div>
+            <span className="text-xs text-muted-foreground font-medium">Soon</span>
+          </div>
+          {/* Notifications */}
+          <Link href="/profile/notifications">
             <div className="px-4 py-3 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <Bell className="w-3.5 h-3.5 text-primary" />
-                <span className="text-sm font-medium">Notification Settings</span>
+                <span className="text-sm font-medium">Notifications</span>
               </div>
               <ChevronRight className="w-4 h-4 text-muted-foreground" />
             </div>
+          </Link>
+        </div>
+
+        {/* Legal */}
+        <div className="rounded-2xl bg-white shadow-card divide-y divide-border overflow-hidden">
+          <div className="px-4 py-3 flex items-center gap-2">
+            <ScrollText className="w-3.5 h-3.5 text-primary" />
+            <span className="text-sm font-semibold">Legal</span>
           </div>
-        </Link>
+          <Link href="/privacy">
+            <div className="px-4 py-3 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Shield className="w-3.5 h-3.5 text-primary" />
+                <span className="text-sm font-medium">Privacy Policy</span>
+              </div>
+              <ChevronRight className="w-4 h-4 text-muted-foreground" />
+            </div>
+          </Link>
+          <Link href="/terms">
+            <div className="px-4 py-3 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <ScrollText className="w-3.5 h-3.5 text-primary" />
+                <span className="text-sm font-medium">Terms of Service</span>
+              </div>
+              <ChevronRight className="w-4 h-4 text-muted-foreground" />
+            </div>
+          </Link>
+        </div>
 
         {/* About */}
         <div className="rounded-2xl bg-white shadow-card overflow-hidden">
@@ -120,6 +160,9 @@ export default async function ProfilePage() {
             Sign out
           </Button>
         </form>
+
+        {/* Danger zone */}
+        <DeleteAccountButton />
       </div>
     </div>
   );

@@ -8,7 +8,7 @@ export default async function SeriesPage() {
   const allSeries = await getSeries();
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col">
       <PageHeader title="Series" description="Recurring events" />
 
       <div className="flex flex-col gap-3 px-4 py-2">

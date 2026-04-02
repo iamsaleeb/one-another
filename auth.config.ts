@@ -9,10 +9,13 @@ export const authConfig = {
       const isLoggedIn = !!auth?.user;
       const isAuthPage =
         nextUrl.pathname.startsWith("/login") ||
-        nextUrl.pathname.startsWith("/register") ||
+        nextUrl.pathname.startsWith("/register");
+      const isPublicPage =
         nextUrl.pathname.startsWith("/terms") ||
         nextUrl.pathname.startsWith("/privacy");
       const isOnboardingPage = nextUrl.pathname.startsWith("/onboarding");
+
+      if (isPublicPage) return true;
 
       if (isAuthPage) {
         if (isLoggedIn) {

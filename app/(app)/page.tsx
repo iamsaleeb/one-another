@@ -40,7 +40,7 @@ export default async function Home({
   ].filter(Boolean);
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col">
       <PageHeader
         title={hasFilters ? "Results" : "Home"}
         description={filterParts.length ? `Showing: ${filterParts.join(" · ")}` : undefined}

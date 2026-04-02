@@ -35,7 +35,7 @@ export default async function AdminPage() {
   }));
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col">
       <PageHeader title="Church Admin" />
       <div className="px-4 pb-6 flex flex-col gap-4">
         {churchesWithOrganisers.length === 0 ? (

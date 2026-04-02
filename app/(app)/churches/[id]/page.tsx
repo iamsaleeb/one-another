@@ -29,7 +29,7 @@ export default async function ChurchDetailPage({ params }: Props) {
     : false;
 
   return (
-    <div className="bg-muted/20 min-h-screen pb-8">
+    <div className="bg-muted/20 pb-8">
       {/* Church Info Card */}
       <div className="px-4 pt-5 pb-3">
         <Card className="rounded-2xl border-0 shadow-none overflow-hidden bg-primary/5">

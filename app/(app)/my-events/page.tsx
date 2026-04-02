@@ -20,7 +20,7 @@ export default async function MyEventsPage() {
   ]);
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col">
       <PageHeader title="My Events" description={`${upcomingEvents.length} upcoming`} />
       <MyEventsTabs
         upcomingEvents={upcomingEvents}

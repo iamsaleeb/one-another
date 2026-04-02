@@ -11,7 +11,7 @@ export default async function NotificationsPage() {
   const preferences = await getNotificationPreferencesAction();
 
   return (
-    <div className="bg-background min-h-screen">
+    <div className="bg-background">
       <PageHeader title="Notifications" />
       <div className="px-4 pb-8">
         <p className="text-sm text-muted-foreground mb-4">

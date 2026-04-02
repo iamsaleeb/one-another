@@ -27,7 +27,7 @@ export default async function OrganiserPage() {
   ]);
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col">
       <PageHeader title="Organiser Tools" />
       <OrganiserTabs
         myEvents={myEvents}

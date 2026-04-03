@@ -26,14 +26,18 @@ export async function sendPushToUsers(
   const disabledIds = new Set(optedOut.map((p) => p.userId));
   const targetIds = userIds.filter((id) => !disabledIds.has(id));
 
-  if (targetIds.length === 0) return;
+  if (targetIds.length === 0) {
+    return;
+  }
 
   const tokens = await prisma.pushToken.findMany({
     where: { userId: { in: targetIds } },
     select: { token: true },
   });
 
-  if (tokens.length === 0) return;
+  if (tokens.length === 0) {
+    return;
+  }
 
   const tokenStrings = tokens.map((t) => t.token);
   const { messaging } = getFirebaseAdmin();

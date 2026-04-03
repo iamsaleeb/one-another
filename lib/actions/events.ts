@@ -161,23 +161,8 @@ export async function updateEventAction(id: string, data: CreateEventInput): Pro
   if (existing && !existing.isDraft && newDatetime.getTime() !== existing.datetime.getTime()) {
     try {
       await rescheduleEventReminders(id, newDatetime);
-
-      const attendees = await prisma.eventAttendee.findMany({
-        where: { eventId: id },
-        select: { userId: true },
-      });
-      const userIds = attendees.map((a) => a.userId);
-      if (userIds.length > 0) {
-        await sendPushToUsers(
-          userIds,
-          "EVENT_POSTPONED",
-          "Event Rescheduled",
-          `${title} has been moved to a new time`,
-          { type: "event_postponed", eventId: id }
-        );
-      }
     } catch (err) {
-      console.error("EVENT_POSTPONED push failed:", err);
+      console.error("Failed to reschedule event reminders:", err);
     }
   }
 

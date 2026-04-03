@@ -27,11 +27,6 @@ export const NOTIFICATION_TYPES = {
     description: "Get notified when an event you're attending is cancelled",
     defaultEnabled: true,
   },
-  EVENT_POSTPONED: {
-    label: "Event Reschedules",
-    description: "Get notified when an event you're attending is rescheduled",
-    defaultEnabled: true,
-  },
 } as const;
 
 export type NotificationTypeKey = keyof typeof NOTIFICATION_TYPES;

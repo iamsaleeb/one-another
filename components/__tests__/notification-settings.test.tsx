@@ -13,7 +13,6 @@ const enabledPreferences: NotificationPreferenceMap = {
   EVENT_REMINDER: { enabled: true, config: { hoursBeforeEvent: 2 } },
   NEW_SERIES_SESSION: { enabled: true, config: undefined },
   EVENT_CANCELLED: { enabled: true, config: undefined },
-  EVENT_POSTPONED: { enabled: true, config: undefined },
 }
 
 beforeEach(() => jest.clearAllMocks())
@@ -25,13 +24,12 @@ describe('NotificationSettings', () => {
     expect(screen.getByText('Event Reminders')).toBeInTheDocument()
     expect(screen.getByText('New Series Sessions')).toBeInTheDocument()
     expect(screen.getByText('Event Cancellations')).toBeInTheDocument()
-    expect(screen.getByText('Event Reschedules')).toBeInTheDocument()
   })
 
   it('renders a switch for each notification type', () => {
     render(<NotificationSettings preferences={enabledPreferences} />)
 
-    expect(screen.getAllByRole('switch')).toHaveLength(4)
+    expect(screen.getAllByRole('switch')).toHaveLength(3)
   })
 
   it('renders the timing select when EVENT_REMINDER is enabled', () => {

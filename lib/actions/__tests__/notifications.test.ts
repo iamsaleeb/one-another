@@ -54,7 +54,6 @@ describe('getNotificationPreferencesAction', () => {
     expect(prefs.NEW_SERIES_SESSION.enabled).toBe(true)
     expect(prefs.NEW_SERIES_SESSION.config).toBeUndefined()
     expect(prefs.EVENT_CANCELLED.enabled).toBe(true)
-    expect(prefs.EVENT_POSTPONED.enabled).toBe(true)
   })
 
   it('merges stored preferences over defaults', async () => {

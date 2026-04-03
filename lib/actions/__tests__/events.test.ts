@@ -680,25 +680,16 @@ describe('updateEventAction', () => {
     expect(mockEventUpdate).not.toHaveBeenCalled()
   })
 
-  it('reschedules reminders and sends push notification when datetime changes on a published event', async () => {
+  it('reschedules reminders when datetime changes on a published event', async () => {
     const mockReschedule = jest.requireMock('@/lib/schedule-notification').rescheduleEventReminders as jest.Mock
-    const mockSendPush = jest.requireMock('@/lib/notifications').sendPushToUsers as jest.Mock
     mockEventFindUnique.mockResolvedValue(existingPublished)
     mockEventUpdate.mockResolvedValue({})
-    mockEventAttendeeFindMany.mockResolvedValue([{ userId: 'user-2' }])
     // Use a different date to trigger reschedule
     const newDate = '2026-05-10'
 
     await updateEventAction('evt-1', { ...validData, date: newDate })
 
     expect(mockReschedule).toHaveBeenCalledWith('evt-1', new Date(`${newDate}T${validData.time}`))
-    expect(mockSendPush).toHaveBeenCalledWith(
-      ['user-2'],
-      'EVENT_POSTPONED',
-      'Event Rescheduled',
-      expect.stringContaining(validData.title),
-      expect.objectContaining({ type: 'event_postponed', eventId: 'evt-1' })
-    )
   })
 
   it('does not reschedule when the datetime is unchanged', async () => {
@@ -759,18 +750,6 @@ describe('updateEventAction', () => {
     await expect(updateEventAction('evt-1', { ...validData, churchId: 'ch-new' })).rejects.toThrow('NEXT_REDIRECT')
 
     expect(mockEventUpdate).not.toHaveBeenCalled()
-  })
-
-  it('handles EVENT_POSTPONED push failure gracefully', async () => {
-    const mockSendPush = jest.requireMock('@/lib/notifications').sendPushToUsers as jest.Mock
-    mockEventFindUnique.mockResolvedValue(existingPublished)
-    mockEventUpdate.mockResolvedValue({})
-    mockEventAttendeeFindMany.mockResolvedValue([{ userId: 'user-2' }])
-    mockSendPush.mockRejectedValueOnce(new Error('push failed'))
-
-    await updateEventAction('evt-1', { ...validData, date: '2026-05-10' })
-
-    expect(mockRedirect).toHaveBeenCalledWith('/events/evt-1')
   })
 
   it('persists photoUrl when provided', async () => {

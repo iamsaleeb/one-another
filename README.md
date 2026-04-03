@@ -139,7 +139,6 @@ Push notifications are delivered via [Firebase Cloud Messaging (FCM)](https://fi
 | `EVENT_REMINDER` | Before an event the user is attending (configurable: 1h, 2h, 4h, or 24h — default 2h) |
 | `NEW_SERIES_SESSION` | When a new session is added to a series the user follows |
 | `EVENT_CANCELLED` | When an event the user is attending is cancelled |
-| `EVENT_POSTPONED` | When an event the user is attending is rescheduled |
 
 ### Firebase setup
 

@@ -8,12 +8,10 @@ export const WHEN_OPTIONS: Array<{ value: WhenFilter; label: string }> = [
 ];
 
 export const CATEGORY_OPTIONS = [
-  "Worship",
-  "Prayer",
-  "Youth",
-  "Outreach",
+  "Youth Meeting",
   "Bible Study",
-  "Missions",
+  "Servants Meeting",
+  "Camp",
 ] as const;
 
 export const TYPE_OPTIONS: Array<{ value: TypeFilter; label: string }> = [

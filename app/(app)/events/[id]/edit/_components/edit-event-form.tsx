@@ -28,15 +28,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { createEventSchema, type CreateEventInput } from "@/lib/validations/event";
 import { updateEventAction, publishEventAction, unpublishEventAction } from "@/lib/actions/events";
 import { PhotoUploadField } from "@/components/photo-upload-field";
-
-const CATEGORIES = [
-  "Worship",
-  "Prayer",
-  "Youth",
-  "Outreach",
-  "Bible Study",
-  "Missions",
-];
+import { CATEGORY_OPTIONS } from "@/types/search";
 
 interface Church { id: string; name: string }
 
@@ -235,7 +227,7 @@ export function EditEventForm({
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  {CATEGORIES.map((cat) => (
+                  {CATEGORY_OPTIONS.map((cat) => (
                     <SelectItem key={cat} value={cat}>
                       {cat}
                     </SelectItem>

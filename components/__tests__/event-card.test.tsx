@@ -7,8 +7,8 @@ const sampleEvent = {
   title: 'Sunday Worship Service',
   location: 'Main Hall, Grace Church',
   host: 'Pastor John',
-  tag: 'Worship',
-  badge: 'Worship',
+  tag: 'Youth Meeting',
+  badge: 'Youth Meeting',
 }
 
 describe('EventCard', () => {
@@ -34,7 +34,7 @@ describe('EventCard', () => {
 
   it('renders the event tag badge', () => {
     render(<EventCard event={sampleEvent} />)
-    expect(screen.getByText('Worship')).toBeInTheDocument()
+    expect(screen.getByText('Youth Meeting')).toBeInTheDocument()
   })
 
   it('wraps the card in a link to the event detail page', () => {
@@ -65,13 +65,13 @@ describe('EventCard', () => {
     const cancelledEvent = { ...sampleEvent, cancelledAt: new Date() }
     render(<EventCard event={cancelledEvent} />)
     expect(screen.getByText('Cancelled')).toBeInTheDocument()
-    expect(screen.queryByText('Worship')).not.toBeInTheDocument()
+    expect(screen.queryByText('Youth Meeting')).not.toBeInTheDocument()
   })
 
   it('shows the tag badge when cancelledAt is null', () => {
     const activeEvent = { ...sampleEvent, cancelledAt: null }
     render(<EventCard event={activeEvent} />)
-    expect(screen.getByText('Worship')).toBeInTheDocument()
+    expect(screen.getByText('Youth Meeting')).toBeInTheDocument()
     expect(screen.queryByText('Cancelled')).not.toBeInTheDocument()
   })
 })

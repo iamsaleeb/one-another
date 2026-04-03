@@ -105,7 +105,7 @@ const validData = {
   time: '09:00',
   location: 'Main Hall',
   host: 'Pastor John',
-  tag: 'Worship',
+  tag: 'Youth Meeting',
   description: 'Weekly Sunday service',
   churchId: 'ch-1',
 }
@@ -131,7 +131,7 @@ describe('createEventAction', () => {
           datetime: new Date('2026-04-06T09:00'),
           location: 'Main Hall',
           host: 'Pastor John',
-          tag: 'Worship',
+          tag: 'Youth Meeting',
           description: 'Weekly Sunday service',
           isPast: false,
           churchId: 'ch-1',

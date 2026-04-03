@@ -56,7 +56,7 @@ const sampleEvent = {
   datetime: '2026-03-16T09:00:00Z',
   location: 'Main Hall',
   host: 'Pastor John',
-  tag: 'Worship',
+  tag: 'Youth Meeting',
   isPast: false,
   createdAt: new Date(),
 }

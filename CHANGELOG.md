@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.8.0](https://github.com/iamsaleeb/one-another/compare/one-another-v0.7.0...one-another-v0.8.0) (2026-04-03)
+
+
+### Features
+
+* added cron fixes and new system ([#52](https://github.com/iamsaleeb/one-another/issues/52)) ([991399c](https://github.com/iamsaleeb/one-another/commit/991399c9ec40c83431701407c78813eff29b8ff3))
+* added jsonb object type for events ([#51](https://github.com/iamsaleeb/one-another/issues/51)) ([c4133b4](https://github.com/iamsaleeb/one-another/commit/c4133b40ce5652bd4f586b5e7ffd0b7e3e1ad751))
+* delete account ability ([#46](https://github.com/iamsaleeb/one-another/issues/46)) ([67afca7](https://github.com/iamsaleeb/one-another/commit/67afca7f69e4588b45efd13911a8f5794b4c1cc8))
+
+
+### Bug Fixes
+
+* fix the logout issues in android and category for events ([#50](https://github.com/iamsaleeb/one-another/issues/50)) ([583e2d1](https://github.com/iamsaleeb/one-another/commit/583e2d17c430b0869ac35d9591cfec6ba34eca1c))
+
 ## [0.7.0](https://github.com/iamsaleeb/one-another/compare/one-another-v0.6.0...one-another-v0.7.0) (2026-04-02)
 
 

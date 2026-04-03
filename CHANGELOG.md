@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.9.0](https://github.com/iamsaleeb/one-another/compare/one-another-v0.8.0...one-another-v0.9.0) (2026-04-03)
+
+
+### Features
+
+* added camp registrations ([#56](https://github.com/iamsaleeb/one-another/issues/56)) ([b4b43de](https://github.com/iamsaleeb/one-another/commit/b4b43def19f422c86d68f50b98cf3cc513d550e5))
+
+
+### Bug Fixes
+
+* fixed authentication models ([#55](https://github.com/iamsaleeb/one-another/issues/55)) ([e21d3d1](https://github.com/iamsaleeb/one-another/commit/e21d3d1b5fe10b3d966d580c57ab5e43cabc95c0))
+* fixed the issues regarding date time UTC ([#53](https://github.com/iamsaleeb/one-another/issues/53)) ([7ac3faa](https://github.com/iamsaleeb/one-another/commit/7ac3faa9a29d73dfa8eb996829410426eadfe546))
+
 ## [0.8.0](https://github.com/iamsaleeb/one-another/compare/one-another-v0.7.0...one-another-v0.8.0) (2026-04-03)
 
 

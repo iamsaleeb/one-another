@@ -11,7 +11,7 @@ import { InfoField } from "@/components/ui/info-field";
 import { RoleBadge } from "./_components/role-badge";
 import { DeleteAccountButton } from "./_components/delete-account-button";
 import { version } from "@/package.json";
-import { format } from "date-fns";
+import { formatDateOnly } from "@/lib/datetime";
 
 export const metadata: Metadata = {
   title: "Profile — One Another",
@@ -61,7 +61,7 @@ export default async function ProfilePage() {
             {dbUser.dateOfBirth && (
               <div className="px-4 py-3">
                 <InfoField icon={CalendarDays} label="Date of birth" iconClassName="w-3.5 h-3.5 text-primary">
-                  {format(dbUser.dateOfBirth, "d MMMM yyyy")}
+                  {formatDateOnly(dbUser.dateOfBirth)}
                 </InfoField>
               </div>
             )}

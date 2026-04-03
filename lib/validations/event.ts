@@ -2,8 +2,9 @@ import { z } from "zod";
 
 export const createEventSchema = z.object({
   title: z.string().min(1, "Title is required"),
-  date: z.string().min(1, "Date is required"),
-  time: z.string().min(1, "Time is required"),
+  date: z.iso.date(),
+  time: z.iso.time(),
+  datetimeISO: z.iso.datetime().optional(),
   location: z.string().min(1, "Location is required"),
   host: z.string().min(1, "Host is required"),
   tag: z.string().min(1, "Category is required"),

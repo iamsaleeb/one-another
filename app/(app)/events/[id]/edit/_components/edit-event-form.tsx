@@ -1,7 +1,7 @@
 "use client";
 
 import { useForm, useWatch } from "react-hook-form";
-import { useTransition } from "react";
+import { useEffect, useTransition } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Repeat } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -27,6 +27,7 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { createEventSchema, type CreateEventInput } from "@/lib/validations/event";
 import { updateEventAction, publishEventAction, unpublishEventAction } from "@/lib/actions/events";
+import { localInputsToUtcDate } from "@/lib/datetime";
 import { PhotoUploadField } from "@/components/photo-upload-field";
 import { CATEGORY_OPTIONS } from "@/types/search";
 
@@ -35,8 +36,7 @@ interface Church { id: string; name: string }
 interface EventData {
   id: string;
   title: string;
-  date: string;
-  time: string;
+  datetimeISO: string;
   location: string;
   host: string;
   tag: string;
@@ -64,8 +64,8 @@ export function EditEventForm({
     resolver: zodResolver(createEventSchema),
     defaultValues: {
       title: event.title,
-      date: event.date,
-      time: event.time,
+      date: "",
+      time: "",
       location: event.location,
       host: event.host,
       tag: event.tag,
@@ -85,8 +85,19 @@ export function EditEventForm({
   const [isPublishPending, startPublishTransition] = useTransition();
   const requiresRegistration = useWatch({ control: form.control, name: "requiresRegistration" });
 
+  // Populate date/time inputs from the stored UTC datetime using the browser's local timezone.
+  // This runs only on the client, so the values reflect the organiser's local timezone.
+  useEffect(() => {
+    const d = new Date(event.datetimeISO);
+    const pad = (n: number) => String(n).padStart(2, "0");
+    form.setValue("date", `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`, { shouldDirty: false });
+    form.setValue("time", `${pad(d.getHours())}:${pad(d.getMinutes())}`, { shouldDirty: false });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const onSubmit = form.handleSubmit(async (data) => {
-    const result = await updateEventAction(event.id, data);
+    const datetimeISO = localInputsToUtcDate(data.date, data.time).toISOString();
+    const result = await updateEventAction(event.id, { ...data, datetimeISO });
     if (result?.error) {
       form.setError("root", { message: result.error });
     }

@@ -8,6 +8,7 @@ import {
   type OnboardingInput,
 } from "@/lib/validations/onboarding";
 import type { ActionResult } from "@/lib/actions/auth";
+import { parseDateOfBirth } from "@/lib/datetime";
 
 export async function completeOnboardingAction(
   data: OnboardingInput
@@ -28,7 +29,7 @@ export async function completeOnboardingAction(
     where: { id: session.user.id },
     data: {
       phone: phone || null,
-      dateOfBirth: dateOfBirth ? new Date(`${dateOfBirth}T12:00:00.000Z`) : null,
+      dateOfBirth: dateOfBirth ? parseDateOfBirth(dateOfBirth) : null,
       image: image || null,
       onboardingCompleted: true,
     },

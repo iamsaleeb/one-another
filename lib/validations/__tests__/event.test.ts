@@ -31,8 +31,28 @@ describe('createEventSchema', () => {
     expect(result.success).toBe(false)
   })
 
+  it('rejects a non-ISO date', () => {
+    const result = createEventSchema.safeParse({ ...validInput, date: '06/04/2026' })
+    expect(result.success).toBe(false)
+  })
+
   it('rejects an empty time', () => {
     const result = createEventSchema.safeParse({ ...validInput, time: '' })
+    expect(result.success).toBe(false)
+  })
+
+  it('rejects a non-ISO time', () => {
+    const result = createEventSchema.safeParse({ ...validInput, time: '9am' })
+    expect(result.success).toBe(false)
+  })
+
+  it('accepts a valid datetimeISO', () => {
+    const result = createEventSchema.safeParse({ ...validInput, datetimeISO: '2026-04-06T09:00:00.000Z' })
+    expect(result.success).toBe(true)
+  })
+
+  it('rejects a malformed datetimeISO', () => {
+    const result = createEventSchema.safeParse({ ...validInput, datetimeISO: 'not-a-datetime' })
     expect(result.success).toBe(false)
   })
 

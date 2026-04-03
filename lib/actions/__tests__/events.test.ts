@@ -185,6 +185,21 @@ describe('createEventAction', () => {
     )
   })
 
+  it('uses datetimeISO when provided, ignoring date+time fields', async () => {
+    mockEventCreate.mockResolvedValue({ id: 'evt-1' })
+    const datetimeISO = '2026-04-06T09:00:00.000Z'
+
+    await createEventAction({ ...validData, datetimeISO })
+
+    expect(mockEventCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          datetime: new Date(datetimeISO),
+        }),
+      })
+    )
+  })
+
   it('returns a fieldError when churchId is empty for a standalone event', async () => {
     const result = await createEventAction({ ...validData, churchId: '' })
 
@@ -642,6 +657,22 @@ describe('updateEventAction', () => {
     )
     expect(mockRedirect).toHaveBeenCalledWith('/events/evt-1')
     expect(mockRevalidatePath).toHaveBeenCalledWith('/')
+  })
+
+  it('uses datetimeISO when provided, ignoring date+time fields', async () => {
+    mockEventFindUnique.mockResolvedValue(existingPublished)
+    mockEventUpdate.mockResolvedValue({})
+    const datetimeISO = '2026-06-01T10:00:00.000Z'
+
+    await updateEventAction('evt-1', { ...validData, datetimeISO })
+
+    expect(mockEventUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          datetime: new Date(datetimeISO),
+        }),
+      })
+    )
   })
 
   it('returns fieldErrors when required fields are missing', async () => {

@@ -28,10 +28,11 @@ export async function createEventAction(data: CreateEventInput): Promise<ActionR
     return { fieldErrors: parsed.error.flatten().fieldErrors };
   }
 
-  const { title, date, time, location, host, tag, description, seriesId, requiresRegistration, capacity, collectPhone, collectNotes, price, isDraft, photoUrl } = parsed.data;
+  const { title, date, time, datetimeISO, location, host, tag, description, seriesId, requiresRegistration, capacity, collectPhone, collectNotes, price, isDraft, photoUrl } = parsed.data;
   let { churchId } = parsed.data;
 
-  const datetime = new Date(`${date}T${time}`);
+  const datetime = datetimeISO ? new Date(datetimeISO) : new Date(`${date}T${time}`);
+  if (Number.isNaN(datetime.getTime())) return { fieldErrors: { date: ["Invalid date or time"] } };
 
   if (seriesId) {
     const series = await prisma.series.findUnique({ where: { id: seriesId }, select: { churchId: true } });
@@ -106,9 +107,10 @@ export async function updateEventAction(id: string, data: CreateEventInput): Pro
     return { fieldErrors: parsed.error.flatten().fieldErrors };
   }
 
-  const { title, date, time, location, host, tag, description, seriesId, requiresRegistration, capacity, collectPhone, collectNotes, price, photoUrl } = parsed.data;
+  const { title, date, time, datetimeISO, location, host, tag, description, seriesId, requiresRegistration, capacity, collectPhone, collectNotes, price, photoUrl } = parsed.data;
   let { churchId } = parsed.data;
-  const newDatetime = new Date(`${date}T${time}`);
+  const newDatetime = datetimeISO ? new Date(datetimeISO) : new Date(`${date}T${time}`);
+  if (Number.isNaN(newDatetime.getTime())) return { fieldErrors: { date: ["Invalid date or time"] } };
 
   if (seriesId) {
     const series = await prisma.series.findUnique({ where: { id: seriesId }, select: { churchId: true } });

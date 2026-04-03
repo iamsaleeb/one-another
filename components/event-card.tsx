@@ -2,7 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Repeat } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import { formatEventDatetime } from "@/lib/utils";
+import { EventDatetime } from "@/components/event-datetime";
 
 interface EventCardProps {
   event: {
@@ -39,7 +39,7 @@ className="object-cover"
           <CardContent className="flex flex-col gap-1 p-4">
           <div className="flex items-center justify-between">
             <p className="text-xs font-semibold text-primary uppercase tracking-wide">
-              {formatEventDatetime(event.datetime)}
+              <EventDatetime datetime={event.datetime} />
             </p>
             {event.isDraft ? (
               <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-medium text-amber-700 whitespace-nowrap">

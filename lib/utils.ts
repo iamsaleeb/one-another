@@ -1,13 +1,8 @@
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
-import { format } from "date-fns"
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
-}
-
-export function formatEventDatetime(date: Date): string {
-  return format(date, "EEE, d MMM | h:mm a").toUpperCase();
 }
 
 export function getInitials(name?: string | null, email?: string | null): string {

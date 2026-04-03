@@ -58,7 +58,6 @@ export async function GET(request: NextRequest) {
 
   try {
     const processed = await processScheduledNotifications();
-    console.log(`[${new Date().toISOString()}] Processed ${processed} scheduled notification(s)`);
     return NextResponse.json({ ok: true, processed });
   } catch (err) {
     console.error(`[${new Date().toISOString()}] Notification cron error:`, err);

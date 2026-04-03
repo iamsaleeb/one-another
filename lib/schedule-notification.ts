@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { subHours } from "@/lib/datetime";
 
 const DEFAULT_HOURS_BEFORE_EVENT = 2;
 
@@ -33,7 +34,7 @@ async function getHoursBeforeEvent(userId: string): Promise<number> {
  */
 export async function scheduleEventReminder(userId: string, event: EventRef): Promise<void> {
   const hoursBeforeEvent = await getHoursBeforeEvent(userId);
-  const scheduledFor = new Date(event.datetime.getTime() - hoursBeforeEvent * 60 * 60 * 1000);
+  const scheduledFor = subHours(event.datetime, hoursBeforeEvent);
 
   if (scheduledFor <= new Date()) {
     // The reminder window has already passed — nothing to schedule
@@ -94,7 +95,7 @@ export async function rescheduleEventReminders(eventId: string, newDatetime: Dat
 
   for (const notification of pending) {
     const hoursBeforeEvent = await getHoursBeforeEvent(notification.userId);
-    const newScheduledFor = new Date(newDatetime.getTime() - hoursBeforeEvent * 60 * 60 * 1000);
+    const newScheduledFor = subHours(newDatetime, hoursBeforeEvent);
 
     const existingPayload = notification.payload as {
       title: string;
@@ -142,7 +143,7 @@ export async function updateReminderScheduleForUser(userId: string, newHoursBefo
     };
 
     const eventDatetime = new Date(payload.data.eventDatetime);
-    const newScheduledFor = new Date(eventDatetime.getTime() - newHoursBeforeEvent * 60 * 60 * 1000);
+    const newScheduledFor = subHours(eventDatetime, newHoursBeforeEvent);
 
     if (newScheduledFor <= new Date()) continue; // already past — leave it
 

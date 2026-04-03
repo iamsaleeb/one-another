@@ -26,6 +26,7 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { createEventSchema, type CreateEventInput } from "@/lib/validations/event";
 import { createEventAction } from "@/lib/actions/events";
+import { localInputsToUtcDate } from "@/lib/datetime";
 import { PhotoUploadField } from "@/components/photo-upload-field";
 import { CATEGORY_OPTIONS } from "@/types/search";
 
@@ -65,7 +66,8 @@ export function CreateEventForm({
   const requiresRegistration = useWatch({ control: form.control, name: "requiresRegistration" });
 
   const onSubmit = form.handleSubmit(async (data) => {
-    const result = await createEventAction(data);
+    const datetimeISO = localInputsToUtcDate(data.date, data.time).toISOString();
+    const result = await createEventAction({ ...data, datetimeISO });
     if (result?.error) {
       form.setValue("isDraft", false);
       form.setError("root", { message: result.error });

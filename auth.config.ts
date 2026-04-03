@@ -13,7 +13,7 @@ export const authConfig = {
       const isPublicPage =
         nextUrl.pathname.startsWith("/terms") ||
         nextUrl.pathname.startsWith("/privacy") ||
-        nextUrl.pathname.startsWith("/api/cron/");
+        nextUrl.pathname === "/api/cron/event-reminders";
       const isOnboardingPage = nextUrl.pathname.startsWith("/onboarding");
 
       if (isPublicPage) return true;

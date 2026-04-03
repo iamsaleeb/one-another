@@ -19,21 +19,6 @@ async function processScheduledNotifications(): Promise<number> {
   if (due.length === 0) return 0;
 
   for (const notification of due) {
-    // Check if user has since opted out of this notification type.
-    // Absent record means enabled (opt-out model).
-    const pref = await prisma.notificationPreference.findUnique({
-      where: { userId_type: { userId: notification.userId, type: notification.type } },
-      select: { enabled: true },
-    });
-
-    if (pref?.enabled === false) {
-      await prisma.scheduledNotification.update({
-        where: { id: notification.id },
-        data: { cancelledAt: new Date() },
-      });
-      continue;
-    }
-
     const payload = notification.payload as {
       title: string;
       body: string;
@@ -73,7 +58,7 @@ export async function GET(request: NextRequest) {
 
   try {
     const processed = await processScheduledNotifications();
-    console.warn(`[${new Date().toISOString()}] Processed ${processed} scheduled notification(s)`);
+    console.log(`[${new Date().toISOString()}] Processed ${processed} scheduled notification(s)`);
     return NextResponse.json({ ok: true, processed });
   } catch (err) {
     console.error(`[${new Date().toISOString()}] Notification cron error:`, err);

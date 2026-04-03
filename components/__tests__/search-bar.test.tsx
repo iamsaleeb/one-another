@@ -123,12 +123,10 @@ describe('SearchBar — dropdown', () => {
   it('shows all category options in dropdown', async () => {
     setup()
     await userEvent.click(screen.getByPlaceholderText(/search events/i))
-    expect(screen.getByRole('button', { name: 'Worship' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Prayer' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Youth' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Outreach' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Youth Meeting' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Bible Study' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Missions' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Servants Meeting' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Camp' })).toBeInTheDocument()
   })
 
   it('closes on Escape key', async () => {
@@ -241,21 +239,21 @@ describe('SearchBar — category filter', () => {
   it('selects a category and navigates', async () => {
     setup()
     await userEvent.click(screen.getByPlaceholderText(/search events/i))
-    await userEvent.click(screen.getByRole('button', { name: 'Prayer' }))
-    expect(mockPush).toHaveBeenCalledWith('/?category=Prayer')
+    await userEvent.click(screen.getByRole('button', { name: 'Youth Meeting' }))
+    expect(mockPush).toHaveBeenCalledWith('/?category=Youth+Meeting')
   })
 
   it('deselects the active category when clicking it again', async () => {
-    setup({ initialCategory: 'Missions' })
+    setup({ initialCategory: 'Servants Meeting' })
     await userEvent.click(screen.getByPlaceholderText(/search events/i))
-    await userEvent.click(screen.getByRole('button', { name: 'Missions' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Servants Meeting' }))
     expect(mockPush).toHaveBeenCalledWith('/')
   })
 
   it('shows active styling on the selected category chip', async () => {
-    setup({ initialCategory: 'Youth' })
+    setup({ initialCategory: 'Youth Meeting' })
     await userEvent.click(screen.getByPlaceholderText(/search events/i))
-    const chip = screen.getByRole('button', { name: 'Youth' })
+    const chip = screen.getByRole('button', { name: 'Youth Meeting' })
     expect(chip.className).toMatch(/bg-primary/)
   })
 })
@@ -264,9 +262,9 @@ describe('SearchBar — category filter', () => {
 
 describe('SearchBar — combined filters', () => {
   it('builds URL with query + when + category', async () => {
-    setup({ initialQuery: 'grace', initialWhen: 'today', initialCategory: 'Worship' })
+    setup({ initialQuery: 'grace', initialWhen: 'today', initialCategory: 'Camp' })
     await userEvent.click(screen.getByRole('button', { name: /^search$/i }))
-    expect(mockPush).toHaveBeenCalledWith('/?q=grace&category=Worship&when=today')
+    expect(mockPush).toHaveBeenCalledWith('/?q=grace&category=Camp&when=today')
   })
 
   it('builds URL with query + type', async () => {

@@ -115,7 +115,7 @@ async function main() {
       title: "Youth Fellowship",
       location: "St George Church",
       host: "Fr Mark Mikhail",
-      tag: "Meeting",
+      tag: "Youth Meeting",
       description:
         "A Friday night gathering for young adults to connect, worship together, and hear uplifting words from Fr Mark Mikhail. Come with an open heart and bring a friend!",
       isPast: false,
@@ -144,7 +144,7 @@ async function main() {
       title: "Sunday Worship Service",
       location: "Grace Community Church",
       host: "Fr Daniel Hanna",
-      tag: "Worship",
+      tag: "Youth Meeting",
       description:
         "A morning of worship, prayer, and the word. Fr Daniel Hanna led the congregation through a powerful reflection on grace and renewal.",
       isPast: true,
@@ -158,7 +158,7 @@ async function main() {
       title: "Lenten Prayer Group",
       location: "New Life Fellowship",
       host: "Fr Mark Mikhail",
-      tag: "Prayer",
+      tag: "Servants Meeting",
       description:
         "A mid-week gathering during the Lenten season for prayer, fasting reflections, and community support.",
       isPast: true,

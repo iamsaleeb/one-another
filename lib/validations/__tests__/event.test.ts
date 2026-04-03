@@ -6,7 +6,7 @@ const validInput = {
   time: '09:00',
   location: 'Main Hall',
   host: 'Pastor John',
-  tag: 'Worship',
+  tag: 'Youth Meeting',
   description: 'Weekly Sunday service',
 }
 

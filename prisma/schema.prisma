@@ -168,9 +168,7 @@ model Event {
   isPast               Boolean @default(false)
   isDraft              Boolean @default(false)
   requiresRegistration Boolean @default(false)
-  capacity             Int?
-  collectPhone         Boolean @default(false)
-  collectNotes         Boolean @default(false)
+  metadata             Json    @db.JsonB
   price                String?
   cancelledAt          DateTime?
   cancellationReason   String?

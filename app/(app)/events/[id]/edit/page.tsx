@@ -2,6 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { UserRole } from "@prisma/client";
 import { getEventById, getChurchesByManager } from "@/lib/actions/data";
+import { parseEventMetadata } from "@/lib/types/event-metadata";
 import { PageHeader } from "@/components/ui/page-header";
 import { EditEventForm } from "./_components/edit-event-form";
 
@@ -21,6 +22,7 @@ export default async function EditEventPage({ params }: Props) {
 
   const [date, fullTime] = event.datetime.toISOString().split("T");
   const time = fullTime.slice(0, 5);
+  const { registration } = parseEventMetadata(event.metadata);
 
   return (
     <div className="mx-auto max-w-lg">
@@ -41,9 +43,9 @@ export default async function EditEventPage({ params }: Props) {
             seriesId: event.seriesId,
             seriesName: event.series?.name,
             requiresRegistration: event.requiresRegistration,
-            capacity: event.capacity,
-            collectPhone: event.collectPhone,
-            collectNotes: event.collectNotes,
+            capacity: registration.capacity,
+            collectPhone: registration.collectPhone,
+            collectNotes: registration.collectNotes,
             price: event.price,
             isDraft: event.isDraft,
             photoUrl: event.photoUrl,

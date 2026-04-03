@@ -105,6 +105,7 @@ async function main() {
       description:
         "Join us for an evening of scripture and reflection as Fr Dan Fanous leads us through the profound mystery of the Cross and what forgiveness truly means in the life of a Christian. All are welcome.",
       isPast: false,
+      metadata: { registration: { capacity: null, collectPhone: false, collectNotes: false } },
       churchId: grace.id,
     },
   });
@@ -119,6 +120,7 @@ async function main() {
       description:
         "A Friday night gathering for young adults to connect, worship together, and hear uplifting words from Fr Mark Mikhail. Come with an open heart and bring a friend!",
       isPast: false,
+      metadata: { registration: { capacity: null, collectPhone: false, collectNotes: false } },
       churchId: newLife.id,
     },
   });
@@ -133,6 +135,7 @@ async function main() {
       description:
         "Roll up your sleeves and serve alongside Deacon Peter and the wider community. We will be volunteering at the Downtown Community Center — food, fellowship, and making a difference together.",
       isPast: false,
+      metadata: { registration: { capacity: null, collectPhone: false, collectNotes: false } },
       churchId: harvest.id,
     },
   });
@@ -148,6 +151,7 @@ async function main() {
       description:
         "A morning of worship, prayer, and the word. Fr Daniel Hanna led the congregation through a powerful reflection on grace and renewal.",
       isPast: true,
+      metadata: { registration: { capacity: null, collectPhone: false, collectNotes: false } },
       churchId: grace.id,
     },
   });
@@ -162,6 +166,7 @@ async function main() {
       description:
         "A mid-week gathering during the Lenten season for prayer, fasting reflections, and community support.",
       isPast: true,
+      metadata: { registration: { capacity: null, collectPhone: false, collectNotes: false } },
       churchId: newLife.id,
     },
   });
@@ -176,6 +181,7 @@ async function main() {
       description:
         "Young adults came together to explore the Book of Romans with Deacon Paul. An evening of deep discussion and spiritual growth.",
       isPast: true,
+      metadata: { registration: { capacity: null, collectPhone: false, collectNotes: false } },
       churchId: cityLight.id,
     },
   });

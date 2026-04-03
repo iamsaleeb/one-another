@@ -6,6 +6,7 @@ import { prisma } from "@/lib/db";
 import { auth } from "@/auth";
 import { UserRole } from "@prisma/client";
 import { createEventSchema, registerEventSchema, type CreateEventInput } from "@/lib/validations/event";
+import { parseEventMetadata } from "@/lib/types/event-metadata";
 import { canManageChurch } from "@/lib/permissions";
 import type { ActionResult } from "@/lib/actions/auth";
 import {
@@ -55,9 +56,13 @@ export async function createEventAction(data: CreateEventInput): Promise<ActionR
       isPast: false,
       isDraft: isDraft ?? false,
       requiresRegistration: requiresRegistration ?? false,
-      capacity: requiresRegistration ? (capacity ?? null) : null,
-      collectPhone: requiresRegistration ? (collectPhone ?? false) : false,
-      collectNotes: requiresRegistration ? (collectNotes ?? false) : false,
+      metadata: {
+        registration: {
+          capacity: requiresRegistration ? (capacity ?? null) : null,
+          collectPhone: requiresRegistration ? (collectPhone ?? false) : false,
+          collectNotes: requiresRegistration ? (collectNotes ?? false) : false,
+        },
+      },
       price: price ?? null,
       photoUrl: photoUrl ?? null,
       churchId,
@@ -139,9 +144,13 @@ export async function updateEventAction(id: string, data: CreateEventInput): Pro
       tag,
       description,
       requiresRegistration: requiresRegistration ?? false,
-      capacity: requiresRegistration ? (capacity ?? null) : null,
-      collectPhone: requiresRegistration ? (collectPhone ?? false) : false,
-      collectNotes: requiresRegistration ? (collectNotes ?? false) : false,
+      metadata: {
+        registration: {
+          capacity: requiresRegistration ? (capacity ?? null) : null,
+          collectPhone: requiresRegistration ? (collectPhone ?? false) : false,
+          collectNotes: requiresRegistration ? (collectNotes ?? false) : false,
+        },
+      },
       price: price ?? null,
       photoUrl: photoUrl ?? null,
       churchId,
@@ -411,12 +420,13 @@ export async function registerEventAction(
 
   const event = await prisma.event.findUnique({
     where: { id: eventId },
-    select: { id: true, title: true, datetime: true, isDraft: true, capacity: true, _count: { select: { attendees: true } } },
+    select: { id: true, title: true, datetime: true, isDraft: true, metadata: true, _count: { select: { attendees: true } } },
   });
 
   if (!event || event.isDraft) return { error: "Event not found." };
 
-  if (event.capacity != null && event._count.attendees >= event.capacity) {
+  const { capacity } = parseEventMetadata(event.metadata).registration;
+  if (capacity != null && event._count.attendees >= capacity) {
     return { error: "Sorry, this event is fully booked." };
   }
 

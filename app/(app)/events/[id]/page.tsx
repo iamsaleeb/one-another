@@ -5,6 +5,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { auth } from "@/auth";
 import { getEventById, getEventAttendees } from "@/lib/actions/data";
+import { parseEventMetadata } from "@/lib/types/event-metadata";
 import { canManageChurch } from "@/lib/permissions";
 import { formatEventDatetime } from "@/lib/utils";
 import { InfoField } from "@/components/ui/info-field";
@@ -43,6 +44,8 @@ export default async function EventDetailPage({ params }: Props) {
   const isAttending = session?.user?.id
     ? event.attendees.some((a) => a.userId === session.user.id)
     : false;
+
+  const { registration } = parseEventMetadata(event.metadata);
 
   return (
     <div className="bg-background">
@@ -124,10 +127,10 @@ export default async function EventDetailPage({ params }: Props) {
         isAttending={isAttending}
         userName={session?.user?.name ?? ""}
         userEmail={session?.user?.email ?? ""}
-        capacity={event.capacity}
+        capacity={registration.capacity}
         spotsUsed={event._count.attendees}
-        collectPhone={event.collectPhone}
-        collectNotes={event.collectNotes}
+        collectPhone={registration.collectPhone}
+        collectNotes={registration.collectNotes}
         price={event.price}
         isCancelled={!!event.cancelledAt}
         isDraft={event.isDraft}

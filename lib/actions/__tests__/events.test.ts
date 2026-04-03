@@ -521,7 +521,7 @@ describe('unattendEventAction', () => {
 })
 
 describe('registerEventAction', () => {
-  const publishedRegEvent = { id: 'evt-1', title: 'Test', datetime: new Date('2026-05-01T09:00:00Z'), isDraft: false, capacity: null, _count: { attendees: 0 } }
+  const publishedRegEvent = { id: 'evt-1', title: 'Test', datetime: new Date('2026-05-01T09:00:00Z'), isDraft: false, metadata: { registration: { capacity: null, collectPhone: false, collectNotes: false } }, _count: { attendees: 0 } }
 
   it('creates an EventAttendee with phone and notes', async () => {
     mockEventFindUnique.mockResolvedValue(publishedRegEvent)
@@ -582,7 +582,7 @@ describe('registerEventAction', () => {
   })
 
   it('allows registration when capacity is not set', async () => {
-    mockEventFindUnique.mockResolvedValue({ ...publishedRegEvent, capacity: null, _count: { attendees: 10 } })
+    mockEventFindUnique.mockResolvedValue({ ...publishedRegEvent, metadata: { registration: { capacity: null, collectPhone: false, collectNotes: false } }, _count: { attendees: 10 } })
     mockEventAttendeeCreate.mockResolvedValue({})
 
     const result = await registerEventAction('evt-1', {}, makeFormData({}))
@@ -592,7 +592,7 @@ describe('registerEventAction', () => {
   })
 
   it('allows registration when spots are still available', async () => {
-    mockEventFindUnique.mockResolvedValue({ ...publishedRegEvent, capacity: 10, _count: { attendees: 9 } })
+    mockEventFindUnique.mockResolvedValue({ ...publishedRegEvent, metadata: { registration: { capacity: 10, collectPhone: false, collectNotes: false } }, _count: { attendees: 9 } })
     mockEventAttendeeCreate.mockResolvedValue({})
 
     const result = await registerEventAction('evt-1', {}, makeFormData({}))
@@ -602,7 +602,7 @@ describe('registerEventAction', () => {
   })
 
   it('returns a fully booked error when capacity is reached', async () => {
-    mockEventFindUnique.mockResolvedValue({ ...publishedRegEvent, capacity: 10, _count: { attendees: 10 } })
+    mockEventFindUnique.mockResolvedValue({ ...publishedRegEvent, metadata: { registration: { capacity: 10, collectPhone: false, collectNotes: false } }, _count: { attendees: 10 } })
 
     const result = await registerEventAction('evt-1', {}, makeFormData({}))
 

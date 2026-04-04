@@ -93,30 +93,43 @@ export async function rescheduleEventReminders(eventId: string, newDatetime: Dat
     select: { id: true, userId: true, payload: true },
   });
 
-  for (const notification of pending) {
-    const hoursBeforeEvent = await getHoursBeforeEvent(notification.userId);
-    const newScheduledFor = subHours(newDatetime, hoursBeforeEvent);
+  if (pending.length === 0) return;
 
-    const existingPayload = notification.payload as {
-      title: string;
-      body: string;
-      data: Record<string, string>;
-    };
+  // Batch-fetch all affected users' preferences in one query
+  const userIds = [...new Set(pending.map((n) => n.userId))];
+  const prefs = await prisma.notificationPreference.findMany({
+    where: { userId: { in: userIds }, type: "EVENT_REMINDER" },
+    select: { userId: true, config: true },
+  });
+  const hoursMap = new Map<string, number>();
+  for (const pref of prefs) {
+    if (pref.config && typeof pref.config === "object" && !Array.isArray(pref.config)) {
+      const hours = (pref.config as Record<string, unknown>).hoursBeforeEvent;
+      if (typeof hours === "number") hoursMap.set(pref.userId, hours);
+    }
+  }
 
-    await prisma.scheduledNotification.update({
-      where: { id: notification.id },
-      data: {
-        scheduledFor: newScheduledFor,
-        payload: {
-          ...existingPayload,
-          data: {
-            ...existingPayload.data,
-            eventDatetime: newDatetime.toISOString(),
+  await prisma.$transaction(
+    pending.map((notification) => {
+      const hoursBeforeEvent = hoursMap.get(notification.userId) ?? DEFAULT_HOURS_BEFORE_EVENT;
+      const newScheduledFor = subHours(newDatetime, hoursBeforeEvent);
+      const existingPayload = notification.payload as {
+        title: string;
+        body: string;
+        data: Record<string, string>;
+      };
+      return prisma.scheduledNotification.update({
+        where: { id: notification.id },
+        data: {
+          scheduledFor: newScheduledFor,
+          payload: {
+            ...existingPayload,
+            data: { ...existingPayload.data, eventDatetime: newDatetime.toISOString() },
           },
         },
-      },
-    });
-  }
+      });
+    })
+  );
 }
 
 /**
@@ -135,27 +148,28 @@ export async function updateReminderScheduleForUser(userId: string, newHoursBefo
     select: { id: true, payload: true },
   });
 
-  for (const notification of pending) {
+  const updates = pending.flatMap((notification) => {
     const payload = notification.payload as {
       title: string;
       body: string;
       data: Record<string, string>;
     };
-
     const eventDatetime = new Date(payload.data.eventDatetime);
     const newScheduledFor = subHours(eventDatetime, newHoursBeforeEvent);
-
-    if (newScheduledFor <= new Date()) continue; // already past — leave it
-
-    await prisma.scheduledNotification.update({
-      where: { id: notification.id },
-      data: {
-        scheduledFor: newScheduledFor,
-        payload: {
-          ...payload,
-          body: `${payload.data.eventTitle} starts in ${newHoursBeforeEvent === 1 ? "1 hour" : `${newHoursBeforeEvent} hours`}`,
+    if (newScheduledFor <= new Date()) return []; // already past — leave it
+    return [
+      prisma.scheduledNotification.update({
+        where: { id: notification.id },
+        data: {
+          scheduledFor: newScheduledFor,
+          payload: {
+            ...payload,
+            body: `${payload.data.eventTitle} starts in ${newHoursBeforeEvent === 1 ? "1 hour" : `${newHoursBeforeEvent} hours`}`,
+          },
         },
-      },
-    });
-  }
+      }),
+    ];
+  });
+
+  if (updates.length > 0) await prisma.$transaction(updates);
 }

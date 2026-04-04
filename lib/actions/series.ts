@@ -74,26 +74,40 @@ export async function updateSeriesAction(id: string, data: CreateSeriesInput): P
   redirect(`/series/${id}`);
 }
 
-export async function followSeriesAction(seriesId: string): Promise<void> {
-  const session = await auth();
-  if (!session?.user?.id) return;
-
-  await prisma.seriesFollower.create({
-    data: { seriesId, userId: session.user.id },
-  });
-
-  revalidatePath(`/series/${seriesId}`);
+export interface FollowSeriesState {
+  error?: string;
 }
 
-export async function unfollowSeriesAction(seriesId: string): Promise<void> {
+export async function followSeriesAction(seriesId: string): Promise<FollowSeriesState> {
   const session = await auth();
-  if (!session?.user?.id) return;
+  if (!session?.user?.id) return { error: "You must be signed in." };
 
-  await prisma.seriesFollower.delete({
-    where: { seriesId_userId: { seriesId, userId: session.user.id } },
-  });
+  try {
+    await prisma.seriesFollower.create({
+      data: { seriesId, userId: session.user.id },
+    });
+  } catch {
+    return { error: "Failed to follow series." };
+  }
 
   revalidatePath(`/series/${seriesId}`);
+  return {};
+}
+
+export async function unfollowSeriesAction(seriesId: string): Promise<FollowSeriesState> {
+  const session = await auth();
+  if (!session?.user?.id) return { error: "You must be signed in." };
+
+  try {
+    await prisma.seriesFollower.delete({
+      where: { seriesId_userId: { seriesId, userId: session.user.id } },
+    });
+  } catch {
+    return { error: "Failed to unfollow series." };
+  }
+
+  revalidatePath(`/series/${seriesId}`);
+  return {};
 }
 
 export async function deleteSeriesAction(id: string): Promise<void> {

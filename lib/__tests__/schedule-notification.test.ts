@@ -2,6 +2,7 @@ jest.mock('@/lib/db', () => ({
   prisma: {
     notificationPreference: {
       findUnique: jest.fn(),
+      findMany: jest.fn(),
     },
     scheduledNotification: {
       findMany: jest.fn(),
@@ -9,6 +10,7 @@ jest.mock('@/lib/db', () => ({
       update: jest.fn(),
       updateMany: jest.fn(),
     },
+    $transaction: jest.fn((ops: Array<Promise<unknown>>) => Promise.all(ops)),
   },
 }))
 
@@ -22,6 +24,7 @@ import {
 } from '@/lib/schedule-notification'
 
 const mockPrefFindUnique = prisma.notificationPreference.findUnique as jest.Mock
+const mockPrefFindMany = prisma.notificationPreference.findMany as jest.Mock
 const mockSnFindMany = prisma.scheduledNotification.findMany as jest.Mock
 const mockSnUpsert = prisma.scheduledNotification.upsert as jest.Mock
 const mockSnUpdate = prisma.scheduledNotification.update as jest.Mock
@@ -37,6 +40,7 @@ const futureEvent = {
 beforeEach(() => {
   jest.clearAllMocks()
   mockPrefFindUnique.mockResolvedValue(null) // default: no stored preference
+  mockPrefFindMany.mockResolvedValue([]) // default: no stored preferences
   mockSnUpsert.mockResolvedValue({})
   mockSnUpdate.mockResolvedValue({})
   mockSnUpdateMany.mockResolvedValue({})
@@ -197,7 +201,7 @@ describe('rescheduleEventReminders', () => {
       },
     ])
     // user-1 has a 4h preference
-    mockPrefFindUnique.mockResolvedValue({ config: { hoursBeforeEvent: 4 } })
+    mockPrefFindMany.mockResolvedValue([{ userId: 'user-1', config: { hoursBeforeEvent: 4 } }])
 
     await rescheduleEventReminders('evt-1', newDatetime)
 

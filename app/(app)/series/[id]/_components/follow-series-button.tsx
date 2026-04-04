@@ -22,10 +22,11 @@ export function FollowSeriesButton({ seriesId, isFollowing, followerCount }: Fol
   function handleClick() {
     startTransition(async () => {
       setOptimisticFollowing(!optimisticFollowing);
-      if (optimisticFollowing) {
-        await unfollowSeriesAction(seriesId);
-      } else {
-        await followSeriesAction(seriesId);
+      const result = optimisticFollowing
+        ? await unfollowSeriesAction(seriesId)
+        : await followSeriesAction(seriesId);
+      if (result.error) {
+        setOptimisticFollowing(optimisticFollowing);
       }
     });
   }

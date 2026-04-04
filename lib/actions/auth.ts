@@ -81,7 +81,11 @@ export async function registerAction(data: RegisterInput): Promise<ActionResult>
     // User exists but is unverified — resend OTP and let them continue verifying
     const otp = generateOtp();
     await storeOtp(`register:${email}`, otp);
-    await sendVerificationEmail(email, existing.name ?? name, otp);
+    try {
+      await sendVerificationEmail(email, existing.name ?? name, otp);
+    } catch {
+      // Email failure is non-fatal — user can resend from the verification step
+    }
     return { pendingVerification: true };
   }
 
@@ -142,7 +146,10 @@ export async function verifyRegistrationOtpAction(
 }
 
 export async function sendPasswordResetOtpAction(email: string): Promise<ActionResult> {
-  const user = await prisma.user.findUnique({ where: { email } });
+  const user = await prisma.user.findUnique({
+    where: { email },
+    select: { emailVerified: true },
+  });
 
   // Always return success to prevent email enumeration
   if (!user || !user.emailVerified) {

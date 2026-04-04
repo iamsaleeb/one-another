@@ -155,6 +155,7 @@ export function EditEventForm({
           </Alert>
         )}
 
+        {/* Cover photo — top so organisers set the visual identity first */}
         <FormField
           control={form.control}
           name="photoUrl"
@@ -169,6 +170,7 @@ export function EditEventForm({
           )}
         />
 
+        {/* What */}
         <FormField
           control={form.control}
           name="title"
@@ -176,50 +178,7 @@ export function EditEventForm({
             <FormItem>
               <FormLabel>Title</FormLabel>
               <FormControl>
-                <Input disabled={isSubmitting} {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <div className="grid grid-cols-2 gap-3">
-          <FormField
-            control={form.control}
-            name="date"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Date</FormLabel>
-                <FormControl>
-                  <Input type="date" disabled={isSubmitting} {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="time"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Time</FormLabel>
-                <FormControl>
-                  <Input type="time" disabled={isSubmitting} {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-
-        <FormField
-          control={form.control}
-          name="location"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Location</FormLabel>
-              <FormControl>
-                <Input disabled={isSubmitting} {...field} />
+                <Input placeholder="e.g. Sunday Evening Worship" disabled={isSubmitting} {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -228,12 +187,17 @@ export function EditEventForm({
 
         <FormField
           control={form.control}
-          name="host"
+          name="description"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Host</FormLabel>
+              <FormLabel>Description</FormLabel>
               <FormControl>
-                <Input disabled={isSubmitting} {...field} />
+                <Textarea
+                  rows={4}
+                  placeholder="e.g. Join us for an evening of worship, prayer and community. All are welcome."
+                  disabled={isSubmitting}
+                  {...field}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -265,14 +229,45 @@ export function EditEventForm({
           )}
         />
 
+        {/* When */}
+        <div className="grid grid-cols-2 gap-3">
+          <FormField
+            control={form.control}
+            name="date"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Date</FormLabel>
+                <FormControl>
+                  <Input type="date" disabled={isSubmitting} {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="time"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Time</FormLabel>
+                <FormControl>
+                  <Input type="time" disabled={isSubmitting} {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        {/* Where / Who */}
         <FormField
           control={form.control}
-          name="description"
+          name="location"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Description</FormLabel>
+              <FormLabel>Location</FormLabel>
               <FormControl>
-                <Textarea rows={4} disabled={isSubmitting} {...field} />
+                <Input placeholder="e.g. 123 Church Street, Sydney NSW 2000" disabled={isSubmitting} {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -281,18 +276,19 @@ export function EditEventForm({
 
         <FormField
           control={form.control}
-          name="price"
+          name="host"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Price (optional)</FormLabel>
+              <FormLabel>Host</FormLabel>
               <FormControl>
-                <PriceInput disabled={isSubmitting} {...field} />
+                <Input placeholder="e.g. Pastor John Smith" disabled={isSubmitting} {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
 
+        {/* Organisation */}
         {event.seriesId ? (
           <div className="grid gap-1.5">
             <FormLabel>Church</FormLabel>
@@ -336,6 +332,22 @@ export function EditEventForm({
           />
         )}
 
+        {/* Extras */}
+        <FormField
+          control={form.control}
+          name="price"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Price (optional)</FormLabel>
+              <FormControl>
+                <PriceInput disabled={isSubmitting} {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {/* Registration */}
         <FormField
           control={form.control}
           name="requiresRegistration"

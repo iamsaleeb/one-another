@@ -91,6 +91,7 @@ export function EditSeriesForm({
           </Alert>
         )}
 
+        {/* Cover photo — top so organisers set the visual identity first */}
         <FormField
           control={form.control}
           name="photoUrl"
@@ -105,6 +106,7 @@ export function EditSeriesForm({
           )}
         />
 
+        {/* What */}
         <FormField
           control={form.control}
           name="name"
@@ -112,7 +114,7 @@ export function EditSeriesForm({
             <FormItem>
               <FormLabel>Name</FormLabel>
               <FormControl>
-                <Input disabled={isSubmitting} {...field} />
+                <Input placeholder="e.g. Alpha Course" disabled={isSubmitting} {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -126,60 +128,12 @@ export function EditSeriesForm({
             <FormItem>
               <FormLabel>Description</FormLabel>
               <FormControl>
-                <Textarea rows={3} disabled={isSubmitting} {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="cadence"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Cadence</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isSubmitting}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select cadence" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {CADENCE_OPTIONS.map((opt) => (
-                    <SelectItem key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="location"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Location</FormLabel>
-              <FormControl>
-                <Input disabled={isSubmitting} {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="host"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Host</FormLabel>
-              <FormControl>
-                <Input disabled={isSubmitting} {...field} />
+                <Textarea
+                  rows={3}
+                  placeholder="e.g. A weekly series exploring the Christian faith through discussion and community."
+                  disabled={isSubmitting}
+                  {...field}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -211,6 +165,7 @@ export function EditSeriesForm({
           )}
         />
 
+        {/* Organisation */}
         <FormField
           control={form.control}
           name="churchId"
@@ -231,6 +186,61 @@ export function EditSeriesForm({
                   ))}
                 </SelectContent>
               </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {/* Pattern */}
+        <FormField
+          control={form.control}
+          name="cadence"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Cadence</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isSubmitting}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="How often does this series run?" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {CADENCE_OPTIONS.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {/* Who / Where */}
+        <FormField
+          control={form.control}
+          name="host"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Host</FormLabel>
+              <FormControl>
+                <Input placeholder="e.g. Pastor Jane Doe" disabled={isSubmitting} {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="location"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Location</FormLabel>
+              <FormControl>
+                <Input placeholder="e.g. Main Hall, 123 Church Street" disabled={isSubmitting} {...field} />
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}

@@ -1,6 +1,12 @@
 import { type NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
+
+const registerTokenSchema = z.object({
+  token: z.string().min(1),
+  platform: z.enum(["android", "ios"]),
+});
 
 export async function POST(request: NextRequest) {
   const session = await auth();
@@ -14,15 +20,13 @@ export async function POST(request: NextRequest) {
   } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
-  const { token, platform } = body as Record<string, unknown>;
 
-  if (
-    typeof token !== "string" ||
-    typeof platform !== "string" ||
-    !["android", "ios"].includes(platform)
-  ) {
+  const parsed = registerTokenSchema.safeParse(body);
+  if (!parsed.success) {
     return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
   }
+
+  const { token, platform } = parsed.data;
 
   await prisma.pushToken.upsert({
     where: { token },

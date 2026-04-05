@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { Globe, MapPin, Facebook, Bell } from "lucide-react";
+import { Globe, MapPin, Share2, Bell } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -73,7 +73,7 @@ export default async function ChurchDetailPage({ params }: Props) {
                 </a>
               )}
               <div className="flex items-center justify-center w-11 h-11 rounded-full border-2 border-border">
-                <Facebook className="w-5 h-5 text-foreground" />
+                <Share2 className="w-5 h-5 text-foreground" />
               </div>
             </div>
 

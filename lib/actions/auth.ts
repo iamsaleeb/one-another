@@ -72,7 +72,10 @@ export async function registerAction(data: RegisterInput): Promise<ActionResult>
 
   const { name, email, password } = parsed.data;
 
-  const existing = await prisma.user.findUnique({ where: { email } });
+  const existing = await prisma.user.findUnique({
+    where: { email },
+    select: { emailVerified: true, name: true },
+  });
 
   if (existing) {
     if (existing.emailVerified) {

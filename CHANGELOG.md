@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.10.1](https://github.com/iamsaleeb/one-another/compare/one-another-v0.10.0...one-another-v0.10.1) (2026-04-05)
+
+
+### Bug Fixes
+
+* added deploys ([#61](https://github.com/iamsaleeb/one-another/issues/61)) ([ef13eca](https://github.com/iamsaleeb/one-another/commit/ef13ecacefcb25bed1234e6a243a68db49048cb7))
+
 ## [0.10.0](https://github.com/iamsaleeb/one-another/compare/one-another-v0.9.0...one-another-v0.10.0) (2026-04-05)
 
 

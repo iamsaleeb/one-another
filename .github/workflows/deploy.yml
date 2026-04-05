@@ -23,6 +23,8 @@ jobs:
     name: Run migrations (${{ inputs.environment }})
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment }}
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -36,8 +38,6 @@ jobs:
         run: npx prisma generate
       - name: Deploy migrations
         run: npx prisma migrate deploy
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
   deploy:
     name: Deploy to Vercel (${{ inputs.environment }})

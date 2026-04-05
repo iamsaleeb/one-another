@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.10.0](https://github.com/iamsaleeb/one-another/compare/one-another-v0.9.0...one-another-v0.10.0) (2026-04-05)
+
+
+### Features
+
+* added new account registrations with email verification ([#59](https://github.com/iamsaleeb/one-another/issues/59)) ([c2104c0](https://github.com/iamsaleeb/one-another/commit/c2104c0668d933e78d7df119eedc80019b0407b3))
+
+
+### Bug Fixes
+
+* added package upgrades ([#60](https://github.com/iamsaleeb/one-another/issues/60)) ([22752bf](https://github.com/iamsaleeb/one-another/commit/22752bfaff91a88e9338e6f8ae15c8943922e97b))
+* fixed and refactored codebase ([#57](https://github.com/iamsaleeb/one-another/issues/57)) ([bf4efd7](https://github.com/iamsaleeb/one-another/commit/bf4efd7e542632c9a36c6620e447d51ec3490ede))
+
 ## [0.9.0](https://github.com/iamsaleeb/one-another/compare/one-another-v0.8.0...one-another-v0.9.0) (2026-04-03)
 
 

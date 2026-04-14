@@ -1,5 +1,6 @@
 jest.mock('next/cache', () => ({
   updateTag: jest.fn(),
+  cacheTag: jest.fn(),
 }))
 
 jest.mock('@/auth', () => ({

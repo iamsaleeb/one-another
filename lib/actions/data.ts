@@ -284,6 +284,14 @@ export async function getUserFollowedSeries(userId: string) {
   });
 }
 
+export async function getStoredNotificationPreferences(userId: string) {
+  cacheTag(`user-notifications-${userId}`);
+  return prisma.notificationPreference.findMany({
+    where: { userId },
+    select: { type: true, enabled: true, config: true },
+  });
+}
+
 // Search results are time-sensitive (today/tomorrow/weekend filters), so use a short TTL.
 export async function searchEventsAndChurches(filters: SearchFilters) {
   cacheLife("minutes");

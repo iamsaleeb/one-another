@@ -91,6 +91,7 @@ export async function followSeriesAction(seriesId: string): Promise<FollowSeries
     return { error: "Failed to follow series." };
   }
 
+  updateTag("series");
   updateTag(`series-${seriesId}`);
   return {};
 }
@@ -107,6 +108,7 @@ export async function unfollowSeriesAction(seriesId: string): Promise<FollowSeri
     return { error: "Failed to unfollow series." };
   }
 
+  updateTag("series");
   updateTag(`series-${seriesId}`);
   return {};
 }

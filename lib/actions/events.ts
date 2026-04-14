@@ -109,6 +109,10 @@ export async function createEventAction(data: CreateEventInput): Promise<ActionR
   }
 
   updateTag("events");
+  if (seriesId) {
+    updateTag("series");
+    updateTag(`series-${seriesId}`);
+  }
   redirect(isDraft ? "/organiser" : seriesId ? `/series/${seriesId}` : "/my-events");
 }
 
@@ -138,7 +142,7 @@ export async function updateEventAction(id: string, data: CreateEventInput): Pro
   // Fetch existing event to verify permission on the original church and detect reschedule
   const existing = await prisma.event.findUnique({
     where: { id },
-    select: { churchId: true, datetime: true, title: true, isDraft: true },
+    select: { churchId: true, datetime: true, title: true, isDraft: true, seriesId: true },
   });
   if (!existing) redirect("/organiser");
 
@@ -198,6 +202,11 @@ export async function updateEventAction(id: string, data: CreateEventInput): Pro
 
   updateTag("events");
   updateTag(`event-${id}`);
+  const affectedSeriesIds = new Set([existing.seriesId, seriesId ?? null].filter(Boolean) as string[]);
+  if (affectedSeriesIds.size > 0) {
+    updateTag("series");
+    affectedSeriesIds.forEach((sid) => updateTag(`series-${sid}`));
+  }
   redirect(`/events/${id}`);
 }
 
@@ -240,6 +249,7 @@ export async function cancelEventAction(id: string, reason: string): Promise<voi
     console.error("EVENT_CANCELLED push failed:", err);
   }
 
+  updateTag("events");
   updateTag(`event-${id}`);
   redirect(`/events/${id}`);
 }
@@ -321,6 +331,10 @@ export async function publishEventAction(id: string): Promise<ActionResult> {
 
   updateTag("events");
   updateTag(`event-${id}`);
+  if (event.seriesId) {
+    updateTag("series");
+    updateTag(`series-${event.seriesId}`);
+  }
   redirect(`/events/${id}`);
 }
 
@@ -330,7 +344,7 @@ export async function unpublishEventAction(id: string): Promise<ActionResult> {
     return { error: "Unauthorised." };
   }
 
-  const event = await prisma.event.findUnique({ where: { id }, select: { churchId: true } });
+  const event = await prisma.event.findUnique({ where: { id }, select: { churchId: true, seriesId: true } });
   if (!event) redirect("/organiser");
 
   const allowed = await canManageChurch(session.user.id, session.user.role, event.churchId);
@@ -346,6 +360,10 @@ export async function unpublishEventAction(id: string): Promise<ActionResult> {
 
   updateTag("events");
   updateTag(`event-${id}`);
+  if (event.seriesId) {
+    updateTag("series");
+    updateTag(`series-${event.seriesId}`);
+  }
   redirect(`/events/${id}`);
 }
 
@@ -353,7 +371,7 @@ export async function deleteEventAction(id: string): Promise<void> {
   const session = await auth();
   if (session?.user?.role !== UserRole.ORGANISER && session?.user?.role !== UserRole.ADMIN) redirect("/");
 
-  const event = await prisma.event.findUnique({ where: { id }, select: { churchId: true } });
+  const event = await prisma.event.findUnique({ where: { id }, select: { churchId: true, seriesId: true } });
   if (!event) redirect("/organiser");
 
   const allowed = await canManageChurch(session.user.id, session.user.role, event.churchId);
@@ -368,6 +386,10 @@ export async function deleteEventAction(id: string): Promise<void> {
   await prisma.event.delete({ where: { id } });
   updateTag("events");
   updateTag(`event-${id}`);
+  if (event.seriesId) {
+    updateTag("series");
+    updateTag(`series-${event.seriesId}`);
+  }
   redirect("/organiser");
 }
 
@@ -395,6 +417,7 @@ export async function attendEventAction(eventId: string): Promise<AttendEventSta
     console.error("Failed to schedule event reminder:", err);
   }
 
+  updateTag("events");
   updateTag(`event-${eventId}`);
   return {};
 }
@@ -413,6 +436,7 @@ export async function unattendEventAction(eventId: string): Promise<AttendEventS
     console.error("Failed to cancel event reminder:", err);
   }
 
+  updateTag("events");
   updateTag(`event-${eventId}`);
   return {};
 }
@@ -497,6 +521,7 @@ export async function registerEventAction(
     console.error("Failed to schedule event reminder after registration:", err);
   }
 
+  updateTag("events");
   updateTag(`event-${eventId}`);
   return { success: true };
 }

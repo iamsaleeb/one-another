@@ -6,6 +6,7 @@ import { updateTag } from "next/cache";
 import { type Prisma } from "@prisma/client";
 import { NOTIFICATION_TYPES, type NotificationTypeKey } from "@/lib/notification-types";
 import { updateReminderScheduleForUser } from "@/lib/schedule-notification";
+import { getStoredNotificationPreferences } from "@/lib/actions/data";
 
 export type NotificationPreferenceMap = {
   [K in NotificationTypeKey]: {
@@ -24,10 +25,7 @@ export async function getNotificationPreferencesAction(): Promise<NotificationPr
     throw new Error("Unauthorized");
   }
 
-  const stored = await prisma.notificationPreference.findMany({
-    where: { userId: session.user.id },
-    select: { type: true, enabled: true, config: true },
-  });
+  const stored = await getStoredNotificationPreferences(session.user.id);
 
   const storedMap = Object.fromEntries(stored.map((p) => [p.type, p]));
 

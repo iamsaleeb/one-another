@@ -17,9 +17,13 @@ import {
 } from "@/lib/schedule-notification";
 import { sendPushToUsers } from "@/lib/notifications";
 
-function invalidateEventCaches(id: string, seriesId?: string | null) {
+function invalidateEventCaches(id: string, churchId?: string | null, seriesId?: string | null) {
   updateTag("events");
   updateTag(`event-${id}`);
+  if (churchId) {
+    updateTag("churches");
+    updateTag(`church-${churchId}`);
+  }
   if (seriesId) {
     updateTag("series");
     updateTag(`series-${seriesId}`);
@@ -117,7 +121,7 @@ export async function createEventAction(data: CreateEventInput): Promise<ActionR
     }
   }
 
-  invalidateEventCaches(created.id, seriesId);
+  invalidateEventCaches(created.id, churchId, seriesId);
   redirect(isDraft ? "/organiser" : seriesId ? `/series/${seriesId}` : "/my-events");
 }
 

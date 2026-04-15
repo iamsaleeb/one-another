@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.11.0](https://github.com/iamsaleeb/one-another/compare/one-another-v0.10.3...one-another-v0.11.0) (2026-04-15)
+
+
+### Features
+
+* added new caching ([#68](https://github.com/iamsaleeb/one-another/issues/68)) ([b83f03d](https://github.com/iamsaleeb/one-another/commit/b83f03d520fcca5bb7f2b9283f3247211a3729f7))
+
 ## [0.10.3](https://github.com/iamsaleeb/one-another/compare/one-another-v0.10.2...one-another-v0.10.3) (2026-04-05)
 
 

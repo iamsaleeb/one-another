@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { updateTag } from "next/cache";
 import { prisma } from "@/lib/db";
 import { auth } from "@/auth";
 
@@ -16,7 +16,7 @@ export async function followChurchAction(churchId: string): Promise<FollowChurch
     data: { churchId, userId: session.user.id },
   });
 
-  revalidatePath(`/churches/${churchId}`);
+  updateTag(`church-${churchId}`);
   return {};
 }
 
@@ -28,6 +28,6 @@ export async function unfollowChurchAction(churchId: string): Promise<FollowChur
     where: { churchId_userId: { churchId, userId: session.user.id } },
   });
 
-  revalidatePath(`/churches/${churchId}`);
+  updateTag(`church-${churchId}`);
   return {};
 }

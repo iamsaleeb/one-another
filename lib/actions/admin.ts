@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { updateTag } from "next/cache";
 import { auth } from "@/auth";
 import { UserRole } from "@prisma/client";
 import { prisma } from "@/lib/db";
@@ -52,7 +52,7 @@ export async function addOrganiserToChurchAction(
     });
   });
 
-  revalidatePath("/admin");
+  updateTag("churches");
   return { success: "Organiser added successfully." };
 }
 
@@ -85,6 +85,6 @@ export async function removeOrganiserFromChurchAction(
     });
   }
 
-  revalidatePath("/admin");
+  updateTag("churches");
   return { success: "Organiser removed." };
 }

@@ -1,13 +1,23 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { revalidatePath } from "next/cache";
+import { updateTag } from "next/cache";
 import { prisma } from "@/lib/db";
 import { auth } from "@/auth";
 import { UserRole } from "@prisma/client";
 import { createSeriesSchema, type CreateSeriesInput } from "@/lib/validations/series";
 import { canManageChurch } from "@/lib/permissions";
 import type { ActionResult } from "@/lib/actions/auth";
+
+function invalidateSeriesCaches(id: string, churchId?: string | null) {
+  updateTag("events");
+  updateTag("series");
+  updateTag(`series-${id}`);
+  if (churchId) {
+    updateTag("churches");
+    updateTag(`church-${churchId}`);
+  }
+}
 
 export async function createSeriesAction(data: CreateSeriesInput): Promise<ActionResult> {
   const session = await auth();
@@ -39,7 +49,7 @@ export async function createSeriesAction(data: CreateSeriesInput): Promise<Actio
     },
   });
 
-  revalidatePath("/");
+  invalidateSeriesCaches(created.id, churchId);
   redirect(`/series/${created.id}`);
 }
 
@@ -70,7 +80,8 @@ export async function updateSeriesAction(id: string, data: CreateSeriesInput): P
     data: { name, description, cadence, location, host, tag, churchId, photoUrl: photoUrl ?? null },
   });
 
-  revalidatePath("/");
+  invalidateSeriesCaches(id, existing.churchId);
+  if (churchId !== existing.churchId) updateTag(`church-${churchId}`);
   redirect(`/series/${id}`);
 }
 
@@ -90,7 +101,8 @@ export async function followSeriesAction(seriesId: string): Promise<FollowSeries
     return { error: "Failed to follow series." };
   }
 
-  revalidatePath(`/series/${seriesId}`);
+  updateTag("series");
+  updateTag(`series-${seriesId}`);
   return {};
 }
 
@@ -106,7 +118,8 @@ export async function unfollowSeriesAction(seriesId: string): Promise<FollowSeri
     return { error: "Failed to unfollow series." };
   }
 
-  revalidatePath(`/series/${seriesId}`);
+  updateTag("series");
+  updateTag(`series-${seriesId}`);
   return {};
 }
 
@@ -121,6 +134,6 @@ export async function deleteSeriesAction(id: string): Promise<void> {
   if (!allowed) redirect("/");
 
   await prisma.series.delete({ where: { id } });
-  revalidatePath("/");
+  invalidateSeriesCaches(id, series.churchId);
   redirect("/organiser");
 }

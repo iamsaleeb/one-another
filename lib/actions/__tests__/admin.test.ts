@@ -1,5 +1,5 @@
 jest.mock('next/cache', () => ({
-  revalidatePath: jest.fn(),
+  updateTag: jest.fn(),
 }))
 
 jest.mock('@/lib/db', () => ({
@@ -26,13 +26,13 @@ jest.mock('@/lib/permissions', () => ({
   isAdminForChurch: jest.fn(),
 }))
 
-import { revalidatePath } from 'next/cache'
+import { updateTag } from 'next/cache'
 import { addOrganiserToChurchAction, removeOrganiserFromChurchAction } from '@/lib/actions/admin'
 import { prisma } from '@/lib/db'
 import { auth } from '@/auth'
 import { isAdminForChurch } from '@/lib/permissions'
 
-const mockRevalidatePath = revalidatePath as jest.Mock
+const mockUpdateTag = updateTag as jest.Mock
 const mockAuth = auth as jest.Mock
 const mockIsAdminForChurch = isAdminForChurch as jest.Mock
 const mockUserFindUnique = prisma.user.findUnique as jest.Mock
@@ -121,7 +121,7 @@ describe('addOrganiserToChurchAction', () => {
     expect(mockTransaction).not.toHaveBeenCalled()
   })
 
-  it('runs a transaction and revalidates on success', async () => {
+  it('runs a transaction and invalidates cache tags on success', async () => {
     mockUserFindUnique.mockResolvedValue({ id: 'user-2', role: 'ORGANISER' })
     mockChurchOrganiserFindUnique.mockResolvedValue(null)
     mockTransaction.mockResolvedValue(undefined)
@@ -132,7 +132,7 @@ describe('addOrganiserToChurchAction', () => {
     )
 
     expect(mockTransaction).toHaveBeenCalled()
-    expect(mockRevalidatePath).toHaveBeenCalledWith('/admin')
+    expect(mockUpdateTag).toHaveBeenCalledWith('churches')
     expect(result.success).toBeDefined()
   })
 })
@@ -162,7 +162,7 @@ describe('removeOrganiserFromChurchAction', () => {
     expect(mockChurchOrganiserDelete).not.toHaveBeenCalled()
   })
 
-  it('deletes the record, revalidates, and returns success', async () => {
+  it('deletes the record, invalidates cache tags, and returns success', async () => {
     mockChurchOrganiserDelete.mockResolvedValue({})
     mockChurchOrganiserCount.mockResolvedValue(1)
 
@@ -174,7 +174,7 @@ describe('removeOrganiserFromChurchAction', () => {
     expect(mockChurchOrganiserDelete).toHaveBeenCalledWith({
       where: { userId_churchId: { userId: 'user-2', churchId: 'ch-1' } },
     })
-    expect(mockRevalidatePath).toHaveBeenCalledWith('/admin')
+    expect(mockUpdateTag).toHaveBeenCalledWith('churches')
     expect(result.success).toBeDefined()
   })
 

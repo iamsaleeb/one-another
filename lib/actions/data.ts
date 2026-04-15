@@ -1,4 +1,5 @@
-import { cache } from "react";
+"use cache";
+import { cacheTag, cacheLife } from "next/cache";
 import { prisma } from "@/lib/db";
 import type { Prisma } from "@prisma/client";
 import { startOfDay, endOfDay, addDays, getDay } from "date-fns";
@@ -31,23 +32,17 @@ function getDateRange(when: WhenFilter): { gte: Date; lte: Date } {
   return { gte: startOfDay(saturday), lte: endOfDay(sunday) };
 }
 
-export const getEvents = cache(async function getEvents() {
+export async function getEvents() {
+  cacheTag("events");
   return prisma.event.findMany({
     where: { isPast: false, isDraft: false },
     orderBy: { createdAt: "asc" },
     include: { series: { select: { name: true } } },
   });
-});
+}
 
-export const getPastEvents = cache(async function getPastEvents() {
-  return prisma.event.findMany({
-    where: { isPast: true, isDraft: false },
-    orderBy: { createdAt: "asc" },
-    include: { series: { select: { name: true } } },
-  });
-});
-
-export const getEventById = cache(async function getEventById(id: string) {
+export async function getEventById(id: string) {
+  cacheTag("events", `event-${id}`);
   return prisma.event.findUnique({
     where: { id },
     include: {
@@ -56,27 +51,101 @@ export const getEventById = cache(async function getEventById(id: string) {
       _count: { select: { attendees: true } },
     },
   });
-});
+}
 
-export const getChurchesByAdmin = cache(async function getChurchesByAdmin(userId: string) {
-  const assignments = await prisma.churchAdmin.findMany({
-    where: { userId },
-    select: { church: { select: { id: true, name: true } } },
-    orderBy: { church: { name: "asc" } },
+export async function getEventAttendees(eventId: string) {
+  cacheTag("events", `event-${eventId}`);
+  return prisma.eventAttendee.findMany({
+    where: { eventId },
+    select: {
+      id: true,
+      phone: true,
+      notes: true,
+      metadata: true,
+      user: { select: { id: true, name: true, email: true } },
+    },
+    orderBy: { createdAt: "asc" },
   });
-  return assignments.map((a) => a.church);
-});
+}
 
-export const getOrganisersByChurch = cache(async function getOrganisersByChurch(churchId: string) {
-  const assignments = await prisma.churchOrganiser.findMany({
-    where: { churchId },
-    select: { user: { select: { id: true, name: true, email: true } } },
-    orderBy: { user: { name: "asc" } },
+export async function getEventsByCreator(userId: string) {
+  cacheTag("events");
+  return prisma.event.findMany({
+    where: { isPast: false, createdById: userId },
+    orderBy: { createdAt: "asc" },
+    include: {
+      series: { select: { name: true } },
+      createdBy: { select: { name: true } },
+    },
   });
-  return assignments.map((a) => a.user);
-});
+}
 
-export const getChurchesByManager = cache(async function getChurchesByManager(userId: string) {
+export async function getEventsNotByCreator(userId: string) {
+  cacheTag("events");
+  return prisma.event.findMany({
+    where: {
+      isPast: false,
+      isDraft: false,
+      OR: [{ createdById: { not: userId } }, { createdById: null }],
+    },
+    orderBy: { createdAt: "asc" },
+    include: {
+      series: { select: { name: true } },
+      createdBy: { select: { name: true } },
+    },
+  });
+}
+
+export async function getUserAttendedEvents(userId: string) {
+  cacheTag("events");
+  return prisma.event.findMany({
+    where: { isPast: false, isDraft: false, attendees: { some: { userId } } },
+    orderBy: { datetime: "asc" },
+    include: { series: { select: { name: true } } },
+  });
+}
+
+export async function getUserAttendedPastEvents(userId: string) {
+  cacheTag("events");
+  return prisma.event.findMany({
+    where: { isPast: true, isDraft: false, attendees: { some: { userId } } },
+    orderBy: { datetime: "desc" },
+    include: { series: { select: { name: true } } },
+  });
+}
+
+export async function getChurches() {
+  cacheTag("churches");
+  return prisma.church.findMany({
+    include: {
+      serviceTimes: true,
+      events: { where: { isPast: false, isDraft: false } },
+    },
+    orderBy: { name: "asc" },
+  });
+}
+
+export async function getChurchById(id: string) {
+  cacheTag("churches", `church-${id}`);
+  return prisma.church.findUnique({
+    where: { id },
+    include: {
+      serviceTimes: true,
+      events: { where: { isPast: false, isDraft: false } },
+      series: {
+        orderBy: { createdAt: "desc" },
+        include: {
+          _count: { select: { events: { where: { isPast: false, isDraft: false } } } },
+        },
+      },
+      followers: { select: { userId: true } },
+      _count: { select: { followers: true } },
+    },
+  });
+}
+
+export async function getChurchesByManager(userId: string) {
+  cacheTag("churches");
   const [organiserRows, adminRows] = await Promise.all([
     prisma.churchOrganiser.findMany({
       where: { userId },
@@ -96,46 +165,120 @@ export const getChurchesByManager = cache(async function getChurchesByManager(us
     }
   }
   return churches.sort((a, b) => a.name.localeCompare(b.name));
-});
+}
 
-export const getChurchesByOrganiser = cache(async function getChurchesByOrganiser(userId: string) {
+export async function getOrganisersByChurch(churchId: string) {
+  cacheTag("churches");
   const assignments = await prisma.churchOrganiser.findMany({
+    where: { churchId },
+    select: { user: { select: { id: true, name: true, email: true } } },
+    orderBy: { user: { name: "asc" } },
+  });
+  return assignments.map((a) => a.user);
+}
+
+export async function getAdminChurches(userId: string) {
+  cacheTag("churches");
+  const assignments = await prisma.churchAdmin.findMany({
     where: { userId },
-    select: { church: { select: { id: true, name: true } } },
+    select: {
+      church: {
+        select: {
+          id: true,
+          name: true,
+          organisers: {
+            select: { user: { select: { id: true, name: true, email: true } } },
+            orderBy: { user: { name: "asc" } },
+          },
+        },
+      },
+    },
     orderBy: { church: { name: "asc" } },
   });
-  return assignments.map((a) => a.church);
-});
+  return assignments.map((a) => ({
+    id: a.church.id,
+    name: a.church.name,
+    organisers: a.church.organisers.map((o) => o.user),
+  }));
+}
 
-export const getChurches = cache(async function getChurches() {
-  return prisma.church.findMany({
+export async function getSeries() {
+  cacheTag("series");
+  return prisma.series.findMany({
+    orderBy: { createdAt: "desc" },
     include: {
-      serviceTimes: true,
-      events: { where: { isPast: false, isDraft: false } },
+      _count: {
+        select: { events: { where: { isPast: false, isDraft: false } } },
+      },
     },
-    orderBy: { name: "asc" },
   });
-});
+}
 
-export const getChurchById = cache(async function getChurchById(id: string) {
-  return prisma.church.findUnique({
+export async function getSeriesById(id: string) {
+  cacheTag("series", `series-${id}`);
+  return prisma.series.findUnique({
     where: { id },
     include: {
-      serviceTimes: true,
-      events: { where: { isPast: false, isDraft: false } },
-      series: {
-        orderBy: { createdAt: "desc" },
-        include: {
-          _count: { select: { events: { where: { isPast: false, isDraft: false } } } },
-        },
+      church: { select: { id: true, name: true } },
+      events: {
+        where: { isPast: false, isDraft: false },
+        orderBy: { datetime: "asc" },
       },
       followers: { select: { userId: true } },
       _count: { select: { followers: true } },
     },
   });
-});
+}
 
-export const searchEventsAndChurches = cache(async function searchEventsAndChurches(filters: SearchFilters) {
+export async function getSeriesByCreator(userId: string) {
+  cacheTag("series");
+  return prisma.series.findMany({
+    where: { createdById: userId },
+    orderBy: { createdAt: "desc" },
+    include: {
+      _count: { select: { events: { where: { isPast: false, isDraft: false } } } },
+      createdBy: { select: { name: true } },
+    },
+  });
+}
+
+export async function getSeriesNotByCreator(userId: string) {
+  cacheTag("series");
+  return prisma.series.findMany({
+    where: {
+      OR: [{ createdById: { not: userId } }, { createdById: null }],
+    },
+    orderBy: { createdAt: "desc" },
+    include: {
+      _count: { select: { events: { where: { isPast: false, isDraft: false } } } },
+      createdBy: { select: { name: true } },
+    },
+  });
+}
+
+export async function getUserFollowedSeries(userId: string) {
+  cacheTag("series");
+  return prisma.series.findMany({
+    where: { followers: { some: { userId } } },
+    orderBy: { createdAt: "desc" },
+    include: {
+      _count: { select: { events: { where: { isPast: false, isDraft: false } } } },
+    },
+  });
+}
+
+export async function getStoredNotificationPreferences(userId: string) {
+  cacheTag(`user-notifications-${userId}`);
+  return prisma.notificationPreference.findMany({
+    where: { userId },
+    select: { type: true, enabled: true, config: true },
+  });
+}
+
+// Search results are time-sensitive (today/tomorrow/weekend filters), so use a short TTL.
+export async function searchEventsAndChurches(filters: SearchFilters) {
+  cacheLife("minutes");
+  cacheTag("events", "churches");
   const { query, type = "all", category, when } = filters;
   const hasFilters = !!(query || category || when);
 
@@ -144,7 +287,6 @@ export const searchEventsAndChurches = cache(async function searchEventsAndChurc
   const shouldFetchEvents = type === "all" || type === "events";
   const shouldFetchChurches = type === "all" || type === "churches";
 
-  // Build event where clause
   const eventWhere: Prisma.EventWhereInput = { isPast: false, isDraft: false };
   if (query) {
     eventWhere.OR = [
@@ -162,12 +304,11 @@ export const searchEventsAndChurches = cache(async function searchEventsAndChurc
     eventWhere.datetime = { gte, lte };
   }
 
-  // Build church where clause
   const churchWhere: Prisma.ChurchWhereInput = {};
   if (query) {
     churchWhere.OR = [
       { name: { contains: query, mode: "insensitive" } },
-{ address: { contains: query, mode: "insensitive" } },
+      { address: { contains: query, mode: "insensitive" } },
     ];
   }
 
@@ -185,132 +326,4 @@ export const searchEventsAndChurches = cache(async function searchEventsAndChurc
   ]);
 
   return { events, churches };
-});
-
-export const getSeries = cache(async function getSeries() {
-  return prisma.series.findMany({
-    orderBy: { createdAt: "desc" },
-    include: {
-      _count: {
-        select: { events: { where: { isPast: false, isDraft: false } } },
-      },
-    },
-  });
-});
-
-export const getSeriesById = cache(async function getSeriesById(id: string) {
-  return prisma.series.findUnique({
-    where: { id },
-    include: {
-      church: { select: { id: true, name: true } },
-      events: {
-        where: { isPast: false, isDraft: false },
-        orderBy: { datetime: "asc" },
-      },
-      followers: { select: { userId: true } },
-      _count: { select: { followers: true } },
-    },
-  });
-});
-
-export const getSeriesByChurchId = cache(async function getSeriesByChurchId(churchId: string) {
-  return prisma.series.findMany({
-    where: { churchId },
-    include: {
-      _count: {
-        select: { events: { where: { isPast: false, isDraft: false } } },
-      },
-    },
-    orderBy: { createdAt: "desc" },
-  });
-});
-
-export const getEventsByCreator = cache(async function getEventsByCreator(userId: string) {
-  return prisma.event.findMany({
-    where: { isPast: false, createdById: userId },
-    orderBy: { createdAt: "asc" },
-    include: {
-      series: { select: { name: true } },
-      createdBy: { select: { name: true } },
-    },
-  });
-});
-
-export const getSeriesByCreator = cache(async function getSeriesByCreator(userId: string) {
-  return prisma.series.findMany({
-    where: { createdById: userId },
-    orderBy: { createdAt: "desc" },
-    include: {
-      _count: { select: { events: { where: { isPast: false, isDraft: false } } } },
-      createdBy: { select: { name: true } },
-    },
-  });
-});
-
-export const getEventsNotByCreator = cache(async function getEventsNotByCreator(userId: string) {
-  return prisma.event.findMany({
-    where: {
-      isPast: false,
-      isDraft: false,
-      OR: [{ createdById: { not: userId } }, { createdById: null }],
-    },
-    orderBy: { createdAt: "asc" },
-    include: {
-      series: { select: { name: true } },
-      createdBy: { select: { name: true } },
-    },
-  });
-});
-
-export const getEventAttendees = cache(async function getEventAttendees(eventId: string) {
-  return prisma.eventAttendee.findMany({
-    where: { eventId },
-    select: {
-      id: true,
-      phone: true,
-      notes: true,
-      metadata: true,
-      user: { select: { id: true, name: true, email: true } },
-    },
-    orderBy: { createdAt: "asc" },
-  });
-});
-
-export const getSeriesNotByCreator = cache(async function getSeriesNotByCreator(userId: string) {
-  return prisma.series.findMany({
-    where: {
-      OR: [{ createdById: { not: userId } }, { createdById: null }],
-    },
-    orderBy: { createdAt: "desc" },
-    include: {
-      _count: { select: { events: { where: { isPast: false, isDraft: false } } } },
-      createdBy: { select: { name: true } },
-    },
-  });
-});
-
-export const getUserAttendedEvents = cache(async function getUserAttendedEvents(userId: string) {
-  return prisma.event.findMany({
-    where: { isPast: false, isDraft: false, attendees: { some: { userId } } },
-    orderBy: { datetime: "asc" },
-    include: { series: { select: { name: true } } },
-  });
-});
-
-export const getUserAttendedPastEvents = cache(async function getUserAttendedPastEvents(userId: string) {
-  return prisma.event.findMany({
-    where: { isPast: true, isDraft: false, attendees: { some: { userId } } },
-    orderBy: { datetime: "desc" },
-    include: { series: { select: { name: true } } },
-  });
-});
-
-export const getUserFollowedSeries = cache(async function getUserFollowedSeries(userId: string) {
-  return prisma.series.findMany({
-    where: { followers: { some: { userId } } },
-    orderBy: { createdAt: "desc" },
-    include: {
-      _count: { select: { events: { where: { isPast: false, isDraft: false } } } },
-    },
-  });
-});
+}

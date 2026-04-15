@@ -1,5 +1,6 @@
 jest.mock('next/cache', () => ({
-  revalidatePath: jest.fn(),
+  updateTag: jest.fn(),
+  cacheTag: jest.fn(),
 }))
 
 jest.mock('@/auth', () => ({
@@ -22,7 +23,7 @@ jest.mock('@/lib/schedule-notification', () => ({
 
 import { auth } from '@/auth'
 import { prisma } from '@/lib/db'
-import { revalidatePath } from 'next/cache'
+import { updateTag } from 'next/cache'
 import { updateReminderScheduleForUser } from '@/lib/schedule-notification'
 import {
   getNotificationPreferencesAction,
@@ -34,7 +35,7 @@ const mockPrefFindMany = prisma.notificationPreference.findMany as jest.Mock
 const mockPrefUpsert = prisma.notificationPreference.upsert as jest.Mock
 const mockPrefDeleteMany = prisma.notificationPreference.deleteMany as jest.Mock
 const mockUpdateReminderSchedule = updateReminderScheduleForUser as jest.Mock
-const mockRevalidatePath = revalidatePath as jest.Mock
+const mockUpdateTag = updateTag as jest.Mock
 
 beforeEach(() => {
   jest.clearAllMocks()
@@ -98,7 +99,7 @@ describe('updateNotificationPreferenceAction', () => {
         where: { userId: 'user-1', type: 'EVENT_CANCELLED' },
       })
       expect(mockPrefUpsert).not.toHaveBeenCalled()
-      expect(mockRevalidatePath).toHaveBeenCalledWith('/profile/notifications')
+      expect(mockUpdateTag).toHaveBeenCalledWith('user-notifications-user-1')
     })
 
     it('does not call updateReminderScheduleForUser when re-enabling with no config', async () => {

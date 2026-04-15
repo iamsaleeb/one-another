@@ -1,7 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { revalidatePath } from "next/cache";
+import { updateTag } from "next/cache";
 import { prisma } from "@/lib/db";
 import { auth } from "@/auth";
 import { UserRole } from "@prisma/client";
@@ -16,6 +16,19 @@ import {
   rescheduleEventReminders,
 } from "@/lib/schedule-notification";
 import { sendPushToUsers } from "@/lib/notifications";
+
+function invalidateEventCaches(id: string, churchId?: string | null, seriesId?: string | null) {
+  updateTag("events");
+  updateTag(`event-${id}`);
+  if (churchId) {
+    updateTag("churches");
+    updateTag(`church-${churchId}`);
+  }
+  if (seriesId) {
+    updateTag("series");
+    updateTag(`series-${seriesId}`);
+  }
+}
 
 export async function createEventAction(data: CreateEventInput): Promise<ActionResult> {
   const session = await auth();
@@ -108,7 +121,7 @@ export async function createEventAction(data: CreateEventInput): Promise<ActionR
     }
   }
 
-  revalidatePath("/");
+  invalidateEventCaches(created.id, churchId, seriesId);
   redirect(isDraft ? "/organiser" : seriesId ? `/series/${seriesId}` : "/my-events");
 }
 
@@ -138,7 +151,7 @@ export async function updateEventAction(id: string, data: CreateEventInput): Pro
   // Fetch existing event to verify permission on the original church and detect reschedule
   const existing = await prisma.event.findUnique({
     where: { id },
-    select: { churchId: true, datetime: true, title: true, isDraft: true },
+    select: { churchId: true, datetime: true, title: true, isDraft: true, seriesId: true },
   });
   if (!existing) redirect("/organiser");
 
@@ -196,7 +209,13 @@ export async function updateEventAction(id: string, data: CreateEventInput): Pro
     }
   }
 
-  revalidatePath("/");
+  invalidateEventCaches(id, existing.churchId);
+  if (churchId && churchId !== existing.churchId) updateTag(`church-${churchId}`);
+  const affectedSeriesIds = [...new Set([existing.seriesId, seriesId ?? null].filter(Boolean) as string[])];
+  if (affectedSeriesIds.length > 0) {
+    updateTag("series");
+    affectedSeriesIds.forEach((sid) => updateTag(`series-${sid}`));
+  }
   redirect(`/events/${id}`);
 }
 
@@ -206,7 +225,7 @@ export async function cancelEventAction(id: string, reason: string): Promise<voi
 
   const event = await prisma.event.findUnique({
     where: { id },
-    select: { churchId: true, title: true },
+    select: { churchId: true, title: true, seriesId: true },
   });
   if (!event) redirect("/organiser");
 
@@ -239,7 +258,7 @@ export async function cancelEventAction(id: string, reason: string): Promise<voi
     console.error("EVENT_CANCELLED push failed:", err);
   }
 
-  revalidatePath("/");
+  invalidateEventCaches(id, event.churchId, event.seriesId);
   redirect(`/events/${id}`);
 }
 
@@ -247,7 +266,7 @@ export async function uncancelEventAction(id: string): Promise<void> {
   const session = await auth();
   if (session?.user?.role !== UserRole.ORGANISER && session?.user?.role !== UserRole.ADMIN) redirect("/");
 
-  const event = await prisma.event.findUnique({ where: { id }, select: { churchId: true } });
+  const event = await prisma.event.findUnique({ where: { id }, select: { churchId: true, seriesId: true } });
   if (!event) redirect("/organiser");
 
   const allowed = await canManageChurch(session.user.id, session.user.role, event.churchId);
@@ -258,7 +277,7 @@ export async function uncancelEventAction(id: string): Promise<void> {
     data: { cancelledAt: null, cancellationReason: null },
   });
 
-  revalidatePath("/");
+  invalidateEventCaches(id, event.churchId, event.seriesId);
   redirect(`/events/${id}`);
 }
 
@@ -318,7 +337,7 @@ export async function publishEventAction(id: string): Promise<ActionResult> {
     }
   }
 
-  revalidatePath("/");
+  invalidateEventCaches(id, event.churchId, event.seriesId);
   redirect(`/events/${id}`);
 }
 
@@ -328,7 +347,7 @@ export async function unpublishEventAction(id: string): Promise<ActionResult> {
     return { error: "Unauthorised." };
   }
 
-  const event = await prisma.event.findUnique({ where: { id }, select: { churchId: true } });
+  const event = await prisma.event.findUnique({ where: { id }, select: { churchId: true, seriesId: true } });
   if (!event) redirect("/organiser");
 
   const allowed = await canManageChurch(session.user.id, session.user.role, event.churchId);
@@ -342,7 +361,7 @@ export async function unpublishEventAction(id: string): Promise<ActionResult> {
     console.error("Failed to cancel reminders on unpublish:", err);
   }
 
-  revalidatePath("/");
+  invalidateEventCaches(id, event.churchId, event.seriesId);
   redirect(`/events/${id}`);
 }
 
@@ -350,7 +369,7 @@ export async function deleteEventAction(id: string): Promise<void> {
   const session = await auth();
   if (session?.user?.role !== UserRole.ORGANISER && session?.user?.role !== UserRole.ADMIN) redirect("/");
 
-  const event = await prisma.event.findUnique({ where: { id }, select: { churchId: true } });
+  const event = await prisma.event.findUnique({ where: { id }, select: { churchId: true, seriesId: true } });
   if (!event) redirect("/organiser");
 
   const allowed = await canManageChurch(session.user.id, session.user.role, event.churchId);
@@ -363,7 +382,7 @@ export async function deleteEventAction(id: string): Promise<void> {
   }
 
   await prisma.event.delete({ where: { id } });
-  revalidatePath("/");
+  invalidateEventCaches(id, event.churchId, event.seriesId);
   redirect("/organiser");
 }
 
@@ -391,7 +410,7 @@ export async function attendEventAction(eventId: string): Promise<AttendEventSta
     console.error("Failed to schedule event reminder:", err);
   }
 
-  revalidatePath(`/events/${eventId}`);
+  invalidateEventCaches(eventId);
   return {};
 }
 
@@ -409,7 +428,7 @@ export async function unattendEventAction(eventId: string): Promise<AttendEventS
     console.error("Failed to cancel event reminder:", err);
   }
 
-  revalidatePath(`/events/${eventId}`);
+  invalidateEventCaches(eventId);
   return {};
 }
 
@@ -493,6 +512,6 @@ export async function registerEventAction(
     console.error("Failed to schedule event reminder after registration:", err);
   }
 
-  revalidatePath(`/events/${eventId}`);
+  invalidateEventCaches(eventId);
   return { success: true };
 }

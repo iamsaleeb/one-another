@@ -3,7 +3,6 @@ jest.mock('next/navigation', () => ({
 }))
 
 jest.mock('next/cache', () => ({
-  revalidatePath: jest.fn(),
   updateTag: jest.fn(),
 }))
 
@@ -60,7 +59,7 @@ jest.mock('@/lib/permissions', () => ({
 }))
 
 import { redirect } from 'next/navigation'
-import { revalidatePath } from 'next/cache'
+import { updateTag } from 'next/cache'
 import {
   createEventAction,
   updateEventAction,
@@ -78,7 +77,7 @@ import { auth } from '@/auth'
 import { canManageChurch } from '@/lib/permissions'
 
 const mockRedirect = redirect as unknown as jest.Mock
-const mockRevalidatePath = revalidatePath as jest.Mock
+const mockUpdateTag = updateTag as jest.Mock
 const mockEventCreate = prisma.event.create as jest.Mock
 const mockEventUpdate = prisma.event.update as jest.Mock
 const mockEventFindUnique = prisma.event.findUnique as jest.Mock
@@ -356,8 +355,8 @@ describe('cancelEventAction', () => {
       where: { id: 'evt-1' },
       data: expect.objectContaining({ cancellationReason: 'Venue unavailable' }),
     })
+    expect(mockUpdateTag).toHaveBeenCalledWith('event-evt-1')
     expect(mockRedirect).toHaveBeenCalledWith('/events/evt-1')
-    expect(mockRevalidatePath).toHaveBeenCalledWith('/')
   })
 
   it('redirects away when the user is not an organiser', async () => {
@@ -432,8 +431,8 @@ describe('uncancelEventAction', () => {
       where: { id: 'evt-1' },
       data: { cancelledAt: null, cancellationReason: null },
     })
+    expect(mockUpdateTag).toHaveBeenCalledWith('event-evt-1')
     expect(mockRedirect).toHaveBeenCalledWith('/events/evt-1')
-    expect(mockRevalidatePath).toHaveBeenCalledWith('/')
   })
 
   it('redirects away when the user is not an organiser', async () => {
@@ -450,7 +449,7 @@ describe('uncancelEventAction', () => {
 describe('attendEventAction', () => {
   const publishedEvent = { id: 'evt-1', title: 'Test', datetime: new Date('2026-05-01T09:00:00Z'), isDraft: false }
 
-  it('creates an EventAttendee and revalidates the event path', async () => {
+  it('creates an EventAttendee and invalidates event cache tags', async () => {
     mockEventFindUnique.mockResolvedValue(publishedEvent)
     mockEventAttendeeCreate.mockResolvedValue({})
 
@@ -459,7 +458,7 @@ describe('attendEventAction', () => {
     expect(mockEventAttendeeCreate).toHaveBeenCalledWith({
       data: { eventId: 'evt-1', userId: 'user-1' },
     })
-    expect(mockRevalidatePath).toHaveBeenCalledWith('/events/evt-1')
+    expect(mockUpdateTag).toHaveBeenCalledWith('event-evt-1')
   })
 
   it('returns an error when the event is a draft', async () => {
@@ -498,12 +497,12 @@ describe('attendEventAction', () => {
     const result = await attendEventAction('evt-1')
 
     expect(result.error).toBeUndefined()
-    expect(mockRevalidatePath).toHaveBeenCalledWith('/events/evt-1')
+    expect(mockUpdateTag).toHaveBeenCalledWith('event-evt-1')
   })
 })
 
 describe('unattendEventAction', () => {
-  it('deletes the EventAttendee and revalidates the event path', async () => {
+  it('deletes the EventAttendee and invalidates event cache tags', async () => {
     mockEventAttendeeDelete.mockResolvedValue({})
 
     await unattendEventAction('evt-1')
@@ -511,7 +510,7 @@ describe('unattendEventAction', () => {
     expect(mockEventAttendeeDelete).toHaveBeenCalledWith({
       where: { eventId_userId: { eventId: 'evt-1', userId: 'user-1' } },
     })
-    expect(mockRevalidatePath).toHaveBeenCalledWith('/events/evt-1')
+    expect(mockUpdateTag).toHaveBeenCalledWith('event-evt-1')
   })
 
   it('returns an error when the user is not signed in', async () => {
@@ -531,7 +530,7 @@ describe('unattendEventAction', () => {
     const result = await unattendEventAction('evt-1')
 
     expect(result.error).toBeUndefined()
-    expect(mockRevalidatePath).toHaveBeenCalledWith('/events/evt-1')
+    expect(mockUpdateTag).toHaveBeenCalledWith('event-evt-1')
   })
 })
 
@@ -554,7 +553,7 @@ describe('registerEventAction', () => {
       },
     })
     expect(result.success).toBe(true)
-    expect(mockRevalidatePath).toHaveBeenCalledWith('/events/evt-1')
+    expect(mockUpdateTag).toHaveBeenCalledWith('event-evt-1')
   })
 
   it('creates an EventAttendee with no optional fields when form is empty', async () => {
@@ -634,7 +633,7 @@ describe('registerEventAction', () => {
     const result = await registerEventAction('evt-1', {}, makeFormData({}))
 
     expect(result.success).toBe(true)
-    expect(mockRevalidatePath).toHaveBeenCalledWith('/events/evt-1')
+    expect(mockUpdateTag).toHaveBeenCalledWith('event-evt-1')
   })
 })
 
@@ -655,8 +654,9 @@ describe('updateEventAction', () => {
         data: expect.objectContaining({ title: 'Sunday Worship', churchId: 'ch-1' }),
       })
     )
+    expect(mockUpdateTag).toHaveBeenCalledWith('events')
+    expect(mockUpdateTag).toHaveBeenCalledWith('event-evt-1')
     expect(mockRedirect).toHaveBeenCalledWith('/events/evt-1')
-    expect(mockRevalidatePath).toHaveBeenCalledWith('/')
   })
 
   it('uses datetimeISO when provided, ignoring date+time fields', async () => {
@@ -820,7 +820,8 @@ describe('deleteEventAction', () => {
 
     expect(mockCancelAll).toHaveBeenCalledWith('evt-1')
     expect(mockEventDelete).toHaveBeenCalledWith({ where: { id: 'evt-1' } })
-    expect(mockRevalidatePath).toHaveBeenCalledWith('/')
+    expect(mockUpdateTag).toHaveBeenCalledWith('events')
+    expect(mockUpdateTag).toHaveBeenCalledWith('event-evt-1')
     expect(mockRedirect).toHaveBeenCalledWith('/organiser')
   })
 
@@ -885,7 +886,8 @@ describe('publishEventAction', () => {
     expect(mockScheduleReminder).toHaveBeenCalledTimes(2)
     expect(mockScheduleReminder).toHaveBeenCalledWith('user-2', { id: 'evt-1', title: 'Test', datetime })
     expect(mockScheduleReminder).toHaveBeenCalledWith('user-3', { id: 'evt-1', title: 'Test', datetime })
-    expect(mockRevalidatePath).toHaveBeenCalledWith('/')
+    expect(mockUpdateTag).toHaveBeenCalledWith('events')
+    expect(mockUpdateTag).toHaveBeenCalledWith('event-evt-1')
     expect(mockRedirect).toHaveBeenCalledWith('/events/evt-1')
   })
 
@@ -986,7 +988,8 @@ describe('unpublishEventAction', () => {
       data: { isDraft: true },
     })
     expect(mockCancelAll).toHaveBeenCalledWith('evt-1')
-    expect(mockRevalidatePath).toHaveBeenCalledWith('/')
+    expect(mockUpdateTag).toHaveBeenCalledWith('events')
+    expect(mockUpdateTag).toHaveBeenCalledWith('event-evt-1')
     expect(mockRedirect).toHaveBeenCalledWith('/events/evt-1')
   })
 

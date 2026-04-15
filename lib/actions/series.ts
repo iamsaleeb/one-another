@@ -9,10 +9,14 @@ import { createSeriesSchema, type CreateSeriesInput } from "@/lib/validations/se
 import { canManageChurch } from "@/lib/permissions";
 import type { ActionResult } from "@/lib/actions/auth";
 
-function invalidateSeriesCaches(id: string) {
+function invalidateSeriesCaches(id: string, churchId?: string | null) {
   updateTag("events");
   updateTag("series");
   updateTag(`series-${id}`);
+  if (churchId) {
+    updateTag("churches");
+    updateTag(`church-${churchId}`);
+  }
 }
 
 export async function createSeriesAction(data: CreateSeriesInput): Promise<ActionResult> {
@@ -45,7 +49,7 @@ export async function createSeriesAction(data: CreateSeriesInput): Promise<Actio
     },
   });
 
-  updateTag("series");
+  invalidateSeriesCaches(created.id, churchId);
   redirect(`/series/${created.id}`);
 }
 
@@ -76,7 +80,8 @@ export async function updateSeriesAction(id: string, data: CreateSeriesInput): P
     data: { name, description, cadence, location, host, tag, churchId, photoUrl: photoUrl ?? null },
   });
 
-  invalidateSeriesCaches(id);
+  invalidateSeriesCaches(id, existing.churchId);
+  if (churchId !== existing.churchId) updateTag(`church-${churchId}`);
   redirect(`/series/${id}`);
 }
 
@@ -129,6 +134,6 @@ export async function deleteSeriesAction(id: string): Promise<void> {
   if (!allowed) redirect("/");
 
   await prisma.series.delete({ where: { id } });
-  invalidateSeriesCaches(id);
+  invalidateSeriesCaches(id, series.churchId);
   redirect("/organiser");
 }

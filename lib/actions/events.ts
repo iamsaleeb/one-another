@@ -209,7 +209,8 @@ export async function updateEventAction(id: string, data: CreateEventInput): Pro
     }
   }
 
-  invalidateEventCaches(id);
+  invalidateEventCaches(id, existing.churchId);
+  if (churchId !== existing.churchId) updateTag(`church-${churchId}`);
   const affectedSeriesIds = [...new Set([existing.seriesId, seriesId ?? null].filter(Boolean) as string[])];
   if (affectedSeriesIds.length > 0) {
     updateTag("series");
@@ -257,7 +258,7 @@ export async function cancelEventAction(id: string, reason: string): Promise<voi
     console.error("EVENT_CANCELLED push failed:", err);
   }
 
-  invalidateEventCaches(id, event.seriesId);
+  invalidateEventCaches(id, event.churchId, event.seriesId);
   redirect(`/events/${id}`);
 }
 
@@ -276,7 +277,7 @@ export async function uncancelEventAction(id: string): Promise<void> {
     data: { cancelledAt: null, cancellationReason: null },
   });
 
-  invalidateEventCaches(id, event.seriesId);
+  invalidateEventCaches(id, event.churchId, event.seriesId);
   redirect(`/events/${id}`);
 }
 
@@ -336,7 +337,7 @@ export async function publishEventAction(id: string): Promise<ActionResult> {
     }
   }
 
-  invalidateEventCaches(id, event.seriesId);
+  invalidateEventCaches(id, event.churchId, event.seriesId);
   redirect(`/events/${id}`);
 }
 
@@ -360,7 +361,7 @@ export async function unpublishEventAction(id: string): Promise<ActionResult> {
     console.error("Failed to cancel reminders on unpublish:", err);
   }
 
-  invalidateEventCaches(id, event.seriesId);
+  invalidateEventCaches(id, event.churchId, event.seriesId);
   redirect(`/events/${id}`);
 }
 
@@ -381,7 +382,7 @@ export async function deleteEventAction(id: string): Promise<void> {
   }
 
   await prisma.event.delete({ where: { id } });
-  invalidateEventCaches(id, event.seriesId);
+  invalidateEventCaches(id, event.churchId, event.seriesId);
   redirect("/organiser");
 }
 

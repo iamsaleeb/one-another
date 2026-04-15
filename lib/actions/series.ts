@@ -9,6 +9,12 @@ import { createSeriesSchema, type CreateSeriesInput } from "@/lib/validations/se
 import { canManageChurch } from "@/lib/permissions";
 import type { ActionResult } from "@/lib/actions/auth";
 
+function invalidateSeriesCaches(id: string) {
+  updateTag("events");
+  updateTag("series");
+  updateTag(`series-${id}`);
+}
+
 export async function createSeriesAction(data: CreateSeriesInput): Promise<ActionResult> {
   const session = await auth();
   if (session?.user?.role !== UserRole.ORGANISER && session?.user?.role !== UserRole.ADMIN) {
@@ -70,9 +76,7 @@ export async function updateSeriesAction(id: string, data: CreateSeriesInput): P
     data: { name, description, cadence, location, host, tag, churchId, photoUrl: photoUrl ?? null },
   });
 
-  updateTag("events");
-  updateTag("series");
-  updateTag(`series-${id}`);
+  invalidateSeriesCaches(id);
   redirect(`/series/${id}`);
 }
 
@@ -125,8 +129,6 @@ export async function deleteSeriesAction(id: string): Promise<void> {
   if (!allowed) redirect("/");
 
   await prisma.series.delete({ where: { id } });
-  updateTag("events");
-  updateTag("series");
-  updateTag(`series-${id}`);
+  invalidateSeriesCaches(id);
   redirect("/organiser");
 }

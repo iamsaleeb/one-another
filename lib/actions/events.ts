@@ -17,6 +17,15 @@ import {
 } from "@/lib/schedule-notification";
 import { sendPushToUsers } from "@/lib/notifications";
 
+function invalidateEventCaches(id: string, seriesId?: string | null) {
+  updateTag("events");
+  updateTag(`event-${id}`);
+  if (seriesId) {
+    updateTag("series");
+    updateTag(`series-${seriesId}`);
+  }
+}
+
 export async function createEventAction(data: CreateEventInput): Promise<ActionResult> {
   const session = await auth();
   if (session?.user?.role !== UserRole.ORGANISER && session?.user?.role !== UserRole.ADMIN) {
@@ -108,11 +117,7 @@ export async function createEventAction(data: CreateEventInput): Promise<ActionR
     }
   }
 
-  updateTag("events");
-  if (seriesId) {
-    updateTag("series");
-    updateTag(`series-${seriesId}`);
-  }
+  invalidateEventCaches(created.id, seriesId);
   redirect(isDraft ? "/organiser" : seriesId ? `/series/${seriesId}` : "/my-events");
 }
 
@@ -200,10 +205,9 @@ export async function updateEventAction(id: string, data: CreateEventInput): Pro
     }
   }
 
-  updateTag("events");
-  updateTag(`event-${id}`);
-  const affectedSeriesIds = new Set([existing.seriesId, seriesId ?? null].filter(Boolean) as string[]);
-  if (affectedSeriesIds.size > 0) {
+  invalidateEventCaches(id);
+  const affectedSeriesIds = [...new Set([existing.seriesId, seriesId ?? null].filter(Boolean) as string[])];
+  if (affectedSeriesIds.length > 0) {
     updateTag("series");
     affectedSeriesIds.forEach((sid) => updateTag(`series-${sid}`));
   }
@@ -249,12 +253,7 @@ export async function cancelEventAction(id: string, reason: string): Promise<voi
     console.error("EVENT_CANCELLED push failed:", err);
   }
 
-  updateTag("events");
-  updateTag(`event-${id}`);
-  if (event.seriesId) {
-    updateTag("series");
-    updateTag(`series-${event.seriesId}`);
-  }
+  invalidateEventCaches(id, event.seriesId);
   redirect(`/events/${id}`);
 }
 
@@ -273,12 +272,7 @@ export async function uncancelEventAction(id: string): Promise<void> {
     data: { cancelledAt: null, cancellationReason: null },
   });
 
-  updateTag("events");
-  updateTag(`event-${id}`);
-  if (event.seriesId) {
-    updateTag("series");
-    updateTag(`series-${event.seriesId}`);
-  }
+  invalidateEventCaches(id, event.seriesId);
   redirect(`/events/${id}`);
 }
 
@@ -338,12 +332,7 @@ export async function publishEventAction(id: string): Promise<ActionResult> {
     }
   }
 
-  updateTag("events");
-  updateTag(`event-${id}`);
-  if (event.seriesId) {
-    updateTag("series");
-    updateTag(`series-${event.seriesId}`);
-  }
+  invalidateEventCaches(id, event.seriesId);
   redirect(`/events/${id}`);
 }
 
@@ -367,12 +356,7 @@ export async function unpublishEventAction(id: string): Promise<ActionResult> {
     console.error("Failed to cancel reminders on unpublish:", err);
   }
 
-  updateTag("events");
-  updateTag(`event-${id}`);
-  if (event.seriesId) {
-    updateTag("series");
-    updateTag(`series-${event.seriesId}`);
-  }
+  invalidateEventCaches(id, event.seriesId);
   redirect(`/events/${id}`);
 }
 
@@ -393,12 +377,7 @@ export async function deleteEventAction(id: string): Promise<void> {
   }
 
   await prisma.event.delete({ where: { id } });
-  updateTag("events");
-  updateTag(`event-${id}`);
-  if (event.seriesId) {
-    updateTag("series");
-    updateTag(`series-${event.seriesId}`);
-  }
+  invalidateEventCaches(id, event.seriesId);
   redirect("/organiser");
 }
 
@@ -426,8 +405,7 @@ export async function attendEventAction(eventId: string): Promise<AttendEventSta
     console.error("Failed to schedule event reminder:", err);
   }
 
-  updateTag("events");
-  updateTag(`event-${eventId}`);
+  invalidateEventCaches(eventId);
   return {};
 }
 
@@ -445,8 +423,7 @@ export async function unattendEventAction(eventId: string): Promise<AttendEventS
     console.error("Failed to cancel event reminder:", err);
   }
 
-  updateTag("events");
-  updateTag(`event-${eventId}`);
+  invalidateEventCaches(eventId);
   return {};
 }
 
@@ -530,7 +507,6 @@ export async function registerEventAction(
     console.error("Failed to schedule event reminder after registration:", err);
   }
 
-  updateTag("events");
-  updateTag(`event-${eventId}`);
+  invalidateEventCaches(eventId);
   return { success: true };
 }

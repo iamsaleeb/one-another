@@ -41,15 +41,6 @@ export async function getEvents() {
   });
 }
 
-export async function getPastEvents() {
-  cacheTag("events");
-  return prisma.event.findMany({
-    where: { isPast: true, isDraft: false },
-    orderBy: { createdAt: "asc" },
-    include: { series: { select: { name: true } } },
-  });
-}
-
 export async function getEventById(id: string) {
   cacheTag("events", `event-${id}`);
   return prisma.event.findUnique({
@@ -153,16 +144,6 @@ export async function getChurchById(id: string) {
   });
 }
 
-export async function getChurchesByAdmin(userId: string) {
-  cacheTag("churches");
-  const assignments = await prisma.churchAdmin.findMany({
-    where: { userId },
-    select: { church: { select: { id: true, name: true } } },
-    orderBy: { church: { name: "asc" } },
-  });
-  return assignments.map((a) => a.church);
-}
-
 export async function getChurchesByManager(userId: string) {
   cacheTag("churches");
   const [organiserRows, adminRows] = await Promise.all([
@@ -184,16 +165,6 @@ export async function getChurchesByManager(userId: string) {
     }
   }
   return churches.sort((a, b) => a.name.localeCompare(b.name));
-}
-
-export async function getChurchesByOrganiser(userId: string) {
-  cacheTag("churches");
-  const assignments = await prisma.churchOrganiser.findMany({
-    where: { userId },
-    select: { church: { select: { id: true, name: true } } },
-    orderBy: { church: { name: "asc" } },
-  });
-  return assignments.map((a) => a.church);
 }
 
 export async function getOrganisersByChurch(churchId: string) {
@@ -256,19 +227,6 @@ export async function getSeriesById(id: string) {
       followers: { select: { userId: true } },
       _count: { select: { followers: true } },
     },
-  });
-}
-
-export async function getSeriesByChurchId(churchId: string) {
-  cacheTag("series");
-  return prisma.series.findMany({
-    where: { churchId },
-    include: {
-      _count: {
-        select: { events: { where: { isPast: false, isDraft: false } } },
-      },
-    },
-    orderBy: { createdAt: "desc" },
   });
 }
 

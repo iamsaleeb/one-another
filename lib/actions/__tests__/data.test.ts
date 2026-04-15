@@ -17,18 +17,14 @@ jest.mock('@/lib/db', () => ({
 
 import {
   getEvents,
-  getPastEvents,
   getEventById,
   getChurches,
   getChurchById,
-  getChurchesByOrganiser,
-  getChurchesByAdmin,
   getChurchesByManager,
   getOrganisersByChurch,
   searchEventsAndChurches,
   getSeries,
   getSeriesById,
-  getSeriesByChurchId,
   getEventsByCreator,
   getSeriesByCreator,
   getEventsNotByCreator,
@@ -102,20 +98,6 @@ describe('getEvents', () => {
   })
 })
 
-describe('getPastEvents', () => {
-  it('returns past events ordered by createdAt asc', async () => {
-    const pastEvent = { ...sampleEvent, id: 'evt-past', isPast: true }
-    mockEventFindMany.mockResolvedValue([pastEvent])
-    const result = await getPastEvents()
-    expect(result).toEqual([pastEvent])
-    expect(mockEventFindMany).toHaveBeenCalledWith({
-      where: { isPast: true, isDraft: false },
-      orderBy: { createdAt: 'asc' },
-      include: { series: { select: { name: true } } },
-    })
-  })
-})
-
 describe('getEventById', () => {
   it('returns the matching event', async () => {
     mockEventFindUnique.mockResolvedValue(sampleEvent)
@@ -134,28 +116,6 @@ describe('getEventById', () => {
   it('returns null when the event does not exist', async () => {
     mockEventFindUnique.mockResolvedValue(null)
     expect(await getEventById('not-found')).toBeNull()
-  })
-})
-
-describe('getChurchesByAdmin', () => {
-  it('returns the churches the admin is assigned to ordered by name', async () => {
-    mockChurchAdminFindMany.mockResolvedValue([
-      { church: { id: 'ch-1', name: 'Grace Church' } },
-    ])
-
-    const result = await getChurchesByAdmin('admin-1')
-
-    expect(result).toEqual([{ id: 'ch-1', name: 'Grace Church' }])
-    expect(mockChurchAdminFindMany).toHaveBeenCalledWith({
-      where: { userId: 'admin-1' },
-      select: { church: { select: { id: true, name: true } } },
-      orderBy: { church: { name: 'asc' } },
-    })
-  })
-
-  it('returns an empty array when the admin has no assigned churches', async () => {
-    mockChurchAdminFindMany.mockResolvedValue([])
-    expect(await getChurchesByAdmin('admin-none')).toEqual([])
   })
 })
 
@@ -217,33 +177,6 @@ describe('getChurchesByManager', () => {
     mockChurchAdminFindMany.mockResolvedValue([])
 
     expect(await getChurchesByManager('user-none')).toEqual([])
-  })
-})
-
-describe('getChurchesByOrganiser', () => {
-  it('returns the churches assigned to the organiser ordered by name', async () => {
-    mockChurchOrganiserFindMany.mockResolvedValue([
-      { church: { id: 'ch-1', name: 'Grace Church' } },
-      { church: { id: 'ch-2', name: 'New Life Fellowship' } },
-    ])
-
-    const result = await getChurchesByOrganiser('user-1')
-
-    expect(result).toEqual([
-      { id: 'ch-1', name: 'Grace Church' },
-      { id: 'ch-2', name: 'New Life Fellowship' },
-    ])
-    expect(mockChurchOrganiserFindMany).toHaveBeenCalledWith({
-      where: { userId: 'user-1' },
-      select: { church: { select: { id: true, name: true } } },
-      orderBy: { church: { name: 'asc' } },
-    })
-  })
-
-  it('returns an empty array when the organiser has no assigned churches', async () => {
-    mockChurchOrganiserFindMany.mockResolvedValue([])
-
-    expect(await getChurchesByOrganiser('user-none')).toEqual([])
   })
 })
 
@@ -425,31 +358,6 @@ describe('getSeriesById', () => {
   it('returns null when series does not exist', async () => {
     mockSeriesFindUnique.mockResolvedValue(null)
     expect(await getSeriesById('not-found')).toBeNull()
-  })
-})
-
-describe('getSeriesByChurchId', () => {
-  it('returns series for the given church with event count', async () => {
-    const seriesWithCount = { ...sampleSeries, _count: { events: 2 } }
-    mockSeriesFindMany.mockResolvedValue([seriesWithCount])
-
-    const result = await getSeriesByChurchId('ch-1')
-
-    expect(result).toEqual([seriesWithCount])
-    expect(mockSeriesFindMany).toHaveBeenCalledWith({
-      where: { churchId: 'ch-1' },
-      include: {
-        _count: {
-          select: { events: { where: { isPast: false, isDraft: false } } },
-        },
-      },
-      orderBy: { createdAt: 'desc' },
-    })
-  })
-
-  it('returns empty array when church has no series', async () => {
-    mockSeriesFindMany.mockResolvedValue([])
-    expect(await getSeriesByChurchId('ch-none')).toEqual([])
   })
 })
 

@@ -92,7 +92,7 @@ export async function getEventsNotByCreator(userId: string) {
       isDraft: false,
       OR: [{ createdById: { not: userId } }, { createdById: null }],
     },
-    orderBy: { createdAt: "asc" },
+    orderBy: { datetime: "asc" },
     take: 50,
     include: {
       series: { select: { name: true } },

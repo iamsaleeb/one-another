@@ -464,7 +464,7 @@ describe('getEventsNotByCreator', () => {
         isDraft: false,
         OR: [{ createdById: { not: 'user-1' } }, { createdById: null }],
       },
-      orderBy: { createdAt: 'asc' },
+      orderBy: { datetime: 'asc' },
       take: 50,
       include: {
         series: { select: { name: true } },

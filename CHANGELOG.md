@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.12.0](https://github.com/iamsaleeb/one-another/compare/one-another-v0.11.0...one-another-v0.12.0) (2026-04-16)
+
+
+### Features
+
+* added analytics and info etc ([#72](https://github.com/iamsaleeb/one-another/issues/72)) ([ee5fefe](https://github.com/iamsaleeb/one-another/commit/ee5fefeb61ca0049f06e8a6081a48f4c2babce30))
+
+
+### Bug Fixes
+
+* optimise the db and loading of pages ([#70](https://github.com/iamsaleeb/one-another/issues/70)) ([58ad796](https://github.com/iamsaleeb/one-another/commit/58ad79668da1eb5e434a188a5d42f47a78802c3d))
+
 ## [0.11.0](https://github.com/iamsaleeb/one-another/compare/one-another-v0.10.3...one-another-v0.11.0) (2026-04-15)
 
 

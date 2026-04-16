@@ -19,14 +19,12 @@ export async function generateMetadata({ params }: Props) {
 }
 
 export default async function ChurchDetailPage({ params }: Props) {
-  const { id } = await params;
-  const [church, session] = await Promise.all([getChurchById(id), auth()]);
+  const [{ id }, session] = await Promise.all([params, auth()]);
+  const church = await getChurchById(id, session?.user?.id ?? undefined);
 
   if (!church) notFound();
 
-  const isFollowing = session?.user?.id
-    ? church.followers.some((f) => f.userId === session.user.id)
-    : false;
+  const isFollowing = church.followers.length > 0;
 
   return (
     <div className="bg-muted/20 pb-8">

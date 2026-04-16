@@ -33,8 +33,8 @@ export async function generateMetadata({ params }: Props) {
 }
 
 export default async function EventDetailPage({ params }: Props) {
-  const { id } = await params;
-  const [event, session] = await Promise.all([getEventById(id), auth()]);
+  const [{ id }, session] = await Promise.all([params, auth()]);
+  const event = await getEventById(id, session?.user?.id ?? undefined);
 
   if (!event) notFound();
 
@@ -43,9 +43,7 @@ export default async function EventDetailPage({ params }: Props) {
   if (event.isDraft && !canManage) notFound();
   const attendees = canManage ? await getEventAttendees(id) : undefined;
 
-  const isAttending = session?.user?.id
-    ? event.attendees.some((a) => a.userId === session.user.id)
-    : false;
+  const isAttending = event.attendees.length > 0;
 
   const { registration, camp } = parseEventMetadata(event.metadata);
 

@@ -25,6 +25,8 @@
     "@prisma/client": "^7.6.0",
     "@react-email/render": "^2.0.5",
     "@uploadthing/react": "^7.3.3",
+    "@vercel/analytics": "^2.0.1",
+    "@vercel/speed-insights": "^2.0.0",
     "bcryptjs": "^3.0.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

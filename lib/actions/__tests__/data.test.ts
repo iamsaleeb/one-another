@@ -99,7 +99,7 @@ describe('getEvents', () => {
 })
 
 describe('getEventById', () => {
-  it('returns the matching event', async () => {
+  it('returns the matching event without userId (no attendees fetched)', async () => {
     mockEventFindUnique.mockResolvedValue(sampleEvent)
     const result = await getEventById('evt-1')
     expect(result).toEqual(sampleEvent)
@@ -107,7 +107,20 @@ describe('getEventById', () => {
       where: { id: 'evt-1' },
       include: {
         series: { select: { id: true, name: true } },
-        attendees: { select: { userId: true } },
+        attendees: { take: 0, select: { userId: true } },
+        _count: { select: { attendees: true } },
+      },
+    })
+  })
+
+  it('filters attendees to the current user when userId provided', async () => {
+    mockEventFindUnique.mockResolvedValue(sampleEvent)
+    await getEventById('evt-1', 'user-1')
+    expect(mockEventFindUnique).toHaveBeenCalledWith({
+      where: { id: 'evt-1' },
+      include: {
+        series: { select: { id: true, name: true } },
+        attendees: { where: { userId: 'user-1' }, select: { userId: true } },
         _count: { select: { attendees: true } },
       },
     })
@@ -181,22 +194,20 @@ describe('getChurchesByManager', () => {
 })
 
 describe('getChurches', () => {
-  it('returns churches ordered by name with serviceTimes and events included', async () => {
-    mockChurchFindMany.mockResolvedValue([sampleChurch])
+  it('returns churches ordered by name with only id and name selected', async () => {
+    const minimalChurch = { id: 'ch-1', name: 'Grace Church' }
+    mockChurchFindMany.mockResolvedValue([minimalChurch])
     const result = await getChurches()
-    expect(result).toEqual([sampleChurch])
+    expect(result).toEqual([minimalChurch])
     expect(mockChurchFindMany).toHaveBeenCalledWith({
-      include: {
-        serviceTimes: true,
-        events: { where: { isPast: false, isDraft: false } },
-      },
+      select: { id: true, name: true },
       orderBy: { name: 'asc' },
     })
   })
 })
 
 describe('getChurchById', () => {
-  it('returns the matching church', async () => {
+  it('returns the matching church without userId (no followers fetched)', async () => {
     mockChurchFindUnique.mockResolvedValue(sampleChurch)
     const result = await getChurchById('ch-1')
     expect(result).toEqual(sampleChurch)
@@ -211,7 +222,27 @@ describe('getChurchById', () => {
             _count: { select: { events: { where: { isPast: false, isDraft: false } } } },
           },
         },
-        followers: { select: { userId: true } },
+        followers: { take: 0, select: { userId: true } },
+        _count: { select: { followers: true } },
+      },
+    })
+  })
+
+  it('filters followers to the current user when userId provided', async () => {
+    mockChurchFindUnique.mockResolvedValue(sampleChurch)
+    await getChurchById('ch-1', 'user-1')
+    expect(mockChurchFindUnique).toHaveBeenCalledWith({
+      where: { id: 'ch-1' },
+      include: {
+        serviceTimes: true,
+        events: { where: { isPast: false, isDraft: false } },
+        series: {
+          orderBy: { createdAt: 'desc' },
+          include: {
+            _count: { select: { events: { where: { isPast: false, isDraft: false } } } },
+          },
+        },
+        followers: { where: { userId: 'user-1' }, select: { userId: true } },
         _count: { select: { followers: true } },
       },
     })
@@ -267,6 +298,7 @@ describe('searchEventsAndChurches', () => {
           { address: { contains: 'baptist', mode: 'insensitive' } },
         ],
       },
+      select: { id: true, name: true, address: true },
     })
   })
 
@@ -330,7 +362,7 @@ describe('getSeries', () => {
 })
 
 describe('getSeriesById', () => {
-  it('returns the matching series with church and upcoming events', async () => {
+  it('returns the matching series without userId (no followers fetched)', async () => {
     const fullSeries = {
       ...sampleSeries,
       church: { id: 'ch-1', name: 'Grace Church' },
@@ -349,7 +381,24 @@ describe('getSeriesById', () => {
           where: { isPast: false, isDraft: false },
           orderBy: { datetime: 'asc' },
         },
-        followers: { select: { userId: true } },
+        followers: { take: 0, select: { userId: true } },
+        _count: { select: { followers: true } },
+      },
+    })
+  })
+
+  it('filters followers to the current user when userId provided', async () => {
+    mockSeriesFindUnique.mockResolvedValue(null)
+    await getSeriesById('ser-1', 'user-1')
+    expect(mockSeriesFindUnique).toHaveBeenCalledWith({
+      where: { id: 'ser-1' },
+      include: {
+        church: { select: { id: true, name: true } },
+        events: {
+          where: { isPast: false, isDraft: false },
+          orderBy: { datetime: 'asc' },
+        },
+        followers: { where: { userId: 'user-1' }, select: { userId: true } },
         _count: { select: { followers: true } },
       },
     })
@@ -415,7 +464,8 @@ describe('getEventsNotByCreator', () => {
         isDraft: false,
         OR: [{ createdById: { not: 'user-1' } }, { createdById: null }],
       },
-      orderBy: { createdAt: 'asc' },
+      orderBy: { datetime: 'asc' },
+      take: 50,
       include: {
         series: { select: { name: true } },
         createdBy: { select: { name: true } },
@@ -440,6 +490,7 @@ describe('getSeriesNotByCreator', () => {
         OR: [{ createdById: { not: 'user-1' } }, { createdById: null }],
       },
       orderBy: { createdAt: 'desc' },
+      take: 50,
       include: {
         _count: { select: { events: { where: { isPast: false, isDraft: false } } } },
         createdBy: { select: { name: true } },

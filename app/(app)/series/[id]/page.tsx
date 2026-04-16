@@ -23,14 +23,13 @@ export async function generateMetadata({ params }: Props) {
 }
 
 export default async function SeriesDetailPage({ params }: Props) {
-  const { id } = await params;
-  const [series, session] = await Promise.all([getSeriesById(id), auth()]);
+  const [{ id }, session] = await Promise.all([params, auth()]);
+  const series = await getSeriesById(id, session?.user?.id ?? undefined);
 
   if (!series) notFound();
 
-  const userId = session?.user?.id;
   const canManage = await canManageChurch(session?.user?.id, session?.user?.role, series.churchId);
-  const isFollowing = userId ? series.followers.some((f) => f.userId === userId) : false;
+  const isFollowing = series.followers.length > 0;
 
   return (
     <div className="bg-background">

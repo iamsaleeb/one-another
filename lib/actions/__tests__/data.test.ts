@@ -298,6 +298,7 @@ describe('searchEventsAndChurches', () => {
           { address: { contains: 'baptist', mode: 'insensitive' } },
         ],
       },
+      select: { id: true, name: true, address: true },
     })
   })
 

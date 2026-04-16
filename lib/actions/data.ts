@@ -32,9 +32,10 @@ function getDateRange(when: WhenFilter): { gte: Date; lte: Date } {
   return { gte: startOfDay(saturday), lte: endOfDay(sunday) };
 }
 
+// ─── Events ──────────────────────────────────────────────────────────────────
+
 export async function getEvents() {
   cacheTag("events");
-  cacheLife("seconds");
   return prisma.event.findMany({
     where: { isPast: false, isDraft: false },
     orderBy: { createdAt: "asc" },
@@ -117,6 +118,8 @@ export async function getUserAttendedPastEvents(userId: string) {
     include: { series: { select: { name: true } } },
   });
 }
+
+// ─── Churches ─────────────────────────────────────────────────────────────────
 
 export async function getChurches() {
   cacheTag("churches");
@@ -205,9 +208,10 @@ export async function getAdminChurches(userId: string) {
   }));
 }
 
+// ─── Series ───────────────────────────────────────────────────────────────────
+
 export async function getSeries() {
   cacheTag("series");
-  cacheLife("seconds");
   return prisma.series.findMany({
     orderBy: { createdAt: "desc" },
     include: {
@@ -274,6 +278,8 @@ export async function getUserFollowedSeries(userId: string) {
   });
 }
 
+// ─── Notifications ────────────────────────────────────────────────────────────
+
 export async function getStoredNotificationPreferences(userId: string) {
   cacheTag(`user-notifications-${userId}`);
   return prisma.notificationPreference.findMany({
@@ -282,14 +288,14 @@ export async function getStoredNotificationPreferences(userId: string) {
   });
 }
 
+// ─── Search ───────────────────────────────────────────────────────────────────
+
 // Search results are time-sensitive (today/tomorrow/weekend filters), so use a short TTL.
 export async function searchEventsAndChurches(filters: SearchFilters) {
   cacheLife("minutes");
   cacheTag("events", "churches");
   const { query, type = "all", category, when } = filters;
-  const hasFilters = !!(query || category || when);
-
-  if (!hasFilters) return { events: [], churches: [] };
+  if (!(query || category || when)) return { events: [], churches: [] };
 
   const shouldFetchEvents = type === "all" || type === "events";
   const shouldFetchChurches = type === "all" || type === "churches";
@@ -328,7 +334,10 @@ export async function searchEventsAndChurches(filters: SearchFilters) {
         })
       : Promise.resolve([]),
     shouldFetchChurches && (query || type === "churches")
-      ? prisma.church.findMany({ where: churchWhere })
+      ? prisma.church.findMany({
+          where: churchWhere,
+          select: { id: true, name: true, address: true },
+        })
       : Promise.resolve([]),
   ]);
 

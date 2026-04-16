@@ -94,7 +94,6 @@ model Church {
   website     String?
   description String
   founded     String?
-  totalEvents Int
 
   serviceTimes ServiceTime[]
   followers    ChurchFollower[]
@@ -153,6 +152,9 @@ model Series {
   createdBy   User?    @relation("UserSeries", fields: [createdById], references: [id], onDelete: SetNull)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  @@index([churchId])
+  @@index([createdById])
 }
 
 model Event {
@@ -181,6 +183,10 @@ model Event {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([isPast, isDraft])
+  @@index([churchId])
+  @@index([createdById])
 }
 
 model EventAttendee {
@@ -195,6 +201,7 @@ model EventAttendee {
   createdAt DateTime @default(now())
 
   @@unique([eventId, userId])
+  @@index([userId])
 }
 
 model ChurchFollower {
@@ -206,6 +213,7 @@ model ChurchFollower {
   createdAt DateTime @default(now())
 
   @@unique([churchId, userId])
+  @@index([userId])
 }
 
 model SeriesFollower {
@@ -217,6 +225,7 @@ model SeriesFollower {
   createdAt DateTime @default(now())
 
   @@unique([seriesId, userId])
+  @@index([userId])
 }
 
 model PushToken {

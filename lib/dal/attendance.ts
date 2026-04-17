@@ -1,6 +1,7 @@
 import "server-only";
 
 import { prisma } from "@/lib/db";
+import { Prisma } from "@prisma/client";
 import { parseEventMetadata } from "@/lib/types/event-metadata";
 import { scheduleEventReminder, cancelEventReminder } from "@/lib/schedule-notification";
 interface DalError { error: string }
@@ -15,9 +16,14 @@ export async function attendEvent(
   });
   if (!event || event.isDraft) return { error: "Event not found." };
 
-  await prisma.eventAttendee.create({
-    data: { eventId, userId },
-  });
+  try {
+    await prisma.eventAttendee.create({ data: { eventId, userId } });
+  } catch (err) {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
+      return {};
+    }
+    throw err;
+  }
 
   try {
     await scheduleEventReminder(userId, event);
@@ -32,9 +38,16 @@ export async function unattendEvent(
   eventId: string,
   userId: string
 ): Promise<DalError | Record<string, never>> {
-  await prisma.eventAttendee.delete({
-    where: { eventId_userId: { eventId, userId } },
-  });
+  try {
+    await prisma.eventAttendee.delete({
+      where: { eventId_userId: { eventId, userId } },
+    });
+  } catch (err) {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2025") {
+      return {};
+    }
+    throw err;
+  }
 
   try {
     await cancelEventReminder(userId, eventId);
@@ -90,15 +103,22 @@ export async function registerEvent(
     validatedSelectedDays = filtered;
   }
 
-  await prisma.eventAttendee.create({
-    data: {
-      eventId,
-      userId,
-      phone: data.phone,
-      notes: data.notes,
-      ...(validatedSelectedDays ? { metadata: { selectedDays: validatedSelectedDays } } : {}),
-    },
-  });
+  try {
+    await prisma.eventAttendee.create({
+      data: {
+        eventId,
+        userId,
+        phone: data.phone,
+        notes: data.notes,
+        ...(validatedSelectedDays ? { metadata: { selectedDays: validatedSelectedDays } } : {}),
+      },
+    });
+  } catch (err) {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
+      return { error: "You're already registered for this event." };
+    }
+    throw err;
+  }
 
   try {
     await scheduleEventReminder(userId, {

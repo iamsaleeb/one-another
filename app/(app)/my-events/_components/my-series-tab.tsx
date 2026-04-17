@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Repeat } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import type { getUserFollowedSeries } from "@/lib/actions/data";
+import type { getUserFollowedSeries } from "@/lib/actions/data-series";
 
 const CADENCE_LABELS: Record<string, string> = {
   WEEKLY: "Weekly",

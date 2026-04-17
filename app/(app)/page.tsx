@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { MapPin, SearchX } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EventCard } from "@/components/event-card";
-import { searchEventsAndChurches } from "@/lib/actions/data";
+import { searchEventsAndChurches } from "@/lib/actions/data-user";
 import { PageHeader } from "@/components/ui/page-header";
 import { WHEN_LABELS, TYPE_LABELS, type WhenFilter, type TypeFilter } from "@/types/search";
 import { EventList } from "./_components/event-list";

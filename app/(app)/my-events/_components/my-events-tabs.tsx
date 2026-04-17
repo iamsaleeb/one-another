@@ -1,11 +1,8 @@
 "use client";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import type {
-  getUserAttendedEvents,
-  getUserAttendedPastEvents,
-  getUserFollowedSeries,
-} from "@/lib/actions/data";
+import type { getUserAttendedEvents, getUserAttendedPastEvents } from "@/lib/actions/data-events";
+import type { getUserFollowedSeries } from "@/lib/actions/data-series";
 import { MyEventsTab } from "./my-events-tab";
 import { MySeriesTab } from "./my-series-tab";
 

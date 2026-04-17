@@ -3,7 +3,8 @@ import { auth } from "@/auth";
 import { CreateEventForm } from "./_components/create-event-form";
 import { UserRole } from "@prisma/client";
 import { PageHeader } from "@/components/ui/page-header";
-import { getChurchesByManager, getSeriesForEvent } from "@/lib/actions/data";
+import { getChurchesByManager } from "@/lib/actions/data-churches";
+import { getSeriesForEvent } from "@/lib/actions/data-series";
 
 interface Props {
   searchParams: Promise<{ seriesId?: string }>;

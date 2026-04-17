@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { AttendButton } from "./attend-button";
 import { RegistrationDrawer } from "./registration-drawer";
 import { AttendeesDrawer } from "./attendees-drawer";
-import type { getEventAttendees } from "@/lib/actions/data";
+import type { getEventAttendees } from "@/lib/actions/data-events";
 import type { EventMetadata } from "@/lib/types/event-metadata";
 
 interface EventActionBarProps {

@@ -26,7 +26,7 @@ import {
 } from "@/components/ui/form";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { createEventSchema, type CreateEventInput } from "@/lib/validations/event";
-import { createEventAction } from "@/lib/actions/events";
+import { createEventAction } from "@/lib/actions/events-crud";
 import { localInputsToUtcDate } from "@/lib/datetime";
 import { PhotoUploadField } from "@/components/photo-upload-field";
 import { CATEGORY_OPTIONS } from "@/types/search";

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getSeries } from "@/lib/actions/data";
+import { getSeries } from "@/lib/actions/data-series";
 import { PageHeader } from "@/components/ui/page-header";
 import { Card, CardContent } from "@/components/ui/card";
 import { CADENCE_LABELS } from "@/types/search";

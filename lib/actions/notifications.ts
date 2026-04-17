@@ -6,7 +6,7 @@ import { updateTag } from "next/cache";
 import { type Prisma } from "@prisma/client";
 import { NOTIFICATION_TYPES, type NotificationTypeKey } from "@/lib/notification-types";
 import { updateReminderScheduleForUser } from "@/lib/schedule-notification";
-import { getStoredNotificationPreferences } from "@/lib/actions/data";
+import { getStoredNotificationPreferences } from "@/lib/actions/data-user";
 
 export type NotificationPreferenceMap = {
   [K in NotificationTypeKey]: {

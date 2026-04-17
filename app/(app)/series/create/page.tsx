@@ -3,7 +3,7 @@ import { auth } from "@/auth";
 import { UserRole } from "@prisma/client";
 import { CreateSeriesForm } from "./_components/create-series-form";
 import { PageHeader } from "@/components/ui/page-header";
-import { getChurchesByManager } from "@/lib/actions/data";
+import { getChurchesByManager } from "@/lib/actions/data-churches";
 
 export default async function CreateSeriesPage() {
   const session = await auth();

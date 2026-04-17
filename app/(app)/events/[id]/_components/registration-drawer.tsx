@@ -16,7 +16,7 @@ import {
   DrawerFooter,
   DrawerClose,
 } from "@/components/ui/drawer";
-import { registerEventAction, unattendEventAction, type RegisterEventState } from "@/lib/actions/events";
+import { registerEventAction, unattendEventAction, type RegisterEventState } from "@/lib/actions/events-attendance";
 import type { EventMetadata } from "@/lib/types/event-metadata";
 
 interface RegistrationDrawerProps {

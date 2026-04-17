@@ -1,11 +1,8 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { PageHeader } from "@/components/ui/page-header";
-import {
-  getUserAttendedEvents,
-  getUserAttendedPastEvents,
-  getUserFollowedSeries,
-} from "@/lib/actions/data";
+import { getUserAttendedEvents, getUserAttendedPastEvents } from "@/lib/actions/data-events";
+import { getUserFollowedSeries } from "@/lib/actions/data-series";
 import { MyEventsTabs } from "./_components/my-events-tabs";
 
 export default async function MyEventsPage() {

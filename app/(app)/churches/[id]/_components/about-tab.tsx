@@ -2,7 +2,7 @@ import { Calendar, Globe, MapPin, Phone, Users } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { InfoField } from "@/components/ui/info-field";
-import type { getChurchById } from "@/lib/actions/data";
+import type { getChurchById } from "@/lib/actions/data-churches";
 
 type ChurchWithDetails = NonNullable<Awaited<ReturnType<typeof getChurchById>>>;
 

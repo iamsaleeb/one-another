@@ -1,6 +1,6 @@
 import { CalendarDays } from "lucide-react";
 import { EventCard } from "@/components/event-card";
-import type { getUserAttendedEvents, getUserAttendedPastEvents } from "@/lib/actions/data";
+import type { getUserAttendedEvents, getUserAttendedPastEvents } from "@/lib/actions/data-events";
 
 interface MyEventsTabProps {
   upcomingEvents: Awaited<ReturnType<typeof getUserAttendedEvents>>;

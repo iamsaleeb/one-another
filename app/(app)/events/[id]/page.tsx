@@ -4,7 +4,7 @@ import { AlertTriangle, Calendar, FileEdit, MapPin, Pencil, Repeat, User } from 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { auth } from "@/auth";
-import { getEventById, getEventAttendees } from "@/lib/actions/data";
+import { getEventById, getEventAttendees } from "@/lib/actions/data-events";
 import { parseEventMetadata } from "@/lib/types/event-metadata";
 import { canManageChurch } from "@/lib/permissions";
 import { EventDatetime } from "@/components/event-datetime";

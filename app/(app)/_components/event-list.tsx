@@ -1,4 +1,4 @@
-import { getEvents } from "@/lib/actions/data";
+import { getEvents } from "@/lib/actions/data-events";
 import { EventCard } from "@/components/event-card";
 
 export async function EventList() {

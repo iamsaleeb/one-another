@@ -68,10 +68,12 @@ import {
   deleteEventAction,
   publishEventAction,
   unpublishEventAction,
+} from '@/lib/actions/events-crud'
+import {
   attendEventAction,
   unattendEventAction,
   registerEventAction,
-} from '@/lib/actions/events'
+} from '@/lib/actions/events-attendance'
 import { prisma } from '@/lib/db'
 import { auth } from '@/auth'
 import { canManageChurch } from '@/lib/permissions'
@@ -377,7 +379,7 @@ describe('cancelEventAction', () => {
     await expect(cancelEventAction('evt-1', 'reason')).rejects.toThrow('NEXT_REDIRECT')
 
     expect(mockEventUpdate).not.toHaveBeenCalled()
-    expect(mockRedirect).toHaveBeenCalledWith('/')
+    expect(mockRedirect).toHaveBeenCalledWith('/organiser')
   })
 
   it('redirects to /organiser when the event is not found', async () => {

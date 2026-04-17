@@ -1,7 +1,7 @@
 "use client";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import type { getChurchById } from "@/lib/actions/data";
+import type { getChurchById } from "@/lib/actions/data-churches";
 import { AboutTab } from "./about-tab";
 import { EventsTab } from "./events-tab";
 import { ServicesTab } from "./services-tab";

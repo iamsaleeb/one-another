@@ -2,12 +2,8 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { UserRole } from "@prisma/client";
 import { PageHeader } from "@/components/ui/page-header";
-import {
-  getEventsByCreator,
-  getSeriesByCreator,
-  getEventsNotByCreator,
-  getSeriesNotByCreator,
-} from "@/lib/actions/data";
+import { getEventsByCreator, getEventsNotByCreator } from "@/lib/actions/data-events";
+import { getSeriesByCreator, getSeriesNotByCreator } from "@/lib/actions/data-series";
 import { OrganiserTabs } from "./_components/organiser-tabs";
 
 export default async function OrganiserPage() {

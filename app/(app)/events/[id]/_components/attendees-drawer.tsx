@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
 import { parseEventAttendeeMetadata, type EventMetadata } from "@/lib/types/event-metadata";
-import type { getEventAttendees } from "@/lib/actions/data";
+import type { getEventAttendees } from "@/lib/actions/data-events";
 
 interface AttendeesDrawerProps {
   attendees: Awaited<ReturnType<typeof getEventAttendees>>;

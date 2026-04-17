@@ -276,13 +276,13 @@ describe('updateSeriesAction', () => {
     expect(mockSeriesUpdate).not.toHaveBeenCalled()
   })
 
-  it('redirects to / when organiser is not assigned to the church', async () => {
+  it('redirects to /organiser when organiser is not assigned to the church', async () => {
     mockCanManageChurch.mockResolvedValue(false)
     mockRedirect.mockImplementationOnce(() => { throw new Error('NEXT_REDIRECT') })
 
     await expect(updateSeriesAction('ser-1', validData)).rejects.toThrow('NEXT_REDIRECT')
 
-    expect(mockRedirect).toHaveBeenCalledWith('/')
+    expect(mockRedirect).toHaveBeenCalledWith('/organiser')
     expect(mockSeriesUpdate).not.toHaveBeenCalled()
   })
 })
@@ -322,13 +322,13 @@ describe('deleteSeriesAction', () => {
     expect(mockSeriesDelete).not.toHaveBeenCalled()
   })
 
-  it('redirects to / when organiser is not assigned to the church', async () => {
+  it('redirects to /organiser when organiser is not assigned to the church', async () => {
     mockCanManageChurch.mockResolvedValue(false)
     mockRedirect.mockImplementationOnce(() => { throw new Error('NEXT_REDIRECT') })
 
     await expect(deleteSeriesAction('ser-1')).rejects.toThrow('NEXT_REDIRECT')
 
-    expect(mockRedirect).toHaveBeenCalledWith('/')
+    expect(mockRedirect).toHaveBeenCalledWith('/organiser')
     expect(mockSeriesDelete).not.toHaveBeenCalled()
   })
 })

@@ -11,7 +11,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { deleteEventAction } from "@/lib/actions/events";
+import { deleteEventAction } from "@/lib/actions/events-crud";
 
 export function DeleteEventButton({ eventId }: { eventId: string }) {
   const action = deleteEventAction.bind(null, eventId);

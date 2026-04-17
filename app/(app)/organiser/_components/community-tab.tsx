@@ -2,7 +2,8 @@ import Link from "next/link";
 import { CalendarDays, Repeat } from "lucide-react";
 import { EventCard } from "@/components/event-card";
 import { Card, CardContent } from "@/components/ui/card";
-import type { getEventsNotByCreator, getSeriesNotByCreator } from "@/lib/actions/data";
+import type { getEventsNotByCreator } from "@/lib/actions/data-events";
+import type { getSeriesNotByCreator } from "@/lib/actions/data-series";
 
 const CADENCE_LABELS: Record<string, string> = {
   WEEKLY: "Weekly",

@@ -19,24 +19,30 @@ jest.mock('@/lib/db', () => ({
 import {
   getEvents,
   getEventById,
+  getEventsByCreator,
+  getEventsNotByCreator,
+  getEventAttendees,
+  getUserAttendedEvents,
+  getUserAttendedPastEvents,
+} from '@/lib/actions/data-events'
+import {
   getChurches,
   getChurchById,
   getChurchesByManager,
   getOrganisersByChurch,
-  searchEventsAndChurches,
+} from '@/lib/actions/data-churches'
+import {
   getSeries,
   getSeriesById,
-  getEventsByCreator,
   getSeriesByCreator,
-  getEventsNotByCreator,
   getSeriesNotByCreator,
-  getEventAttendees,
-  getUserAttendedEvents,
-  getUserAttendedPastEvents,
   getUserFollowedSeries,
-  getProfileUser,
   getSeriesForEvent,
-} from '@/lib/actions/data'
+} from '@/lib/actions/data-series'
+import {
+  searchEventsAndChurches,
+  getProfileUser,
+} from '@/lib/actions/data-user'
 import { prisma } from '@/lib/db'
 
 const mockEventFindMany = prisma.event.findMany as jest.Mock

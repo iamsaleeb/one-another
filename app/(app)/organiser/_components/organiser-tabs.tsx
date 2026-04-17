@@ -1,7 +1,8 @@
 "use client";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import type { getEventsByCreator, getSeriesByCreator, getEventsNotByCreator, getSeriesNotByCreator } from "@/lib/actions/data";
+import type { getEventsByCreator, getEventsNotByCreator } from "@/lib/actions/data-events";
+import type { getSeriesByCreator, getSeriesNotByCreator } from "@/lib/actions/data-series";
 import { MyContentTab } from "./my-content-tab";
 import { CommunityTab } from "./community-tab";
 

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getSeries } from "@/lib/actions/data";
+import { getSeries } from "@/lib/actions/data-series";
 import { CADENCE_LABELS } from "@/types/search";
 
 export async function SeriesRail() {

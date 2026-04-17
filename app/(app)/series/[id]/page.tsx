@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { MapPin, Pencil, Plus, Tag, User } from "lucide-react";
 import { auth } from "@/auth";
-import { getSeriesById } from "@/lib/actions/data";
+import { getSeriesById } from "@/lib/actions/data-series";
 import { canManageChurch } from "@/lib/permissions";
 import { InfoField } from "@/components/ui/info-field";
 import { HeroBanner } from "@/components/ui/hero-banner";

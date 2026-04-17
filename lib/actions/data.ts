@@ -73,7 +73,7 @@ export async function getEventAttendees(eventId: string) {
 }
 
 export async function getEventsByCreator(userId: string) {
-  cacheTag("events");
+  cacheTag("events", `user-events-${userId}`);
   return prisma.event.findMany({
     where: { isPast: false, createdById: userId },
     orderBy: { createdAt: "asc" },
@@ -102,7 +102,7 @@ export async function getEventsNotByCreator(userId: string) {
 }
 
 export async function getUserAttendedEvents(userId: string) {
-  cacheTag("events");
+  cacheTag("events", `user-events-${userId}`);
   return prisma.event.findMany({
     where: { isPast: false, isDraft: false, attendees: { some: { userId } } },
     orderBy: { datetime: "asc" },
@@ -111,7 +111,7 @@ export async function getUserAttendedEvents(userId: string) {
 }
 
 export async function getUserAttendedPastEvents(userId: string) {
-  cacheTag("events");
+  cacheTag("events", `user-events-${userId}`);
   return prisma.event.findMany({
     where: { isPast: true, isDraft: false, attendees: { some: { userId } } },
     orderBy: { datetime: "desc" },
@@ -151,7 +151,7 @@ export async function getChurchById(id: string, currentUserId?: string) {
 }
 
 export async function getChurchesByManager(userId: string) {
-  cacheTag("churches");
+  cacheTag("churches", `user-churches-${userId}`);
   const [organiserRows, adminRows] = await Promise.all([
     prisma.churchOrganiser.findMany({
       where: { userId },
@@ -241,7 +241,7 @@ export async function getSeriesById(id: string, currentUserId?: string) {
 }
 
 export async function getSeriesByCreator(userId: string) {
-  cacheTag("series");
+  cacheTag("series", `user-series-${userId}`);
   return prisma.series.findMany({
     where: { createdById: userId },
     orderBy: { createdAt: "desc" },
@@ -268,13 +268,24 @@ export async function getSeriesNotByCreator(userId: string) {
 }
 
 export async function getUserFollowedSeries(userId: string) {
-  cacheTag("series");
+  cacheTag("series", `user-series-${userId}`);
   return prisma.series.findMany({
     where: { followers: { some: { userId } } },
     orderBy: { createdAt: "desc" },
     include: {
       _count: { select: { events: { where: { isPast: false, isDraft: false } } } },
     },
+  });
+}
+
+// ─── User Profile ────────────────────────────────────────────────────────────
+
+export async function getProfileUser(userId: string) {
+  cacheTag(`user-${userId}`);
+  cacheLife("hours");
+  return prisma.user.findUnique({
+    where: { id: userId },
+    select: { phone: true, dateOfBirth: true },
   });
 }
 
@@ -285,6 +296,14 @@ export async function getStoredNotificationPreferences(userId: string) {
   return prisma.notificationPreference.findMany({
     where: { userId },
     select: { type: true, enabled: true, config: true },
+  });
+}
+
+export async function getSeriesForEvent(seriesId: string) {
+  cacheTag("series", `series-${seriesId}`);
+  return prisma.series.findUnique({
+    where: { id: seriesId },
+    select: { id: true, name: true, church: { select: { id: true, name: true } } },
   });
 }
 

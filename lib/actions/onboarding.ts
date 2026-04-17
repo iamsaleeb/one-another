@@ -3,6 +3,7 @@
 import { z } from "zod";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
+import { updateTag } from "next/cache";
 import {
   onboardingSchema,
   type OnboardingInput,
@@ -34,6 +35,8 @@ export async function completeOnboardingAction(
       onboardingCompleted: true,
     },
   });
+
+  updateTag(`user-${session.user.id}`);
 
   return {};
 }

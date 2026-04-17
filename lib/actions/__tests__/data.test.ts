@@ -8,6 +8,7 @@ jest.mock('@/lib/db', () => ({
     event: { findMany: jest.fn(), findUnique: jest.fn() },
     church: { findMany: jest.fn(), findUnique: jest.fn() },
     series: { findMany: jest.fn(), findUnique: jest.fn() },
+    user: { findUnique: jest.fn() },
     churchOrganiser: { findMany: jest.fn() },
     churchAdmin: { findMany: jest.fn() },
     churchFollower: { findMany: jest.fn() },
@@ -33,6 +34,8 @@ import {
   getUserAttendedEvents,
   getUserAttendedPastEvents,
   getUserFollowedSeries,
+  getProfileUser,
+  getSeriesForEvent,
 } from '@/lib/actions/data'
 import { prisma } from '@/lib/db'
 
@@ -45,6 +48,7 @@ const mockSeriesFindUnique = prisma.series.findUnique as jest.Mock
 const mockChurchOrganiserFindMany = prisma.churchOrganiser.findMany as jest.Mock
 const mockChurchAdminFindMany = prisma.churchAdmin.findMany as jest.Mock
 const mockEventAttendeeFindMany = prisma.eventAttendee.findMany as jest.Mock
+const mockUserFindUnique = prisma.user.findUnique as jest.Mock
 
 const sampleEvent = {
   id: 'evt-1',
@@ -616,5 +620,49 @@ describe('getUserFollowedSeries', () => {
   it('returns empty array when the user follows no series', async () => {
     mockSeriesFindMany.mockResolvedValue([])
     expect(await getUserFollowedSeries('user-none')).toEqual([])
+  })
+})
+
+describe('getProfileUser', () => {
+  it('returns phone and dateOfBirth for the given user', async () => {
+    const profileData = { phone: '+61400000000', dateOfBirth: new Date('1990-01-01') }
+    mockUserFindUnique.mockResolvedValue(profileData)
+
+    const result = await getProfileUser('user-1')
+
+    expect(result).toEqual(profileData)
+    expect(mockUserFindUnique).toHaveBeenCalledWith({
+      where: { id: 'user-1' },
+      select: { phone: true, dateOfBirth: true },
+    })
+  })
+
+  it('returns null when the user does not exist', async () => {
+    mockUserFindUnique.mockResolvedValue(null)
+    expect(await getProfileUser('user-missing')).toBeNull()
+  })
+})
+
+describe('getSeriesForEvent', () => {
+  it('returns slim series data for event creation', async () => {
+    const seriesData = {
+      id: 'ser-1',
+      name: 'Bible Study Series',
+      church: { id: 'ch-1', name: 'Grace Church' },
+    }
+    mockSeriesFindUnique.mockResolvedValue(seriesData)
+
+    const result = await getSeriesForEvent('ser-1')
+
+    expect(result).toEqual(seriesData)
+    expect(mockSeriesFindUnique).toHaveBeenCalledWith({
+      where: { id: 'ser-1' },
+      select: { id: true, name: true, church: { select: { id: true, name: true } } },
+    })
+  })
+
+  it('returns null when the series does not exist', async () => {
+    mockSeriesFindUnique.mockResolvedValue(null)
+    expect(await getSeriesForEvent('ser-missing')).toBeNull()
   })
 })

@@ -1,3 +1,7 @@
+jest.mock('next/cache', () => ({
+  updateTag: jest.fn(),
+}))
+
 jest.mock('@/auth', () => ({
   auth: jest.fn(),
 }))
@@ -13,9 +17,11 @@ jest.mock('@/lib/db', () => ({
 import { completeOnboardingAction, skipOnboardingAction } from '@/lib/actions/onboarding'
 import { auth } from '@/auth'
 import { prisma } from '@/lib/db'
+import { updateTag } from 'next/cache'
 
 const mockAuth = auth as jest.Mock
 const mockUpdate = prisma.user.update as jest.Mock
+const mockUpdateTag = updateTag as jest.Mock
 
 beforeEach(() => {
   jest.clearAllMocks()
@@ -39,7 +45,7 @@ describe('completeOnboardingAction', () => {
     expect(mockUpdate).not.toHaveBeenCalled()
   })
 
-  it('saves all fields and returns {} on success', async () => {
+  it('saves all fields, invalidates user cache, and returns {} on success', async () => {
     mockAuth.mockResolvedValue({ user: { id: 'user-1' } })
     mockUpdate.mockResolvedValue({})
 
@@ -59,6 +65,7 @@ describe('completeOnboardingAction', () => {
         onboardingCompleted: true,
       },
     })
+    expect(mockUpdateTag).toHaveBeenCalledWith('user-user-1')
   })
 
   it('stores null for missing phone, dateOfBirth and image', async () => {

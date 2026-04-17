@@ -15,8 +15,9 @@ export default function AppLayout({
   return (
     <div className="min-h-screen">
       <Suspense>
-        <AppShell>{children}</AppShell>
+        <AppShellNav />
       </Suspense>
+      <main className="pb-nav">{children}</main>
       <Suspense>
         <BackButtonProvider />
       </Suspense>
@@ -24,7 +25,7 @@ export default function AppLayout({
   );
 }
 
-async function AppShell({ children }: { children: React.ReactNode }) {
+async function AppShellNav() {
   const session = await auth();
   const isOrganiser = session?.user?.role === UserRole.ORGANISER;
   const isAdmin = session?.user?.role === UserRole.ADMIN;
@@ -32,7 +33,6 @@ async function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <>
       <TopNav user={session?.user} />
-      <main className="pb-nav">{children}</main>
       <BottomNav isOrganiser={isOrganiser} isAdmin={isAdmin} />
       <CreateEventFAB isOrganiser={isOrganiser || isAdmin} />
       <PushNotificationProvider />

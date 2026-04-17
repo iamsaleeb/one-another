@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { auth } from "@/auth";
-import { prisma } from "@/lib/db";
+import { getProfileUser } from "@/lib/actions/data";
 import { signOutAction } from "@/lib/actions/auth";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -21,12 +21,7 @@ export default async function ProfilePage() {
   const session = await auth();
   const user = session?.user;
 
-  const dbUser = user?.id
-    ? await prisma.user.findUnique({
-        where: { id: user.id },
-        select: { phone: true, dateOfBirth: true },
-      })
-    : null;
+  const dbUser = user?.id ? await getProfileUser(user.id) : null;
 
   return (
     <div className="bg-background">

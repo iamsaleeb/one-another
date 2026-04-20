@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+// --- Event form schemas ---
+
 export const createEventSchema = z.object({
   title: z.string().min(1, "Title is required"),
   date: z.iso.date(),
@@ -43,3 +45,74 @@ export const registerEventSchema = z.object({
 });
 
 export type RegisterEventInput = z.infer<typeof registerEventSchema>;
+
+// --- Event metadata types and parsing ---
+
+export interface CampAgendaItem {
+  id: string;
+  date: string;
+  time?: string;
+  title: string;
+  description?: string;
+}
+
+export interface EventMetadata {
+  registration: {
+    capacity: number | null;
+    collectPhone: boolean;
+    collectNotes: boolean;
+  };
+  camp?: {
+    endDate: string;
+    allowPartialRegistration: boolean;
+    agenda: CampAgendaItem[];
+  };
+}
+
+export interface EventAttendeeMetadata {
+  selectedDays?: string[];
+}
+
+const registrationDefault = { capacity: null, collectPhone: false, collectNotes: false };
+
+const eventMetadataSchema = z
+  .object({
+    registration: z
+      .object({
+        capacity: z.number().nullable().catch(null),
+        collectPhone: z.boolean().catch(false),
+        collectNotes: z.boolean().catch(false),
+      })
+      .catch(registrationDefault),
+    camp: z
+      .object({
+        endDate: z.string(),
+        allowPartialRegistration: z.boolean().default(false),
+        agenda: z
+          .array(
+            z.object({
+              id: z.string(),
+              date: z.string(),
+              time: z.string().optional(),
+              title: z.string(),
+              description: z.string().optional(),
+            })
+          )
+          .default([]),
+      })
+      .optional()
+      .catch(undefined),
+  })
+  .catch({ registration: registrationDefault });
+
+export function parseEventMetadata(raw: unknown): EventMetadata {
+  return eventMetadataSchema.parse(raw);
+}
+
+const eventAttendeeMetadataSchema = z
+  .object({ selectedDays: z.array(z.string()).optional() })
+  .catch({});
+
+export function parseEventAttendeeMetadata(raw: unknown): EventAttendeeMetadata {
+  return eventAttendeeMetadataSchema.parse(raw);
+}

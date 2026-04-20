@@ -5,6 +5,7 @@ import { auth } from "@/auth";
 import { UserRole } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { isAdminForChurch } from "@/lib/permissions";
+import { addOrganiserSchema, removeOrganiserSchema } from "@/lib/validations/admin";
 
 export interface AdminActionState {
   error?: string;
@@ -18,10 +19,13 @@ export async function addOrganiserToChurchAction(
   const session = await auth();
   if (session?.user?.role !== UserRole.ADMIN) return { error: "Unauthorised." };
 
-  const churchId = formData.get("churchId") as string | null;
-  const email = (formData.get("email") as string | null)?.trim().toLowerCase();
+  const parsed = addOrganiserSchema.safeParse({
+    churchId: formData.get("churchId"),
+    email: (formData.get("email") as string | null)?.trim().toLowerCase(),
+  });
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input." };
 
-  if (!churchId || !email) return { error: "Church and email are required." };
+  const { churchId, email } = parsed.data;
 
   const allowed = await isAdminForChurch(session.user.id, churchId);
   if (!allowed) return { error: "You are not an admin of this church." };
@@ -63,10 +67,13 @@ export async function removeOrganiserFromChurchAction(
   const session = await auth();
   if (session?.user?.role !== UserRole.ADMIN) return { error: "Unauthorised." };
 
-  const churchId = formData.get("churchId") as string | null;
-  const targetUserId = formData.get("targetUserId") as string | null;
+  const parsed = removeOrganiserSchema.safeParse({
+    churchId: formData.get("churchId"),
+    targetUserId: formData.get("targetUserId"),
+  });
+  if (!parsed.success) return { error: "Missing required fields." };
 
-  if (!churchId || !targetUserId) return { error: "Missing required fields." };
+  const { churchId, targetUserId } = parsed.data;
 
   const allowed = await isAdminForChurch(session.user.id, churchId);
   if (!allowed) return { error: "You are not an admin of this church." };

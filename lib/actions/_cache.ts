@@ -32,6 +32,7 @@ export function invalidateEventFields(
   churchId?: string | null,
   seriesId?: string | null
 ) {
+  updateTag("events");
   updateTag(`event-${id}`);
   if (churchId) updateTag(`church-${churchId}`);
   if (seriesId) updateTag(`series-${seriesId}`);
@@ -55,6 +56,7 @@ export function broadcastSeriesChange(id: string, churchId?: string | null) {
  * when a series is updated (content change, not list membership).
  */
 export function invalidateSeriesFields(id: string, churchId?: string | null) {
+  updateTag("series");
   updateTag(`series-${id}`);
   if (churchId) updateTag(`church-${churchId}`);
 }
@@ -63,6 +65,8 @@ export function invalidateSeriesFields(id: string, churchId?: string | null) {
  * Invalidates only the specific series when a user follows/unfollows.
  * Following doesn't change series list membership.
  */
-export function invalidateSeriesFollowing(seriesId: string) {
+export function invalidateSeriesFollowing(seriesId: string, userId: string) {
+  updateTag("series");
   updateTag(`series-${seriesId}`);
+  updateTag(`user-series-${userId}`);
 }

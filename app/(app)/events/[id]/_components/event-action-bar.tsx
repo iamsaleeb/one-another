@@ -7,7 +7,7 @@ import { AttendButton } from "./attend-button";
 import { RegistrationDrawer } from "./registration-drawer";
 import { AttendeesDrawer } from "./attendees-drawer";
 import type { getEventAttendees } from "@/lib/actions/data-events";
-import type { EventMetadata } from "@/lib/types/event-metadata";
+import type { EventMetadata } from "@/lib/validations/event";
 
 interface EventActionBarProps {
   eventId: string;

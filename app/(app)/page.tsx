@@ -6,7 +6,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { EventCard } from "@/components/event-card";
 import { searchEventsAndChurches } from "@/lib/actions/data-user";
 import { PageHeader } from "@/components/ui/page-header";
-import { WHEN_LABELS, TYPE_LABELS, type WhenFilter, type TypeFilter } from "@/types/search";
+import { WHEN_LABELS, TYPE_LABELS, type WhenFilter } from "@/types/search";
+import { searchParamsSchema } from "@/lib/validations/search";
 import { EventList } from "./_components/event-list";
 import { SeriesRail } from "./_components/series-rail";
 
@@ -15,14 +16,14 @@ export default async function Home({
 }: {
   searchParams: Promise<{ q?: string; type?: string; when?: string; category?: string }>;
 }) {
-  const { q, type, when, category } = await searchParams;
+  const { q, type, when, category } = searchParamsSchema.parse(await searchParams);
   const query = q?.trim() ?? "";
-  const hasFilters = !!(query || type || when || category);
+  const hasFilters = !!(query || type !== "all" || when || category);
 
   const searchResults = hasFilters
     ? await searchEventsAndChurches({
         query,
-        type: (type as TypeFilter) ?? "all",
+        type,
         when: when as WhenFilter | undefined,
         category: category ?? "",
       })

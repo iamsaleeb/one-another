@@ -60,7 +60,7 @@ export async function followSeriesAction(seriesId: string): Promise<FollowSeries
     return { error: "Failed to follow series." };
   }
 
-  invalidateSeriesFollowing(seriesId);
+  invalidateSeriesFollowing(seriesId, session.user.id);
   return {};
 }
 
@@ -76,7 +76,7 @@ export async function unfollowSeriesAction(seriesId: string): Promise<FollowSeri
     return { error: "Failed to unfollow series." };
   }
 
-  invalidateSeriesFollowing(seriesId);
+  invalidateSeriesFollowing(seriesId, session.user.id);
   return {};
 }
 

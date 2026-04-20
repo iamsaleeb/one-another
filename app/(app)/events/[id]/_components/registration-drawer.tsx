@@ -17,7 +17,7 @@ import {
   DrawerClose,
 } from "@/components/ui/drawer";
 import { registerEventAction, unattendEventAction, type RegisterEventState } from "@/lib/actions/events-attendance";
-import type { EventMetadata } from "@/lib/types/event-metadata";
+import type { EventMetadata } from "@/lib/validations/event";
 import { getCampDays, formatDayLabel } from "@/lib/datetime";
 
 interface RegistrationDrawerProps {

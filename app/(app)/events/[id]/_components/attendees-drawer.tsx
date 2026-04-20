@@ -10,7 +10,7 @@ import {
   DrawerClose,
 } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
-import { parseEventAttendeeMetadata, type EventMetadata } from "@/lib/types/event-metadata";
+import { parseEventAttendeeMetadata, type EventMetadata } from "@/lib/validations/event";
 import type { getEventAttendees } from "@/lib/actions/data-events";
 import { formatDayShort } from "@/lib/datetime";
 

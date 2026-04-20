@@ -7,7 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft } from "lucide-react";
 import { getInitials } from "@/lib/utils";
-import { useIsDetailPage } from "@/lib/hooks/use-is-detail-page";
+import { useIsDetailPage } from "@/hooks/use-is-detail-page";
 import { SearchBar } from "@/components/search-bar";
 import type { WhenFilter, TypeFilter } from "@/types/search";
 

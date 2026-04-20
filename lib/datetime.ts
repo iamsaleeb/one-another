@@ -58,3 +58,27 @@ export function parseDateOfBirth(dateStr: string): Date {
 
 /** Subtract hours from a Date — replaces raw getTime() arithmetic. */
 export { subHours };
+
+/** Returns all ISO dates (YYYY-MM-DD) between startDate and endDate inclusive. */
+export function getCampDays(startDate: string, endDate: string): string[] {
+  const days: string[] = [];
+  const current = new Date(`${startDate}T12:00:00.000Z`);
+  const end = new Date(`${endDate}T12:00:00.000Z`);
+  while (current <= end) {
+    days.push(current.toISOString().slice(0, 10));
+    current.setUTCDate(current.getUTCDate() + 1);
+  }
+  return days;
+}
+
+/** Format YYYY-MM-DD as "Monday, 1 January" (long form, for registration checkboxes). */
+export function formatDayLabel(isoDate: string): string {
+  const d = new Date(`${isoDate}T12:00:00.000Z`);
+  return d.toLocaleDateString("en", { weekday: "long", day: "numeric", month: "long" });
+}
+
+/** Format YYYY-MM-DD as "Mon, 1 Jan" (short form, for attendee lists). */
+export function formatDayShort(isoDate: string): string {
+  const d = new Date(`${isoDate}T12:00:00.000Z`);
+  return d.toLocaleDateString("en", { weekday: "short", day: "numeric", month: "short" });
+}

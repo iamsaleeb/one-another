@@ -225,7 +225,7 @@ describe('getChurchById', () => {
       where: { id: 'ch-1' },
       include: {
         serviceTimes: true,
-        events: { where: { isPast: false, isDraft: false } },
+        events: { where: { isPast: false, isDraft: false }, orderBy: { datetime: 'asc' }, take: 20 },
         series: {
           orderBy: { createdAt: 'desc' },
           include: {
@@ -245,7 +245,7 @@ describe('getChurchById', () => {
       where: { id: 'ch-1' },
       include: {
         serviceTimes: true,
-        events: { where: { isPast: false, isDraft: false } },
+        events: { where: { isPast: false, isDraft: false }, orderBy: { datetime: 'asc' }, take: 20 },
         series: {
           orderBy: { createdAt: 'desc' },
           include: {

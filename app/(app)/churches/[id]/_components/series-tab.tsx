@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Repeat } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { EmptyState } from "@/components/empty-state";
 import type { getChurchById } from "@/lib/actions/data-churches";
 
 type ChurchWithDetails = NonNullable<Awaited<ReturnType<typeof getChurchById>>>;
@@ -22,10 +23,7 @@ export function SeriesTab({ series }: SeriesTabProps) {
       <h2 className="text-lg font-bold mb-3">Series</h2>
 
       {series.length === 0 ? (
-        <div className="flex flex-col items-center gap-2 py-10">
-          <Repeat className="w-8 h-8 text-muted-foreground/40" />
-          <p className="text-sm text-muted-foreground">No series yet</p>
-        </div>
+        <EmptyState icon={Repeat} label="No series yet" className="py-10" />
       ) : (
         <div className="space-y-3">
           {series.map((s) => (

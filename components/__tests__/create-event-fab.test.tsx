@@ -6,11 +6,11 @@ jest.mock('next/navigation', () => ({
   useParams: jest.fn(),
 }))
 
-jest.mock('@/lib/hooks/use-is-detail-page', () => ({
+jest.mock('@/hooks/use-is-detail-page', () => ({
   useIsDetailPage: jest.fn(),
 }))
 
-import { useIsDetailPage } from '@/lib/hooks/use-is-detail-page'
+import { useIsDetailPage } from '@/hooks/use-is-detail-page'
 
 const mockUseIsDetailPage = useIsDetailPage as jest.Mock
 

@@ -25,13 +25,12 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { createEventSchema, type CreateEventInput } from "@/lib/validations/event";
+import { createEventSchema, type CreateEventInput, type CampAgendaItem } from "@/lib/validations/event";
 import { updateEventAction, publishEventAction, unpublishEventAction } from "@/lib/actions/events-crud";
 import { localInputsToUtcDate } from "@/lib/datetime";
 import { PhotoUploadField } from "@/components/photo-upload-field";
 import { CATEGORY_OPTIONS } from "@/types/search";
 import { CampDetailsSection } from "@/app/(app)/events/create/_components/camp-details-section";
-import type { CampAgendaItem } from "@/lib/types/event-metadata";
 
 interface Church { id: string; name: string }
 

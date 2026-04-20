@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { CalendarPlus, Plus, X, Repeat } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
-import { useIsDetailPage } from "@/lib/hooks/use-is-detail-page";
+import { useIsDetailPage } from "@/hooks/use-is-detail-page";
 
 export function CreateEventFAB({ isOrganiser }: { isOrganiser: boolean }) {
   const isDetailPage = useIsDetailPage();

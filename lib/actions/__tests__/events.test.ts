@@ -658,6 +658,7 @@ describe('updateEventAction', () => {
     )
     expect(mockUpdateTag).toHaveBeenCalledWith('events')
     expect(mockUpdateTag).toHaveBeenCalledWith('event-evt-1')
+    expect(mockUpdateTag).toHaveBeenCalledWith('church-ch-1')
     expect(mockRedirect).toHaveBeenCalledWith('/events/evt-1')
   })
 

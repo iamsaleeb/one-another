@@ -33,6 +33,7 @@ function getDateRange(when: WhenFilter): { gte: Date; lte: Date } {
   return { gte: startOfDay(saturday), lte: endOfDay(sunday) };
 }
 
+// TTL policy: profile → hours | notification preferences → minutes | search → minutes
 export async function getProfileUser(userId: string) {
   cacheTag(`user-${userId}`);
   cacheLife("hours");
@@ -44,6 +45,7 @@ export async function getProfileUser(userId: string) {
 
 export async function getStoredNotificationPreferences(userId: string) {
   cacheTag(`user-notifications-${userId}`);
+  cacheLife("minutes");
   return prisma.notificationPreference.findMany({
     where: { userId },
     select: { type: true, enabled: true, config: true },

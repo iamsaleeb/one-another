@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { CalendarDays, Repeat } from "lucide-react";
 import { EventCard } from "@/components/event-card";
+import { EmptyState } from "@/components/empty-state";
 import { Card, CardContent } from "@/components/ui/card";
 import type { getEventsByCreator } from "@/lib/actions/data-events";
 import type { getSeriesByCreator } from "@/lib/actions/data-series";
@@ -23,10 +24,7 @@ export function MyContentTab({ events, series }: MyContentTabProps) {
       <section className="flex flex-col gap-3">
         <h2 className="text-base font-semibold">My Events</h2>
         {events.length === 0 ? (
-          <div className="flex flex-col items-center gap-2 py-8">
-            <CalendarDays className="w-8 h-8 text-muted-foreground/40" />
-            <p className="text-sm text-muted-foreground">No upcoming events</p>
-          </div>
+          <EmptyState icon={CalendarDays} label="No upcoming events" />
         ) : (
           events.map((event) => (
             <EventCard key={event.id} event={{ ...event, badge: event.tag, seriesName: event.series?.name, isDraft: event.isDraft }} />
@@ -37,10 +35,7 @@ export function MyContentTab({ events, series }: MyContentTabProps) {
       <section className="flex flex-col gap-3">
         <h2 className="text-base font-semibold">My Series</h2>
         {series.length === 0 ? (
-          <div className="flex flex-col items-center gap-2 py-8">
-            <Repeat className="w-8 h-8 text-muted-foreground/40" />
-            <p className="text-sm text-muted-foreground">No series yet</p>
-          </div>
+          <EmptyState icon={Repeat} label="No series yet" />
         ) : (
           series.map((s) => (
             <Link key={s.id} href={`/series/${s.id}`}>

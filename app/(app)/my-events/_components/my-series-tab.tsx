@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Repeat } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { EmptyState } from "@/components/empty-state";
 import type { getUserFollowedSeries } from "@/lib/actions/data-series";
 
 const CADENCE_LABELS: Record<string, string> = {
@@ -18,10 +19,7 @@ export function MySeriesTab({ series }: MySeriesTabProps) {
   return (
     <div className="flex flex-col gap-3">
       {series.length === 0 ? (
-        <div className="flex flex-col items-center gap-2 py-10">
-          <Repeat className="w-8 h-8 text-muted-foreground/40" />
-          <p className="text-sm text-muted-foreground">No followed series yet</p>
-        </div>
+        <EmptyState icon={Repeat} label="No followed series yet" className="py-10" />
       ) : (
         series.map((s) => (
           <Link key={s.id} href={`/series/${s.id}`}>

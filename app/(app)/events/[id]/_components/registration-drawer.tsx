@@ -17,7 +17,8 @@ import {
   DrawerClose,
 } from "@/components/ui/drawer";
 import { registerEventAction, unattendEventAction, type RegisterEventState } from "@/lib/actions/events-attendance";
-import type { EventMetadata } from "@/lib/types/event-metadata";
+import type { EventMetadata } from "@/lib/validations/event";
+import { getCampDays, formatDayLabel } from "@/lib/datetime";
 
 interface RegistrationDrawerProps {
   eventId: string;
@@ -33,22 +34,6 @@ interface RegistrationDrawerProps {
   campStartDate?: string;
 }
 
-/** Returns all ISO dates (YYYY-MM-DD) between startDate and endDate inclusive */
-function getCampDays(startDate: string, endDate: string): string[] {
-  const days: string[] = [];
-  const current = new Date(`${startDate}T12:00:00.000Z`);
-  const end = new Date(`${endDate}T12:00:00.000Z`);
-  while (current <= end) {
-    days.push(current.toISOString().slice(0, 10));
-    current.setUTCDate(current.getUTCDate() + 1);
-  }
-  return days;
-}
-
-function formatDayLabel(isoDate: string): string {
-  const d = new Date(`${isoDate}T12:00:00.000Z`);
-  return d.toLocaleDateString("en", { weekday: "long", day: "numeric", month: "long" });
-}
 
 export function RegistrationDrawer({
   eventId,

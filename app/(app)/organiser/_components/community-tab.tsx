@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { CalendarDays, Repeat } from "lucide-react";
 import { EventCard } from "@/components/event-card";
+import { EmptyState } from "@/components/empty-state";
 import { Card, CardContent } from "@/components/ui/card";
 import type { getEventsNotByCreator } from "@/lib/actions/data-events";
 import type { getSeriesNotByCreator } from "@/lib/actions/data-series";
@@ -23,10 +24,7 @@ export function CommunityTab({ events, series }: CommunityTabProps) {
       <section className="flex flex-col gap-3">
         <h2 className="text-base font-semibold">Events</h2>
         {events.length === 0 ? (
-          <div className="flex flex-col items-center gap-2 py-8">
-            <CalendarDays className="w-8 h-8 text-muted-foreground/40" />
-            <p className="text-sm text-muted-foreground">No events from others</p>
-          </div>
+          <EmptyState icon={CalendarDays} label="No events from others" />
         ) : (
           events.map((event) => (
             <EventCard
@@ -44,10 +42,7 @@ export function CommunityTab({ events, series }: CommunityTabProps) {
       <section className="flex flex-col gap-3">
         <h2 className="text-base font-semibold">Series</h2>
         {series.length === 0 ? (
-          <div className="flex flex-col items-center gap-2 py-8">
-            <Repeat className="w-8 h-8 text-muted-foreground/40" />
-            <p className="text-sm text-muted-foreground">No series from others</p>
-          </div>
+          <EmptyState icon={Repeat} label="No series from others" />
         ) : (
           series.map((s) => (
             <Link key={s.id} href={`/series/${s.id}`}>

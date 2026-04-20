@@ -2,7 +2,7 @@ import "server-only";
 
 import { prisma } from "@/lib/db";
 import { Prisma } from "@prisma/client";
-import { parseEventMetadata } from "@/lib/types/event-metadata";
+import { parseEventMetadata } from "@/lib/validations/event";
 import { scheduleEventReminder, cancelEventReminder } from "@/lib/schedule-notification";
 interface DalError { error: string }
 

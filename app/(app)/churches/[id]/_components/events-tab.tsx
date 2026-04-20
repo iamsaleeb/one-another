@@ -1,5 +1,6 @@
 import { CalendarDays } from "lucide-react";
 import { EventCard } from "@/components/event-card";
+import { EmptyState } from "@/components/empty-state";
 import type { getChurchById } from "@/lib/actions/data-churches";
 
 type ChurchWithDetails = NonNullable<Awaited<ReturnType<typeof getChurchById>>>;
@@ -14,10 +15,7 @@ export function EventsTab({ events }: EventsTabProps) {
       <h2 className="text-lg font-bold mb-3">Upcoming Events</h2>
 
       {events.length === 0 ? (
-        <div className="flex flex-col items-center gap-2 py-10">
-          <CalendarDays className="w-8 h-8 text-muted-foreground/40" />
-          <p className="text-sm text-muted-foreground">No upcoming events</p>
-        </div>
+        <EmptyState icon={CalendarDays} label="No upcoming events" className="py-10" />
       ) : (
         <div className="space-y-3">
           {events.map((event) => (

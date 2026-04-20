@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home, Church, CalendarDays, Wrench, ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useIsDetailPage } from "@/lib/hooks/use-is-detail-page";
+import { useIsDetailPage } from "@/hooks/use-is-detail-page";
 
 const baseTabs = [
   { label: "Home", href: "/", icon: Home },

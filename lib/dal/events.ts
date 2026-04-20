@@ -10,6 +10,33 @@ import {
 } from "@/lib/schedule-notification";
 import type { CreateEventInput } from "@/lib/validations/event";
 
+async function notifySeriesFollowers(seriesId: string, title: string, eventId: string) {
+  const followers = await prisma.seriesFollower.findMany({
+    where: { seriesId },
+    select: { userId: true },
+  });
+  const followerIds = followers.map((f) => f.userId);
+  if (followerIds.length === 0) return;
+  await sendPushToUsers(followerIds, "NEW_SERIES_SESSION", "New Session Added", `A new session has been added: ${title}`, {
+    type: "new_session",
+    seriesId,
+    eventId,
+  });
+}
+
+async function notifyEventAttendees(eventId: string, title: string) {
+  const attendees = await prisma.eventAttendee.findMany({
+    where: { eventId },
+    select: { userId: true },
+  });
+  const userIds = attendees.map((a) => a.userId);
+  if (userIds.length === 0) return;
+  await sendPushToUsers(userIds, "EVENT_CANCELLED", "Event Cancelled", `${title} has been cancelled`, {
+    type: "event_cancelled",
+    eventId,
+  });
+}
+
 type DalError = { error: string } | { fieldErrors: Record<string, string[]> };
 
 export async function createEvent(
@@ -94,20 +121,7 @@ export async function createEvent(
 
   if (!isDraft && seriesId) {
     try {
-      const followers = await prisma.seriesFollower.findMany({
-        where: { seriesId },
-        select: { userId: true },
-      });
-      const followerIds = followers.map((f) => f.userId);
-      if (followerIds.length > 0) {
-        await sendPushToUsers(
-          followerIds,
-          "NEW_SERIES_SESSION",
-          "New Session Added",
-          `A new session has been added: ${title}`,
-          { type: "new_session", seriesId, eventId: created.id }
-        );
-      }
+      await notifySeriesFollowers(seriesId, title, created.id);
     } catch (err) {
       console.error("NEW_SERIES_SESSION push failed:", err);
     }
@@ -244,20 +258,7 @@ export async function cancelEvent(
 
   try {
     await cancelAllRemindersForEvent(id);
-    const attendees = await prisma.eventAttendee.findMany({
-      where: { eventId: id },
-      select: { userId: true },
-    });
-    const userIds = attendees.map((a) => a.userId);
-    if (userIds.length > 0) {
-      await sendPushToUsers(
-        userIds,
-        "EVENT_CANCELLED",
-        "Event Cancelled",
-        `${event.title} has been cancelled`,
-        { type: "event_cancelled", eventId: id }
-      );
-    }
+    await notifyEventAttendees(id, event.title);
   } catch (err) {
     console.error("EVENT_CANCELLED push failed:", err);
   }
@@ -323,20 +324,7 @@ export async function publishEvent(
 
   if (event.seriesId) {
     try {
-      const followers = await prisma.seriesFollower.findMany({
-        where: { seriesId: event.seriesId },
-        select: { userId: true },
-      });
-      const followerIds = followers.map((f) => f.userId);
-      if (followerIds.length > 0) {
-        await sendPushToUsers(
-          followerIds,
-          "NEW_SERIES_SESSION",
-          "New Session Added",
-          `A new session has been added: ${event.title}`,
-          { type: "new_session", seriesId: event.seriesId, eventId: id }
-        );
-      }
+      await notifySeriesFollowers(event.seriesId, event.title, id);
     } catch (err) {
       console.error("NEW_SERIES_SESSION push failed:", err);
     }

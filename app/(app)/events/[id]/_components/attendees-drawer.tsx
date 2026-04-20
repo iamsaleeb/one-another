@@ -10,8 +10,9 @@ import {
   DrawerClose,
 } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
-import { parseEventAttendeeMetadata, type EventMetadata } from "@/lib/types/event-metadata";
+import { parseEventAttendeeMetadata, type EventMetadata } from "@/lib/validations/event";
 import type { getEventAttendees } from "@/lib/actions/data-events";
+import { formatDayShort } from "@/lib/datetime";
 
 interface AttendeesDrawerProps {
   attendees: Awaited<ReturnType<typeof getEventAttendees>>;
@@ -22,11 +23,6 @@ interface AttendeesDrawerProps {
   onOpenChange: (open: boolean) => void;
   camp?: EventMetadata["camp"];
   campStartDate?: string;
-}
-
-function formatDayShort(isoDate: string): string {
-  const d = new Date(`${isoDate}T12:00:00.000Z`);
-  return d.toLocaleDateString("en", { weekday: "short", day: "numeric", month: "short" });
 }
 
 export function AttendeesDrawer({

@@ -4,6 +4,9 @@ import {
   localInputsToUtcDate,
   parseDateOfBirth,
   subHours,
+  getCampDays,
+  formatDayLabel,
+  formatDayShort,
 } from "@/lib/datetime";
 
 describe("formatEventDatetime", () => {
@@ -82,5 +85,37 @@ describe("subHours", () => {
     const base = new Date("2025-03-16T01:00:00.000Z");
     const result = subHours(base, 2);
     expect(result.toISOString()).toBe("2025-03-15T23:00:00.000Z");
+  });
+});
+
+describe("getCampDays", () => {
+  it("returns all dates inclusive between start and end", () => {
+    expect(getCampDays("2026-08-07", "2026-08-09")).toEqual([
+      "2026-08-07",
+      "2026-08-08",
+      "2026-08-09",
+    ]);
+  });
+
+  it("returns a single date when start equals end", () => {
+    expect(getCampDays("2026-08-07", "2026-08-07")).toEqual(["2026-08-07"]);
+  });
+
+  it("returns empty array when end is before start", () => {
+    expect(getCampDays("2026-08-09", "2026-08-07")).toEqual([]);
+  });
+});
+
+describe("formatDayLabel", () => {
+  it("returns a long-form weekday and date string", () => {
+    const result = formatDayLabel("2026-08-07");
+    expect(result).toMatch(/\w+, \w+ \d{1,2}/);
+  });
+});
+
+describe("formatDayShort", () => {
+  it("returns a short-form weekday and date string", () => {
+    const result = formatDayShort("2026-08-07");
+    expect(result).toMatch(/\w+, \w+ \d{1,2}/);
   });
 });

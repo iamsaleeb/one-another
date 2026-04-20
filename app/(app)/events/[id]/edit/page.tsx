@@ -3,7 +3,7 @@ import { auth } from "@/auth";
 import { UserRole } from "@prisma/client";
 import { getEventById } from "@/lib/actions/data-events";
 import { getChurchesByManager } from "@/lib/actions/data-churches";
-import { parseEventMetadata } from "@/lib/types/event-metadata";
+import { parseEventMetadata } from "@/lib/validations/event";
 import { PageHeader } from "@/components/ui/page-header";
 import { EditEventForm } from "./_components/edit-event-form";
 

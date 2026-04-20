@@ -3,21 +3,12 @@
 import { redirect } from "next/navigation";
 import { updateTag } from "next/cache";
 import { auth } from "@/auth";
-import { UserRole } from "@prisma/client";
+import { UserRole, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { createSeriesSchema, type CreateSeriesInput } from "@/lib/validations/series";
 import { createSeries, updateSeries, deleteSeries } from "@/lib/dal/series";
 import type { ActionResult } from "@/lib/actions/auth";
-
-function invalidateSeriesCaches(id: string, churchId?: string | null) {
-  updateTag("events");
-  updateTag("series");
-  updateTag(`series-${id}`);
-  if (churchId) {
-    updateTag("churches");
-    updateTag(`church-${churchId}`);
-  }
-}
+import { broadcastSeriesChange, invalidateSeriesFields, invalidateSeriesFollowing } from "@/lib/actions/_cache";
 
 export async function createSeriesAction(data: CreateSeriesInput): Promise<ActionResult> {
   const session = await auth();
@@ -31,7 +22,7 @@ export async function createSeriesAction(data: CreateSeriesInput): Promise<Actio
   const result = await createSeries(parsed.data, session.user.id, session.user.role);
   if ("error" in result || "fieldErrors" in result) return result;
 
-  invalidateSeriesCaches(result.id, result.churchId);
+  broadcastSeriesChange(result.id, result.churchId);
   redirect(`/series/${result.id}`);
 }
 
@@ -45,7 +36,7 @@ export async function updateSeriesAction(id: string, data: CreateSeriesInput): P
   const result = await updateSeries(id, parsed.data, session.user.id, session.user.role);
   if ("error" in result || "fieldErrors" in result) redirect("/organiser");
 
-  invalidateSeriesCaches(id, result.oldChurchId);
+  invalidateSeriesFields(id, result.oldChurchId);
   if (result.newChurchId !== result.oldChurchId) updateTag(`church-${result.newChurchId}`);
   redirect(`/series/${id}`);
 }
@@ -62,12 +53,14 @@ export async function followSeriesAction(seriesId: string): Promise<FollowSeries
     await prisma.seriesFollower.create({
       data: { seriesId, userId: session.user.id },
     });
-  } catch {
+  } catch (err) {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
+      return {};
+    }
     return { error: "Failed to follow series." };
   }
 
-  updateTag("series");
-  updateTag(`series-${seriesId}`);
+  invalidateSeriesFollowing(seriesId, session.user.id);
   return {};
 }
 
@@ -83,8 +76,7 @@ export async function unfollowSeriesAction(seriesId: string): Promise<FollowSeri
     return { error: "Failed to unfollow series." };
   }
 
-  updateTag("series");
-  updateTag(`series-${seriesId}`);
+  invalidateSeriesFollowing(seriesId, session.user.id);
   return {};
 }
 
@@ -95,6 +87,6 @@ export async function deleteSeriesAction(id: string): Promise<void> {
   const result = await deleteSeries(id, session.user.id, session.user.role);
   if ("error" in result) redirect("/organiser");
 
-  invalidateSeriesCaches(id, result.churchId);
+  broadcastSeriesChange(id, result.churchId);
   redirect("/organiser");
 }

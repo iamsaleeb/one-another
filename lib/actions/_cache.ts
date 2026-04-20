@@ -23,9 +23,8 @@ export function broadcastEventChange(
 }
 
 /**
- * Invalidates only the specific event and its parent containers
- * when an event is updated or its state changes (cancel/uncancel).
- * The event stays in the same lists, so broad list tags are not needed.
+ * Invalidates event lists and the specific event when it is updated
+ * or its state changes (cancel/uncancel).
  */
 export function invalidateEventFields(
   id: string,

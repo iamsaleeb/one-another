@@ -38,7 +38,10 @@ export async function updateEventAction(id: string, data: CreateEventInput): Pro
 
   invalidateEventFields(id, result.oldChurchId);
   if (result.newChurchId !== result.oldChurchId) updateTag(`church-${result.newChurchId}`);
-  result.affectedSeriesIds.forEach((sid) => updateTag(`series-${sid}`));
+  if (result.affectedSeriesIds.length > 0) {
+    updateTag("series");
+    result.affectedSeriesIds.forEach((sid) => updateTag(`series-${sid}`));
+  }
   redirect(`/events/${id}`);
 }
 

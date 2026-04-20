@@ -16,7 +16,7 @@ export default async function Home({
 }: {
   searchParams: Promise<{ q?: string; type?: string; when?: string; category?: string }>;
 }) {
-  const { q, type, when, category } = searchParamsSchema.parse(await searchParams);
+  const { q, type, when, category } = searchParamsSchema.catch({ q: undefined, type: "all", when: undefined, category: undefined }).parse(await searchParams);
   const query = q?.trim() ?? "";
   const hasFilters = !!(query || type !== "all" || when || category);
 

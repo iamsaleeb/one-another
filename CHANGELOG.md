@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.13.0](https://github.com/iamsaleeb/one-another/compare/one-another-v0.12.1...one-another-v0.13.0) (2026-04-21)
+
+
+### Features
+
+* notification rebuild ([#78](https://github.com/iamsaleeb/one-another/issues/78)) ([70fde2b](https://github.com/iamsaleeb/one-another/commit/70fde2b529ff9e5d706bc5d3bd48e3614a96aaf4))
+
+
+### Bug Fixes
+
+* added refactoring job ([#76](https://github.com/iamsaleeb/one-another/issues/76)) ([b586336](https://github.com/iamsaleeb/one-another/commit/b5863369f5bd2eeeafa0fdc7cee803743bc50375))
+
 ## [0.12.1](https://github.com/iamsaleeb/one-another/compare/one-another-v0.12.0...one-another-v0.12.1) (2026-04-17)
 
 

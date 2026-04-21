@@ -1,5 +1,6 @@
 jest.mock('next/cache', () => ({
   updateTag: jest.fn(),
+  revalidatePath: jest.fn(),
   cacheTag: jest.fn(),
   cacheLife: jest.fn(),
 }))
@@ -28,11 +29,13 @@ jest.mock('@/lib/notifications/inbox', () => ({
 
 import { auth } from '@/auth'
 import { prisma } from '@/lib/db'
-import { updateTag } from 'next/cache'
+import { updateTag, revalidatePath } from 'next/cache'
 import { updateUserReminderSchedule } from '@/lib/notifications/queue'
+import { markNotificationsRead } from '@/lib/notifications/inbox'
 import {
   getNotificationPreferencesAction,
   updateNotificationPreferenceAction,
+  markReadAction,
 } from '@/lib/actions/notifications'
 
 const mockAuth = auth as jest.Mock
@@ -41,6 +44,8 @@ const mockPrefUpsert = prisma.notificationPreference.upsert as jest.Mock
 const mockPrefDeleteMany = prisma.notificationPreference.deleteMany as jest.Mock
 const mockUpdateReminderSchedule = updateUserReminderSchedule as jest.Mock
 const mockUpdateTag = updateTag as jest.Mock
+const mockRevalidatePath = revalidatePath as jest.Mock
+const mockMarkNotificationsRead = markNotificationsRead as jest.Mock
 
 beforeEach(() => {
   jest.clearAllMocks()
@@ -175,5 +180,24 @@ describe('updateNotificationPreferenceAction', () => {
     expect(result.error).toBe('Invalid notification type')
     expect(mockPrefUpsert).not.toHaveBeenCalled()
     expect(mockPrefDeleteMany).not.toHaveBeenCalled()
+  })
+})
+
+describe('markReadAction', () => {
+  it('marks all notifications read, invalidates cache tag, and revalidates layout', async () => {
+    mockMarkNotificationsRead.mockResolvedValue(undefined)
+
+    await markReadAction()
+
+    expect(mockMarkNotificationsRead).toHaveBeenCalledWith('user-1')
+    expect(mockUpdateTag).toHaveBeenCalledWith('user-notifications-user-1')
+    expect(mockRevalidatePath).toHaveBeenCalledWith('/', 'layout')
+  })
+
+  it('throws Unauthorized when there is no session', async () => {
+    mockAuth.mockResolvedValue(null)
+
+    await expect(markReadAction()).rejects.toThrow('Unauthorized')
+    expect(mockMarkNotificationsRead).not.toHaveBeenCalled()
   })
 })

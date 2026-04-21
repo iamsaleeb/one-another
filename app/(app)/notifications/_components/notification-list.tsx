@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useTransition } from 'react';
+import { useRouter } from 'next/navigation';
 import { Bell } from 'lucide-react';
 import { NotificationItem } from '@/components/notifications/notification-item';
 import { markReadAction } from '@/lib/actions/notifications';
@@ -8,14 +9,19 @@ import type { InboxNotification } from '@/lib/notifications/inbox';
 
 export function NotificationList({ notifications }: { notifications: InboxNotification[] }) {
   const hasUnread = notifications.some((n) => n.readAt === null);
+  const router = useRouter();
+  const [, startTransition] = useTransition();
 
   useEffect(() => {
     if (hasUnread) {
-      markReadAction().catch((err) =>
-        console.error('[NotificationList] markReadAction failed:', err)
-      );
+      startTransition(async () => {
+        await markReadAction().catch((err) =>
+          console.error('[NotificationList] markReadAction failed:', err)
+        );
+        router.refresh();
+      });
     }
-  }, [hasUnread]);
+  }, [hasUnread, router]);
 
   if (notifications.length === 0) {
     return (

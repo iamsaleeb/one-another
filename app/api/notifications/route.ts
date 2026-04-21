@@ -7,8 +7,10 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const { searchParams } = req.nextUrl;
-  const page = Math.max(1, Number(searchParams.get('page') ?? 1));
-  const pageSize = Math.min(50, Math.max(1, Number(searchParams.get('pageSize') ?? 20)));
+  const rawPage = Number(searchParams.get('page'));
+  const rawPageSize = Number(searchParams.get('pageSize'));
+  const page = Number.isFinite(rawPage) && rawPage >= 1 ? Math.floor(rawPage) : 1;
+  const pageSize = Number.isFinite(rawPageSize) && rawPageSize >= 1 ? Math.min(50, Math.floor(rawPageSize)) : 20;
 
   const notifications = await getInboxNotifications({ userId: session.user.id, page, pageSize });
   return NextResponse.json({ notifications, page, pageSize });

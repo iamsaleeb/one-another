@@ -14,7 +14,7 @@ export const authConfig = {
       const isPublicPage =
         nextUrl.pathname.startsWith("/terms") ||
         nextUrl.pathname.startsWith("/privacy") ||
-        nextUrl.pathname === "/api/cron/event-reminders";
+        nextUrl.pathname === "/api/cron/process-notifications";
       const isOnboardingPage = nextUrl.pathname.startsWith("/onboarding");
 
       if (isPublicPage) return true;

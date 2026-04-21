@@ -13,12 +13,16 @@ export async function processNotifications(): Promise<{ processed: number }> {
 
   const results = await Promise.allSettled(
     due.map(async (notif) => {
+      const data =
+        notif.data != null && typeof notif.data === 'object' && !Array.isArray(notif.data)
+          ? (notif.data as Record<string, string>)
+          : undefined;
       await sendPushToUsers(
         [notif.userId],
         notif.type as NotificationTypeKey,
         notif.title,
         notif.body,
-        notif.data as Record<string, string> | undefined
+        data
       );
       await prisma.notification.update({
         where: { id: notif.id },

@@ -19,20 +19,20 @@ export async function queueNotification(input: QueueInput): Promise<void> {
     userId, type, title, body,
     data,
     scheduledFor = new Date(),
-    dedupeKey = null,
+    dedupeKey = undefined,
   } = input;
 
-  const jsonData = (data ?? Prisma.JsonNull) as Prisma.InputJsonValue;
+  const jsonData = (data !== undefined ? data : Prisma.DbNull) as Prisma.InputJsonValue;
   const basePayload = { userId, type, title, body, data: jsonData, scheduledFor };
 
-  if (dedupeKey !== null) {
+  if (dedupeKey != null) {
     await prisma.notification.upsert({
       where: { userId_type_dedupeKey: { userId, type, dedupeKey } },
       create: { ...basePayload, dedupeKey },
       update: { scheduledFor, cancelledAt: null, title, body, data: jsonData },
     });
   } else {
-    await prisma.notification.create({ data: { ...basePayload, dedupeKey: null } });
+    await prisma.notification.create({ data: { ...basePayload, dedupeKey: undefined } });
   }
 }
 

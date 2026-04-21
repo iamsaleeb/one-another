@@ -52,6 +52,14 @@ export async function getStoredNotificationPreferences(userId: string) {
   });
 }
 
+export async function getCachedUnreadCount(userId: string): Promise<number> {
+  cacheTag(`user-notifications-${userId}`);
+  cacheLife("seconds");
+  return prisma.notification.count({
+    where: { userId, sentAt: { not: null }, readAt: null },
+  });
+}
+
 // Search results are time-sensitive (today/tomorrow/weekend filters), so use a short TTL.
 export async function searchEventsAndChurches(filters: SearchFilters) {
   cacheLife("minutes");

@@ -58,7 +58,7 @@ describe('queueNotification — instant (EVENT_CANCELLED, NEW_SERIES_SESSION)', 
 
     expect(mockCreate).toHaveBeenCalledWith(
       expect.objectContaining({
-        data: expect.objectContaining({ userId: 'u-2', type: 'EVENT_CANCELLED', dedupeKey: null }),
+        data: expect.objectContaining({ userId: 'u-2', type: 'EVENT_CANCELLED', dedupeKey: undefined }),
       })
     )
   })

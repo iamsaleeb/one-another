@@ -108,5 +108,6 @@ export async function markReadAction(): Promise<void> {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
   await markNotificationsRead(session.user.id);
+  updateTag(`user-notifications-${session.user.id}`);
   revalidatePath("/", "layout");
 }

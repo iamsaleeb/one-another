@@ -40,7 +40,6 @@ model User {
   churchOrganisers ChurchOrganiser[] @relation("UserChurches")
   adminChurches    ChurchAdmin[]     @relation("UserAdminChurches")
   pushTokens              PushToken[]
-  scheduledNotifications  ScheduledNotification[]
   notificationPreferences NotificationPreference[]
   notifications           Notification[]
 
@@ -240,21 +239,6 @@ model PushToken {
   @@index([userId, platform])
 }
 
-model ScheduledNotification {
-  id           String    @id @default(cuid())
-  userId       String
-  type         String
-  eventId      String?
-  scheduledFor DateTime
-  sentAt       DateTime?
-  cancelledAt  DateTime?
-  payload      Json
-  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt    DateTime  @default(now())
-
-  @@unique([userId, type, eventId])
-  @@index([scheduledFor, sentAt, cancelledAt])
-}
 
 model NotificationPreference {
   id      String  @id @default(cuid())

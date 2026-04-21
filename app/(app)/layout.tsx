@@ -5,7 +5,7 @@ import { TopNav } from "@/components/top-nav";
 import { CreateEventFAB } from "@/components/create-event-fab";
 import { PushNotificationProvider } from "@/components/push-notification-provider";
 import { BackButtonProvider } from "@/components/back-button-provider";
-import { getUnreadCount } from "@/lib/notifications/inbox";
+import { getCachedUnreadCount } from "@/lib/actions/data-user";
 import { UserRole } from "@prisma/client";
 
 export default function AppLayout({
@@ -31,7 +31,7 @@ async function AppShellNav() {
   const isOrganiser = session?.user?.role === UserRole.ORGANISER;
   const isAdmin = session?.user?.role === UserRole.ADMIN;
   const unreadCount = session?.user?.id
-    ? await getUnreadCount(session.user.id)
+    ? await getCachedUnreadCount(session.user.id)
     : 0;
 
   return (

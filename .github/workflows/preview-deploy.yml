@@ -92,24 +92,44 @@ jobs:
       - name: Generate Prisma client
         run: npx prisma generate
 
+      - name: Assert DATABASE_URL is not production
+        run: |
+          if echo "$DATABASE_URL" | grep -qiE "prod[^a-z]|production"; then
+            echo "ERROR: DATABASE_URL appears to be a production database. Aborting." >&2
+            exit 1
+          fi
+
       - name: Wipe and reseed preview database
         run: npx prisma migrate reset --force
 
+      - name: Install Vercel CLI
+        run: npm install -g vercel
+
       - name: Pull Vercel environment variables
-        run: npx vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
+        run: npx vercel pull --yes --environment=preview --token=$VERCEL_TOKEN
 
       - name: Build
-        run: npx vercel build --token=${{ secrets.VERCEL_TOKEN }}
+        run: npx vercel build --token=$VERCEL_TOKEN
 
       - name: Deploy to Vercel
         id: deploy
         run: |
-          DEPLOY_URL=$(npx vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }})
-          echo "url=$DEPLOY_URL" >> $GITHUB_OUTPUT
+          DEPLOY_URL=$(npx vercel deploy --prebuilt --token=$VERCEL_TOKEN 2>/dev/null | tail -1)
+          {
+            echo "url<<EOF"
+            echo "$DEPLOY_URL"
+            echo "EOF"
+          } >> $GITHUB_OUTPUT
 
       - name: Comment preview URL on PR
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PREVIEW_URL: ${{ steps.deploy.outputs.url }}
         run: |
           gh pr comment ${{ github.event.pull_request.number }} \
-            --body "Preview deployed: ${{ steps.deploy.outputs.url }}"
+            --repo ${{ github.repository }} \
+            --body "Preview deployed: ${PREVIEW_URL}" \
+            --edit-last || \
+          gh pr comment ${{ github.event.pull_request.number }} \
+            --repo ${{ github.repository }} \
+            --body "Preview deployed: ${PREVIEW_URL}"

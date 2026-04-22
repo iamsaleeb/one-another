@@ -115,22 +115,12 @@ jobs:
       - name: Install Vercel CLI
         run: npm install -g vercel
 
-      - name: Pull Vercel environment variables
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-        run: npx vercel pull --yes --environment=preview --token=$VERCEL_TOKEN
-
-      - name: Build
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-        run: npx vercel build --token=$VERCEL_TOKEN
-
       - name: Deploy to Vercel
         id: deploy
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         run: |
-          DEPLOY_URL=$(npx vercel deploy --prebuilt --token=$VERCEL_TOKEN | tail -1)
+          DEPLOY_URL=$(vercel deploy --token=$VERCEL_TOKEN | tail -1)
           {
             echo "url<<EOF"
             echo "$DEPLOY_URL"

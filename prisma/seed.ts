@@ -447,42 +447,42 @@ async function main() {
             {
               id: "day1-arrive",
               date: futureDate(campDay),
-              time: "8:00 AM",
+              time: "08:00",
               title: "Arrival & Registration",
               description: "Check in, settle into cabins, and meet your camp family.",
             },
             {
               id: "day1-liturgy",
               date: futureDate(campDay),
-              time: "10:00 AM",
+              time: "10:00",
               title: "Opening Divine Liturgy",
               description: "We begin our camp week with a solemn Divine Liturgy celebrated by Fr. Bishoy Lamie.",
             },
             {
               id: "day1-games",
               date: futureDate(campDay),
-              time: "3:00 PM",
+              time: "15:00",
               title: "Team Building & Welcome Games",
               description: "Get to know your fellow campers with outdoor team-building activities.",
             },
             {
               id: "day1-vespers",
               date: futureDate(campDay),
-              time: "8:00 PM",
+              time: "20:00",
               title: "Evening Vespers & Theme Introduction",
               description: "Evening prayer followed by an introduction to the camp theme \"Called by Name.\"",
             },
             {
               id: "day2-agpeya",
               date: futureDate(campDay + 1),
-              time: "6:30 AM",
+              time: "06:30",
               title: "Morning Agpeya",
               description: "Start the day with the Third and Sixth Hour prayers of the Agpeya.",
             },
             {
               id: "day2-talk1",
               date: futureDate(campDay + 1),
-              time: "9:00 AM",
+              time: "09:00",
               title: "Talk 1: \"Who Am I?\" — Identity in Christ",
               description:
                 "Fr. Bishoy opens our theological journey by exploring what Scripture and the Church Fathers say about our identity as children of God.",
@@ -490,7 +490,7 @@ async function main() {
             {
               id: "day2-workshop1",
               date: futureDate(campDay + 1),
-              time: "11:30 AM",
+              time: "11:30",
               title: "Workshop: Icons & the Theology of Beauty",
               description:
                 "A hands-on workshop exploring Coptic iconography and what it tells us about the Kingdom of Heaven.",
@@ -498,28 +498,28 @@ async function main() {
             {
               id: "day2-recreation",
               date: futureDate(campDay + 1),
-              time: "3:00 PM",
+              time: "15:00",
               title: "Swimming & Recreation",
               description: "Free time at the lake — swimming, kayaking, and outdoor games.",
             },
             {
               id: "day2-praise",
               date: futureDate(campDay + 1),
-              time: "8:00 PM",
+              time: "20:00",
               title: "Evening Praise (Tasbeha)",
               description: "Youth-led Tasbeha night — a joyful evening of Coptic hymns and praise.",
             },
             {
               id: "day3-liturgy",
               date: futureDate(campDay + 2),
-              time: "6:30 AM",
+              time: "06:30",
               title: "Sunday Divine Liturgy",
               description: "The centerpiece of our week — a full Sunday Liturgy in the Bright Season tunes.",
             },
             {
               id: "day3-talk2",
               date: futureDate(campDay + 2),
-              time: "10:30 AM",
+              time: "10:30",
               title: "Talk 2: \"What Is My Vocation?\" — Called to Serve",
               description:
                 "Exploring the different vocations in the Church — monasticism, marriage, deaconate, and lay service — and how to discern your calling.",
@@ -527,7 +527,7 @@ async function main() {
             {
               id: "day3-workshop2",
               date: futureDate(campDay + 2),
-              time: "2:00 PM",
+              time: "14:00",
               title: "Workshop: The Agpeya & Daily Prayer",
               description:
                 "Learn the structure and spirituality of the Agpeya (Coptic Book of Hours) and how to build a daily prayer rule.",
@@ -535,21 +535,21 @@ async function main() {
             {
               id: "day3-talent",
               date: futureDate(campDay + 2),
-              time: "7:00 PM",
+              time: "19:00",
               title: "Talent Show Night",
               description: "An evening of music, skits, and creativity showcasing the talents of our camp community.",
             },
             {
               id: "day4-agpeya",
               date: futureDate(campDay + 3),
-              time: "6:30 AM",
+              time: "06:30",
               title: "Morning Agpeya",
               description: "Morning prayers to begin the penultimate day of camp.",
             },
             {
               id: "day4-talk3",
               date: futureDate(campDay + 3),
-              time: "9:00 AM",
+              time: "09:00",
               title: "Talk 3: \"Living Coptic in the West\" — Faith & Culture",
               description:
                 "A panel discussion with young Coptic professionals on navigating faith, identity, and culture as Copts in the diaspora.",
@@ -557,7 +557,7 @@ async function main() {
             {
               id: "day4-hike",
               date: futureDate(campDay + 3),
-              time: "1:00 PM",
+              time: "13:00",
               title: "Guided Nature Hike",
               description:
                 "A three-mile hike through the Bosque River trail, concluding with a reflection on creation and the Desert Fathers.",
@@ -565,21 +565,21 @@ async function main() {
             {
               id: "day4-campfire",
               date: futureDate(campDay + 3),
-              time: "8:00 PM",
+              time: "20:00",
               title: "Campfire & Testimonies",
               description: "An intimate campfire gathering where campers share their stories of encountering God during the week.",
             },
             {
               id: "day5-liturgy",
               date: futureDate(campDay + 4),
-              time: "6:30 AM",
+              time: "06:30",
               title: "Closing Divine Liturgy",
               description: "We close our camp week with a Divine Liturgy and renewal of baptismal commitments.",
             },
             {
               id: "day5-reflection",
               date: futureDate(campDay + 4),
-              time: "10:30 AM",
+              time: "10:30",
               title: "Final Reflection & Sending",
               description:
                 "Fr. Bishoy leads the closing session with camper testimonies, a charge for the year ahead, and prayers of blessing.",
@@ -587,7 +587,7 @@ async function main() {
             {
               id: "day5-depart",
               date: futureDate(campDay + 4),
-              time: "1:00 PM",
+              time: "13:00",
               title: "Departure",
               description: "Safe travels home. May God keep you until we meet again.",
             },

@@ -134,10 +134,28 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PREVIEW_URL: ${{ steps.deploy.outputs.url }}
         run: |
+          cat > /tmp/comment.md << EOF
+          ### Preview deployed
+
+          ${PREVIEW_URL}
+
+          <details>
+          <summary>Test accounts &mdash; password: <code>password123</code></summary>
+
+          | Role | Name | Email |
+          |------|------|-------|
+          | Attendee | Mark Girgis | user@example.com |
+          | Organiser | Fr. Bishoy Lamie | organiser1@example.com |
+          | Organiser | Deacon Mina Nashed | organiser2@example.com |
+          | Organiser | Fr. Antonious Farag | organiser3@example.com |
+          | Admin | Carol Admin | admin@example.com |
+
+          </details>
+          EOF
           gh pr comment ${{ github.event.pull_request.number }} \
             --repo ${{ github.repository }} \
-            --body "Preview deployed: ${PREVIEW_URL}" \
+            --body-file /tmp/comment.md \
             --edit-last || \
           gh pr comment ${{ github.event.pull_request.number }} \
             --repo ${{ github.repository }} \
-            --body "Preview deployed: ${PREVIEW_URL}"
+            --body-file /tmp/comment.md

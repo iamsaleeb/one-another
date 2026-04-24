@@ -1,21 +1,20 @@
 import Link from "next/link";
 import Image from "next/image";
-import { Repeat } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { EventDatetime } from "@/components/event-datetime";
+import { TAG_COLORS, type Category } from "@/types/search";
 
 interface EventCardProps {
   event: {
     id: string;
     datetime: Date;
     title: string;
-    location: string;
+    churchName: string;
     host: string;
     tag: string;
     badge: string;
     cancelledAt?: Date | null;
     isDraft?: boolean;
-    seriesName?: string | null;
     photoUrl?: string | null;
   };
 }
@@ -49,20 +48,17 @@ className="object-cover"
               <span className="rounded-full bg-destructive/10 px-2.5 py-1 text-xs font-medium text-destructive whitespace-nowrap">
                 Cancelled
               </span>
-            ) : (
-              <span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary whitespace-nowrap">
-                {event.badge}
-              </span>
-            )}
+            ) : (() => {
+              const colors = TAG_COLORS[event.tag as Category] ?? { bg: "bg-primary/10", text: "text-primary" };
+              return (
+                <span className={`rounded-full ${colors.bg} px-2.5 py-1 text-xs font-medium ${colors.text} whitespace-nowrap`}>
+                  {event.badge}
+                </span>
+              );
+            })()}
           </div>
-          <p className="text-base font-bold leading-snug">{event.title}</p>
-          {event.seriesName && (
-            <p className="text-xs text-muted-foreground flex items-center gap-1">
-              <Repeat className="size-3 shrink-0" />
-              {event.seriesName}
-            </p>
-          )}
-          <p className="text-sm text-muted-foreground">{event.location}</p>
+          <p className="text-lg font-bold leading-snug">{event.title}</p>
+          <p className="text-sm font-semibold text-muted-foreground">{event.churchName}</p>
           <p className="text-sm text-muted-foreground">{event.host}</p>
         </CardContent>
         </div>

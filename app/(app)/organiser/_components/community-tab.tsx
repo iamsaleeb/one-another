@@ -31,8 +31,8 @@ export function CommunityTab({ events, series }: CommunityTabProps) {
               key={event.id}
               event={{
                 ...event,
-                badge: event.createdBy?.name ?? "Unknown",
-                seriesName: event.series?.name,
+                badge: event.tag,
+                churchName: event.church?.name ?? "",
               }}
             />
           ))

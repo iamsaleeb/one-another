@@ -7,9 +7,10 @@ type ChurchWithDetails = NonNullable<Awaited<ReturnType<typeof getChurchById>>>;
 
 interface EventsTabProps {
   events: ChurchWithDetails["events"];
+  churchName: string;
 }
 
-export function EventsTab({ events }: EventsTabProps) {
+export function EventsTab({ events, churchName }: EventsTabProps) {
   return (
     <div>
       <h2 className="text-lg font-bold mb-3">Upcoming Events</h2>
@@ -19,7 +20,7 @@ export function EventsTab({ events }: EventsTabProps) {
       ) : (
         <div className="space-y-3">
           {events.map((event) => (
-            <EventCard key={event.id} event={{ ...event, badge: event.tag }} />
+            <EventCard key={event.id} event={{ ...event, badge: event.tag, churchName }} />
           ))}
         </div>
       )}

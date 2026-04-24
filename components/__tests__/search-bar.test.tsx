@@ -254,7 +254,7 @@ describe('SearchBar — category filter', () => {
     setup({ initialCategory: 'Youth Meeting' })
     await userEvent.click(screen.getByPlaceholderText(/search events/i))
     const chip = screen.getByRole('button', { name: 'Youth Meeting' })
-    expect(chip.className).toMatch(/bg-primary/)
+    expect(chip.className).toMatch(/bg-blue-100/)
   })
 })
 

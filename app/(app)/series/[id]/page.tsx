@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { MapPin, Pencil, Plus, Tag, User } from "lucide-react";
+import { Church, MapPin, Pencil, Plus, Tag, User } from "lucide-react";
 import { auth } from "@/auth";
 import { getSeriesById } from "@/lib/actions/data-series";
 import { canManageChurch } from "@/lib/permissions";
@@ -58,6 +58,13 @@ export default async function SeriesDetailPage({ params }: Props) {
           </div>
 
           <div className="flex flex-col gap-4">
+            {series.church && (
+              <InfoField icon={Church} label="Church">
+                <Link href={`/churches/${series.church.id}`} className="text-primary hover:underline">
+                  {series.church.name}
+                </Link>
+              </InfoField>
+            )}
             <InfoField icon={MapPin} label="Location">{series.location}</InfoField>
             <InfoField icon={User} label="Host">{series.host}</InfoField>
             <InfoField icon={Tag} label="Category">{series.tag}</InfoField>
@@ -86,7 +93,7 @@ export default async function SeriesDetailPage({ params }: Props) {
             <p className="text-sm text-muted-foreground py-4 text-center">No upcoming sessions</p>
           ) : (
             series.events.map((event) => (
-              <EventCard key={event.id} event={{ ...event, badge: event.tag, seriesName: null }} />
+              <EventCard key={event.id} event={{ ...event, badge: event.tag, churchName: series.church?.name ?? "" }} />
             ))
           )}
         </section>

@@ -17,7 +17,7 @@ export function MyEventsTab({ upcomingEvents, pastEvents }: MyEventsTabProps) {
           <EmptyState icon={CalendarDays} label="No upcoming events" />
         ) : (
           upcomingEvents.map((event) => (
-            <EventCard key={event.id} event={{ ...event, badge: event.tag, seriesName: event.series?.name }} />
+            <EventCard key={event.id} event={{ ...event, badge: event.tag, churchName: event.church?.name ?? "" }} />
           ))
         )}
       </section>
@@ -27,7 +27,7 @@ export function MyEventsTab({ upcomingEvents, pastEvents }: MyEventsTabProps) {
           <EmptyState icon={CalendarDays} label="No past events" />
         ) : (
           pastEvents.map((event) => (
-            <EventCard key={event.id} event={{ ...event, badge: event.tag, seriesName: event.series?.name }} />
+            <EventCard key={event.id} event={{ ...event, badge: event.tag, churchName: event.church?.name ?? "" }} />
           ))
         )}
       </section>

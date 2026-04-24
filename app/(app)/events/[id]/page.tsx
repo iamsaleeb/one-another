@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { AlertTriangle, Calendar, FileEdit, MapPin, Pencil, Repeat, User } from "lucide-react";
+import { AlertTriangle, Calendar, Church, FileEdit, MapPin, Pencil, Repeat, User } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { auth } from "@/auth";
@@ -94,6 +94,13 @@ export default async function EventDetailPage({ params }: Props) {
           </div>
 
           <div className="flex flex-col gap-4">
+            {event.church && (
+              <InfoField icon={Church} label="Church">
+                <Link href={`/churches/${event.church.id}`} className="text-primary hover:underline">
+                  {event.church.name}
+                </Link>
+              </InfoField>
+            )}
             <InfoField icon={User} label="Host">{event.host}</InfoField>
             <InfoField icon={Calendar} label={camp ? "Dates" : "Date & Time"}>
               {camp ? (

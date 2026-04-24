@@ -98,7 +98,7 @@ describe('getEvents', () => {
     expect(mockEventFindMany).toHaveBeenCalledWith({
       where: { isPast: false, isDraft: false },
       orderBy: { createdAt: 'asc' },
-      include: { series: { select: { name: true } } },
+      include: { church: { select: { name: true } } },
     })
   })
 
@@ -116,6 +116,7 @@ describe('getEventById', () => {
     expect(mockEventFindUnique).toHaveBeenCalledWith({
       where: { id: 'evt-1' },
       include: {
+        church: { select: { id: true, name: true } },
         series: { select: { id: true, name: true } },
         attendees: { take: 0, select: { userId: true } },
         _count: { select: { attendees: true } },
@@ -129,6 +130,7 @@ describe('getEventById', () => {
     expect(mockEventFindUnique).toHaveBeenCalledWith({
       where: { id: 'evt-1' },
       include: {
+        church: { select: { id: true, name: true } },
         series: { select: { id: true, name: true } },
         attendees: { where: { userId: 'user-1' }, select: { userId: true } },
         _count: { select: { attendees: true } },
@@ -429,7 +431,7 @@ describe('getEventsByCreator', () => {
       where: { isPast: false, createdById: 'user-1' },
       orderBy: { createdAt: 'asc' },
       include: {
-        series: { select: { name: true } },
+        church: { select: { name: true } },
         createdBy: { select: { name: true } },
       },
     })
@@ -477,7 +479,7 @@ describe('getEventsNotByCreator', () => {
       orderBy: { datetime: 'asc' },
       take: 50,
       include: {
-        series: { select: { name: true } },
+        church: { select: { name: true } },
         createdBy: { select: { name: true } },
       },
     })
@@ -579,7 +581,7 @@ describe('getUserAttendedEvents', () => {
     expect(mockEventFindMany).toHaveBeenCalledWith({
       where: { isPast: false, isDraft: false, attendees: { some: { userId: 'user-1' } } },
       orderBy: { datetime: 'asc' },
-      include: { series: { select: { name: true } } },
+      include: { church: { select: { name: true } } },
     })
   })
 
@@ -598,7 +600,7 @@ describe('getUserAttendedPastEvents', () => {
     expect(mockEventFindMany).toHaveBeenCalledWith({
       where: { isPast: true, isDraft: false, attendees: { some: { userId: 'user-1' } } },
       orderBy: { datetime: 'desc' },
-      include: { series: { select: { name: true } } },
+      include: { church: { select: { name: true } } },
     })
   })
 

@@ -11,8 +11,10 @@ import {
   WHEN_OPTIONS,
   TYPE_LABELS,
   TYPE_OPTIONS,
+  TAG_COLORS,
   type WhenFilter,
   type TypeFilter,
+  type Category,
 } from "@/types/search";
 
 interface SearchBarProps {
@@ -33,10 +35,12 @@ function FilterChip({
   label,
   active,
   onClick,
+  activeClassName = "bg-primary text-primary-foreground",
 }: {
   label: string;
   active: boolean;
   onClick: () => void;
+  activeClassName?: string;
 }) {
   return (
     <button
@@ -44,7 +48,7 @@ function FilterChip({
       onClick={onClick}
       className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
         active
-          ? "bg-primary text-primary-foreground"
+          ? activeClassName
           : "bg-muted text-foreground border border-border hover:bg-muted/80"
       }`}
     >
@@ -53,15 +57,15 @@ function FilterChip({
   );
 }
 
-function ActivePill({ label, onRemove }: { label: string; onRemove: () => void }) {
+function ActivePill({ label, onRemove, colorClassName = "bg-primary/10 text-primary" }: { label: string; onRemove: () => void; colorClassName?: string }) {
   return (
-    <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
+    <span className={`inline-flex items-center gap-1 rounded-full ${colorClassName} px-2.5 py-1 text-xs font-medium`}>
       {label}
       <button
         type="button"
         onClick={onRemove}
         aria-label={`Remove ${label} filter`}
-        className="ml-0.5 hover:text-primary/70"
+        className="ml-0.5 opacity-70 hover:opacity-100"
       >
         <X className="size-3" />
       </button>
@@ -198,12 +202,16 @@ export function SearchBar({
               onRemove={() => { setWhen(undefined); handleNavigate({ when: undefined }); }}
             />
           )}
-          {category && (
-            <ActivePill
-              label={category}
-              onRemove={() => { setCategory(""); handleNavigate({ category: "" }); }}
-            />
-          )}
+          {category && (() => {
+            const colors = TAG_COLORS[category as Category];
+            return (
+              <ActivePill
+                label={category}
+                onRemove={() => { setCategory(""); handleNavigate({ category: "" }); }}
+                colorClassName={colors ? `${colors.bg} ${colors.text}` : "bg-primary/10 text-primary"}
+              />
+            );
+          })()}
           {type && type !== "all" && (
             <ActivePill
               label={TYPE_LABELS[type]}
@@ -245,14 +253,18 @@ export function SearchBar({
           <div>
             <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Category</p>
             <div className="flex flex-wrap gap-2">
-              {CATEGORY_OPTIONS.map((cat) => (
-                <FilterChip
-                  key={cat}
-                  label={cat}
-                  active={category === cat}
-                  onClick={() => toggleCategory(cat)}
-                />
-              ))}
+              {CATEGORY_OPTIONS.map((cat) => {
+                const colors = TAG_COLORS[cat];
+                return (
+                  <FilterChip
+                    key={cat}
+                    label={cat}
+                    active={category === cat}
+                    onClick={() => toggleCategory(cat)}
+                    activeClassName={`${colors.bg} ${colors.text}`}
+                  />
+                );
+              })}
             </div>
           </div>
 

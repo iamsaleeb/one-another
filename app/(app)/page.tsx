@@ -1,10 +1,10 @@
 import Link from "next/link";
-import { Suspense } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { MapPin, SearchX } from "lucide-react";
-import { Skeleton } from "@/components/ui/skeleton";
 import { EventCard } from "@/components/event-card";
 import { searchEventsAndChurches } from "@/lib/actions/data-user";
+import { getEvents } from "@/lib/actions/data-events";
+import { getSeries } from "@/lib/actions/data-series";
 import { PageHeader } from "@/components/ui/page-header";
 import { WHEN_LABELS, TYPE_LABELS, type WhenFilter } from "@/types/search";
 import { searchParamsSchema } from "@/lib/validations/search";
@@ -20,17 +20,22 @@ export default async function Home({
   const query = q?.trim() ?? "";
   const hasFilters = !!(query || type !== "all" || when || category);
 
-  const searchResults = hasFilters
-    ? await searchEventsAndChurches({
-        query,
-        type,
-        when: when as WhenFilter | undefined,
-        category: category ?? "",
-      })
-    : null;
+  const [searchResults, events, allSeries] = await Promise.all([
+    hasFilters
+      ? searchEventsAndChurches({
+          query,
+          type,
+          when: when as WhenFilter | undefined,
+          category: category ?? "",
+        })
+      : Promise.resolve(null),
+    getEvents(),
+    getSeries(),
+  ]);
 
   const filteredEvents = searchResults?.events ?? null;
   const filteredChurches = searchResults?.churches ?? null;
+
   const hasResults = (filteredEvents?.length ?? 0) > 0 || (filteredChurches?.length ?? 0) > 0;
 
   const filterParts = [
@@ -98,33 +103,8 @@ export default async function Home({
         ) : (
           /* ── Default home content ── */
           <>
-            <Suspense
-              fallback={
-                <section className="flex flex-col gap-3">
-                  <Skeleton className="h-5 w-36" />
-                  <Skeleton className="h-24 w-full rounded-2xl" />
-                  <Skeleton className="h-24 w-full rounded-2xl" />
-                  <Skeleton className="h-24 w-full rounded-2xl" />
-                </section>
-              }
-            >
-              <EventList />
-            </Suspense>
-            <Suspense
-              fallback={
-                <section className="flex flex-col gap-3">
-                  <Skeleton className="h-5 w-20" />
-                  <div className="flex gap-2">
-                    <Skeleton className="h-9 w-24 rounded-full shrink-0" />
-                    <Skeleton className="h-9 w-24 rounded-full shrink-0" />
-                    <Skeleton className="h-9 w-24 rounded-full shrink-0" />
-                    <Skeleton className="h-9 w-24 rounded-full shrink-0" />
-                  </div>
-                </section>
-              }
-            >
-              <SeriesRail />
-            </Suspense>
+            <EventList events={events} />
+            <SeriesRail series={allSeries} />
           </>
         )}
       </div>

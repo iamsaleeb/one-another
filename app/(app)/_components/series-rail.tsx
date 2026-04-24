@@ -1,17 +1,17 @@
 import Link from "next/link";
-import { getSeries } from "@/lib/actions/data-series";
+import type { getSeries } from "@/lib/actions/data-series";
 import { CADENCE_LABELS } from "@/types/search";
 
-export async function SeriesRail() {
-  const allSeries = await getSeries();
+type Series = Awaited<ReturnType<typeof getSeries>>[number];
 
-  if (allSeries.length === 0) return null;
+export function SeriesRail({ series }: { series: Series[] }) {
+  if (series.length === 0) return null;
 
   return (
     <section className="flex flex-col gap-3">
       <h2 className="text-base font-semibold">Series</h2>
       <div className="flex gap-2 overflow-x-auto pb-1 -mx-4 px-4">
-        {allSeries.map((s) => (
+        {series.map((s) => (
           <Link
             key={s.id}
             href={`/series/${s.id}`}

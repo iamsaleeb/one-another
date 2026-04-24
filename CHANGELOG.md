@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.14.0](https://github.com/iamsaleeb/one-another/compare/one-another-v0.13.2...one-another-v0.14.0) (2026-04-24)
+
+
+### Features
+
+* Event lists showing churches and badge correctly ([#88](https://github.com/iamsaleeb/one-another/issues/88)) ([d017036](https://github.com/iamsaleeb/one-another/commit/d017036e7668ff7fe504fec17f2423a02b560059))
+
+
+### Bug Fixes
+
+* fixed loading.tsx issues and loaded stability measures ([#86](https://github.com/iamsaleeb/one-another/issues/86)) ([f328f60](https://github.com/iamsaleeb/one-another/commit/f328f60835a535929d4f43d6969baf4c0ce110fd))
+
 ## [0.13.2](https://github.com/iamsaleeb/one-another/compare/one-another-v0.13.1...one-another-v0.13.2) (2026-04-23)
 
 

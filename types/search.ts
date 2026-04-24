@@ -14,6 +14,15 @@ export const CATEGORY_OPTIONS = [
   "Camp",
 ] as const;
 
+export type Category = typeof CATEGORY_OPTIONS[number];
+
+export const TAG_COLORS: Record<Category, { bg: string; text: string }> = {
+  "Youth Meeting":    { bg: "bg-blue-100",   text: "text-blue-700" },
+  "Bible Study":      { bg: "bg-purple-100", text: "text-purple-700" },
+  "Servants Meeting": { bg: "bg-emerald-100", text: "text-emerald-700" },
+  "Camp":             { bg: "bg-orange-100", text: "text-orange-700" },
+};
+
 export const TYPE_OPTIONS: Array<{ value: TypeFilter; label: string }> = [
   { value: "all", label: "All" },
   { value: "events", label: "Events" },

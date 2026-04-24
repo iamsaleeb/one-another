@@ -2,6 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Card, CardContent } from "@/components/ui/card";
 import { EventDatetime } from "@/components/event-datetime";
+import { TAG_COLORS, type Category } from "@/types/search";
 
 interface EventCardProps {
   event: {
@@ -47,11 +48,14 @@ className="object-cover"
               <span className="rounded-full bg-destructive/10 px-2.5 py-1 text-xs font-medium text-destructive whitespace-nowrap">
                 Cancelled
               </span>
-            ) : (
-              <span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary whitespace-nowrap">
-                {event.badge}
-              </span>
-            )}
+            ) : (() => {
+              const colors = TAG_COLORS[event.tag as Category] ?? { bg: "bg-primary/10", text: "text-primary" };
+              return (
+                <span className={`rounded-full ${colors.bg} px-2.5 py-1 text-xs font-medium ${colors.text} whitespace-nowrap`}>
+                  {event.badge}
+                </span>
+              );
+            })()}
           </div>
           <p className="text-lg font-bold leading-snug">{event.title}</p>
           <p className="text-sm font-semibold text-muted-foreground">{event.churchName}</p>

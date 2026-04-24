@@ -35,7 +35,7 @@ export function ChurchTabs({ church }: ChurchTabsProps) {
         </TabsContent>
 
         <TabsContent value="events">
-          <EventsTab events={church.events} />
+          <EventsTab events={church.events} churchName={church.name} />
         </TabsContent>
 
         <TabsContent value="series">

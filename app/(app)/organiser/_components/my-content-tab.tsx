@@ -27,7 +27,7 @@ export function MyContentTab({ events, series }: MyContentTabProps) {
           <EmptyState icon={CalendarDays} label="No upcoming events" />
         ) : (
           events.map((event) => (
-            <EventCard key={event.id} event={{ ...event, badge: event.tag, seriesName: event.series?.name, isDraft: event.isDraft }} />
+            <EventCard key={event.id} event={{ ...event, badge: event.tag, churchName: event.church?.name ?? "", isDraft: event.isDraft }} />
           ))
         )}
       </section>

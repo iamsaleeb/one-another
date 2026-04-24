@@ -99,7 +99,7 @@ export async function searchEventsAndChurches(filters: SearchFilters) {
     shouldFetchEvents
       ? prisma.event.findMany({
           where: eventWhere,
-          include: { series: { select: { name: true } } },
+          include: { church: { select: { name: true } } },
           orderBy: { datetime: "asc" },
         })
       : Promise.resolve([]),

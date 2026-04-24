@@ -5,7 +5,7 @@ const sampleEvent = {
   id: 'evt-1',
   datetime: new Date('2026-03-16T09:00'),
   title: 'Sunday Worship Service',
-  location: 'Main Hall, Grace Church',
+  churchName: 'Grace Church',
   host: 'Pastor John',
   tag: 'Youth Meeting',
   badge: 'Youth Meeting',
@@ -22,9 +22,9 @@ describe('EventCard', () => {
     expect(screen.getByText('MON, 16 MAR | 9:00 AM')).toBeInTheDocument()
   })
 
-  it('renders the event location', () => {
+  it('renders the church name', () => {
     render(<EventCard event={sampleEvent} />)
-    expect(screen.getByText('Main Hall, Grace Church')).toBeInTheDocument()
+    expect(screen.getByText('Grace Church')).toBeInTheDocument()
   })
 
   it('renders the event host', () => {

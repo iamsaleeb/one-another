@@ -1,6 +1,5 @@
 import Link from "next/link";
 import Image from "next/image";
-import { Repeat } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { EventDatetime } from "@/components/event-datetime";
 
@@ -9,13 +8,12 @@ interface EventCardProps {
     id: string;
     datetime: Date;
     title: string;
-    location: string;
+    churchName: string;
     host: string;
     tag: string;
     badge: string;
     cancelledAt?: Date | null;
     isDraft?: boolean;
-    seriesName?: string | null;
     photoUrl?: string | null;
   };
 }
@@ -55,14 +53,8 @@ className="object-cover"
               </span>
             )}
           </div>
-          <p className="text-base font-bold leading-snug">{event.title}</p>
-          {event.seriesName && (
-            <p className="text-xs text-muted-foreground flex items-center gap-1">
-              <Repeat className="size-3 shrink-0" />
-              {event.seriesName}
-            </p>
-          )}
-          <p className="text-sm text-muted-foreground">{event.location}</p>
+          <p className="text-lg font-bold leading-snug">{event.title}</p>
+          <p className="text-sm font-semibold text-muted-foreground">{event.churchName}</p>
           <p className="text-sm text-muted-foreground">{event.host}</p>
         </CardContent>
         </div>

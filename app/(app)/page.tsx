@@ -70,7 +70,7 @@ export default async function Home({
                     <span className="text-sm font-normal text-muted-foreground">({filteredEvents.length})</span>
                   </h2>
                   {filteredEvents.map((event) => (
-                    <EventCard key={event.id} event={{ ...event, badge: event.tag, seriesName: event.series?.name }} />
+                    <EventCard key={event.id} event={{ ...event, badge: event.tag, churchName: event.church?.name ?? "" }} />
                   ))}
                 </section>
               )}

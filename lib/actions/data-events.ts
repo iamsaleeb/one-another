@@ -11,7 +11,7 @@ export async function getEvents() {
   return prisma.event.findMany({
     where: { isPast: false, isDraft: false },
     orderBy: { createdAt: "asc" },
-    include: { series: { select: { name: true } } },
+    include: { church: { select: { name: true } } },
   });
 }
 
@@ -21,6 +21,7 @@ export async function getEventById(id: string, currentUserId?: string) {
   return prisma.event.findUnique({
     where: { id },
     include: {
+      church: { select: { id: true, name: true } },
       series: { select: { id: true, name: true } },
       attendees: currentUserId
         ? { where: { userId: currentUserId }, select: { userId: true } }
@@ -53,7 +54,7 @@ export async function getEventsByCreator(userId: string) {
     where: { isPast: false, createdById: userId },
     orderBy: { createdAt: "asc" },
     include: {
-      series: { select: { name: true } },
+      church: { select: { name: true } },
       createdBy: { select: { name: true } },
     },
   });
@@ -71,7 +72,7 @@ export async function getEventsNotByCreator(userId: string) {
     orderBy: { datetime: "asc" },
     take: 50,
     include: {
-      series: { select: { name: true } },
+      church: { select: { name: true } },
       createdBy: { select: { name: true } },
     },
   });
@@ -83,7 +84,7 @@ export async function getUserAttendedEvents(userId: string) {
   return prisma.event.findMany({
     where: { isPast: false, isDraft: false, attendees: { some: { userId } } },
     orderBy: { datetime: "asc" },
-    include: { series: { select: { name: true } } },
+    include: { church: { select: { name: true } } },
   });
 }
 
@@ -93,6 +94,6 @@ export async function getUserAttendedPastEvents(userId: string) {
   return prisma.event.findMany({
     where: { isPast: true, isDraft: false, attendees: { some: { userId } } },
     orderBy: { datetime: "desc" },
-    include: { series: { select: { name: true } } },
+    include: { church: { select: { name: true } } },
   });
 }

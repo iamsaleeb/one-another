@@ -1,13 +1,14 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { Form } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { createEventSchema, type CreateEventInput } from "@/lib/validations/event";
-import { saveDraftAction, updateEventAction } from "@/lib/actions/events-crud";
+import { saveDraftAction, saveEventAction } from "@/lib/actions/events-crud";
 import { localInputsToUtcDate, utcIsoToLocalInputs } from "@/lib/datetime";
 import { WizardProgress } from "./wizard-progress";
 import { StepBasics } from "./steps/step-basics";
@@ -51,6 +52,7 @@ const STEP_FIELDS: Array<Array<keyof CreateEventInput>> = [
 ];
 
 export function EventWizard({ churches, series, eventId, defaultValues }: EventWizardProps) {
+  const router = useRouter();
   const [currentStep, setCurrentStep] = useState(0);
   const [draftId, setDraftId] = useState<string | undefined>(eventId);
   const [isSaving, setIsSaving] = useState(false);
@@ -85,14 +87,52 @@ export function EventWizard({ churches, series, eventId, defaultValues }: EventW
         },
   });
 
+  // Capture initial datetimeISO in a ref so the effect only seeds date/time once on mount
+  const initialDatetimeISO = useRef(defaultValues?.datetimeISO);
+  // Refs so the auto-save closure always sees the latest values without re-subscribing
+  const draftIdRef = useRef(draftId);
+  const isBusyRef = useRef(false);
+  const setDraftIdRef = useRef(setDraftId);
+  useEffect(() => { draftIdRef.current = draftId; }, [draftId]);
+  useEffect(() => { isBusyRef.current = isSaving || isPublishing; }, [isSaving, isPublishing]);
+
+  // Seed date/time inputs from the UTC ISO stored on the event (edit mode only)
   useEffect(() => {
-    if (defaultValues?.datetimeISO) {
-      const { date, time } = utcIsoToLocalInputs(defaultValues.datetimeISO);
+    if (initialDatetimeISO.current) {
+      const { date, time } = utcIsoToLocalInputs(initialDatetimeISO.current);
       form.setValue("date", date, { shouldDirty: false });
       form.setValue("time", time, { shouldDirty: false });
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [form]);
+
+  // Silently auto-save whenever form values change (create and edit flows)
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout>;
+
+    const { unsubscribe } = form.watch(() => {
+      clearTimeout(timer);
+      timer = setTimeout(async () => {
+        if (isBusyRef.current) return;
+        const data = form.getValues();
+        // Skip auto-create if the form is completely empty (user hasn't started)
+        if (!draftIdRef.current && !data.title && !data.description && !data.tag) return;
+        const payload =
+          data.date && data.time
+            ? { ...data, datetimeISO: localInputsToUtcDate(data.date, data.time).toISOString() }
+            : data;
+        const result = await saveDraftAction(draftIdRef.current, payload);
+        if ("eventId" in result && !draftIdRef.current) {
+          draftIdRef.current = result.eventId;
+          setDraftIdRef.current(result.eventId);
+        }
+      }, 1500);
+    });
+
+    return () => {
+      unsubscribe();
+      clearTimeout(timer);
+    };
+  }, [form]);
 
   const tag = useWatch({ control: form.control, name: "tag" });
 
@@ -114,12 +154,14 @@ export function EventWizard({ churches, series, eventId, defaultValues }: EventW
 
     setIsSaving(true);
     try {
+      const isNew = !draftId;
       const result = await saveDraftAction(draftId, buildData());
       if ("error" in result) {
         toast.error(result.error);
         return;
       }
       setDraftId(result.eventId);
+      if (isNew) toast.success("Draft saved — your progress is safe.");
       setCurrentStep((s) => s + 1);
     } finally {
       setIsSaving(false);
@@ -150,10 +192,17 @@ export function EventWizard({ churches, series, eventId, defaultValues }: EventW
     }
     setIsPublishing(true);
     try {
-      const result = await updateEventAction(draftId, { ...buildData(), isDraft: false });
-      if (result?.error) toast.error(result.error);
-      if (result?.fieldErrors) toast.error("Please review all fields before publishing.");
-      // updateEventAction redirects on success — no need to handle success case
+      const result = await saveEventAction(draftId, { ...buildData(), isDraft: false });
+      if (result && "error" in result) {
+        toast.error(result.error);
+        return;
+      }
+      if (result && "fieldErrors" in result) {
+        toast.error("Please review all fields before publishing.");
+        return;
+      }
+      toast.success("Event published!");
+      router.push(`/events/${draftId}`);
     } finally {
       setIsPublishing(false);
     }
@@ -197,6 +246,10 @@ export function EventWizard({ churches, series, eventId, defaultValues }: EventW
         totalSteps={activeSteps.length}
         stepLabel={activeSteps[currentStep].label}
       />
+
+      <p className="text-xs text-muted-foreground text-center px-2">
+        Your progress is automatically saved as a draft — you can leave and come back any time.
+      </p>
 
       <div className="rounded-2xl bg-white shadow-card p-5">
         <Form {...form}>

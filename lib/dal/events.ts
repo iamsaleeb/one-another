@@ -171,6 +171,7 @@ export async function updateEvent(
     collectPhone,
     collectNotes,
     price,
+    isDraft,
     photoUrl,
     campEndDate,
     campAllowPartialRegistration,
@@ -221,6 +222,7 @@ export async function updateEvent(
       tag: tag || "",
       description: description || "",
       requiresRegistration: requiresRegistration ?? false,
+      ...(isDraft !== undefined ? { isDraft } : {}),
       metadata: {
         registration: {
           capacity: requiresRegistration ? (capacity ?? null) : null,

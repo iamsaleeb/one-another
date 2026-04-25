@@ -8,6 +8,7 @@ import { createEventSchema, type CreateEventInput } from "@/lib/validations/even
 import { createEvent, updateEvent, cancelEvent, uncancelEvent, publishEvent, unpublishEvent, deleteEvent } from "@/lib/dal/events";
 import type { ActionResult } from "@/lib/actions/auth";
 import { broadcastEventChange, invalidateEventFields } from "@/lib/actions/_cache";
+import { localInputsToUtcDate } from "@/lib/datetime";
 
 export async function createEventAction(data: CreateEventInput): Promise<ActionResult> {
   const session = await auth();
@@ -91,6 +92,38 @@ export async function unpublishEventAction(id: string): Promise<ActionResult> {
 
   broadcastEventChange(id, result.churchId, result.seriesId);
   redirect(`/events/${id}`);
+}
+
+export async function saveDraftAction(
+  id: string | undefined,
+  data: CreateEventInput
+): Promise<{ eventId: string } | { error: string }> {
+  const session = await auth();
+  if (session?.user?.role !== UserRole.ORGANISER && session?.user?.role !== UserRole.ADMIN) {
+    return { error: "Unauthorised." };
+  }
+
+  let datetimeISO: string | undefined;
+  if (data.date && data.time) {
+    datetimeISO = localInputsToUtcDate(data.date, data.time).toISOString();
+  }
+
+  const parsed = createEventSchema.safeParse({ ...data, datetimeISO });
+  if (!parsed.success) return { error: "Invalid data." };
+
+  if (!id) {
+    const result = await createEvent({ ...parsed.data, isDraft: true }, session.user.id, session.user.role);
+    if ("error" in result || "fieldErrors" in result) {
+      return { error: ("error" in result ? result.error : undefined) ?? "Failed to save draft." };
+    }
+    return { eventId: result.id };
+  } else {
+    const result = await updateEvent(id, { ...parsed.data, isDraft: true }, session.user.id, session.user.role);
+    if ("error" in result || "fieldErrors" in result) {
+      return { error: "error" in result ? (result.error ?? "Failed to save draft.") : "Failed to save draft." };
+    }
+    return { eventId: id };
+  }
 }
 
 export async function deleteEventAction(id: string): Promise<void> {

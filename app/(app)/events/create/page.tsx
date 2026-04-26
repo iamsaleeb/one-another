@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
-import { CreateEventForm } from "./_components/create-event-form";
+import { EventWizard } from "./_components/event-wizard";
 import { UserRole } from "@prisma/client";
 import { PageHeader } from "@/components/ui/page-header";
 import { getChurchesByManager } from "@/lib/actions/data-churches";
@@ -28,12 +28,10 @@ export default async function CreateEventPage({ searchParams }: Props) {
     <div className="mx-auto max-w-lg">
       <PageHeader title={series ? "Add Session" : "Create Event"} />
       <div className="px-4 pb-6">
-        <div className="rounded-2xl bg-white shadow-card p-5">
-          <CreateEventForm
-            churches={churches}
-            series={series ? { id: series.id, name: series.name, churchId: series.church.id, churchName: series.church.name } : undefined}
-          />
-        </div>
+        <EventWizard
+          churches={churches}
+          series={series ? { id: series.id, name: series.name, churchId: series.church.id, churchName: series.church.name } : undefined}
+        />
       </div>
     </div>
   );

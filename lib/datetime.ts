@@ -45,6 +45,25 @@ export function localInputsToUtcDate(dateStr: string, timeStr: string): Date {
 }
 
 /**
+ * Convert a UTC ISO datetime string to separate local date and time strings
+ * suitable for HTML <input type="date"> and <input type="time"> elements.
+ * Uses JS local-timezone getters so the values reflect the user's timezone.
+ * Must only be called in "use client" components.
+ */
+export function utcIsoToLocalInputs(iso: string): { date: string; time: string } {
+  const d = new Date(iso);
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  const hours = String(d.getHours()).padStart(2, "0");
+  const minutes = String(d.getMinutes()).padStart(2, "0");
+  return {
+    date: `${year}-${month}-${day}`,
+    time: `${hours}:${minutes}`,
+  };
+}
+
+/**
  * Parse a YYYY-MM-DD date string into a UTC Date pinned to noon.
  * Displayed via date-fns `format()` in a server component running in UTC,
  * so the calendar date is always rendered correctly regardless of the user's

@@ -83,7 +83,7 @@ export async function rescheduleNotification(input: RescheduleInput): Promise<vo
 interface EventRef {
   id: string;
   title: string;
-  datetime: Date;
+  datetime: Date | null;
 }
 
 /**
@@ -102,6 +102,8 @@ export async function scheduleEventReminderNotification(userId: string, event: E
     const h = (pref.config as Record<string, unknown>).hoursBeforeEvent;
     if (typeof h === 'number') hours = h;
   }
+
+  if (!event.datetime) return;
 
   const scheduledFor = subHours(event.datetime, hours);
   if (scheduledFor <= new Date()) return;

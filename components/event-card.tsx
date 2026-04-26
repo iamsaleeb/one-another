@@ -7,10 +7,10 @@ import { TAG_COLORS, type Category } from "@/types/search";
 interface EventCardProps {
   event: {
     id: string;
-    datetime: Date;
+    datetime: Date | null;
     title: string;
     churchName: string;
-    host: string;
+    host: string | null;
     tag: string;
     badge: string;
     cancelledAt?: Date | null;
@@ -59,7 +59,7 @@ className="object-cover"
           </div>
           <p className="text-lg font-bold leading-snug">{event.title}</p>
           <p className="text-sm font-semibold text-muted-foreground">{event.churchName}</p>
-          <p className="text-sm text-muted-foreground">{event.host}</p>
+          <p className="text-sm text-muted-foreground">{event.host ?? "TBD"}</p>
         </CardContent>
         </div>
       </Card>

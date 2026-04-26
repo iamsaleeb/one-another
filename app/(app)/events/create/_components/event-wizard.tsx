@@ -63,7 +63,7 @@ export function EventWizard({ churches, series, eventId, defaultValues }: EventW
   const form = useForm<CreateEventInput>({
     resolver: zodResolver(createEventSchema),
     defaultValues: defaultValues
-      ? { ...restDefaultValues }
+      ? { date: "", time: "", ...restDefaultValues }
       : {
           title: "",
           date: "",

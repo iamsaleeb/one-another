@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
+import { CloudUpload } from "lucide-react";
 import { Form } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { createEventSchema, type CreateEventInput } from "@/lib/validations/event";
@@ -46,7 +47,7 @@ const REVIEW_STEP = { label: "Review" };
 
 const STEP_FIELDS: Array<Array<keyof CreateEventInput>> = [
   ["title", "description", "tag", "churchId", "photoUrl"],
-  ["date", "time"],
+  ["date", "time", "location", "host"],
   ["price", "requiresRegistration", "capacity", "collectPhone", "collectNotes"],
   ["campEndDate", "campAllowPartialRegistration", "campAgenda"],
 ];
@@ -161,6 +162,11 @@ export function EventWizard({ churches, series, eventId, defaultValues }: EventW
     if (!fields) return;
     const valid = await form.trigger(fields as Array<keyof CreateEventInput>);
     if (!valid) return;
+    // campEndDate is optional in schema (allows partial drafts) but required to publish
+    if (fields.includes("campEndDate") && tag === "Camp" && !form.getValues("campEndDate")) {
+      form.setError("campEndDate", { message: "End date is required for camp events" });
+      return;
+    }
     setCurrentStep((s) => s + 1);
   };
 
@@ -244,16 +250,19 @@ export function EventWizard({ churches, series, eventId, defaultValues }: EventW
   };
 
   return (
-    <>
+    <div className="flex flex-col gap-4">
       <WizardProgress
         currentStep={currentStep + 1}
         totalSteps={activeSteps.length}
         stepLabel={activeSteps[currentStep].label}
       />
 
-      <p className="text-xs text-muted-foreground text-center px-2">
-        Your progress is automatically saved — you can leave and come back any time.
-      </p>
+      <div className="flex justify-center">
+        <div className="flex items-center gap-1.5 rounded-full border bg-muted/50 px-3 py-1 text-xs text-muted-foreground">
+          <CloudUpload className="size-3.5 shrink-0" />
+          Progress automatically saved
+        </div>
+      </div>
 
       <div className="rounded-2xl bg-white shadow-card p-5">
         <Form {...form}>
@@ -284,6 +293,6 @@ export function EventWizard({ churches, series, eventId, defaultValues }: EventW
           </form>
         </Form>
       </div>
-    </>
+    </div>
   );
 }

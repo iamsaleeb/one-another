@@ -52,6 +52,7 @@ export function localInputsToUtcDate(dateStr: string, timeStr: string): Date {
  */
 export function utcIsoToLocalInputs(iso: string): { date: string; time: string } {
   const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return { date: "", time: "" };
   const year = d.getFullYear();
   const month = String(d.getMonth() + 1).padStart(2, "0");
   const day = String(d.getDate()).padStart(2, "0");

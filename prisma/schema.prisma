@@ -159,10 +159,10 @@ model Series {
 
 model Event {
   id                   String  @id @default(cuid())
-  datetime             DateTime
+  datetime             DateTime?
   title                String
-  location             String
-  host                 String
+  location             String?
+  host                 String?
   tag                  String
   description          String
   photoUrl             String?

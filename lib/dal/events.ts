@@ -78,8 +78,14 @@ export async function createEvent(
   } = data;
   let { churchId } = data;
 
-  const datetime = datetimeISO ? new Date(datetimeISO) : new Date(`${date}T${time}`);
-  if (Number.isNaN(datetime.getTime())) return { fieldErrors: { date: ["Invalid date or time"] } };
+  let datetime: Date | null = null;
+  if (datetimeISO) {
+    datetime = new Date(datetimeISO);
+    if (Number.isNaN(datetime.getTime())) return { fieldErrors: { date: ["Invalid date or time"] } };
+  } else if (date && time) {
+    datetime = new Date(`${date}T${time}`);
+    if (Number.isNaN(datetime.getTime())) return { fieldErrors: { date: ["Invalid date or time"] } };
+  }
 
   if (seriesId) {
     const series = await prisma.series.findUnique({ where: { id: seriesId }, select: { churchId: true } });
@@ -92,16 +98,16 @@ export async function createEvent(
   if (!allowed) return { error: "You are not assigned to this church." };
 
   const isCamp = tag === "Camp";
-  if (isCamp && !campEndDate) return { fieldErrors: { campEndDate: ["End date is required for camp events"] } };
+  if (isCamp && !campEndDate && !isDraft) return { fieldErrors: { campEndDate: ["End date is required for camp events"] } };
 
   const created = await prisma.event.create({
     data: {
-      title,
-      datetime,
-      location,
-      host,
-      tag,
-      description,
+      title: title || "",
+      datetime: datetime ?? null,
+      location: location || null,
+      host: host || null,
+      tag: tag || "",
+      description: description || "",
       isPast: false,
       isDraft: isDraft ?? false,
       requiresRegistration: requiresRegistration ?? false,
@@ -165,6 +171,7 @@ export async function updateEvent(
     collectPhone,
     collectNotes,
     price,
+    isDraft,
     photoUrl,
     campEndDate,
     campAllowPartialRegistration,
@@ -172,8 +179,14 @@ export async function updateEvent(
   } = data;
   let { churchId } = data;
 
-  const newDatetime = datetimeISO ? new Date(datetimeISO) : new Date(`${date}T${time}`);
-  if (Number.isNaN(newDatetime.getTime())) return { fieldErrors: { date: ["Invalid date or time"] } };
+  let newDatetime: Date | null = null;
+  if (datetimeISO) {
+    newDatetime = new Date(datetimeISO);
+    if (Number.isNaN(newDatetime.getTime())) return { fieldErrors: { date: ["Invalid date or time"] } };
+  } else if (date && time) {
+    newDatetime = new Date(`${date}T${time}`);
+    if (Number.isNaN(newDatetime.getTime())) return { fieldErrors: { date: ["Invalid date or time"] } };
+  }
 
   if (seriesId) {
     const series = await prisma.series.findUnique({ where: { id: seriesId }, select: { churchId: true } });
@@ -197,18 +210,19 @@ export async function updateEvent(
   }
 
   const isCamp = tag === "Camp";
-  if (isCamp && !campEndDate) return { fieldErrors: { campEndDate: ["End date is required for camp events"] } };
+  if (isCamp && !campEndDate && !isDraft) return { fieldErrors: { campEndDate: ["End date is required for camp events"] } };
 
   await prisma.event.update({
     where: { id },
     data: {
-      title,
-      datetime: newDatetime,
-      location,
-      host,
-      tag,
-      description,
+      title: title || "",
+      datetime: newDatetime ?? null,
+      location: location || null,
+      host: host || null,
+      tag: tag || "",
+      description: description || "",
       requiresRegistration: requiresRegistration ?? false,
+      ...(isDraft !== undefined ? { isDraft } : {}),
       metadata: {
         registration: {
           capacity: requiresRegistration ? (capacity ?? null) : null,
@@ -232,7 +246,7 @@ export async function updateEvent(
     },
   });
 
-  if (!existing.isDraft && newDatetime.getTime() !== existing.datetime.getTime()) {
+  if (!existing.isDraft && newDatetime && existing.datetime && newDatetime.getTime() !== existing.datetime.getTime()) {
     try {
       await rescheduleEventReminderNotifications(id, newDatetime);
     } catch (err) {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useFieldArray, type UseFormReturn } from "react-hook-form";
+import { useFormContext, useWatch, useFieldArray } from "react-hook-form";
 import { Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,13 +15,10 @@ import {
 } from "@/components/ui/form";
 import type { CreateEventInput } from "@/lib/validations/event";
 
-interface CampDetailsSectionProps {
-  form: UseFormReturn<CreateEventInput>;
-  startDate?: string;
-}
+export function StepCampDetails() {
+  const form = useFormContext<CreateEventInput>();
+  const startDate = useWatch({ control: form.control, name: "date" });
 
-export function CampDetailsSection({ form, startDate }: CampDetailsSectionProps) {
-  const { isSubmitting } = form.formState;
   const { fields, append, remove } = useFieldArray({
     control: form.control,
     name: "campAgenda",
@@ -40,7 +37,7 @@ export function CampDetailsSection({ form, startDate }: CampDetailsSectionProps)
             <FormControl>
               <Input
                 type="date"
-                disabled={isSubmitting}
+
                 min={startDate ?? undefined}
                 {...field}
                 value={field.value ?? ""}
@@ -58,13 +55,15 @@ export function CampDetailsSection({ form, startDate }: CampDetailsSectionProps)
           <FormItem className="flex items-center justify-between gap-3 rounded-xl border bg-white px-4 py-3">
             <div>
               <p className="text-sm font-medium">Allow Partial Attendance</p>
-              <p className="text-xs text-muted-foreground">Let attendees choose which days to attend</p>
+              <p className="text-xs text-muted-foreground">
+                Let attendees choose which days to attend
+              </p>
             </div>
             <FormControl>
               <Switch
                 checked={field.value ?? false}
                 onCheckedChange={field.onChange}
-                disabled={isSubmitting}
+
               />
             </FormControl>
           </FormItem>
@@ -94,7 +93,7 @@ export function CampDetailsSection({ form, startDate }: CampDetailsSectionProps)
                 size="icon"
                 className="size-7 text-destructive hover:text-destructive"
                 onClick={() => remove(index)}
-                disabled={isSubmitting}
+
               >
                 <Trash2 className="size-3.5" />
               </Button>
@@ -110,7 +109,7 @@ export function CampDetailsSection({ form, startDate }: CampDetailsSectionProps)
                     <FormControl>
                       <Input
                         type="date"
-                        disabled={isSubmitting}
+        
                         min={startDate ?? undefined}
                         {...f}
                         value={f.value ?? ""}
@@ -127,7 +126,12 @@ export function CampDetailsSection({ form, startDate }: CampDetailsSectionProps)
                   <FormItem>
                     <FormLabel className="text-xs">Time (optional)</FormLabel>
                     <FormControl>
-                      <Input type="time" disabled={isSubmitting} {...f} value={f.value ?? ""} />
+                      <Input
+                        type="time"
+        
+                        {...f}
+                        value={f.value ?? ""}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -142,7 +146,11 @@ export function CampDetailsSection({ form, startDate }: CampDetailsSectionProps)
                 <FormItem>
                   <FormLabel className="text-xs">Title</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g. Morning worship" disabled={isSubmitting} {...f} />
+                    <Input
+                      placeholder="e.g. Morning worship"
+      
+                      {...f}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -156,7 +164,12 @@ export function CampDetailsSection({ form, startDate }: CampDetailsSectionProps)
                 <FormItem>
                   <FormLabel className="text-xs">Description (optional)</FormLabel>
                   <FormControl>
-                    <Textarea rows={2} disabled={isSubmitting} {...f} value={f.value ?? ""} />
+                    <Textarea
+                      rows={2}
+      
+                      {...f}
+                      value={f.value ?? ""}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -172,14 +185,15 @@ export function CampDetailsSection({ form, startDate }: CampDetailsSectionProps)
           className="w-full"
           onClick={() =>
             append({
-              id: crypto.randomUUID?.() ?? `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`,
+              id:
+                crypto.randomUUID?.() ??
+                `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`,
               date: startDate ?? "",
               time: undefined,
               title: "",
               description: undefined,
             })
           }
-          disabled={isSubmitting}
         >
           <Plus className="size-4 mr-1" />
           Add Agenda Item

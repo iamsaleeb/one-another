@@ -101,7 +101,7 @@ export default async function EventDetailPage({ params }: Props) {
                 </Link>
               </InfoField>
             )}
-            <InfoField icon={User} label="Host">{event.host}</InfoField>
+            <InfoField icon={User} label="Host">{event.host ?? "TBD"}</InfoField>
             <InfoField icon={Calendar} label={camp ? "Dates" : "Date & Time"}>
               {camp ? (
                 <span>
@@ -114,7 +114,7 @@ export default async function EventDetailPage({ params }: Props) {
                 <EventDatetime datetime={event.datetime} />
               )}
             </InfoField>
-            <InfoField icon={MapPin} label="Location">{event.location}</InfoField>
+            <InfoField icon={MapPin} label="Location">{event.location ?? "TBD"}</InfoField>
             {event.series && (
               <InfoField icon={Repeat} label="Part of Series">
                 <Link href={`/series/${event.series.id}`} className="text-primary hover:underline">
@@ -141,7 +141,7 @@ export default async function EventDetailPage({ params }: Props) {
         {camp && camp.agenda.length > 0 && (
           <CampAgenda
             agenda={camp.agenda}
-            startDate={event.datetime.toISOString().slice(0, 10)}
+            startDate={event.datetime?.toISOString().slice(0, 10) ?? ""}
             endDate={camp.endDate}
           />
         )}
@@ -163,7 +163,7 @@ export default async function EventDetailPage({ params }: Props) {
         isDraft={event.isDraft}
         attendees={attendees}
         camp={camp}
-        campStartDate={event.datetime.toISOString().slice(0, 10)}
+        campStartDate={event.datetime?.toISOString().slice(0, 10) ?? ""}
       />
     </div>
   );

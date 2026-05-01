@@ -51,6 +51,22 @@ export function broadcastSeriesChange(id: string, churchId?: string | null) {
 }
 
 /**
+ * Invalidates all caches affected when an event's fields are updated —
+ * handles church reassignment and series membership changes.
+ */
+export function invalidateEventUpdate(
+  id: string,
+  result: { oldChurchId: string | null; newChurchId: string | null; affectedSeriesIds: string[] }
+) {
+  invalidateEventFields(id, result.oldChurchId);
+  if (result.newChurchId !== result.oldChurchId) updateTag(`church-${result.newChurchId}`);
+  if (result.affectedSeriesIds.length > 0) {
+    updateTag("series");
+    result.affectedSeriesIds.forEach((sid) => updateTag(`series-${sid}`));
+  }
+}
+
+/**
  * Invalidates only the specific series and its parent church
  * when a series is updated (content change, not list membership).
  */

@@ -16,7 +16,7 @@ export async function getEvents() {
 export async function getEventById(id: string, currentUserId?: string) {
   cacheTag("events", `event-${id}`);
   cacheLife("hours");
-  return prisma.event.findUnique({
+  const event = await prisma.event.findUnique({
     where: { id },
     include: {
       church: { select: { id: true, name: true } },
@@ -27,6 +27,8 @@ export async function getEventById(id: string, currentUserId?: string) {
       _count: { select: { attendees: true } },
     },
   });
+  if (event?.seriesId) cacheTag(`series-${event.seriesId}`);
+  return event;
 }
 
 export async function getEventAttendees(eventId: string) {

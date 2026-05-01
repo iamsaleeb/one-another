@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { useEventAutoSave } from "./use-event-auto-save";
 import { useRouter } from "next/navigation";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -55,7 +56,6 @@ const STEP_FIELDS: Array<Array<keyof CreateEventInput>> = [
 export function EventWizard({ churches, series, eventId, defaultValues }: EventWizardProps) {
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(0);
-  const [draftId, setDraftId] = useState<string | undefined>(eventId);
   const [isSaving, setIsSaving] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
 
@@ -88,14 +88,14 @@ export function EventWizard({ churches, series, eventId, defaultValues }: EventW
         },
   });
 
+  const { draftId, setDraftId, autoSaveStatus } = useEventAutoSave({
+    form: form as Parameters<typeof useEventAutoSave>[0]["form"],
+    initialDraftId: eventId,
+    isBusy: isSaving || isPublishing,
+  });
+
   // Capture initial datetimeISO in a ref so the effect only seeds date/time once on mount
   const initialDatetimeISO = useRef(defaultValues?.datetimeISO);
-  // Refs so the auto-save closure always sees the latest values without re-subscribing
-  const draftIdRef = useRef(draftId);
-  const isBusyRef = useRef(false);
-  const autoSaveInFlightRef = useRef(false);
-  useEffect(() => { draftIdRef.current = draftId; }, [draftId]);
-  useEffect(() => { isBusyRef.current = isSaving || isPublishing; }, [isSaving, isPublishing]);
 
   // Seed date/time inputs from the UTC ISO stored on the event (edit mode only)
   useEffect(() => {
@@ -105,43 +105,6 @@ export function EventWizard({ churches, series, eventId, defaultValues }: EventW
       form.setValue("time", time, { shouldDirty: false });
     }
   }, [form]);
-
-  // Silently auto-save whenever the user changes something
-  useEffect(() => {
-    let timer: ReturnType<typeof setTimeout>;
-
-    const { unsubscribe } = form.watch(() => {
-      clearTimeout(timer);
-      timer = setTimeout(async () => {
-        if (isBusyRef.current || autoSaveInFlightRef.current) return;
-        // Skip saves driven purely by programmatic setValue (e.g. datetime seeding on mount)
-        if (!form.formState.isDirty) return;
-        const data = form.getValues();
-        // Don't create a draft until the user has typed something meaningful
-        if (!draftIdRef.current && !data.title && !data.description && !data.tag) return;
-        const payload =
-          data.date && data.time
-            ? { ...data, datetimeISO: localInputsToUtcDate(data.date, data.time).toISOString() }
-            : data;
-        autoSaveInFlightRef.current = true;
-        try {
-          const result = await saveDraftAction(draftIdRef.current, payload);
-          if ("eventId" in result && !draftIdRef.current) {
-            draftIdRef.current = result.eventId;
-            setDraftId(result.eventId);
-            form.setValue("isDraft", true, { shouldDirty: false });
-          }
-        } finally {
-          autoSaveInFlightRef.current = false;
-        }
-      }, 1500);
-    });
-
-    return () => {
-      unsubscribe();
-      clearTimeout(timer);
-    };
-  }, [form, setDraftId]);
 
   const tag = useWatch({ control: form.control, name: "tag" });
   const isDraft = useWatch({ control: form.control, name: "isDraft" });
@@ -260,7 +223,11 @@ export function EventWizard({ churches, series, eventId, defaultValues }: EventW
       <div className="flex justify-center">
         <div className="flex items-center gap-1.5 rounded-full border bg-muted/50 px-3 py-1 text-xs text-muted-foreground">
           <CloudUpload className="size-3.5 shrink-0" />
-          Progress automatically saved
+          {autoSaveStatus === "saving"
+            ? "Saving..."
+            : autoSaveStatus === "saved"
+            ? "Progress saved"
+            : "Auto-saving progress"}
         </div>
       </div>
 

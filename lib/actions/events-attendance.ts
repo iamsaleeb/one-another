@@ -1,9 +1,9 @@
 "use server";
 
-import { updateTag } from "next/cache";
 import { auth } from "@/auth";
 import { registerEventSchema } from "@/lib/validations/event";
 import { attendEvent, unattendEvent, registerEvent } from "@/lib/dal/attendance";
+import { invalidateEventFields } from "@/lib/actions/_cache";
 
 export interface AttendEventState {
   error?: string;
@@ -14,11 +14,6 @@ export interface RegisterEventState {
   error?: string;
 }
 
-function invalidateEventCaches(id: string) {
-  updateTag("events");
-  updateTag(`event-${id}`);
-}
-
 export async function attendEventAction(eventId: string): Promise<AttendEventState> {
   const session = await auth();
   if (!session?.user?.id) return { error: "You must be signed in." };
@@ -26,7 +21,7 @@ export async function attendEventAction(eventId: string): Promise<AttendEventSta
   const result = await attendEvent(eventId, session.user.id);
   if ("error" in result && result.error) return { error: result.error };
 
-  invalidateEventCaches(eventId);
+  invalidateEventFields(eventId);
   return {};
 }
 
@@ -36,7 +31,7 @@ export async function unattendEventAction(eventId: string): Promise<AttendEventS
 
   await unattendEvent(eventId, session.user.id);
 
-  invalidateEventCaches(eventId);
+  invalidateEventFields(eventId);
   return {};
 }
 
@@ -75,6 +70,6 @@ export async function registerEventAction(
 
   if ("error" in result) return { error: result.error };
 
-  invalidateEventCaches(eventId);
+  invalidateEventFields(eventId);
   return { success: true };
 }

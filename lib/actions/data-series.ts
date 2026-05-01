@@ -1,10 +1,11 @@
 "use cache: remote";
 
-import { cacheTag } from "next/cache";
+import { cacheTag, cacheLife } from "next/cache";
 import { prisma } from "@/lib/db";
 
 export async function getSeries() {
   cacheTag("series");
+  cacheLife("minutes");
   return prisma.series.findMany({
     orderBy: { createdAt: "desc" },
     include: {
@@ -17,6 +18,7 @@ export async function getSeries() {
 
 export async function getSeriesById(id: string, currentUserId?: string) {
   cacheTag("series", `series-${id}`);
+  cacheLife("hours");
   return prisma.series.findUnique({
     where: { id },
     include: {
@@ -35,6 +37,7 @@ export async function getSeriesById(id: string, currentUserId?: string) {
 
 export async function getSeriesByCreator(userId: string) {
   cacheTag("series", `user-series-${userId}`);
+  cacheLife("minutes");
   return prisma.series.findMany({
     where: { createdById: userId },
     orderBy: { createdAt: "desc" },
@@ -47,6 +50,7 @@ export async function getSeriesByCreator(userId: string) {
 
 export async function getSeriesNotByCreator(userId: string) {
   cacheTag("series");
+  cacheLife("minutes");
   return prisma.series.findMany({
     where: {
       OR: [{ createdById: { not: userId } }, { createdById: null }],
@@ -62,6 +66,7 @@ export async function getSeriesNotByCreator(userId: string) {
 
 export async function getUserFollowedSeries(userId: string) {
   cacheTag("series", `user-series-${userId}`);
+  cacheLife("minutes");
   return prisma.series.findMany({
     where: { followers: { some: { userId } } },
     orderBy: { createdAt: "desc" },
@@ -73,6 +78,7 @@ export async function getUserFollowedSeries(userId: string) {
 
 export async function getSeriesForEvent(seriesId: string) {
   cacheTag("series", `series-${seriesId}`);
+  cacheLife("hours");
   return prisma.series.findUnique({
     where: { id: seriesId },
     select: { id: true, name: true, church: { select: { id: true, name: true } } },

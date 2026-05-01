@@ -1,10 +1,6 @@
 import "server-only";
 import { updateTag } from "next/cache";
 
-/**
- * Broadcasts to list caches when an event is created, deleted,
- * published, or unpublished (i.e. its presence in public lists changes).
- */
 export function broadcastEventChange(
   id: string,
   churchId?: string | null,
@@ -22,10 +18,6 @@ export function broadcastEventChange(
   }
 }
 
-/**
- * Invalidates event lists and the specific event when it is updated
- * or its state changes (cancel/uncancel).
- */
 export function invalidateEventFields(
   id: string,
   churchId?: string | null,
@@ -37,9 +29,6 @@ export function invalidateEventFields(
   if (seriesId) updateTag(`series-${seriesId}`);
 }
 
-/**
- * Broadcasts to list caches when a series is created or deleted.
- */
 export function broadcastSeriesChange(id: string, churchId?: string | null) {
   updateTag("events");
   updateTag("series");
@@ -50,21 +39,28 @@ export function broadcastSeriesChange(id: string, churchId?: string | null) {
   }
 }
 
-/**
- * Invalidates only the specific series and its parent church
- * when a series is updated (content change, not list membership).
- */
-export function invalidateSeriesFields(id: string, churchId?: string | null) {
-  updateTag("series");
-  updateTag(`series-${id}`);
-  if (churchId) updateTag(`church-${churchId}`);
+export function invalidateEventUpdate(
+  id: string,
+  oldChurchId: string | null | undefined,
+  newChurchId: string | null | undefined,
+  affectedSeriesIds: string[]
+) {
+  invalidateEventFields(id, oldChurchId);
+  if (newChurchId && newChurchId !== oldChurchId) updateTag(`church-${newChurchId}`);
+  if (affectedSeriesIds.length > 0) {
+    updateTag("series");
+    affectedSeriesIds.forEach((sid) => updateTag(`series-${sid}`));
+  }
 }
 
-/**
- * Invalidates the specific series and the user's followed-series list
- * when a user follows/unfollows. Does not bust broad series lists since
- * follow state is not included in getSeries() list queries.
- */
+export function invalidateSeriesFields(id: string, oldChurchId?: string | null, newChurchId?: string | null) {
+  updateTag("series");
+  updateTag(`series-${id}`);
+  if (oldChurchId) updateTag(`church-${oldChurchId}`);
+  if (newChurchId && newChurchId !== oldChurchId) updateTag(`church-${newChurchId}`);
+}
+
+// follow state not in getSeries() queries — don't bust broad series lists
 export function invalidateSeriesFollowing(seriesId: string, userId: string) {
   updateTag(`series-${seriesId}`);
   updateTag(`user-series-${userId}`);

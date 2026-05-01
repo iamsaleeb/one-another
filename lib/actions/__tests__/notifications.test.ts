@@ -184,14 +184,14 @@ describe('updateNotificationPreferenceAction', () => {
 })
 
 describe('markReadAction', () => {
-  it('marks all notifications read, invalidates cache tag, and revalidates layout', async () => {
+  it('marks all notifications read and invalidates cache tag', async () => {
     mockMarkNotificationsRead.mockResolvedValue(undefined)
 
     await markReadAction()
 
     expect(mockMarkNotificationsRead).toHaveBeenCalledWith('user-1')
     expect(mockUpdateTag).toHaveBeenCalledWith('user-notifications-user-1')
-    expect(mockRevalidatePath).toHaveBeenCalledWith('/', 'layout')
+    expect(mockRevalidatePath).not.toHaveBeenCalled()
   })
 
   it('throws Unauthorized when there is no session', async () => {

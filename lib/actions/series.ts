@@ -1,7 +1,6 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { updateTag } from "next/cache";
 import { auth } from "@/auth";
 import { UserRole, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
@@ -36,8 +35,7 @@ export async function updateSeriesAction(id: string, data: CreateSeriesInput): P
   const result = await updateSeries(id, parsed.data, session.user.id, session.user.role);
   if ("error" in result || "fieldErrors" in result) redirect("/organiser");
 
-  invalidateSeriesFields(id, result.oldChurchId);
-  if (result.newChurchId !== result.oldChurchId) updateTag(`church-${result.newChurchId}`);
+  invalidateSeriesFields(id, result.oldChurchId, result.newChurchId);
   redirect(`/series/${id}`);
 }
 

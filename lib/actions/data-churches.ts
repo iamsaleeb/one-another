@@ -3,8 +3,6 @@
 import { cacheTag, cacheLife } from "next/cache";
 import { prisma } from "@/lib/db";
 
-// TTL policy: church list → hours (churches rarely added/removed)
-//             church detail → hours (content changes infrequently)
 export async function getChurches() {
   cacheTag("churches");
   cacheLife("hours");

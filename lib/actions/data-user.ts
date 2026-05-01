@@ -33,7 +33,6 @@ function getDateRange(when: WhenFilter): { gte: Date; lte: Date } {
   return { gte: startOfDay(saturday), lte: endOfDay(sunday) };
 }
 
-// TTL policy: profile → hours | notification preferences → minutes | search → minutes
 export async function getProfileUser(userId: string) {
   cacheTag(`user-${userId}`);
   cacheLife("hours");
@@ -60,7 +59,6 @@ export async function getCachedUnreadCount(userId: string): Promise<number> {
   });
 }
 
-// Search results are time-sensitive (today/tomorrow/weekend filters), so use a short TTL.
 export async function searchEventsAndChurches(filters: SearchFilters) {
   cacheLife("minutes");
   cacheTag("events", "churches");

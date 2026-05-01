@@ -2,7 +2,7 @@
 
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
-import { updateTag, revalidatePath } from "next/cache";
+import { updateTag } from "next/cache";
 import { type Prisma } from "@prisma/client";
 import { NOTIFICATION_TYPES, type NotificationTypeKey } from "@/lib/notification-types";
 import { updateUserReminderSchedule } from "@/lib/notifications/queue";
@@ -109,5 +109,4 @@ export async function markReadAction(): Promise<void> {
   if (!session?.user?.id) throw new Error("Unauthorized");
   await markNotificationsRead(session.user.id);
   updateTag(`user-notifications-${session.user.id}`);
-  revalidatePath("/", "layout");
 }

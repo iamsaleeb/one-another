@@ -3,8 +3,6 @@
 import { cacheTag, cacheLife } from "next/cache";
 import { prisma } from "@/lib/db";
 
-// TTL policy: event lists → minutes (change on new events/RSVPs)
-//             event detail → hours (changes infrequently once published)
 export async function getEvents() {
   cacheTag("events");
   cacheLife("minutes");

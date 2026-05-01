@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.15.0](https://github.com/iamsaleeb/one-another/compare/one-another-v0.14.0...one-another-v0.15.0) (2026-05-01)
+
+
+### Features
+
+* event wizard ([#89](https://github.com/iamsaleeb/one-another/issues/89)) ([272b601](https://github.com/iamsaleeb/one-another/commit/272b601968a99f8d013da430209cef7337eeaaf1))
+
+
+### Bug Fixes
+
+* patched vulnerabilities ([#92](https://github.com/iamsaleeb/one-another/issues/92)) ([776b506](https://github.com/iamsaleeb/one-another/commit/776b506936584db1e26f1605ce5173c0c7a09ffc))
+
 ## [0.14.0](https://github.com/iamsaleeb/one-another/compare/one-another-v0.13.2...one-another-v0.14.0) (2026-04-24)
 
 

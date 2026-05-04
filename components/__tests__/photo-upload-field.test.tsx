@@ -7,7 +7,7 @@ jest.mock("@/lib/actions/upload", () => ({
 }));
 
 
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor, act } from "@testing-library/react";
 import { PhotoUploadField } from "@/components/photo-upload-field";
 import { upload } from "@vercel/blob/client";
 import { deleteUploadedFileAction } from "@/lib/actions/upload";
@@ -139,10 +139,12 @@ describe("PhotoUploadField", () => {
   });
 
   describe("remove", () => {
-    it("calls onChange with undefined immediately on remove click", () => {
+    it("calls onChange with undefined immediately on remove click", async () => {
       const onChange = jest.fn();
       render(<PhotoUploadField variant="cover" value={BLOB_URL} onChange={onChange} />);
-      fireEvent.click(screen.getByRole("button", { name: /remove photo/i }));
+      await act(async () => {
+        fireEvent.click(screen.getByRole("button", { name: /remove photo/i }));
+      });
       expect(onChange).toHaveBeenCalledWith(undefined);
     });
 
@@ -154,9 +156,11 @@ describe("PhotoUploadField", () => {
       });
     });
 
-    it("switches to upload area after remove", () => {
+    it("switches to upload area after remove", async () => {
       render(<PhotoUploadField variant="cover" value={BLOB_URL} onChange={jest.fn()} />);
-      fireEvent.click(screen.getByRole("button", { name: /remove photo/i }));
+      await act(async () => {
+        fireEvent.click(screen.getByRole("button", { name: /remove photo/i }));
+      });
       expect(screen.getByRole("button", { name: "Add cover photo" })).toBeInTheDocument();
     });
   });

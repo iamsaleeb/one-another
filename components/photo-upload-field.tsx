@@ -139,7 +139,9 @@ export function PhotoUploadField({ variant, value, onChange }: PhotoUploadFieldP
         onChange={handleInputChange}
       />
       <div
+        role="button"
         tabIndex={0}
+        aria-label={label}
         className={cn(
           "flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-input bg-background p-8 transition-colors cursor-pointer",
           isDragOver && "border-primary bg-primary/5",
@@ -174,6 +176,8 @@ export function PhotoUploadField({ variant, value, onChange }: PhotoUploadFieldP
               <Button
                 type="button"
                 size="sm"
+                aria-hidden="true"
+                tabIndex={-1}
                 onClick={(e) => {
                   e.stopPropagation();
                   inputRef.current?.click();

@@ -14,9 +14,6 @@ export default async function OnboardingPage() {
   }
 
   return (
-    <OnboardingForm
-      userName={session.user.name ?? undefined}
-      userEmail={session.user.email ?? undefined}
-    />
+    <OnboardingForm />
   );
 }

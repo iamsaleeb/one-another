@@ -30,12 +30,7 @@ import {
 } from "@/components/ui/popover";
 import { PhotoUploadField } from "@/components/photo-upload-field";
 
-interface OnboardingFormProps {
-  userName?: string;
-  userEmail?: string;
-}
-
-export function OnboardingForm({ userName, userEmail }: OnboardingFormProps) {
+export function OnboardingForm() {
   const router = useRouter();
   const { update } = useSession();
   const [isSubmitting, setIsSubmitting] = useState(false);

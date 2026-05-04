@@ -12,6 +12,7 @@ export type AutoSaveStatus = "idle" | "saving" | "saved";
 interface UseEventAutoSaveOptions {
   form: UseFormReturn<CreateEventInput>;
   initialDraftId: string | undefined;
+  initialIsDraft?: boolean;
   isBusy: boolean;
   debounceMs?: number;
 }
@@ -26,6 +27,7 @@ export interface UseEventAutoSaveResult {
 export function useEventAutoSave({
   form,
   initialDraftId,
+  initialIsDraft = true,
   isBusy,
   debounceMs = 1500,
 }: UseEventAutoSaveOptions): UseEventAutoSaveResult {
@@ -43,6 +45,8 @@ export function useEventAutoSave({
   // Only true after this session writes a draft — not inherited from initialDraftId.
   // Prevents the unmount toast from firing on StrictMode's intentional remount.
   const hasSavedRef = useRef(false);
+  // True as soon as the user touches any field — set in the watch callback before debounce fires.
+  const hasChangesRef = useRef(false);
   const publishedRef = useRef(false);
 
   // Sync refs inline — simpler than separate useEffects.
@@ -116,6 +120,7 @@ export function useEventAutoSave({
 
     // form.watch(callback) fires on any field change without causing re-renders
     const { unsubscribe } = form.watch(() => {
+      hasChangesRef.current = true;
       clearTimeout(timer);
       timer = setTimeout(() => void performSave(), debounceMs);
     });
@@ -131,11 +136,16 @@ export function useEventAutoSave({
   useEffect(() => {
     return () => {
       clearTimeout(savedResetTimerRef.current);
-      if (hasSavedRef.current && !publishedRef.current) {
-        toast.info("Draft saved – you can continue where you left off");
+      const hasActivity = hasSavedRef.current || hasChangesRef.current;
+      if (hasActivity && !publishedRef.current) {
+        if (initialIsDraft) {
+          toast.info("Draft saved – you can continue where you left off");
+        } else {
+          toast.info("Changes saved");
+        }
       }
     };
-  }, []);
+  }, [initialIsDraft]);
 
   return { draftId, setDraftId, autoSaveStatus, markPublished };
 }

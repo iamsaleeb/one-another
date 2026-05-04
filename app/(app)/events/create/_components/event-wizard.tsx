@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
 import { useForm, useWatch, type UseFormReturn } from "react-hook-form";
 import { useEventAutoSave } from "./use-event-auto-save";
 import { useRouter } from "next/navigation";
@@ -59,12 +59,13 @@ export function EventWizard({ churches, series, eventId, defaultValues }: EventW
   const [isSaving, setIsSaving] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
 
-  const { datetimeISO: _datetimeISO, ...restDefaultValues } = defaultValues ?? {};
+  const { datetimeISO, ...restDefaultValues } = defaultValues ?? {};
+  const seedDatetime = datetimeISO ? utcIsoToLocalInputs(datetimeISO) : null;
 
   const form = useForm<CreateEventInput>({
     resolver: zodResolver(createEventSchema),
     defaultValues: defaultValues
-      ? { date: "", time: "", ...restDefaultValues }
+      ? { date: seedDatetime?.date ?? "", time: seedDatetime?.time ?? "", ...restDefaultValues }
       : {
           title: "",
           date: "",
@@ -91,20 +92,9 @@ export function EventWizard({ churches, series, eventId, defaultValues }: EventW
   const { draftId, setDraftId, autoSaveStatus, markPublished } = useEventAutoSave({
     form: form as UseFormReturn<CreateEventInput>,
     initialDraftId: eventId,
+    initialIsDraft: defaultValues?.isDraft ?? true,
     isBusy: isSaving || isPublishing,
   });
-
-  // Capture initial datetimeISO in a ref so the effect only seeds date/time once on mount
-  const initialDatetimeISO = useRef(defaultValues?.datetimeISO);
-
-  // Seed date/time inputs from the UTC ISO stored on the event (edit mode only)
-  useEffect(() => {
-    if (initialDatetimeISO.current) {
-      const { date, time } = utcIsoToLocalInputs(initialDatetimeISO.current);
-      form.setValue("date", date, { shouldDirty: false });
-      form.setValue("time", time, { shouldDirty: false });
-    }
-  }, [form]);
 
   const tag = useWatch({ control: form.control, name: "tag" });
   const isDraft = useWatch({ control: form.control, name: "isDraft" });

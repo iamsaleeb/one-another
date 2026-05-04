@@ -1,14 +1,13 @@
 import { renderHook, act, waitFor } from "@testing-library/react";
 import { useForm } from "react-hook-form";
 import { useEventAutoSave } from "../use-event-auto-save";
+import * as eventsCrud from "@/lib/actions/events-crud";
 
 jest.mock("@/lib/actions/events-crud", () => ({
   saveDraftAction: jest.fn(),
 }));
 
-const { saveDraftAction } = require("@/lib/actions/events-crud") as {
-  saveDraftAction: jest.Mock;
-};
+const saveDraftAction = eventsCrud.saveDraftAction as jest.Mock;
 
 // Renders both the form and the hook together — mirrors real usage.
 // debounceMs defaults to 0 so tests don't need fake timers.

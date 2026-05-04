@@ -1,13 +1,12 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { updateTag } from "next/cache";
 import { auth } from "@/auth";
 import { UserRole } from "@prisma/client";
 import { createEventSchema, saveDraftSchema, type CreateEventInput, type SaveDraftInput } from "@/lib/validations/event";
 import { createEvent, updateEvent, cancelEvent, uncancelEvent, publishEvent, unpublishEvent, deleteEvent } from "@/lib/dal/events";
 import type { ActionResult } from "@/lib/actions/auth";
-import { broadcastEventChange, invalidateEventFields } from "@/lib/actions/_cache";
+import { broadcastEventChange, invalidateEventFields, invalidateEventUpdate } from "@/lib/actions/_cache";
 
 export async function createEventAction(data: CreateEventInput): Promise<ActionResult> {
   const session = await auth();
@@ -36,12 +35,7 @@ export async function updateEventAction(id: string, data: CreateEventInput): Pro
   if ("error" in result) redirect("/organiser");
   if ("fieldErrors" in result) return result;
 
-  invalidateEventFields(id, result.oldChurchId);
-  if (result.newChurchId !== result.oldChurchId) updateTag(`church-${result.newChurchId}`);
-  if (result.affectedSeriesIds.length > 0) {
-    updateTag("series");
-    result.affectedSeriesIds.forEach((sid) => updateTag(`series-${sid}`));
-  }
+  invalidateEventUpdate(id, result);
   redirect(`/events/${id}`);
 }
 
@@ -113,12 +107,7 @@ export async function saveDraftAction(
   } else {
     const result = await updateEvent(id, { ...parsed.data, isDraft: parsed.data.isDraft ?? true }, session.user.id, session.user.role);
     if ("error" in result || "fieldErrors" in result) return result;
-    invalidateEventFields(id, result.oldChurchId);
-    if (result.newChurchId !== result.oldChurchId) updateTag(`church-${result.newChurchId}`);
-    if (result.affectedSeriesIds.length > 0) {
-      updateTag("series");
-      result.affectedSeriesIds.forEach((sid) => updateTag(`series-${sid}`));
-    }
+    invalidateEventUpdate(id, result);
     return { eventId: id };
   }
 }
@@ -138,12 +127,7 @@ export async function saveEventAction(
   const result = await updateEvent(id, parsed.data, session.user.id, session.user.role);
   if ("error" in result || "fieldErrors" in result) return result;
 
-  invalidateEventFields(id, result.oldChurchId);
-  if (result.newChurchId !== result.oldChurchId) updateTag(`church-${result.newChurchId}`);
-  if (result.affectedSeriesIds.length > 0) {
-    updateTag("series");
-    result.affectedSeriesIds.forEach((sid) => updateTag(`series-${sid}`));
-  }
+  invalidateEventUpdate(id, result);
 
   return { success: true };
 }

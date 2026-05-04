@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
+import { useForm, useWatch, type UseFormReturn } from "react-hook-form";
+import { useEventAutoSave } from "./use-event-auto-save";
 import { useRouter } from "next/navigation";
-import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
-import { CloudUpload } from "lucide-react";
+import { CloudUpload, Check, Loader2 } from "lucide-react";
 import { Form } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { createEventSchema, type CreateEventInput } from "@/lib/validations/event";
@@ -55,16 +56,16 @@ const STEP_FIELDS: Array<Array<keyof CreateEventInput>> = [
 export function EventWizard({ churches, series, eventId, defaultValues }: EventWizardProps) {
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(0);
-  const [draftId, setDraftId] = useState<string | undefined>(eventId);
   const [isSaving, setIsSaving] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
 
-  const { datetimeISO: _datetimeISO, ...restDefaultValues } = defaultValues ?? {};
+  const { datetimeISO, ...restDefaultValues } = defaultValues ?? {};
+  const seedDatetime = datetimeISO ? utcIsoToLocalInputs(datetimeISO) : null;
 
   const form = useForm<CreateEventInput>({
     resolver: zodResolver(createEventSchema),
     defaultValues: defaultValues
-      ? { date: "", time: "", ...restDefaultValues }
+      ? { date: seedDatetime?.date ?? "", time: seedDatetime?.time ?? "", ...restDefaultValues }
       : {
           title: "",
           date: "",
@@ -88,60 +89,12 @@ export function EventWizard({ churches, series, eventId, defaultValues }: EventW
         },
   });
 
-  // Capture initial datetimeISO in a ref so the effect only seeds date/time once on mount
-  const initialDatetimeISO = useRef(defaultValues?.datetimeISO);
-  // Refs so the auto-save closure always sees the latest values without re-subscribing
-  const draftIdRef = useRef(draftId);
-  const isBusyRef = useRef(false);
-  const autoSaveInFlightRef = useRef(false);
-  useEffect(() => { draftIdRef.current = draftId; }, [draftId]);
-  useEffect(() => { isBusyRef.current = isSaving || isPublishing; }, [isSaving, isPublishing]);
-
-  // Seed date/time inputs from the UTC ISO stored on the event (edit mode only)
-  useEffect(() => {
-    if (initialDatetimeISO.current) {
-      const { date, time } = utcIsoToLocalInputs(initialDatetimeISO.current);
-      form.setValue("date", date, { shouldDirty: false });
-      form.setValue("time", time, { shouldDirty: false });
-    }
-  }, [form]);
-
-  // Silently auto-save whenever the user changes something
-  useEffect(() => {
-    let timer: ReturnType<typeof setTimeout>;
-
-    const { unsubscribe } = form.watch(() => {
-      clearTimeout(timer);
-      timer = setTimeout(async () => {
-        if (isBusyRef.current || autoSaveInFlightRef.current) return;
-        // Skip saves driven purely by programmatic setValue (e.g. datetime seeding on mount)
-        if (!form.formState.isDirty) return;
-        const data = form.getValues();
-        // Don't create a draft until the user has typed something meaningful
-        if (!draftIdRef.current && !data.title && !data.description && !data.tag) return;
-        const payload =
-          data.date && data.time
-            ? { ...data, datetimeISO: localInputsToUtcDate(data.date, data.time).toISOString() }
-            : data;
-        autoSaveInFlightRef.current = true;
-        try {
-          const result = await saveDraftAction(draftIdRef.current, payload);
-          if ("eventId" in result && !draftIdRef.current) {
-            draftIdRef.current = result.eventId;
-            setDraftId(result.eventId);
-            form.setValue("isDraft", true, { shouldDirty: false });
-          }
-        } finally {
-          autoSaveInFlightRef.current = false;
-        }
-      }, 1500);
-    });
-
-    return () => {
-      unsubscribe();
-      clearTimeout(timer);
-    };
-  }, [form, setDraftId]);
+  const { draftId, setDraftId, autoSaveStatus, markPublished } = useEventAutoSave({
+    form: form as UseFormReturn<CreateEventInput>,
+    initialDraftId: eventId,
+    initialIsDraft: defaultValues?.isDraft ?? true,
+    isBusy: isSaving || isPublishing,
+  });
 
   const tag = useWatch({ control: form.control, name: "tag" });
   const isDraft = useWatch({ control: form.control, name: "isDraft" });
@@ -212,6 +165,7 @@ export function EventWizard({ churches, series, eventId, defaultValues }: EventW
         toast.error("Please review all fields before publishing.");
         return;
       }
+      markPublished();
       toast.success("Event published!");
       router.push(`/events/${id}`);
     } finally {
@@ -258,9 +212,27 @@ export function EventWizard({ churches, series, eventId, defaultValues }: EventW
       />
 
       <div className="flex justify-center">
-        <div className="flex items-center gap-1.5 rounded-full border bg-muted/50 px-3 py-1 text-xs text-muted-foreground">
-          <CloudUpload className="size-3.5 shrink-0" />
-          Progress automatically saved
+        <div
+          className={`flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs transition-colors duration-300 ${
+            autoSaveStatus === "saved"
+              ? "border-green-200 bg-green-50 text-green-700"
+              : autoSaveStatus === "saving"
+              ? "border-border bg-muted/50 text-muted-foreground"
+              : "border-border bg-muted/50 text-muted-foreground"
+          }`}
+        >
+          {autoSaveStatus === "saved" ? (
+            <Check className="size-3.5 shrink-0" />
+          ) : autoSaveStatus === "saving" ? (
+            <Loader2 className="size-3.5 shrink-0 animate-spin" />
+          ) : (
+            <CloudUpload className="size-3.5 shrink-0" />
+          )}
+          {autoSaveStatus === "saving"
+            ? "Saving..."
+            : autoSaveStatus === "saved"
+            ? "Progress saved"
+            : "Auto-saving progress"}
         </div>
       </div>
 

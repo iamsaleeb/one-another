@@ -17,7 +17,7 @@ export async function POST(request: Request): Promise<NextResponse> {
           throw new Error("Unauthorized");
         }
 
-        const variant = clientPayload as "profile" | "cover";
+        const variant = clientPayload === "cover" ? "cover" : "profile";
 
         if (variant === "cover") {
           if (

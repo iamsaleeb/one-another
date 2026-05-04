@@ -55,6 +55,9 @@ export function useEventAutoSave({
   isBusyRef.current = isBusy;
   isDirtyRef.current = form.formState.isDirty;
 
+  // Holds the latest performSave so the isBusy-transition effect can call it.
+  const performSaveRef = useRef<() => void>(() => {});
+
   const setDraftId = (id: string) => {
     draftIdRef.current = id;
     hasSavedRef.current = true;
@@ -118,6 +121,8 @@ export function useEventAutoSave({
       }
     }
 
+    performSaveRef.current = performSave;
+
     // form.watch(callback) fires on any field change without causing re-renders
     const { unsubscribe } = form.watch(() => {
       hasChangesRef.current = true;
@@ -131,6 +136,15 @@ export function useEventAutoSave({
       clearTimeout(timer);
     };
   }, [form, debounceMs]);
+
+  // Flush pending changes when a manual save/publish completes (isBusy: true → false).
+  // The trailing-save in performSave's finally only fires after an in-flight auto-save,
+  // not after a busy period, so we need this separate trigger.
+  useEffect(() => {
+    if (!isBusy && hasPendingRef.current && !autoSaveInFlightRef.current) {
+      void performSaveRef.current();
+    }
+  }, [isBusy]);
 
   // Refs are stable — no deps needed, and exhaustive-deps doesn't flag ref.current reads.
   useEffect(() => {

@@ -1,90 +1,192 @@
 "use client";
 
+import { useRef, useState } from "react";
 import Image from "next/image";
-import { X } from "lucide-react";
-import { useState } from "react";
+import { upload } from "@vercel/blob/client";
+import { ImageIcon, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { UploadDropzone } from "@/lib/uploadthing";
+import { Progress } from "@/components/ui/progress";
+import { cn } from "@/lib/utils";
 import { deleteUploadedFileAction } from "@/lib/actions/upload";
 
+const MAX_SIZE_BYTES = 4 * 1024 * 1024;
+
 interface PhotoUploadFieldProps {
+  variant: "profile" | "cover";
   value: string | undefined;
   onChange: (url: string | undefined) => void;
 }
 
-export function PhotoUploadField({ value, onChange }: PhotoUploadFieldProps) {
+export function PhotoUploadField({ variant, value, onChange }: PhotoUploadFieldProps) {
+  const inputRef = useRef<HTMLInputElement>(null);
   const [localUrl, setLocalUrl] = useState(value);
-  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
+  const [uploadingFilename, setUploadingFilename] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [isDragOver, setIsDragOver] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const handleRemove = async () => {
+  const isUploading = uploadProgress !== null;
+  const label = variant === "profile" ? "Add photo" : "Add cover photo";
+
+  async function handleFile(file: File) {
+    setError(null);
+
+    if (!file.type.startsWith("image/")) {
+      setError("Please select an image file.");
+      return;
+    }
+    if (file.size > MAX_SIZE_BYTES) {
+      setError("Image must be 4MB or less.");
+      return;
+    }
+
+    setUploadingFilename(file.name);
+    setUploadProgress(0);
+
+    try {
+      const blob = await upload(file.name, file, {
+        access: "public",
+        handleUploadUrl: "/api/upload",
+        clientPayload: variant,
+        onUploadProgress: ({ percentage }) => {
+          setUploadProgress(percentage);
+        },
+      });
+      setUploadProgress(null);
+      setUploadingFilename(null);
+      setLocalUrl(blob.url);
+      onChange(blob.url);
+    } catch {
+      setUploadProgress(null);
+      setUploadingFilename(null);
+      setError("Upload failed. Please try again.");
+    }
+  }
+
+  async function handleRemove() {
     if (!localUrl) return;
     const urlToDelete = localUrl;
     setLocalUrl(undefined);
     onChange(undefined);
     setIsDeleting(true);
-    await deleteUploadedFileAction(urlToDelete);
-    setIsDeleting(false);
-  };
+    try {
+      await deleteUploadedFileAction(urlToDelete);
+    } catch {
+      setLocalUrl(urlToDelete);
+      onChange(urlToDelete);
+      setError("Failed to remove photo. Please try again.");
+    } finally {
+      setIsDeleting(false);
+    }
+  }
+
+  function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (file) handleFile(file);
+    e.target.value = "";
+  }
+
+  function handleDrop(e: React.DragEvent) {
+    e.preventDefault();
+    setIsDragOver(false);
+    const file = e.dataTransfer.files[0];
+    if (file) handleFile(file);
+  }
 
   if (localUrl) {
+    const isProfile = variant === "profile";
     return (
-      <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-muted">
-        <Image
-          src={localUrl}
-          alt="Cover photo"
-          fill
-          className="object-cover"
-          sizes="(max-width: 768px) 100vw, 50vw"
-        />
+      <div className="flex flex-col gap-2">
+        <div
+          className={cn(
+            "relative w-full overflow-hidden bg-muted",
+            isProfile
+              ? "aspect-square rounded-full max-w-24 mx-auto"
+              : "aspect-video rounded-xl"
+          )}
+        >
+          <Image
+            src={localUrl}
+            alt={isProfile ? "Profile photo" : "Cover photo"}
+            fill
+            className="object-cover"
+            sizes="(max-width: 768px) 100vw, 50vw"
+          />
+        </div>
         <Button
           type="button"
           variant="outline"
-          size="icon"
-          className="absolute top-2 right-2 size-8 bg-white/90 hover:bg-white"
+          className="w-full"
           onClick={handleRemove}
           disabled={isDeleting}
         >
-          <X className="size-4" />
+          <X className="size-4 mr-2" />
+          {isDeleting ? "Removing..." : "Remove photo"}
         </Button>
+        {error && <p className="text-sm text-destructive">{error}</p>}
       </div>
     );
   }
 
   return (
     <div className="flex flex-col gap-1.5">
-      <UploadDropzone
-        endpoint="coverPhoto"
-        onClientUploadComplete={(res) => {
-          const url = res?.[0]?.ufsUrl;
-          if (!url) {
-            setUploadError("Upload finished but no file URL was returned. Please try again.");
-            return;
-          }
-          setUploadError(null);
-          setLocalUrl(url);
-          onChange(url);
-        }}
-        onUploadError={(error) => {
-          setUploadError(error.message);
-        }}
-        appearance={{
-          container:
-            "border-2 border-dashed border-input rounded-xl bg-background ut-uploading:border-primary",
-          uploadIcon: "text-muted-foreground",
-          label: "text-sm font-medium text-foreground ut-ready:text-foreground",
-          allowedContent: "text-xs text-muted-foreground ut-uploading:text-primary",
-          button:
-            "bg-primary text-primary-foreground text-sm rounded-lg px-4 py-2 ut-ready:bg-primary ut-uploading:cursor-not-allowed",
-        }}
-        content={{
-          label: "Add Cover Photo",
-          allowedContent: "Images up to 4MB",
-        }}
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handleInputChange}
       />
-      {uploadError && (
-        <p className="text-sm text-destructive">{uploadError}</p>
-      )}
+      <div
+        tabIndex={0}
+        className={cn(
+          "flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-input bg-background p-8 transition-colors cursor-pointer",
+          isDragOver && "border-primary bg-primary/5",
+          isUploading && "pointer-events-none opacity-80"
+        )}
+        onClick={() => !isUploading && inputRef.current?.click()}
+        onKeyDown={(e) => {
+          if ((e.key === "Enter" || e.key === " ") && !isUploading) {
+            e.preventDefault();
+            inputRef.current?.click();
+          }
+        }}
+        onDragOver={(e) => {
+          e.preventDefault();
+          setIsDragOver(true);
+        }}
+        onDragLeave={() => setIsDragOver(false)}
+        onDrop={handleDrop}
+      >
+        {isUploading ? (
+          <div className="flex flex-col items-center gap-3 w-full">
+            <p className="text-sm text-muted-foreground truncate max-w-full px-4">
+              {uploadingFilename}
+            </p>
+            <Progress value={uploadProgress} className="w-full" />
+            <p className="text-xs text-muted-foreground">{uploadProgress}%</p>
+          </div>
+        ) : (
+          <>
+            <ImageIcon className="size-8 text-muted-foreground" />
+            <div className="flex flex-col items-center gap-1">
+              <Button
+                type="button"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  inputRef.current?.click();
+                }}
+              >
+                {label}
+              </Button>
+              <p className="text-xs text-muted-foreground">Images up to 4MB</p>
+            </div>
+          </>
+        )}
+      </div>
+      {error && <p className="text-sm text-destructive">{error}</p>}
     </div>
   );
 }

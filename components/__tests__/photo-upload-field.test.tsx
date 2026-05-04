@@ -6,9 +6,6 @@ jest.mock("@/lib/actions/upload", () => ({
   deleteUploadedFileAction: jest.fn().mockResolvedValue(undefined),
 }));
 
-jest.mock("@/lib/uploadthing", () => ({
-  UploadDropzone: () => null,
-}));
 
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { PhotoUploadField } from "@/components/photo-upload-field";
@@ -57,7 +54,7 @@ describe("PhotoUploadField", () => {
       render(<PhotoUploadField variant="cover" value={undefined} onChange={jest.fn()} />);
       const input = document.querySelector('input[type="file"]') as HTMLInputElement;
       const file = new File(["content"], "doc.pdf", { type: "application/pdf" });
-      Object.defineProperty(input, "files", { value: [file] });
+      Object.defineProperty(input, "files", { value: [file], configurable: true });
       fireEvent.change(input);
       expect(await screen.findByText("Please select an image file.")).toBeInTheDocument();
       expect(mockUpload).not.toHaveBeenCalled();
@@ -71,7 +68,7 @@ describe("PhotoUploadField", () => {
         "big.jpg",
         { type: "image/jpeg" }
       );
-      Object.defineProperty(input, "files", { value: [largeFile] });
+      Object.defineProperty(input, "files", { value: [largeFile], configurable: true });
       fireEvent.change(input);
       expect(await screen.findByText("Image must be 4MB or less.")).toBeInTheDocument();
       expect(mockUpload).not.toHaveBeenCalled();
@@ -85,7 +82,7 @@ describe("PhotoUploadField", () => {
       render(<PhotoUploadField variant="cover" value={undefined} onChange={onChange} />);
       const input = document.querySelector('input[type="file"]') as HTMLInputElement;
       const file = new File(["img"], "photo.jpg", { type: "image/jpeg" });
-      Object.defineProperty(input, "files", { value: [file] });
+      Object.defineProperty(input, "files", { value: [file], configurable: true });
       fireEvent.change(input);
       await waitFor(() => {
         expect(onChange).toHaveBeenCalledWith(BLOB_URL);
@@ -97,7 +94,7 @@ describe("PhotoUploadField", () => {
       render(<PhotoUploadField variant="cover" value={undefined} onChange={jest.fn()} />);
       const input = document.querySelector('input[type="file"]') as HTMLInputElement;
       const file = new File(["img"], "photo.jpg", { type: "image/jpeg" });
-      Object.defineProperty(input, "files", { value: [file] });
+      Object.defineProperty(input, "files", { value: [file], configurable: true });
       fireEvent.change(input);
       await waitFor(() => {
         expect(mockUpload).toHaveBeenCalledWith(
@@ -117,7 +114,7 @@ describe("PhotoUploadField", () => {
       render(<PhotoUploadField variant="cover" value={undefined} onChange={jest.fn()} />);
       const input = document.querySelector('input[type="file"]') as HTMLInputElement;
       const file = new File(["img"], "photo.jpg", { type: "image/jpeg" });
-      Object.defineProperty(input, "files", { value: [file] });
+      Object.defineProperty(input, "files", { value: [file], configurable: true });
       fireEvent.change(input);
       expect(await screen.findByText("Upload failed. Please try again.")).toBeInTheDocument();
     });
@@ -130,10 +127,10 @@ describe("PhotoUploadField", () => {
       render(<PhotoUploadField variant="cover" value={undefined} onChange={onChange} />);
       const input = document.querySelector('input[type="file"]') as HTMLInputElement;
       const file = new File(["img"], "photo.jpg", { type: "image/jpeg" });
-      Object.defineProperty(input, "files", { value: [file] });
+      Object.defineProperty(input, "files", { value: [file], configurable: true });
       fireEvent.change(input);
       expect(await screen.findByText("Upload failed. Please try again.")).toBeInTheDocument();
-      Object.defineProperty(input, "files", { value: [file] });
+      Object.defineProperty(input, "files", { value: [file], configurable: true });
       fireEvent.change(input);
       await waitFor(() => {
         expect(screen.queryByText("Upload failed. Please try again.")).not.toBeInTheDocument();

@@ -122,6 +122,28 @@ describe("useEventAutoSave", () => {
     await waitFor(() => expect(result.current.autoSaveStatus).toBe("saved"));
   });
 
+  it("performs a trailing save for changes that arrived while in-flight", async () => {
+    let resolveFirst!: (v: { eventId: string }) => void;
+    saveDraftAction.mockReturnValueOnce(new Promise((r) => { resolveFirst = r; }));
+    saveDraftAction.mockResolvedValue({ eventId: "draft-1" });
+
+    const { result } = renderWithForm({ initialDraftId: "draft-1", formDefaults: { isDraft: true } });
+    await act(async () => {
+      result.current.form.setValue("title", "First", { shouldDirty: true });
+    });
+    await waitFor(() => expect(result.current.autoSaveStatus).toBe("saving"));
+
+    // Change arrives while in-flight — should be picked up as a trailing save
+    await act(async () => {
+      result.current.form.setValue("title", "Second", { shouldDirty: true });
+    });
+
+    // Resolve the first save — trailing save should fire automatically
+    await act(async () => resolveFirst({ eventId: "draft-1" }));
+    await waitFor(() => expect(saveDraftAction).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(result.current.autoSaveStatus).toBe("saved"));
+  });
+
   it("resets status to idle when saveDraftAction returns an error", async () => {
     saveDraftAction.mockResolvedValue({ error: "Unauthorized." });
 

@@ -32,14 +32,16 @@ export function useEventAutoSave({
   const [draftId, setDraftIdState] = useState<string | undefined>(initialDraftId);
   const [autoSaveStatus, setAutoSaveStatus] = useState<AutoSaveStatus>("idle");
 
-  // Refs so the async timeout closure always reads latest values
+  // Refs so the async closure always reads latest values
   const draftIdRef = useRef(initialDraftId);
   const isBusyRef = useRef(isBusy);
   const isDirtyRef = useRef(false);
   const autoSaveInFlightRef = useRef(false);
   const savedResetTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  // Set when a field change arrives while a save is in flight — triggers a trailing save.
+  const hasPendingRef = useRef(false);
   // Only true after this session writes a draft — not inherited from initialDraftId.
-  // This prevents the unmount toast from firing on StrictMode's intentional remount.
+  // Prevents the unmount toast from firing on StrictMode's intentional remount.
   const hasSavedRef = useRef(false);
   const publishedRef = useRef(false);
 
@@ -60,31 +62,34 @@ export function useEventAutoSave({
   };
 
   useEffect(() => {
+    let cancelled = false;
     let timer: ReturnType<typeof setTimeout>;
 
-    // form.watch(callback) fires on any field change without causing re-renders
-    const { unsubscribe } = form.watch(() => {
-      clearTimeout(timer);
-      timer = setTimeout(async () => {
-        if (isBusyRef.current || autoSaveInFlightRef.current) return;
-        if (!isDirtyRef.current) return;
+    async function performSave() {
+      if (isBusyRef.current || autoSaveInFlightRef.current) {
+        hasPendingRef.current = true;
+        return;
+      }
+      if (!isDirtyRef.current) return;
 
-        // Read latest values at debounce-fire time, not at watch-fire time
-        const data = form.getValues();
+      const data = form.getValues();
+      if (!draftIdRef.current && !data.title && !data.description && !data.tag) return;
 
-        // Don't create a new draft until user enters something meaningful
-        if (!draftIdRef.current && !data.title && !data.description && !data.tag) return;
+      const payload =
+        data.date && data.time
+          ? { ...data, datetimeISO: localInputsToUtcDate(data.date, data.time).toISOString() }
+          : data;
 
-        const payload =
-          data.date && data.time
-            ? { ...data, datetimeISO: localInputsToUtcDate(data.date, data.time).toISOString() }
-            : data;
-
-        autoSaveInFlightRef.current = true;
+      hasPendingRef.current = false;
+      autoSaveInFlightRef.current = true;
+      if (!cancelled) {
         setAutoSaveStatus("saving");
         clearTimeout(savedResetTimerRef.current);
-        try {
-          const result = await saveDraftAction(draftIdRef.current, payload);
+      }
+
+      try {
+        const result = await saveDraftAction(draftIdRef.current, payload);
+        if (!cancelled) {
           if ("eventId" in result) {
             if (!draftIdRef.current) {
               setDraftId(result.eventId);
@@ -96,15 +101,27 @@ export function useEventAutoSave({
           } else {
             setAutoSaveStatus("idle");
           }
-        } catch {
-          setAutoSaveStatus("idle");
-        } finally {
-          autoSaveInFlightRef.current = false;
         }
-      }, debounceMs);
+      } catch {
+        if (!cancelled) setAutoSaveStatus("idle");
+      } finally {
+        autoSaveInFlightRef.current = false;
+        // Trailing save: a change arrived while we were in-flight — persist it now.
+        if (hasPendingRef.current && !isBusyRef.current && !cancelled) {
+          hasPendingRef.current = false;
+          void performSave();
+        }
+      }
+    }
+
+    // form.watch(callback) fires on any field change without causing re-renders
+    const { unsubscribe } = form.watch(() => {
+      clearTimeout(timer);
+      timer = setTimeout(() => void performSave(), debounceMs);
     });
 
     return () => {
+      cancelled = true;
       unsubscribe();
       clearTimeout(timer);
     };

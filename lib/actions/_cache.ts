@@ -59,7 +59,7 @@ export function invalidateEventUpdate(
   result: { oldChurchId: string | null; newChurchId: string | null; affectedSeriesIds: string[] }
 ) {
   invalidateEventFields(id, result.oldChurchId);
-  if (result.newChurchId !== result.oldChurchId) updateTag(`church-${result.newChurchId}`);
+  if (result.newChurchId && result.newChurchId !== result.oldChurchId) updateTag(`church-${result.newChurchId}`);
   if (result.affectedSeriesIds.length > 0) {
     updateTag("series");
     result.affectedSeriesIds.forEach((sid) => updateTag(`series-${sid}`));

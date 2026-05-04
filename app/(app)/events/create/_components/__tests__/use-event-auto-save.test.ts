@@ -1,11 +1,13 @@
 import { renderHook, act, waitFor } from "@testing-library/react";
 import { useForm } from "react-hook-form";
+import { toast } from "sonner";
 import { useEventAutoSave } from "../use-event-auto-save";
 import * as eventsCrud from "@/lib/actions/events-crud";
 
 jest.mock("@/lib/actions/events-crud", () => ({
   saveDraftAction: jest.fn(),
 }));
+jest.mock("sonner", () => ({ toast: { info: jest.fn() } }));
 
 const saveDraftAction = eventsCrud.saveDraftAction as jest.Mock;
 
@@ -47,7 +49,6 @@ describe("useEventAutoSave", () => {
 
   it("does not auto-save when form is not dirty", async () => {
     renderWithForm();
-    // Advance event loop without dirtying the form
     await act(async () => {});
     expect(saveDraftAction).not.toHaveBeenCalled();
   });
@@ -63,7 +64,6 @@ describe("useEventAutoSave", () => {
 
   it("does not create a new draft when no meaningful content entered", async () => {
     const { result } = renderWithForm();
-    // mark dirty but leave title/description/tag empty
     await act(async () => {
       result.current.form.setValue("isDraft", true, { shouldDirty: true });
     });
@@ -112,7 +112,6 @@ describe("useEventAutoSave", () => {
     });
     await waitFor(() => expect(result.current.autoSaveStatus).toBe("saving"));
 
-    // Fire a second change while first is still in flight — should NOT trigger a second call
     await act(async () => {
       result.current.form.setValue("title", "Second", { shouldDirty: true });
     });
@@ -133,5 +132,53 @@ describe("useEventAutoSave", () => {
 
     await waitFor(() => expect(result.current.autoSaveStatus).toBe("idle"));
     expect(saveDraftAction).toHaveBeenCalled();
+  });
+
+  describe("unmount toast", () => {
+    it("does NOT show toast when unmounting with only initialDraftId (edit mode, no new save)", () => {
+      const { unmount } = renderWithForm({ initialDraftId: "existing-123" });
+      unmount();
+      expect(toast.info).not.toHaveBeenCalled();
+    });
+
+    it("does NOT show toast when unmounting with no draft at all", () => {
+      const { unmount } = renderWithForm();
+      unmount();
+      expect(toast.info).not.toHaveBeenCalled();
+    });
+
+    it("shows toast when unmounting after auto-save without publishing", async () => {
+      saveDraftAction.mockResolvedValue({ eventId: "new-draft-123" });
+
+      const { result, unmount } = renderWithForm();
+      await act(async () => {
+        result.current.form.setValue("title", "My Event", { shouldDirty: true });
+      });
+      await waitFor(() => expect(result.current.autoSaveStatus).toBe("saved"));
+
+      unmount();
+      expect(toast.info).toHaveBeenCalledWith("Draft saved – you can continue where you left off");
+    });
+
+    it("does NOT show toast when unmounting after markPublished", async () => {
+      saveDraftAction.mockResolvedValue({ eventId: "new-draft-123" });
+
+      const { result, unmount } = renderWithForm();
+      await act(async () => {
+        result.current.form.setValue("title", "My Event", { shouldDirty: true });
+      });
+      await waitFor(() => expect(result.current.autoSaveStatus).toBe("saved"));
+
+      act(() => result.current.markPublished());
+      unmount();
+      expect(toast.info).not.toHaveBeenCalled();
+    });
+
+    it("shows toast when unmounting after manual setDraftId call", () => {
+      const { result, unmount } = renderWithForm();
+      act(() => result.current.setDraftId("manual-draft-456"));
+      unmount();
+      expect(toast.info).toHaveBeenCalledWith("Draft saved – you can continue where you left off");
+    });
   });
 });

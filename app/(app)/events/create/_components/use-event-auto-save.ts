@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { UseFormReturn } from "react-hook-form";
+import { toast } from "sonner";
 import { saveDraftAction } from "@/lib/actions/events-crud";
 import { localInputsToUtcDate } from "@/lib/datetime";
 import type { CreateEventInput } from "@/lib/validations/event";
@@ -19,6 +20,7 @@ export interface UseEventAutoSaveResult {
   draftId: string | undefined;
   setDraftId: (id: string) => void;
   autoSaveStatus: AutoSaveStatus;
+  markPublished: () => void;
 }
 
 export function useEventAutoSave({
@@ -35,6 +37,11 @@ export function useEventAutoSave({
   const isBusyRef = useRef(isBusy);
   const isDirtyRef = useRef(false);
   const autoSaveInFlightRef = useRef(false);
+  const savedResetTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  // Only true after this session writes a draft — not inherited from initialDraftId.
+  // This prevents the unmount toast from firing on StrictMode's intentional remount.
+  const hasSavedRef = useRef(false);
+  const publishedRef = useRef(false);
 
   // Sync refs inline — simpler than separate useEffects.
   // isDirty must be read here (render phase) so RHF's proxy subscribes to it.
@@ -44,7 +51,12 @@ export function useEventAutoSave({
 
   const setDraftId = (id: string) => {
     draftIdRef.current = id;
+    hasSavedRef.current = true;
     setDraftIdState(id);
+  };
+
+  const markPublished = () => {
+    publishedRef.current = true;
   };
 
   useEffect(() => {
@@ -70,6 +82,7 @@ export function useEventAutoSave({
 
         autoSaveInFlightRef.current = true;
         setAutoSaveStatus("saving");
+        clearTimeout(savedResetTimerRef.current);
         try {
           const result = await saveDraftAction(draftIdRef.current, payload);
           if ("eventId" in result) {
@@ -77,7 +90,9 @@ export function useEventAutoSave({
               setDraftId(result.eventId);
               form.setValue("isDraft", true, { shouldDirty: false });
             }
+            hasSavedRef.current = true;
             setAutoSaveStatus("saved");
+            savedResetTimerRef.current = setTimeout(() => setAutoSaveStatus("idle"), 3000);
           } else {
             setAutoSaveStatus("idle");
           }
@@ -95,5 +110,15 @@ export function useEventAutoSave({
     };
   }, [form, debounceMs]);
 
-  return { draftId, setDraftId, autoSaveStatus };
+  // Refs are stable — no deps needed, and exhaustive-deps doesn't flag ref.current reads.
+  useEffect(() => {
+    return () => {
+      clearTimeout(savedResetTimerRef.current);
+      if (hasSavedRef.current && !publishedRef.current) {
+        toast.info("Draft saved – you can continue where you left off");
+      }
+    };
+  }, []);
+
+  return { draftId, setDraftId, autoSaveStatus, markPublished };
 }

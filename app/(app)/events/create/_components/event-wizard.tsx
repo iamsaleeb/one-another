@@ -1,12 +1,12 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { useForm, useWatch, type UseFormReturn } from "react-hook-form";
 import { useEventAutoSave } from "./use-event-auto-save";
 import { useRouter } from "next/navigation";
-import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
-import { CloudUpload } from "lucide-react";
+import { CloudUpload, Check, Loader2 } from "lucide-react";
 import { Form } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { createEventSchema, type CreateEventInput } from "@/lib/validations/event";
@@ -88,8 +88,8 @@ export function EventWizard({ churches, series, eventId, defaultValues }: EventW
         },
   });
 
-  const { draftId, setDraftId, autoSaveStatus } = useEventAutoSave({
-    form: form as Parameters<typeof useEventAutoSave>[0]["form"],
+  const { draftId, setDraftId, autoSaveStatus, markPublished } = useEventAutoSave({
+    form: form as UseFormReturn<CreateEventInput>,
     initialDraftId: eventId,
     isBusy: isSaving || isPublishing,
   });
@@ -175,6 +175,7 @@ export function EventWizard({ churches, series, eventId, defaultValues }: EventW
         toast.error("Please review all fields before publishing.");
         return;
       }
+      markPublished();
       toast.success("Event published!");
       router.push(`/events/${id}`);
     } finally {
@@ -221,8 +222,22 @@ export function EventWizard({ churches, series, eventId, defaultValues }: EventW
       />
 
       <div className="flex justify-center">
-        <div className="flex items-center gap-1.5 rounded-full border bg-muted/50 px-3 py-1 text-xs text-muted-foreground">
-          <CloudUpload className="size-3.5 shrink-0" />
+        <div
+          className={`flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs transition-colors duration-300 ${
+            autoSaveStatus === "saved"
+              ? "border-green-200 bg-green-50 text-green-700"
+              : autoSaveStatus === "saving"
+              ? "border-border bg-muted/50 text-muted-foreground"
+              : "border-border bg-muted/50 text-muted-foreground"
+          }`}
+        >
+          {autoSaveStatus === "saved" ? (
+            <Check className="size-3.5 shrink-0" />
+          ) : autoSaveStatus === "saving" ? (
+            <Loader2 className="size-3.5 shrink-0 animate-spin" />
+          ) : (
+            <CloudUpload className="size-3.5 shrink-0" />
+          )}
           {autoSaveStatus === "saving"
             ? "Saving..."
             : autoSaveStatus === "saved"

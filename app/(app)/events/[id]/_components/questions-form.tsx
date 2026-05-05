@@ -131,6 +131,7 @@ export function QuestionsForm({ questions, defaultResponses = {}, disabled }: Qu
               <RadioGroup
                 name={`response_${q.id}`}
                 defaultValue={defaultAnswer ?? undefined}
+                required={q.required}
                 disabled={disabled}
                 className="flex flex-col gap-2"
               >
@@ -147,6 +148,15 @@ export function QuestionsForm({ questions, defaultResponses = {}, disabled }: Qu
 
             {q.type === QuestionType.FILE_UPLOAD && (
               <div className="flex flex-col gap-1.5">
+                {/* sr-only input lets browser enforce required on file upload questions */}
+                <input
+                  className="sr-only"
+                  aria-hidden
+                  tabIndex={-1}
+                  value={fileUrls[q.id] ?? ""}
+                  onChange={() => undefined}
+                  required={q.required}
+                />
                 <input
                   ref={(el) => { inputRefs.current[q.id] = el; }}
                   type="file"

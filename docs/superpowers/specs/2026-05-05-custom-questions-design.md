@@ -8,7 +8,9 @@
 
 ## Overview
 
-Allow event organisers to attach custom questions to any event. Questions appear to attendees when they register or confirm attendance (all events, not just registration-required ones). Organiser can view collected responses in a dedicated table view.
+Allow event organisers to attach custom questions to events that require registration. Questions appear to attendees in the registration drawer. Organisers can view collected responses in a dedicated table view.
+
+> **Implementation note:** Questions are scoped to registration-required events only. The original spec described questions for all events (including quick-attend events), but this was revised during implementation to keep the attend flow single-tap for non-registration events.
 
 ---
 
@@ -112,7 +114,7 @@ model EventAttendeeResponse {
 5. Camp Details *(conditional on tag === "Camp")*
 6. Review
 
-The Questions step always appears regardless of `requiresRegistration` — questions are supported for all events.
+The Questions step only appears when `requiresRegistration` is true — questions are only supported for registration events. Toggling registration off clears any questions from the form state.
 
 ### New files
 
@@ -176,8 +178,8 @@ Draft saves allow empty `questions` arrays. Questions are managed via `useFieldA
 
 ### Trigger
 
-- **Quick attend** (no `requiresRegistration`): if the event has custom questions, tapping "I'm going" opens the registration `Drawer` showing the questions form before confirming attendance. If no questions, existing single-tap behaviour is unchanged.
 - **Registration** (`requiresRegistration: true`): custom questions appear below the existing phone/notes fields in the registration `Drawer`.
+- **Quick attend** events do not support custom questions — the single-tap attend flow is preserved.
 
 ### Question rendering per type
 

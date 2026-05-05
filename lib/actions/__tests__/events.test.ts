@@ -21,6 +21,7 @@ jest.mock('@/lib/db', () => ({
       create: jest.fn(),
       delete: jest.fn(),
       findMany: jest.fn(),
+      findUnique: jest.fn(),
     },
     seriesFollower: {
       findMany: jest.fn(),
@@ -57,6 +58,11 @@ jest.mock('@/lib/permissions', () => ({
   canManageChurch: jest.fn(),
 }))
 
+jest.mock('@/lib/dal/questions', () => ({
+  syncEventQuestions: jest.fn().mockResolvedValue(undefined),
+  getQuestionLibraryForUser: jest.fn().mockResolvedValue([]),
+}))
+
 import { redirect } from 'next/navigation'
 import { updateTag } from 'next/cache'
 import {
@@ -87,6 +93,7 @@ const mockEventDelete = prisma.event.delete as jest.Mock
 const mockEventAttendeeCreate = prisma.eventAttendee.create as jest.Mock
 const mockEventAttendeeDelete = prisma.eventAttendee.delete as jest.Mock
 const mockEventAttendeeFindMany = prisma.eventAttendee.findMany as jest.Mock
+const mockEventAttendeeFindUnique = prisma.eventAttendee.findUnique as jest.Mock
 const mockSeriesFollowerFindMany = prisma.seriesFollower.findMany as jest.Mock
 const mockAuth = auth as jest.Mock
 const mockCanManageChurch = canManageChurch as jest.Mock
@@ -117,6 +124,7 @@ beforeEach(() => {
   mockCanManageChurch.mockResolvedValue(true)
   mockSeriesFollowerFindMany.mockResolvedValue([])
   mockEventAttendeeFindMany.mockResolvedValue([])
+  mockEventAttendeeFindUnique.mockResolvedValue(null) // not already registered by default
 })
 
 describe('createEventAction', () => {

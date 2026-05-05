@@ -6,10 +6,22 @@ import type { ResponseInput } from "@/lib/validations/questions";
 
 export async function saveResponses(
   eventAttendeeId: string,
-  responses: ResponseInput[]
+  responses: ResponseInput[],
+  eventId: string
 ): Promise<void> {
+  if (responses.length === 0) return;
+
+  // Validate that all questionIds belong to this event to prevent cross-event pollution
+  const validQuestions = await prisma.eventQuestion.findMany({
+    where: { eventId, id: { in: responses.map((r) => r.questionId) } },
+    select: { id: true },
+  });
+  const validIds = new Set(validQuestions.map((q) => q.id));
+  const safeResponses = responses.filter((r) => validIds.has(r.questionId));
+  if (safeResponses.length === 0) return;
+
   await prisma.$transaction(
-    responses.map((r) =>
+    safeResponses.map((r) =>
       prisma.eventAttendeeResponse.upsert({
         where: { eventAttendeeId_questionId: { eventAttendeeId, questionId: r.questionId } },
         create: {

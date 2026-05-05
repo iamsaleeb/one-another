@@ -61,12 +61,14 @@ export function QuestionDrawer({
   const [options, setOptions] = useState<string[]>(
     initial?.options?.length ? initial.options : [""]
   );
+  const [libraryItemId, setLibraryItemId] = useState<string | undefined>(initial?.libraryItemId);
   const [libraryOpen, setLibraryOpen] = useState(false);
 
   function handleLibrarySelect(item: LibraryItem) {
     setLabel(item.label);
     setType(item.type);
     setOptions(item.options.length ? item.options : [""]);
+    setLibraryItemId(item.id);
   }
 
   function handleSave() {
@@ -78,7 +80,7 @@ export function QuestionDrawer({
       label: label.trim(),
       options: type === QuestionType.MULTIPLE_CHOICE ? validOptions : [],
       required,
-      libraryItemId: initial?.libraryItemId,
+      libraryItemId,
     });
     onOpenChange(false);
   }

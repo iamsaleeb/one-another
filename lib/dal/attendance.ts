@@ -86,6 +86,18 @@ export async function registerEvent(
 
   if (!event || event.isDraft) return { error: "Event not found." };
 
+  // If already registered, just update responses — skip capacity check and create
+  const existingAttendee = await prisma.eventAttendee.findUnique({
+    where: { eventId_userId: { eventId, userId } },
+    select: { id: true },
+  });
+  if (existingAttendee) {
+    if (data.responses && data.responses.length > 0) {
+      await saveResponses(existingAttendee.id, data.responses, eventId);
+    }
+    return { success: true };
+  }
+
   const eventMeta = parseEventMetadata(event.metadata);
   const { capacity } = eventMeta.registration;
   if (capacity != null && event._count.attendees >= capacity) {
@@ -122,18 +134,11 @@ export async function registerEvent(
       select: { id: true },
     });
   } catch (err) {
-    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
-      return { error: "You're already registered for this event." };
-    }
     throw err;
   }
 
   if (data.responses && data.responses.length > 0) {
-    try {
-      await saveResponses(created.id, data.responses);
-    } catch (err) {
-      console.error("Failed to save responses:", err);
-    }
+    await saveResponses(created.id, data.responses, eventId);
   }
 
   try {

@@ -113,6 +113,13 @@ export function EventWizard({ churches, series, eventId, defaultValues, libraryI
     setCurrentStep((s) => Math.min(s, activeSteps.length - 1));
   }, [activeSteps.length]);
 
+  // Clear questions from form state when registration is disabled so they aren't persisted
+  useEffect(() => {
+    if (!requiresRegistration) {
+      form.setValue("questions", [], { shouldDirty: false });
+    }
+  }, [requiresRegistration, form]);
+
   const buildData = (): CreateEventInput & { datetimeISO?: string } => {
     const data = form.getValues();
     if (data.date && data.time) {

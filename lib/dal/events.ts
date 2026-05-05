@@ -139,11 +139,7 @@ export async function createEvent(
   });
 
   if (questions && questions.length > 0) {
-    try {
-      await syncEventQuestions(created.id, questions, userId);
-    } catch (err) {
-      console.error("Failed to sync event questions:", err);
-    }
+    await syncEventQuestions(created.id, questions, userId);
   }
 
   if (!isDraft && seriesId) {
@@ -258,11 +254,7 @@ export async function updateEvent(
   });
 
   if (questions !== undefined) {
-    try {
-      await syncEventQuestions(id, questions ?? [], userId);
-    } catch (err) {
-      console.error("Failed to sync event questions on update:", err);
-    }
+    await syncEventQuestions(id, questions, userId);
   }
 
   if (!existing.isDraft && newDatetime && existing.datetime && newDatetime.getTime() !== existing.datetime.getTime()) {

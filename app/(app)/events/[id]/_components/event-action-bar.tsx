@@ -9,6 +9,14 @@ import { AttendeesDrawer } from "./attendees-drawer";
 import type { getEventAttendees } from "@/lib/actions/data-events";
 import type { EventMetadata } from "@/lib/validations/event";
 
+interface Question {
+  id: string;
+  type: string;
+  label: string;
+  options: string[];
+  required: boolean;
+}
+
 interface EventActionBarProps {
   eventId: string;
   eventTitle: string;
@@ -26,6 +34,8 @@ interface EventActionBarProps {
   attendees?: Awaited<ReturnType<typeof getEventAttendees>>;
   camp?: EventMetadata["camp"];
   campStartDate?: string;
+  questions?: Question[];
+  existingResponses?: Record<string, { answer: string | null; fileUrl: string | null }>;
 }
 
 export function EventActionBar({
@@ -45,6 +55,8 @@ export function EventActionBar({
   attendees,
   camp,
   campStartDate,
+  questions,
+  existingResponses,
 }: EventActionBarProps) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [attendeesDrawerOpen, setAttendeesDrawerOpen] = useState(false);
@@ -91,7 +103,7 @@ export function EventActionBar({
               </Button>
             )}
 
-            {!isCancelled && !isDraft && (requiresRegistration ? (
+            {!isCancelled && !isDraft && (requiresRegistration || (questions && questions.length > 0) ? (
               <Button
                 onClick={() => setDrawerOpen(true)}
                 variant={isAttending ? "outline" : "default"}
@@ -99,7 +111,10 @@ export function EventActionBar({
                 disabled={isFull}
               >
                 {isAttending && <Check className="size-4" />}
-                {isAttending ? "Registered" : isFull ? "Fully booked" : "Register"}
+                {isAttending
+                  ? requiresRegistration ? "Registered" : "Going"
+                  : isFull ? "Fully booked"
+                  : requiresRegistration ? "Register" : "I'm going"}
               </Button>
             ) : (
               <AttendButton eventId={eventId} isAttending={isAttending} />
@@ -108,7 +123,7 @@ export function EventActionBar({
         </div>
       </div>
 
-      {requiresRegistration && (
+      {(requiresRegistration || (questions && questions.length > 0)) && (
         <RegistrationDrawer
           eventId={eventId}
           eventTitle={eventTitle}
@@ -121,6 +136,9 @@ export function EventActionBar({
           onOpenChange={setDrawerOpen}
           camp={camp}
           campStartDate={campStartDate}
+          questions={questions}
+          existingResponses={existingResponses}
+          mode={requiresRegistration ? "register" : "attend"}
         />
       )}
 

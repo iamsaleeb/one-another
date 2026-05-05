@@ -3,7 +3,7 @@ import { auth } from "@/auth";
 import { UserRole } from "@prisma/client";
 import { getEventById } from "@/lib/actions/data-events";
 import { getChurchesByManager } from "@/lib/actions/data-churches";
-import { getEventQuestions } from "@/lib/actions/data-questions";
+import { getEventQuestions, hasEventResponses } from "@/lib/actions/data-questions";
 import { getQuestionLibraryForUser } from "@/lib/dal/questions";
 import { parseEventMetadata } from "@/lib/validations/event";
 import { PageHeader } from "@/components/ui/page-header";
@@ -20,10 +20,11 @@ export default async function EditEventPage({ params }: Props) {
   if (session?.user?.role !== UserRole.ORGANISER && session?.user?.role !== UserRole.ADMIN) redirect("/");
   if (!event) notFound();
 
-  const [churches, questions, libraryItems] = await Promise.all([
+  const [churches, questions, libraryItems, questionsLocked] = await Promise.all([
     getChurchesByManager(session.user.id),
     getEventQuestions(id),
     getQuestionLibraryForUser(session.user.id),
+    hasEventResponses(id),
   ]);
   if (!churches.some((c) => c.id === event.churchId)) notFound();
 
@@ -38,6 +39,7 @@ export default async function EditEventPage({ params }: Props) {
           eventId={event.id}
           churches={churches}
           libraryItems={libraryItems}
+          questionsLocked={questionsLocked}
           series={event.seriesId && event.series?.name ? { id: event.seriesId, name: event.series.name, churchId: event.churchId ?? "", churchName: churches.find(c => c.id === event.churchId)?.name ?? "" } : undefined}
           defaultValues={{
             title: event.title,

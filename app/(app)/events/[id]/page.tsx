@@ -5,8 +5,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { auth } from "@/auth";
 import { getEventById, getEventAttendees } from "@/lib/actions/data-events";
-import { getEventQuestions } from "@/lib/actions/data-questions";
-import { getMyResponsesForEvent } from "@/lib/dal/responses";
+import { getEventQuestions, getMyResponses } from "@/lib/actions/data-questions";
 import { parseEventMetadata } from "@/lib/validations/event";
 import { canManageChurch } from "@/lib/permissions";
 import { EventDatetime } from "@/components/event-datetime";
@@ -50,7 +49,7 @@ export default async function EventDetailPage({ params }: Props) {
   const questions = await getEventQuestions(id);
 
   const myResponses = session?.user?.id && questions.length > 0 && isAttending
-    ? await getMyResponsesForEvent(id, session.user.id)
+    ? await getMyResponses(id, session.user.id)
     : {};
 
   const { registration, camp } = parseEventMetadata(event.metadata);

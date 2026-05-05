@@ -46,3 +46,33 @@ export async function getEventResponses(eventId: string) {
 
   return { questions, attendees };
 }
+
+export async function hasEventResponses(eventId: string): Promise<boolean> {
+  cacheTag(`event-questions-${eventId}`);
+  cacheLife("minutes");
+  const count = await prisma.eventAttendeeResponse.count({
+    where: { question: { eventId } },
+  });
+  return count > 0;
+}
+
+export async function getMyResponses(
+  eventId: string,
+  userId: string
+): Promise<Record<string, { answer: string | null; fileUrl: string | null }>> {
+  cacheTag(`event-questions-${eventId}`, `user-responses-${eventId}-${userId}`);
+  cacheLife("minutes");
+
+  const attendee = await prisma.eventAttendee.findUnique({
+    where: { eventId_userId: { eventId, userId } },
+    select: {
+      responses: { select: { questionId: true, answer: true, fileUrl: true } },
+    },
+  });
+
+  if (!attendee) return {};
+
+  return Object.fromEntries(
+    attendee.responses.map((r) => [r.questionId, { answer: r.answer, fileUrl: r.fileUrl }])
+  );
+}

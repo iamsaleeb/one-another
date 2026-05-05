@@ -9,18 +9,16 @@ export async function syncEventQuestions(
   questions: QuestionInput[],
   createdById: string
 ): Promise<void> {
-  const responseCount = await prisma.eventAttendeeResponse.count({
-    where: { question: { eventId } },
-  });
+  await prisma.$transaction(async (tx) => {
+    const responseCount = await tx.eventAttendeeResponse.count({
+      where: { question: { eventId } },
+    });
 
-  // Once responses exist, questions are locked
-  if (responseCount > 0) {
-    throw new Error("Questions cannot be changed after responses have been submitted.");
-  }
+    // Questions are locked once responses exist — skip sync, preserve existing questions
+    if (responseCount > 0) return;
 
-  await prisma.$transaction([
-    prisma.eventQuestion.deleteMany({ where: { eventId } }),
-    prisma.eventQuestion.createMany({
+    await tx.eventQuestion.deleteMany({ where: { eventId } });
+    await tx.eventQuestion.createMany({
       data: questions.map((q, i) => ({
         eventId,
         type: q.type,
@@ -30,8 +28,8 @@ export async function syncEventQuestions(
         order: i,
         libraryItemId: q.libraryItemId ?? null,
       })),
-    }),
-  ]);
+    });
+  });
 
   // Upsert library items for each unique (label, type) pair
   const seen = new Set<string>();

@@ -78,8 +78,8 @@ import {
   attendEventAction,
   unattendEventAction,
   registerEventAction,
-  extractResponses,
 } from '@/lib/actions/events-attendance'
+import { extractResponses } from '@/lib/utils/forms'
 import { prisma } from '@/lib/db'
 import { auth } from '@/auth'
 import { canManageChurch } from '@/lib/permissions'

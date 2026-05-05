@@ -13,22 +13,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import type { QuestionType } from "@/lib/validations/questions";
-
-const TYPE_LABELS: Record<QuestionType, string> = {
-  SHORT_TEXT: "Short text",
-  LONG_TEXT: "Long text",
-  YES_NO: "Yes / No",
-  MULTIPLE_CHOICE: "Multiple choice",
-  FILE_UPLOAD: "File upload",
-};
-
-interface LibraryItem {
-  id: string;
-  type: QuestionType;
-  label: string;
-  options: string[];
-}
+import { TYPE_LABELS, type LibraryItem } from "@/lib/validations/questions";
 
 interface LibraryDrawerProps {
   open: boolean;

@@ -4,7 +4,7 @@ import { updateTag } from "next/cache";
 import { auth } from "@/auth";
 import { registerEventSchema } from "@/lib/validations/event";
 import { attendEvent, unattendEvent, registerEvent } from "@/lib/dal/attendance";
-import type { ResponseInput } from "@/lib/validations/questions";
+import { extractResponses } from "@/lib/utils/forms";
 
 export interface AttendEventState {
   error?: string;
@@ -18,23 +18,6 @@ export interface RegisterEventState {
 function invalidateEventCaches(id: string) {
   updateTag("events");
   updateTag(`event-${id}`);
-}
-
-export function extractResponses(formData: FormData): ResponseInput[] {
-  const map = new Map<string, ResponseInput>();
-  for (const [key, value] of formData.entries()) {
-    if (typeof value !== "string") continue;
-    if (key.startsWith("response_file_")) {
-      const questionId = key.slice("response_file_".length);
-      const entry = map.get(questionId) ?? { questionId, answer: null, fileUrl: null };
-      map.set(questionId, { ...entry, fileUrl: value || null });
-    } else if (key.startsWith("response_")) {
-      const questionId = key.slice("response_".length);
-      const entry = map.get(questionId) ?? { questionId, answer: null, fileUrl: null };
-      map.set(questionId, { ...entry, answer: value || null });
-    }
-  }
-  return Array.from(map.values());
 }
 
 export async function attendEventAction(eventId: string): Promise<AttendEventState> {

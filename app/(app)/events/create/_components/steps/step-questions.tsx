@@ -3,32 +3,19 @@
 
 import { useState } from "react";
 import { useFormContext, useFieldArray } from "react-hook-form";
-import { ChevronUp, ChevronDown, Pencil, Trash2, Plus } from "lucide-react";
+import { ChevronUp, ChevronDown, Lock, Pencil, Trash2, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Switch } from "@/components/ui/switch";
-import {
-  FormControl,
-  FormField,
-  FormItem,
-} from "@/components/ui/form";
 import { QuestionDrawer } from "./question-drawer";
-import type { QuestionType, QuestionInput } from "@/lib/validations/questions";
+import { TYPE_LABELS, type QuestionType, type QuestionInput, type LibraryItem } from "@/lib/validations/questions";
 import type { CreateEventInput } from "@/lib/validations/event";
 
-const TYPE_LABELS: Record<QuestionType, string> = {
-  SHORT_TEXT: "Short text",
-  LONG_TEXT: "Long text",
-  YES_NO: "Yes / No",
-  MULTIPLE_CHOICE: "Multiple choice",
-  FILE_UPLOAD: "File upload",
-};
-
 interface StepQuestionsProps {
-  libraryItems: Array<{ id: string; type: QuestionType; label: string; options: string[] }>;
+  libraryItems: LibraryItem[];
+  locked?: boolean;
 }
 
-export function StepQuestions({ libraryItems }: StepQuestionsProps) {
+export function StepQuestions({ libraryItems, locked }: StepQuestionsProps) {
   const form = useFormContext<CreateEventInput>();
   const { fields, append, remove, update, move } = useFieldArray({
     control: form.control,
@@ -61,11 +48,22 @@ export function StepQuestions({ libraryItems }: StepQuestionsProps) {
   }
 
   return (
-    <div className="flex flex-col gap-4 rounded-2xl border-2 border-primary/20 bg-primary/5 px-4 py-4">
-      <p className="text-sm font-semibold text-primary">Custom Questions</p>
-      <p className="text-xs text-muted-foreground">
-        Questions will be shown to attendees when they sign up or confirm attendance.
-      </p>
+    <div className="flex flex-col gap-3">
+      <div>
+        <p className="text-sm font-semibold">Custom Questions</p>
+        <p className="text-xs text-muted-foreground mt-0.5">
+          Questions will be shown to attendees when they sign up or confirm attendance.
+        </p>
+      </div>
+
+      {locked && (
+        <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-3 text-amber-700">
+          <Lock className="size-4 mt-0.5 shrink-0" />
+          <p className="text-xs">
+            Questions are locked because attendees have already submitted responses. To change questions, you must first remove all responses.
+          </p>
+        </div>
+      )}
 
       {fields.length === 0 && (
         <p className="text-xs text-muted-foreground text-center py-2">
@@ -76,9 +74,8 @@ export function StepQuestions({ libraryItems }: StepQuestionsProps) {
       {fields.map((field, index) => (
         <div
           key={field.id}
-          className="flex flex-col gap-2 rounded-xl border bg-white px-3 py-3"
+          className="flex items-start justify-between gap-2 rounded-xl border bg-white px-3 py-3"
         >
-          <div className="flex items-start justify-between gap-2">
             <div className="flex flex-col gap-1 flex-1 min-w-0">
               <p className="text-sm font-medium line-clamp-2">{field.label}</p>
               <div className="flex items-center gap-1.5">
@@ -97,7 +94,7 @@ export function StepQuestions({ libraryItems }: StepQuestionsProps) {
                 variant="ghost"
                 size="icon"
                 className="size-8"
-                disabled={index === 0}
+                disabled={locked || index === 0}
                 onClick={() => move(index, index - 1)}
                 aria-label="Move up"
               >
@@ -108,7 +105,7 @@ export function StepQuestions({ libraryItems }: StepQuestionsProps) {
                 variant="ghost"
                 size="icon"
                 className="size-8"
-                disabled={index === fields.length - 1}
+                disabled={locked || index === fields.length - 1}
                 onClick={() => move(index, index + 1)}
                 aria-label="Move down"
               >
@@ -119,6 +116,7 @@ export function StepQuestions({ libraryItems }: StepQuestionsProps) {
                 variant="ghost"
                 size="icon"
                 className="size-8"
+                disabled={locked}
                 onClick={() => openEdit(index)}
                 aria-label="Edit question"
               >
@@ -129,42 +127,28 @@ export function StepQuestions({ libraryItems }: StepQuestionsProps) {
                 variant="ghost"
                 size="icon"
                 className="size-8 text-destructive hover:text-destructive"
+                disabled={locked}
                 onClick={() => remove(index)}
                 aria-label="Delete question"
               >
                 <Trash2 className="size-3.5" />
               </Button>
             </div>
-          </div>
-
-          <FormField
-            control={form.control}
-            name={`questions.${index}.required`}
-            render={({ field: f }) => (
-              <FormItem className="flex items-center justify-between gap-2 pt-1">
-                <p className="text-xs text-muted-foreground">Required</p>
-                <FormControl>
-                  <Switch
-                    checked={f.value ?? false}
-                    onCheckedChange={f.onChange}
-                  />
-                </FormControl>
-              </FormItem>
-            )}
-          />
         </div>
       ))}
 
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        className="w-full"
-        onClick={openAdd}
-      >
-        <Plus className="size-4 mr-1" />
-        Add question
-      </Button>
+      {!locked && (
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="w-full"
+          onClick={openAdd}
+        >
+          <Plus className="size-4 mr-1" />
+          Add question
+        </Button>
+      )}
 
       <QuestionDrawer
         key={drawerKey}

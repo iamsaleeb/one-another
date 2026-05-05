@@ -9,19 +9,34 @@ export async function saveResponses(
   responses: ResponseInput[],
   eventId: string
 ): Promise<void> {
-  if (responses.length === 0) return;
-
-  // Validate that all questionIds belong to this event to prevent cross-event pollution
-  const validQuestions = await prisma.eventQuestion.findMany({
-    where: { eventId, id: { in: responses.map((r) => r.questionId) } },
-    select: { id: true },
+  // Fetch all questions for this event to validate IDs and enforce required rules
+  const eventQuestions = await prisma.eventQuestion.findMany({
+    where: { eventId },
+    select: { id: true, required: true },
   });
-  const validIds = new Set(validQuestions.map((q) => q.id));
+
+  if (eventQuestions.length === 0) return;
+
+  const validIds = new Set(eventQuestions.map((q) => q.id));
   const safeResponses = responses.filter(
     (r) =>
       validIds.has(r.questionId) &&
       (r.fileUrl == null || r.fileUrl.startsWith("https://"))
   );
+
+  // Enforce required questions server-side — client HTML required is bypassable
+  const answeredIds = new Set(
+    safeResponses
+      .filter((r) => (r.answer?.trim() ?? "") !== "" || r.fileUrl != null)
+      .map((r) => r.questionId)
+  );
+  const missingRequired = eventQuestions.find(
+    (q) => q.required && !answeredIds.has(q.id)
+  );
+  if (missingRequired) {
+    throw new Error("All required questions must be answered before registering.");
+  }
+
   if (safeResponses.length === 0) return;
 
   await prisma.$transaction(

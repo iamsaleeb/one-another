@@ -4,6 +4,21 @@ import { QuestionType } from "@prisma/client";
 
 export { QuestionType };
 
+export const TYPE_LABELS: Record<QuestionType, string> = {
+  SHORT_TEXT: "Short text",
+  LONG_TEXT: "Long text",
+  YES_NO: "Yes / No",
+  MULTIPLE_CHOICE: "Multiple choice",
+  FILE_UPLOAD: "File upload",
+};
+
+export interface LibraryItem {
+  id: string;
+  type: QuestionType;
+  label: string;
+  options: string[];
+}
+
 export const questionSchema = z.object({
   id: z.string().optional(),
   type: z.nativeEnum(QuestionType),

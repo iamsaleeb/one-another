@@ -19,7 +19,7 @@ import { StepRegistration } from "./steps/step-registration";
 import { StepCampDetails } from "./steps/step-camp-details";
 import { StepReview } from "./steps/step-review";
 import { StepQuestions } from "./steps/step-questions";
-import type { QuestionType } from "@/lib/validations/questions";
+import type { LibraryItem } from "@/lib/validations/questions";
 
 interface Church {
   id: string;
@@ -33,25 +33,19 @@ interface Series {
   churchName: string;
 }
 
-interface LibraryItem {
-  id: string;
-  type: QuestionType;
-  label: string;
-  options: string[];
-}
-
 interface EventWizardProps {
   churches: Church[];
   series?: Series | null;
   eventId?: string;
   defaultValues?: Partial<CreateEventInput> & { datetimeISO?: string };
   libraryItems?: LibraryItem[];
+  questionsLocked?: boolean;
 }
 
 type StepKey = "basics" | "whenWhere" | "registration" | "questions" | "campDetails" | "review";
 interface WizardStep { label: string; key: StepKey; fields: Array<keyof CreateEventInput> }
 
-export function EventWizard({ churches, series, eventId, defaultValues, libraryItems }: EventWizardProps) {
+export function EventWizard({ churches, series, eventId, defaultValues, libraryItems, questionsLocked }: EventWizardProps) {
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
@@ -200,7 +194,7 @@ export function EventWizard({ churches, series, eventId, defaultValues, libraryI
       case "basics": return <StepBasics churches={churches} series={series} />;
       case "whenWhere": return <StepWhenWhere />;
       case "registration": return <StepRegistration />;
-      case "questions": return <StepQuestions libraryItems={libraryItems ?? []} />;
+      case "questions": return <StepQuestions libraryItems={libraryItems ?? []} locked={questionsLocked} />;
       case "campDetails": return <StepCampDetails />;
       case "review":
         return (

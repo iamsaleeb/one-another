@@ -23,22 +23,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { LibraryDrawer } from "./library-drawer";
-import { QuestionType, type QuestionInput } from "@/lib/validations/questions";
-
-const TYPE_LABELS: Record<QuestionType, string> = {
-  SHORT_TEXT: "Short text",
-  LONG_TEXT: "Long text",
-  YES_NO: "Yes / No",
-  MULTIPLE_CHOICE: "Multiple choice",
-  FILE_UPLOAD: "File upload",
-};
-
-interface LibraryItem {
-  id: string;
-  type: QuestionType;
-  label: string;
-  options: string[];
-}
+import { QuestionType, questionSchema, TYPE_LABELS, type QuestionInput, type LibraryItem } from "@/lib/validations/questions";
 
 interface QuestionDrawerProps {
   open: boolean;
@@ -72,9 +57,13 @@ export function QuestionDrawer({
   }
 
   const validOptions = options.filter((o) => o.trim().length > 0);
-  const canSave =
-    label.trim().length > 0 &&
-    (type !== QuestionType.MULTIPLE_CHOICE || validOptions.length > 0);
+  const canSave = questionSchema.safeParse({
+    type,
+    label: label.trim(),
+    options: type === QuestionType.MULTIPLE_CHOICE ? validOptions : [],
+    required,
+    order: 0,
+  }).success;
 
   function handleSave() {
     if (!canSave) return;

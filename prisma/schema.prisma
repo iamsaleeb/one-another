@@ -224,6 +224,7 @@ model QuestionLibraryItem {
   label       String
   options     String[]
   createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
   questions   EventQuestion[]
 
   @@unique([createdById, label, type])
@@ -241,9 +242,11 @@ model EventQuestion {
   options       String[]
   required      Boolean                 @default(false)
   order         Int
+  updatedAt     DateTime                @updatedAt
   responses     EventAttendeeResponse[]
 
   @@index([eventId])
+  @@index([eventId, order])
 }
 
 model EventAttendeeResponse {

@@ -3,6 +3,8 @@ import { auth } from "@/auth";
 import { UserRole } from "@prisma/client";
 import { getEventById } from "@/lib/actions/data-events";
 import { getChurchesByManager } from "@/lib/actions/data-churches";
+import { getEventQuestions } from "@/lib/actions/data-questions";
+import { getQuestionLibraryForUser } from "@/lib/dal/questions";
 import { parseEventMetadata } from "@/lib/validations/event";
 import { PageHeader } from "@/components/ui/page-header";
 import { EventWizard } from "@/app/(app)/events/create/_components/event-wizard";
@@ -18,7 +20,11 @@ export default async function EditEventPage({ params }: Props) {
   if (session?.user?.role !== UserRole.ORGANISER && session?.user?.role !== UserRole.ADMIN) redirect("/");
   if (!event) notFound();
 
-  const churches = await getChurchesByManager(session.user.id);
+  const [churches, questions, libraryItems] = await Promise.all([
+    getChurchesByManager(session.user.id),
+    getEventQuestions(id),
+    getQuestionLibraryForUser(session.user.id),
+  ]);
   if (!churches.some((c) => c.id === event.churchId)) notFound();
 
   const datetimeISO = event.datetime?.toISOString() ?? "";
@@ -31,6 +37,7 @@ export default async function EditEventPage({ params }: Props) {
         <EventWizard
           eventId={event.id}
           churches={churches}
+          libraryItems={libraryItems}
           series={event.seriesId && event.series?.name ? { id: event.seriesId, name: event.series.name, churchId: event.churchId ?? "", churchName: churches.find(c => c.id === event.churchId)?.name ?? "" } : undefined}
           defaultValues={{
             title: event.title,
@@ -51,7 +58,7 @@ export default async function EditEventPage({ params }: Props) {
             campEndDate: camp?.endDate ?? undefined,
             campAllowPartialRegistration: camp?.allowPartialRegistration ?? false,
             campAgenda: camp?.agenda ?? [],
-            questions: [],
+            questions: questions.map((q) => ({ ...q, libraryItemId: q.libraryItemId ?? undefined })),
           }}
         />
       </div>

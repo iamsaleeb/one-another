@@ -8,7 +8,7 @@ export async function saveResponses(
   eventAttendeeId: string,
   responses: ResponseInput[]
 ): Promise<void> {
-  await Promise.all(
+  await prisma.$transaction(
     responses.map((r) =>
       prisma.eventAttendeeResponse.upsert({
         where: { eventAttendeeId_questionId: { eventAttendeeId, questionId: r.questionId } },

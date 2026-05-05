@@ -6,7 +6,7 @@ import { prisma } from "@/lib/db";
 
 export async function getEventQuestions(eventId: string) {
   cacheTag(`event-questions-${eventId}`);
-  cacheLife("hours");
+  cacheLife("minutes");
   return prisma.eventQuestion.findMany({
     where: { eventId },
     orderBy: { order: "asc" },

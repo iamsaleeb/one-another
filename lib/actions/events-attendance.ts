@@ -21,27 +21,20 @@ function invalidateEventCaches(id: string) {
 }
 
 function extractResponses(formData: FormData): ResponseInput[] {
-  const responses: ResponseInput[] = [];
+  const map = new Map<string, ResponseInput>();
   for (const [key, value] of formData.entries()) {
-    if (key.startsWith("response_file_") && typeof value === "string" && value) {
-      const questionId = key.replace("response_file_", "");
-      const existing = responses.find((r) => r.questionId === questionId);
-      if (existing) {
-        existing.fileUrl = value;
-      } else {
-        responses.push({ questionId, fileUrl: value, answer: null });
-      }
-    } else if (key.startsWith("response_") && !key.startsWith("response_file_") && typeof value === "string") {
-      const questionId = key.replace("response_", "");
-      const existing = responses.find((r) => r.questionId === questionId);
-      if (existing) {
-        existing.answer = value || null;
-      } else {
-        responses.push({ questionId, answer: value || null, fileUrl: null });
-      }
+    if (typeof value !== "string") continue;
+    if (key.startsWith("response_file_") && value) {
+      const questionId = key.slice("response_file_".length);
+      const entry = map.get(questionId) ?? { questionId, answer: null, fileUrl: null };
+      map.set(questionId, { ...entry, fileUrl: value });
+    } else if (key.startsWith("response_") && !key.startsWith("response_file_")) {
+      const questionId = key.slice("response_".length);
+      const entry = map.get(questionId) ?? { questionId, answer: null, fileUrl: null };
+      map.set(questionId, { ...entry, answer: value || null });
     }
   }
-  return responses;
+  return Array.from(map.values());
 }
 
 export async function attendEventAction(eventId: string): Promise<AttendEventState> {

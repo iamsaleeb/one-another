@@ -23,8 +23,8 @@ export async function syncEventQuestions(
         eventId,
         type: q.type,
         label: q.label,
-        options: q.options ?? [],
-        required: q.required ?? false,
+        options: q.options,
+        required: q.required,
         order: i,
         libraryItemId: q.libraryItemId ?? null,
       })),
@@ -40,8 +40,8 @@ export async function syncEventQuestions(
 
     await prisma.questionLibraryItem.upsert({
       where: { createdById_label_type: { createdById, label: q.label, type: q.type } },
-      create: { createdById, type: q.type, label: q.label, options: q.options ?? [] },
-      update: { options: q.options ?? [] },
+      create: { createdById, type: q.type, label: q.label, options: q.options },
+      update: { options: q.options },
     });
   }
 }

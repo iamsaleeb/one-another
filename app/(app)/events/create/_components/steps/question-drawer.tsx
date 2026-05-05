@@ -55,10 +55,12 @@ export function QuestionDrawer({
   libraryItems,
   onSave,
 }: QuestionDrawerProps) {
-  const [label, setLabel] = useState("");
-  const [type, setType] = useState<QuestionType>(QuestionType.SHORT_TEXT);
-  const [required, setRequired] = useState(false);
-  const [options, setOptions] = useState<string[]>([""]);
+  const [label, setLabel] = useState(initial?.label ?? "");
+  const [type, setType] = useState<QuestionType>(initial?.type ?? QuestionType.SHORT_TEXT);
+  const [required, setRequired] = useState(initial?.required ?? false);
+  const [options, setOptions] = useState<string[]>(
+    initial?.options?.length ? initial.options : [""]
+  );
   const [libraryOpen, setLibraryOpen] = useState(false);
 
   function handleLibrarySelect(item: LibraryItem) {

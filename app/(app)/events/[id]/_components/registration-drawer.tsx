@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useTransition, useEffect, useState } from "react";
+import { useActionState, useTransition, useEffect, useState, useRef } from "react";
 import { Check } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -16,9 +16,18 @@ import {
   DrawerFooter,
   DrawerClose,
 } from "@/components/ui/drawer";
-import { registerEventAction, unattendEventAction, type RegisterEventState } from "@/lib/actions/events-attendance";
+import { registerEventAction, unattendEventAction, attendWithQuestionsAction, type RegisterEventState } from "@/lib/actions/events-attendance";
 import type { EventMetadata } from "@/lib/validations/event";
 import { getCampDays, formatDayLabel } from "@/lib/datetime";
+import { QuestionsForm } from "./questions-form";
+
+interface Question {
+  id: string;
+  type: string;
+  label: string;
+  options: string[];
+  required: boolean;
+}
 
 interface RegistrationDrawerProps {
   eventId: string;
@@ -32,6 +41,9 @@ interface RegistrationDrawerProps {
   onOpenChange: (open: boolean) => void;
   camp?: EventMetadata["camp"];
   campStartDate?: string;
+  questions?: Question[];
+  existingResponses?: Record<string, { answer: string | null; fileUrl: string | null }>;
+  mode?: "register" | "attend";
 }
 
 
@@ -47,10 +59,19 @@ export function RegistrationDrawer({
   onOpenChange,
   camp,
   campStartDate,
+  questions,
+  existingResponses,
+  mode: modeProp,
 }: RegistrationDrawerProps) {
-  const boundAction = registerEventAction.bind(null, eventId);
+  const mode = modeProp ?? "register";
+
+  const boundAction =
+    mode === "attend"
+      ? attendWithQuestionsAction.bind(null, eventId)
+      : registerEventAction.bind(null, eventId);
+
   const [state, formAction, isPending] = useActionState<RegisterEventState, FormData>(
-    boundAction,
+    boundAction as (prevState: RegisterEventState, formData: FormData) => Promise<RegisterEventState>,
     {}
   );
   const [unattendPending, startUnattendTransition] = useTransition();
@@ -67,9 +88,23 @@ export function RegistrationDrawer({
 
   const [selectedDays, setSelectedDays] = useState<string[]>(allDays);
 
+  // Track whether the form has been submitted so we can close on success for both modes
+  const submittedRef = useRef(false);
+
   useEffect(() => {
-    if (state.success) onOpenChange(false);
-  }, [state.success, onOpenChange]);
+    if (state.success) {
+      onOpenChange(false);
+    } else if (submittedRef.current && !isPending && !state.error) {
+      // attend mode: no success flag, but no error either — treat as success
+      onOpenChange(false);
+    }
+  }, [state.success, state.error, isPending, onOpenChange]);
+
+  function handleFormAction(formData: FormData) {
+    submittedRef.current = false;
+    submittedRef.current = true;
+    formAction(formData);
+  }
 
   function toggleDay(day: string) {
     setSelectedDays((prev) =>
@@ -84,6 +119,18 @@ export function RegistrationDrawer({
     });
   }
 
+  const hasQuestions = questions && questions.length > 0;
+
+  // Show confirmation screen only when registered and there are no questions to fill
+  const showConfirmation = isRegistered && !hasQuestions;
+
+  // Determine button text
+  function getButtonLabel(pending: boolean) {
+    if (isRegistered) return pending ? "Updating..." : "Update response";
+    if (mode === "attend") return pending ? "Confirming..." : "Confirm attendance";
+    return pending ? "Registering..." : "Confirm Registration";
+  }
+
   return (
     <Drawer open={open} onOpenChange={onOpenChange} direction="bottom">
       <DrawerContent aria-describedby={undefined}>
@@ -92,7 +139,7 @@ export function RegistrationDrawer({
         </DrawerHeader>
 
         <div className="px-4 pb-2 flex flex-col gap-4">
-          {isRegistered ? (
+          {showConfirmation ? (
             <div className="flex flex-col items-center gap-3 py-4">
               <div className="flex size-12 items-center justify-center rounded-full bg-primary/10">
                 <Check className="size-6 text-primary" />
@@ -102,7 +149,7 @@ export function RegistrationDrawer({
               </p>
             </div>
           ) : (
-            <form action={formAction} className="flex flex-col gap-4">
+            <form action={handleFormAction} className="flex flex-col gap-4">
               {state.error && (
                 <Alert variant="destructive">
                   <AlertDescription>{state.error}</AlertDescription>
@@ -166,12 +213,20 @@ export function RegistrationDrawer({
                 </div>
               )}
 
+              {hasQuestions && (
+                <QuestionsForm
+                  questions={questions}
+                  defaultResponses={existingResponses ?? {}}
+                  disabled={isPending}
+                />
+              )}
+
               <Button
                 type="submit"
                 className="w-full"
                 disabled={isPending || (showPartialDays ? selectedDays.length === 0 : false)}
               >
-                {isPending ? "Registering..." : "Confirm Registration"}
+                {getButtonLabel(isPending)}
               </Button>
               {showPartialDays && selectedDays.length === 0 && (
                 <p className="text-xs text-muted-foreground text-center">

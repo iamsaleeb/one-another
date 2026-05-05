@@ -37,6 +37,7 @@ export function StepQuestions({ libraryItems }: StepQuestionsProps) {
 
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [drawerKey, setDrawerKey] = useState(0);
 
   function handleSave(q: Omit<QuestionInput, "order">) {
     if (editingIndex !== null) {
@@ -49,11 +50,13 @@ export function StepQuestions({ libraryItems }: StepQuestionsProps) {
 
   function openEdit(index: number) {
     setEditingIndex(index);
+    setDrawerKey((k) => k + 1);
     setDrawerOpen(true);
   }
 
   function openAdd() {
     setEditingIndex(null);
+    setDrawerKey((k) => k + 1);
     setDrawerOpen(true);
   }
 
@@ -164,7 +167,7 @@ export function StepQuestions({ libraryItems }: StepQuestionsProps) {
       </Button>
 
       <QuestionDrawer
-        key={editingIndex !== null ? (fields[editingIndex]?.id ?? `idx-${editingIndex}`) : "new"}
+        key={drawerKey}
         open={drawerOpen}
         onOpenChange={(o) => {
           setDrawerOpen(o);

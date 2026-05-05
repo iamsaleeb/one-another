@@ -86,24 +86,11 @@ export async function registerEvent(
 
   if (!event || event.isDraft) return { error: "Event not found." };
 
-  // If already registered, just update responses — skip capacity check and create
-  const existingAttendee = await prisma.eventAttendee.findUnique({
-    where: { eventId_userId: { eventId, userId } },
-    select: { id: true },
-  });
-  if (existingAttendee) {
-    if (data.responses && data.responses.length > 0) {
-      await saveResponses(existingAttendee.id, data.responses, eventId);
-    }
-    return { success: true };
-  }
-
   const eventMeta = parseEventMetadata(event.metadata);
   const { capacity } = eventMeta.registration;
-  if (capacity != null && event._count.attendees >= capacity) {
-    return { error: "Sorry, this event is fully booked." };
-  }
 
+  // Run camp validation first so validatedSelectedDays is ready for both the
+  // existing-attendee update path and the new-attendee create path.
   let validatedSelectedDays: string[] | undefined;
   if (eventMeta.camp?.allowPartialRegistration && eventMeta.camp.endDate) {
     if (!event.datetime) {
@@ -121,9 +108,32 @@ export async function registerEvent(
     validatedSelectedDays = filtered;
   }
 
-  let created: { id: string };
+  const existingAttendee = await prisma.eventAttendee.findUnique({
+    where: { eventId_userId: { eventId, userId } },
+    select: { id: true },
+  });
+  if (existingAttendee) {
+    await prisma.eventAttendee.update({
+      where: { id: existingAttendee.id },
+      data: {
+        phone: data.phone,
+        notes: data.notes,
+        ...(validatedSelectedDays ? { metadata: { selectedDays: validatedSelectedDays } } : {}),
+      },
+    });
+    if (data.responses && data.responses.length > 0) {
+      await saveResponses(existingAttendee.id, data.responses, eventId);
+    }
+    return { success: true };
+  }
+
+  if (capacity != null && event._count.attendees >= capacity) {
+    return { error: "Sorry, this event is fully booked." };
+  }
+
+  let attendeeId: string;
   try {
-    created = await prisma.eventAttendee.create({
+    const created = await prisma.eventAttendee.create({
       data: {
         eventId,
         userId,
@@ -133,12 +143,25 @@ export async function registerEvent(
       },
       select: { id: true },
     });
+    attendeeId = created.id;
   } catch (err) {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
+      // Race: another concurrent request registered this user — find their record and save responses
+      const raced = await prisma.eventAttendee.findUnique({
+        where: { eventId_userId: { eventId, userId } },
+        select: { id: true },
+      });
+      if (!raced) throw err;
+      if (data.responses && data.responses.length > 0) {
+        await saveResponses(raced.id, data.responses, eventId);
+      }
+      return { success: true };
+    }
     throw err;
   }
 
   if (data.responses && data.responses.length > 0) {
-    await saveResponses(created.id, data.responses, eventId);
+    await saveResponses(attendeeId, data.responses, eventId);
   }
 
   try {
@@ -153,3 +176,4 @@ export async function registerEvent(
 
   return { success: true };
 }
+

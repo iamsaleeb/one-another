@@ -13,8 +13,10 @@ export async function syncEventQuestions(
     where: { question: { eventId } },
   });
 
-  // Once responses exist, questions are locked — no sync
-  if (responseCount > 0) return;
+  // Once responses exist, questions are locked
+  if (responseCount > 0) {
+    throw new Error("Questions cannot be changed after responses have been submitted.");
+  }
 
   await prisma.$transaction([
     prisma.eventQuestion.deleteMany({ where: { eventId } }),

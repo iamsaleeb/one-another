@@ -17,7 +17,11 @@ export async function saveResponses(
     select: { id: true },
   });
   const validIds = new Set(validQuestions.map((q) => q.id));
-  const safeResponses = responses.filter((r) => validIds.has(r.questionId));
+  const safeResponses = responses.filter(
+    (r) =>
+      validIds.has(r.questionId) &&
+      (r.fileUrl == null || r.fileUrl.startsWith("https://"))
+  );
   if (safeResponses.length === 0) return;
 
   await prisma.$transaction(

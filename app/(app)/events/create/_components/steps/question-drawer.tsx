@@ -71,9 +71,13 @@ export function QuestionDrawer({
     setLibraryItemId(item.id);
   }
 
+  const validOptions = options.filter((o) => o.trim().length > 0);
+  const canSave =
+    label.trim().length > 0 &&
+    (type !== QuestionType.MULTIPLE_CHOICE || validOptions.length > 0);
+
   function handleSave() {
-    if (!label.trim()) return;
-    const validOptions = options.filter((o) => o.trim().length > 0);
+    if (!canSave) return;
     onSave({
       id: initial?.id,
       type,
@@ -82,6 +86,7 @@ export function QuestionDrawer({
       required,
       libraryItemId,
     });
+
     onOpenChange(false);
   }
 
@@ -187,7 +192,7 @@ export function QuestionDrawer({
               type="button"
               className="w-full"
               onClick={handleSave}
-              disabled={!label.trim()}
+              disabled={!canSave}
             >
               {initial ? "Save changes" : "Add question"}
             </Button>

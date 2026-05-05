@@ -38,6 +38,18 @@ export function QuestionsForm({ questions, defaultResponses = {}, disabled }: Qu
     return initial;
   });
 
+  // Track which YES_NO switches the user has explicitly toggled (or have a prior answer).
+  // Optional, untouched switches are omitted from FormData to avoid posting "false" noise.
+  const [switchTouched, setSwitchTouched] = useState<Record<string, boolean>>(() => {
+    const initial: Record<string, boolean> = {};
+    for (const q of questions) {
+      if (q.type === QuestionType.YES_NO && defaultResponses[q.id]?.answer != null) {
+        initial[q.id] = true;
+      }
+    }
+    return initial;
+  });
+
   const [fileUrls, setFileUrls] = useState<Record<string, string>>(() => {
     const initial: Record<string, string> = {};
     for (const q of questions) {
@@ -114,16 +126,20 @@ export function QuestionsForm({ questions, defaultResponses = {}, disabled }: Qu
                 <Switch
                   checked={switchValues[q.id] ?? false}
                   disabled={disabled}
-                  onCheckedChange={(checked) =>
-                    setSwitchValues((prev) => ({ ...prev, [q.id]: checked }))
-                  }
+                  onCheckedChange={(checked) => {
+                    setSwitchValues((prev) => ({ ...prev, [q.id]: checked }));
+                    setSwitchTouched((prev) => ({ ...prev, [q.id]: true }));
+                  }}
                 />
-                {/* Hidden input carries the switch value through FormData */}
-                <input
-                  type="hidden"
-                  name={`response_${q.id}`}
-                  value={switchValues[q.id] ? "true" : "false"}
-                />
+                {/* Submit the hidden input only when required or the user has interacted,
+                    so optional untouched switches don't post a spurious "false". */}
+                {(q.required || switchTouched[q.id]) && (
+                  <input
+                    type="hidden"
+                    name={`response_${q.id}`}
+                    value={switchValues[q.id] ? "true" : "false"}
+                  />
+                )}
               </div>
             )}
 
@@ -167,6 +183,8 @@ export function QuestionsForm({ questions, defaultResponses = {}, disabled }: Qu
                     e.target.value = "";
                   }}
                 />
+                {/* Always present — empty string signals "cleared" to extractResponses */}
+                <input type="hidden" name={`response_file_${q.id}`} value={fileUrls[q.id] ?? ""} />
                 {fileUrls[q.id] ? (
                   <div className="flex items-center gap-2 rounded-xl border bg-background px-4 py-3">
                     <Paperclip className="size-4 text-muted-foreground shrink-0" />
@@ -185,7 +203,6 @@ export function QuestionsForm({ questions, defaultResponses = {}, disabled }: Qu
                         <X className="size-3.5" />
                       </Button>
                     )}
-                    <input type="hidden" name={`response_file_${q.id}`} value={fileUrls[q.id]} />
                   </div>
                 ) : (
                   <Button

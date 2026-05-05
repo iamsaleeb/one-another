@@ -78,6 +78,7 @@ import {
   attendEventAction,
   unattendEventAction,
   registerEventAction,
+  extractResponses,
 } from '@/lib/actions/events-attendance'
 import { prisma } from '@/lib/db'
 import { auth } from '@/auth'
@@ -990,6 +991,57 @@ describe('publishEventAction', () => {
     await publishEventAction('evt-1')
 
     expect(mockRedirect).toHaveBeenCalledWith('/events/evt-1')
+  })
+})
+
+describe('extractResponses', () => {
+  it('extracts a text response', () => {
+    const fd = makeFormData({ 'response_q1': 'hello' })
+    expect(extractResponses(fd)).toEqual([{ questionId: 'q1', answer: 'hello', fileUrl: null }])
+  })
+
+  it('extracts a file response', () => {
+    const fd = makeFormData({ 'response_file_q1': 'https://blob.example.com/file.pdf' })
+    expect(extractResponses(fd)).toEqual([{ questionId: 'q1', answer: null, fileUrl: 'https://blob.example.com/file.pdf' }])
+  })
+
+  it('converts empty string answer to null', () => {
+    const fd = makeFormData({ 'response_q1': '' })
+    expect(extractResponses(fd)).toEqual([{ questionId: 'q1', answer: null, fileUrl: null }])
+  })
+
+  it('converts empty string fileUrl to null (cleared file signal)', () => {
+    const fd = makeFormData({ 'response_file_q1': '' })
+    expect(extractResponses(fd)).toEqual([{ questionId: 'q1', answer: null, fileUrl: null }])
+  })
+
+  it('merges answer and fileUrl onto the same entry when both keys exist', () => {
+    const fd = makeFormData({ 'response_q1': 'true', 'response_file_q1': 'https://blob.example.com/file.pdf' })
+    expect(extractResponses(fd)).toEqual([
+      { questionId: 'q1', answer: 'true', fileUrl: 'https://blob.example.com/file.pdf' },
+    ])
+  })
+
+  it('handles multiple questions independently', () => {
+    const fd = makeFormData({ 'response_q1': 'answer1', 'response_q2': 'answer2' })
+    const result = extractResponses(fd)
+    expect(result).toHaveLength(2)
+    expect(result).toEqual(
+      expect.arrayContaining([
+        { questionId: 'q1', answer: 'answer1', fileUrl: null },
+        { questionId: 'q2', answer: 'answer2', fileUrl: null },
+      ])
+    )
+  })
+
+  it('ignores non-response_ keys', () => {
+    const fd = makeFormData({ phone: '07700', notes: 'veg', response_q1: 'yes' })
+    expect(extractResponses(fd)).toEqual([{ questionId: 'q1', answer: 'yes', fileUrl: null }])
+  })
+
+  it('returns an empty array when no response_ keys are present', () => {
+    const fd = makeFormData({ phone: '07700', notes: 'veg' })
+    expect(extractResponses(fd)).toEqual([])
   })
 })
 

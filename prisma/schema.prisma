@@ -19,6 +19,14 @@ enum Cadence {
   CUSTOM
 }
 
+enum QuestionType {
+  SHORT_TEXT
+  LONG_TEXT
+  YES_NO
+  MULTIPLE_CHOICE
+  FILE_UPLOAD
+}
+
 model User {
   id            String    @id @default(cuid())
   name          String?
@@ -42,6 +50,7 @@ model User {
   pushTokens              PushToken[]
   notificationPreferences NotificationPreference[]
   notifications           Notification[]
+  questionLibrary         QuestionLibraryItem[]   @relation("UserQuestionLibrary")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -180,6 +189,7 @@ model Event {
   createdById          String?
   createdBy            User?   @relation("UserEvents", fields: [createdById], references: [id], onDelete: SetNull)
   attendees            EventAttendee[]
+  questions            EventQuestion[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -200,8 +210,55 @@ model EventAttendee {
   metadata  Json?    @db.JsonB
   createdAt DateTime @default(now())
 
+  responses EventAttendeeResponse[]
+
   @@unique([eventId, userId])
   @@index([userId])
+}
+
+model QuestionLibraryItem {
+  id          String          @id @default(cuid())
+  createdById String
+  createdBy   User            @relation("UserQuestionLibrary", fields: [createdById], references: [id], onDelete: Cascade)
+  type        QuestionType
+  label       String
+  options     String[]
+  createdAt   DateTime        @default(now())
+  questions   EventQuestion[]
+
+  @@unique([createdById, label, type])
+  @@index([createdById])
+}
+
+model EventQuestion {
+  id            String                  @id @default(cuid())
+  eventId       String
+  event         Event                   @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  libraryItemId String?
+  libraryItem   QuestionLibraryItem?    @relation(fields: [libraryItemId], references: [id], onDelete: SetNull)
+  type          QuestionType
+  label         String
+  options       String[]
+  required      Boolean                 @default(false)
+  order         Int
+  responses     EventAttendeeResponse[]
+
+  @@index([eventId])
+}
+
+model EventAttendeeResponse {
+  id              String        @id @default(cuid())
+  eventAttendeeId String
+  eventAttendee   EventAttendee @relation(fields: [eventAttendeeId], references: [id], onDelete: Cascade)
+  questionId      String
+  question        EventQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  answer          String?
+  fileUrl         String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@unique([eventAttendeeId, questionId])
+  @@index([questionId])
 }
 
 model ChurchFollower {

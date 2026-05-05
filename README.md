@@ -24,6 +24,7 @@ A church event discovery and management platform. Browse events from local churc
 | Auth | Auth.js (NextAuth v5) |
 | Database | PostgreSQL via [Prisma](https://www.prisma.io) |
 | Forms | React Hook Form + Zod |
+| File storage | [Vercel Blob](https://vercel.com/docs/storage/vercel-blob) |
 | Mobile | Capacitor (Android & iOS) |
 | Push notifications | Firebase Cloud Messaging (FCM) |
 | Testing | Jest + Testing Library |
@@ -50,6 +51,9 @@ Copy `.env.example` to `.env.local` and fill in the required values:
 ```env
 DATABASE_URL="postgresql://user:password@localhost:5432/oneanother"
 AUTH_SECRET="your-auth-secret"
+
+# Vercel Blob (photo uploads)
+BLOB_READ_WRITE_TOKEN="vercel_blob_rw_..."
 
 # Firebase (push notifications)
 FIREBASE_PROJECT_ID="your-firebase-project-id"
@@ -100,6 +104,7 @@ app/
   (auth)/         # Unauthenticated routes (login, register)
   api/
     auth/         # Auth.js route handler
+    upload/       # POST — generate Vercel Blob client upload token
     push/
       register-token/  # POST — upsert device FCM token for authenticated user
 components/

@@ -18,7 +18,6 @@ const config = {
     '!components/ui/**',
     // Exclude infrastructure / config files
     '!lib/db.ts',
-    '!lib/uploadthing.ts',
     '!lib/actions/upload.ts',
     // Exclude static seed/fixture data
     '!lib/data/**',

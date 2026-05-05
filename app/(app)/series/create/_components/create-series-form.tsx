@@ -81,7 +81,7 @@ export function CreateSeriesForm({ churches }: { churches: Church[] }) {
             <FormItem>
               <FormLabel>Cover Photo (optional)</FormLabel>
               <FormControl>
-                <PhotoUploadField value={field.value} onChange={field.onChange} />
+                <PhotoUploadField variant="cover" value={field.value} onChange={field.onChange} />
               </FormControl>
               <FormMessage />
             </FormItem>

@@ -6,13 +6,12 @@ import { useSession } from "next-auth/react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { format, parse } from "date-fns";
-import { CalendarIcon, Camera } from "lucide-react";
+import { CalendarIcon } from "lucide-react";
 
-import { cn, getInitials } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import { onboardingSchema, type OnboardingInput } from "@/lib/validations/onboarding";
 import { completeOnboardingAction, skipOnboardingAction } from "@/lib/actions/onboarding";
 
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import {
@@ -29,22 +28,14 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { UploadButton } from "@/lib/uploadthing";
+import { PhotoUploadField } from "@/components/photo-upload-field";
 
-interface OnboardingFormProps {
-  userName?: string;
-  userEmail?: string;
-}
-
-export function OnboardingForm({ userName, userEmail }: OnboardingFormProps) {
+export function OnboardingForm() {
   const router = useRouter();
   const { update } = useSession();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSkipping, setIsSkipping] = useState(false);
   const [calendarOpen, setCalendarOpen] = useState(false);
-  const [uploadError, setUploadError] = useState<string | null>(null);
-  const [photoUrl, setPhotoUrl] = useState<string | undefined>();
-
   const form = useForm<OnboardingInput>({
     resolver: zodResolver(onboardingSchema),
     defaultValues: {
@@ -90,49 +81,24 @@ export function OnboardingForm({ userName, userEmail }: OnboardingFormProps) {
           className="flex flex-col gap-5"
         >
           {/* Profile Photo */}
-          <div className="rounded-2xl bg-white shadow-card p-5 flex flex-col items-center gap-4">
-            <p className="text-sm font-medium self-start">Profile photo</p>
-            <div className="flex flex-col items-center gap-3">
-              <Avatar className="size-24 text-2xl">
-                <AvatarImage src={photoUrl ?? ""} />
-                <AvatarFallback className="bg-primary text-primary-foreground">
-                  {getInitials(userName, userEmail)}
-                </AvatarFallback>
-              </Avatar>
-              <UploadButton
-                endpoint="profilePhoto"
-                onClientUploadComplete={(res) => {
-                  const url = res?.[0]?.ufsUrl;
-                  if (!url) {
-                    setUploadError("Upload finished but no URL was returned. Please try again.");
-                    return;
-                  }
-                  setUploadError(null);
-                  setPhotoUrl(url);
-                  form.setValue("image", url);
-                }}
-                onUploadError={(error) => {
-                  setUploadError(error.message);
-                }}
-                appearance={{
-                  button:
-                    "bg-primary text-primary-foreground text-xs rounded-lg px-3 py-1.5 ut-ready:bg-primary ut-uploading:cursor-not-allowed ut-uploading:bg-primary/70",
-                  allowedContent: "hidden",
-                  container: "w-auto",
-                }}
-                content={{
-                  button: (
-                    <span className="flex items-center gap-1.5">
-                      <Camera className="size-3.5" />
-                      {photoUrl ? "Change photo" : "Add photo"}
-                    </span>
-                  ),
-                }}
-              />
-              {uploadError && (
-                <p className="text-xs text-destructive text-center">{uploadError}</p>
+          <div className="rounded-2xl bg-white shadow-card p-5 flex flex-col gap-4">
+            <p className="text-sm font-medium">Profile photo</p>
+            <FormField
+              control={form.control}
+              name="image"
+              render={({ field }) => (
+                <FormItem>
+                  <FormControl>
+                    <PhotoUploadField
+                      variant="profile"
+                      value={field.value}
+                      onChange={field.onChange}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
               )}
-            </div>
+            />
           </div>
 
           {/* Personal Details */}

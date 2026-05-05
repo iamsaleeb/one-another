@@ -1,97 +1,167 @@
-jest.mock('@/lib/uploadthing', () => ({
-  UploadDropzone: ({ onClientUploadComplete, onUploadError, content }: {
-    onClientUploadComplete: (res: Array<{ ufsUrl: string }>) => void
-    onUploadError: (error: { message: string }) => void
-    content?: { label?: string }
-  }) => (
-    <div data-testid="upload-dropzone">
-      <span>{content?.label ?? 'Upload'}</span>
-      <button
-        data-testid="simulate-upload"
-        onClick={() => onClientUploadComplete([{ ufsUrl: 'https://utfs.io/f/uploaded.jpg' }])}
-      >
-        Simulate Upload
-      </button>
-      <button
-        data-testid="simulate-error"
-        onClick={() => onUploadError({ message: 'Upload failed' })}
-      >
-        Simulate Error
-      </button>
-    </div>
-  ),
-}))
+jest.mock("@vercel/blob/client", () => ({
+  upload: jest.fn(),
+}));
 
-jest.mock('@/lib/actions/upload', () => ({
+jest.mock("@/lib/actions/upload", () => ({
   deleteUploadedFileAction: jest.fn().mockResolvedValue(undefined),
-}))
+}));
 
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
-import { PhotoUploadField } from '@/components/photo-upload-field'
-import { deleteUploadedFileAction } from '@/lib/actions/upload'
 
-const mockDeleteUploadedFileAction = deleteUploadedFileAction as jest.Mock
+import { render, screen, fireEvent, waitFor, act } from "@testing-library/react";
+import { PhotoUploadField } from "@/components/photo-upload-field";
+import { upload } from "@vercel/blob/client";
+import { deleteUploadedFileAction } from "@/lib/actions/upload";
 
-describe('PhotoUploadField', () => {
-  beforeEach(() => {
-    jest.clearAllMocks()
-  })
+const mockUpload = upload as jest.Mock;
+const mockDelete = deleteUploadedFileAction as jest.Mock;
 
-  it('renders the dropzone when no value is provided', () => {
-    render(<PhotoUploadField value={undefined} onChange={jest.fn()} />)
-    expect(screen.getByTestId('upload-dropzone')).toBeInTheDocument()
-  })
+const BLOB_URL = "https://abc123.public.blob.vercel-storage.com/photo.jpg";
 
-  it('shows the "Add Cover Photo" label in the dropzone', () => {
-    render(<PhotoUploadField value={undefined} onChange={jest.fn()} />)
-    expect(screen.getByText('Add Cover Photo')).toBeInTheDocument()
-  })
+describe("PhotoUploadField", () => {
+  beforeEach(() => jest.clearAllMocks());
 
-  it('renders the image preview when a value is provided', () => {
-    render(<PhotoUploadField value="https://utfs.io/f/photo.jpg" onChange={jest.fn()} />)
-    const img = screen.getByRole('img', { name: 'Cover photo' })
-    expect(img).toBeInTheDocument()
-  })
+  describe("idle state", () => {
+    it("renders upload area for cover variant", () => {
+      render(<PhotoUploadField variant="cover" value={undefined} onChange={jest.fn()} />);
+      expect(screen.getByRole("button", { name: "Add cover photo" })).toBeInTheDocument();
+    });
 
-  it('does not render the dropzone when a value is provided', () => {
-    render(<PhotoUploadField value="https://utfs.io/f/photo.jpg" onChange={jest.fn()} />)
-    expect(screen.queryByTestId('upload-dropzone')).not.toBeInTheDocument()
-  })
+    it("renders upload area for profile variant", () => {
+      render(<PhotoUploadField variant="profile" value={undefined} onChange={jest.fn()} />);
+      expect(screen.getByRole("button", { name: "Add photo" })).toBeInTheDocument();
+    });
+  });
 
-  it('calls onChange with undefined and deletes from the server when remove is clicked', async () => {
-    const onChange = jest.fn()
-    render(<PhotoUploadField value="https://utfs.io/f/photo.jpg" onChange={onChange} />)
-    fireEvent.click(screen.getByRole('button'))
-    expect(onChange).toHaveBeenCalledWith(undefined)
-    await waitFor(() => {
-      expect(mockDeleteUploadedFileAction).toHaveBeenCalledWith('https://utfs.io/f/photo.jpg')
-    })
-  })
+  describe("preview state", () => {
+    it("renders cover photo preview when value provided", () => {
+      render(<PhotoUploadField variant="cover" value={BLOB_URL} onChange={jest.fn()} />);
+      expect(screen.getByRole("img", { name: "Cover photo" })).toBeInTheDocument();
+    });
 
-  it('switches to the dropzone immediately when remove is clicked', () => {
-    render(<PhotoUploadField value="https://utfs.io/f/photo.jpg" onChange={jest.fn()} />)
-    fireEvent.click(screen.getByRole('button'))
-    expect(screen.getByTestId('upload-dropzone')).toBeInTheDocument()
-  })
+    it("renders profile photo preview when value provided", () => {
+      render(<PhotoUploadField variant="profile" value={BLOB_URL} onChange={jest.fn()} />);
+      expect(screen.getByRole("img", { name: "Profile photo" })).toBeInTheDocument();
+    });
 
-  it('calls onChange with the uploaded URL on successful upload', () => {
-    const onChange = jest.fn()
-    render(<PhotoUploadField value={undefined} onChange={onChange} />)
-    fireEvent.click(screen.getByTestId('simulate-upload'))
-    expect(onChange).toHaveBeenCalledWith('https://utfs.io/f/uploaded.jpg')
-  })
+    it("does not render upload area when value provided", () => {
+      render(<PhotoUploadField variant="cover" value={BLOB_URL} onChange={jest.fn()} />);
+      expect(screen.queryByRole("button", { name: "Add cover photo" })).not.toBeInTheDocument();
+    });
+  });
 
-  it('displays an error message when upload fails', () => {
-    render(<PhotoUploadField value={undefined} onChange={jest.fn()} />)
-    fireEvent.click(screen.getByTestId('simulate-error'))
-    expect(screen.getByText('Upload failed')).toBeInTheDocument()
-  })
+  describe("file validation", () => {
+    it("shows error for non-image file and does not upload", async () => {
+      render(<PhotoUploadField variant="cover" value={undefined} onChange={jest.fn()} />);
+      const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+      const file = new File(["content"], "doc.pdf", { type: "application/pdf" });
+      Object.defineProperty(input, "files", { value: [file], configurable: true });
+      fireEvent.change(input);
+      expect(await screen.findByText("Please select an image file.")).toBeInTheDocument();
+      expect(mockUpload).not.toHaveBeenCalled();
+    });
 
-  it('clears the error after a successful upload', () => {
-    render(<PhotoUploadField value={undefined} onChange={jest.fn()} />)
-    fireEvent.click(screen.getByTestId('simulate-error'))
-    expect(screen.getByText('Upload failed')).toBeInTheDocument()
-    fireEvent.click(screen.getByTestId('simulate-upload'))
-    expect(screen.queryByText('Upload failed')).not.toBeInTheDocument()
-  })
-})
+    it("shows error for file over 4MB and does not upload", async () => {
+      render(<PhotoUploadField variant="cover" value={undefined} onChange={jest.fn()} />);
+      const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+      const largeFile = new File(
+        [new ArrayBuffer(5 * 1024 * 1024)],
+        "big.jpg",
+        { type: "image/jpeg" }
+      );
+      Object.defineProperty(input, "files", { value: [largeFile], configurable: true });
+      fireEvent.change(input);
+      expect(await screen.findByText("Image must be 4MB or less.")).toBeInTheDocument();
+      expect(mockUpload).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("upload", () => {
+    it("calls onChange with blob URL on successful upload", async () => {
+      const onChange = jest.fn();
+      mockUpload.mockResolvedValue({ url: BLOB_URL });
+      render(<PhotoUploadField variant="cover" value={undefined} onChange={onChange} />);
+      const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+      const file = new File(["img"], "photo.jpg", { type: "image/jpeg" });
+      Object.defineProperty(input, "files", { value: [file], configurable: true });
+      fireEvent.change(input);
+      await waitFor(() => {
+        expect(onChange).toHaveBeenCalledWith(BLOB_URL);
+      });
+    });
+
+    it("calls upload with correct args including variant as clientPayload", async () => {
+      mockUpload.mockResolvedValue({ url: BLOB_URL });
+      render(<PhotoUploadField variant="cover" value={undefined} onChange={jest.fn()} />);
+      const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+      const file = new File(["img"], "photo.jpg", { type: "image/jpeg" });
+      Object.defineProperty(input, "files", { value: [file], configurable: true });
+      fireEvent.change(input);
+      await waitFor(() => {
+        expect(mockUpload).toHaveBeenCalledWith(
+          "photo.jpg",
+          file,
+          expect.objectContaining({
+            access: "public",
+            handleUploadUrl: "/api/upload",
+            clientPayload: "cover",
+          })
+        );
+      });
+    });
+
+    it("shows error on upload failure", async () => {
+      mockUpload.mockRejectedValue(new Error("Network error"));
+      render(<PhotoUploadField variant="cover" value={undefined} onChange={jest.fn()} />);
+      const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+      const file = new File(["img"], "photo.jpg", { type: "image/jpeg" });
+      Object.defineProperty(input, "files", { value: [file], configurable: true });
+      fireEvent.change(input);
+      expect(await screen.findByText("Upload failed. Please try again.")).toBeInTheDocument();
+    });
+
+    it("clears a previous error on new successful upload", async () => {
+      const onChange = jest.fn();
+      mockUpload
+        .mockRejectedValueOnce(new Error("fail"))
+        .mockResolvedValueOnce({ url: BLOB_URL });
+      render(<PhotoUploadField variant="cover" value={undefined} onChange={onChange} />);
+      const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+      const file = new File(["img"], "photo.jpg", { type: "image/jpeg" });
+      Object.defineProperty(input, "files", { value: [file], configurable: true });
+      fireEvent.change(input);
+      expect(await screen.findByText("Upload failed. Please try again.")).toBeInTheDocument();
+      Object.defineProperty(input, "files", { value: [file], configurable: true });
+      fireEvent.change(input);
+      await waitFor(() => {
+        expect(screen.queryByText("Upload failed. Please try again.")).not.toBeInTheDocument();
+      });
+    });
+  });
+
+  describe("remove", () => {
+    it("calls onChange with undefined after delete settles", async () => {
+      const onChange = jest.fn();
+      render(<PhotoUploadField variant="cover" value={BLOB_URL} onChange={onChange} />);
+      await act(async () => {
+        fireEvent.click(screen.getByRole("button", { name: /remove photo/i }));
+      });
+      expect(onChange).toHaveBeenCalledWith(undefined);
+    });
+
+    it("calls deleteUploadedFileAction with the URL", async () => {
+      render(<PhotoUploadField variant="cover" value={BLOB_URL} onChange={jest.fn()} />);
+      fireEvent.click(screen.getByRole("button", { name: /remove photo/i }));
+      await waitFor(() => {
+        expect(mockDelete).toHaveBeenCalledWith(BLOB_URL);
+      });
+    });
+
+    it("switches to upload area after remove", async () => {
+      render(<PhotoUploadField variant="cover" value={BLOB_URL} onChange={jest.fn()} />);
+      await act(async () => {
+        fireEvent.click(screen.getByRole("button", { name: /remove photo/i }));
+      });
+      expect(screen.getByRole("button", { name: "Add cover photo" })).toBeInTheDocument();
+    });
+  });
+});

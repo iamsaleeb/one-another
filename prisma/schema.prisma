@@ -6,54 +6,32 @@ datasource db {
   provider = "postgresql"
 }
 
-enum UserRole {
-  ATTENDEE
-  ORGANISER
-  ADMIN
-}
-
-enum Cadence {
-  WEEKLY
-  BIWEEKLY
-  MONTHLY
-  CUSTOM
-}
-
-enum QuestionType {
-  SHORT_TEXT
-  LONG_TEXT
-  YES_NO
-  MULTIPLE_CHOICE
-  FILE_UPLOAD
-}
-
 model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String    @unique
-  emailVerified DateTime?
-  password      String?
-  image         String?
-  phone         String?
-  dateOfBirth   DateTime?
-  onboardingCompleted Boolean @default(false)
-  role          UserRole  @default(ATTENDEE)
-  accounts      Account[]
-  sessions      Session[]
-  events        Event[]   @relation("UserEvents")
-  series        Series[]  @relation("UserSeries")
-  eventAttendances EventAttendee[]
-  churchFollows    ChurchFollower[]
-  seriesFollows    SeriesFollower[]
-  churchOrganisers ChurchOrganiser[] @relation("UserChurches")
-  adminChurches    ChurchAdmin[]     @relation("UserAdminChurches")
-  pushTokens              PushToken[]
-  notificationPreferences NotificationPreference[]
+  id                      String                   @id @default(cuid())
+  name                    String?
+  email                   String                   @unique
+  emailVerified           DateTime?
+  password                String?
+  image                   String?
+  phone                   String?
+  dateOfBirth             DateTime?
+  onboardingCompleted     Boolean                  @default(false)
+  role                    UserRole                 @default(ATTENDEE)
+  createdAt               DateTime                 @default(now())
+  updatedAt               DateTime                 @updatedAt
+  accounts                Account[]
+  adminChurches           ChurchAdmin[]            @relation("UserAdminChurches")
+  churchFollows           ChurchFollower[]
+  churchOrganisers        ChurchOrganiser[]        @relation("UserChurches")
+  events                  Event[]                  @relation("UserEvents")
+  eventAttendances        EventAttendee[]
   notifications           Notification[]
-  questionLibrary         QuestionLibraryItem[]   @relation("UserQuestionLibrary")
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  notificationPreferences NotificationPreference[]
+  pushTokens              PushToken[]
+  questionLibrary         QuestionLibraryItem[]    @relation("UserQuestionLibrary")
+  series                  Series[]                 @relation("UserSeries")
+  seriesFollows           SeriesFollower[]
+  sessions                Session[]
 }
 
 model Account {
@@ -68,11 +46,9 @@ model Account {
   scope             String?
   id_token          String?
   session_state     String?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@id([provider, providerAccountId])
 }
@@ -81,10 +57,9 @@ model Session {
   sessionToken String   @unique
   userId       String
   expires      DateTime
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
 }
 
 model VerificationToken {
@@ -96,31 +71,29 @@ model VerificationToken {
 }
 
 model Church {
-  id          String  @id @default(cuid())
-  name        String
-  address     String?
-  phone       String?
-  website     String?
-  description String
-  founded     String?
-
-  serviceTimes ServiceTime[]
+  id           String            @id @default(cuid())
+  name         String
+  address      String?
+  phone        String?
+  website      String?
+  description  String
+  founded      String?
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  admins       ChurchAdmin[]     @relation("ChurchAdmins")
   followers    ChurchFollower[]
+  organisers   ChurchOrganiser[] @relation("ChurchOrganisers")
   events       Event[]
   series       Series[]
-  organisers   ChurchOrganiser[] @relation("ChurchOrganisers")
-  admins       ChurchAdmin[]     @relation("ChurchAdmins")
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  serviceTimes ServiceTime[]
 }
 
 model ChurchAdmin {
   userId    String
   churchId  String
-  user      User     @relation("UserAdminChurches", fields: [userId], references: [id], onDelete: Cascade)
-  church    Church   @relation("ChurchAdmins", fields: [churchId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
+  church    Church   @relation("ChurchAdmins", fields: [churchId], references: [id], onDelete: Cascade)
+  user      User     @relation("UserAdminChurches", fields: [userId], references: [id], onDelete: Cascade)
 
   @@id([userId, churchId])
 }
@@ -128,9 +101,9 @@ model ChurchAdmin {
 model ChurchOrganiser {
   userId    String
   churchId  String
-  user      User     @relation("UserChurches", fields: [userId], references: [id], onDelete: Cascade)
-  church    Church   @relation("ChurchOrganisers", fields: [churchId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
+  church    Church   @relation("ChurchOrganisers", fields: [churchId], references: [id], onDelete: Cascade)
+  user      User     @relation("UserChurches", fields: [userId], references: [id], onDelete: Cascade)
 
   @@id([userId, churchId])
 }
@@ -145,7 +118,7 @@ model ServiceTime {
 }
 
 model Series {
-  id          String   @id @default(cuid())
+  id          String           @id @default(cuid())
   name        String
   description String
   cadence     Cadence
@@ -154,20 +127,20 @@ model Series {
   tag         String
   photoUrl    String?
   churchId    String
-  church      Church   @relation(fields: [churchId], references: [id], onDelete: Restrict)
-  events      Event[]
-  followers   SeriesFollower[]
   createdById String?
-  createdBy   User?    @relation("UserSeries", fields: [createdById], references: [id], onDelete: SetNull)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  events      Event[]
+  church      Church           @relation(fields: [churchId], references: [id])
+  createdBy   User?            @relation("UserSeries", fields: [createdById], references: [id])
+  followers   SeriesFollower[]
 
   @@index([churchId])
   @@index([createdById])
 }
 
 model Event {
-  id                   String  @id @default(cuid())
+  id                   String          @id @default(cuid())
   datetime             DateTime?
   title                String
   location             String?
@@ -175,24 +148,23 @@ model Event {
   tag                  String
   description          String
   photoUrl             String?
-  isPast               Boolean @default(false)
-  isDraft              Boolean @default(false)
-  requiresRegistration Boolean @default(false)
-  metadata             Json    @db.JsonB
+  isPast               Boolean         @default(false)
+  isDraft              Boolean         @default(false)
+  requiresRegistration Boolean         @default(false)
+  metadata             Json            @db.JsonB
   price                String?
   cancelledAt          DateTime?
   cancellationReason   String?
   churchId             String?
-  church               Church? @relation(fields: [churchId], references: [id], onDelete: SetNull)
   seriesId             String?
-  series               Series? @relation(fields: [seriesId], references: [id], onDelete: SetNull)
   createdById          String?
-  createdBy            User?   @relation("UserEvents", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt            DateTime        @default(now())
+  updatedAt            DateTime        @updatedAt
+  church               Church?         @relation(fields: [churchId], references: [id])
+  createdBy            User?           @relation("UserEvents", fields: [createdById], references: [id])
+  series               Series?         @relation(fields: [seriesId], references: [id])
   attendees            EventAttendee[]
   questions            EventQuestion[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
 
   @@index([isPast, isDraft])
   @@index([churchId])
@@ -200,16 +172,15 @@ model Event {
 }
 
 model EventAttendee {
-  id        String   @id @default(cuid())
+  id        String                  @id @default(cuid())
   eventId   String
   userId    String
-  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   phone     String?
   notes     String?
-  metadata  Json?    @db.JsonB
-  createdAt DateTime @default(now())
-
+  metadata  Json?                   @db.JsonB
+  createdAt DateTime                @default(now())
+  event     Event                   @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user      User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
   responses EventAttendeeResponse[]
 
   @@unique([eventId, userId])
@@ -219,13 +190,13 @@ model EventAttendee {
 model QuestionLibraryItem {
   id          String          @id @default(cuid())
   createdById String
-  createdBy   User            @relation("UserQuestionLibrary", fields: [createdById], references: [id], onDelete: Cascade)
   type        QuestionType
   label       String
   options     String[]
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
   questions   EventQuestion[]
+  createdBy   User            @relation("UserQuestionLibrary", fields: [createdById], references: [id], onDelete: Cascade)
 
   @@unique([createdById, label, type])
   @@index([createdById])
@@ -234,9 +205,7 @@ model QuestionLibraryItem {
 model EventQuestion {
   id            String                  @id @default(cuid())
   eventId       String
-  event         Event                   @relation(fields: [eventId], references: [id], onDelete: Cascade)
   libraryItemId String?
-  libraryItem   QuestionLibraryItem?    @relation(fields: [libraryItemId], references: [id], onDelete: SetNull)
   type          QuestionType
   label         String
   options       String[]
@@ -244,6 +213,8 @@ model EventQuestion {
   order         Int
   updatedAt     DateTime                @updatedAt
   responses     EventAttendeeResponse[]
+  event         Event                   @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  libraryItem   QuestionLibraryItem?    @relation(fields: [libraryItemId], references: [id])
 
   @@index([eventId])
   @@index([eventId, order])
@@ -252,13 +223,13 @@ model EventQuestion {
 model EventAttendeeResponse {
   id              String        @id @default(cuid())
   eventAttendeeId String
-  eventAttendee   EventAttendee @relation(fields: [eventAttendeeId], references: [id], onDelete: Cascade)
   questionId      String
-  question        EventQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
   answer          String?
   fileUrl         String?
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
+  eventAttendee   EventAttendee @relation(fields: [eventAttendeeId], references: [id], onDelete: Cascade)
+  question        EventQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
 
   @@unique([eventAttendeeId, questionId])
   @@index([questionId])
@@ -268,9 +239,9 @@ model ChurchFollower {
   id        String   @id @default(cuid())
   churchId  String
   userId    String
+  createdAt DateTime @default(now())
   church    Church   @relation(fields: [churchId], references: [id], onDelete: Cascade)
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
 
   @@unique([churchId, userId])
   @@index([userId])
@@ -280,9 +251,9 @@ model SeriesFollower {
   id        String   @id @default(cuid())
   seriesId  String
   userId    String
+  createdAt DateTime @default(now())
   series    Series   @relation(fields: [seriesId], references: [id], onDelete: Cascade)
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
 
   @@unique([seriesId, userId])
   @@index([userId])
@@ -298,7 +269,6 @@ model PushToken {
 
   @@index([userId, platform])
 }
-
 
 model NotificationPreference {
   id      String  @id @default(cuid())
@@ -324,10 +294,30 @@ model Notification {
   cancelledAt  DateTime?
   dedupeKey    String?
   createdAt    DateTime  @default(now())
-
   user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, type, dedupeKey])
   @@index([scheduledFor, sentAt, cancelledAt])
   @@index([userId, sentAt, readAt])
+}
+
+enum UserRole {
+  ATTENDEE
+  ORGANISER
+  ADMIN
+}
+
+enum Cadence {
+  WEEKLY
+  BIWEEKLY
+  MONTHLY
+  CUSTOM
+}
+
+enum QuestionType {
+  SHORT_TEXT
+  LONG_TEXT
+  YES_NO
+  MULTIPLE_CHOICE
+  FILE_UPLOAD
 }

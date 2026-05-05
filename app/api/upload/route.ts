@@ -4,9 +4,8 @@ import { auth } from "@/auth";
 import { UserRole } from "@prisma/client";
 
 export async function POST(request: Request): Promise<NextResponse> {
-  const body = (await request.json()) as HandleUploadBody;
-
   try {
+    const body = (await request.json()) as HandleUploadBody;
     const jsonResponse = await handleUpload({
       body,
       request,
@@ -50,9 +49,10 @@ export async function POST(request: Request): Promise<NextResponse> {
 
     return NextResponse.json(jsonResponse);
   } catch (error) {
-    return NextResponse.json(
-      { error: (error as Error).message },
-      { status: 400 }
-    );
+    const message = (error as Error).message;
+    const status =
+      message === "Unauthorized" ? 401 :
+      message === "Forbidden" ? 403 : 400;
+    return NextResponse.json({ error: message }, { status });
   }
 }

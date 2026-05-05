@@ -67,6 +67,7 @@ export function PhotoUploadField({ variant, value, onChange }: PhotoUploadFieldP
   async function handleRemove() {
     if (!localUrl) return;
     const urlToDelete = localUrl;
+    setError(null);
     setLocalUrl(undefined);
     onChange(undefined);
     setIsDeleting(true);

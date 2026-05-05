@@ -102,7 +102,7 @@ Errors: 401 unauthenticated, 403 insufficient role, 400 invalid file
 
 URL domain whitelist changes from `utfs.io`/`ufs.sh` to `*.public.blob.vercel-storage.com`.
 
-Auth check unchanged: `ORGANISER` or `ADMIN` required.
+Auth check: `ORGANISER` or `ADMIN` required (prevents IDOR — blob URLs are public so any-user gate would allow deleting others' assets).
 
 ### `app/api/uploadthing/` — deleted entirely
 

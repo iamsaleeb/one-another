@@ -18,6 +18,8 @@ import { StepWhenWhere } from "./steps/step-when-where";
 import { StepRegistration } from "./steps/step-registration";
 import { StepCampDetails } from "./steps/step-camp-details";
 import { StepReview } from "./steps/step-review";
+import { StepQuestions } from "./steps/step-questions";
+import type { QuestionType } from "@/lib/validations/questions";
 
 interface Church {
   id: string;
@@ -31,11 +33,19 @@ interface Series {
   churchName: string;
 }
 
+interface LibraryItem {
+  id: string;
+  type: QuestionType;
+  label: string;
+  options: string[];
+}
+
 interface EventWizardProps {
   churches: Church[];
   series?: Series | null;
   eventId?: string;
   defaultValues?: Partial<CreateEventInput> & { datetimeISO?: string };
+  libraryItems?: LibraryItem[];
 }
 
 const BASE_STEPS = [
@@ -44,16 +54,18 @@ const BASE_STEPS = [
   { label: "Registration" },
 ];
 const CAMP_STEP = { label: "Camp Details" };
+const QUESTIONS_STEP = { label: "Questions" };
 const REVIEW_STEP = { label: "Review" };
 
 const STEP_FIELDS: Array<Array<keyof CreateEventInput>> = [
   ["title", "description", "tag", "churchId", "photoUrl"],
   ["date", "time", "location", "host"],
   ["price", "requiresRegistration", "capacity", "collectPhone", "collectNotes"],
+  ["questions"],
   ["campEndDate", "campAllowPartialRegistration", "campAgenda"],
 ];
 
-export function EventWizard({ churches, series, eventId, defaultValues }: EventWizardProps) {
+export function EventWizard({ churches, series, eventId, defaultValues, libraryItems }: EventWizardProps) {
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
@@ -100,7 +112,7 @@ export function EventWizard({ churches, series, eventId, defaultValues }: EventW
   const tag = useWatch({ control: form.control, name: "tag" });
   const isDraft = useWatch({ control: form.control, name: "isDraft" });
 
-  const activeSteps = [...BASE_STEPS, ...(tag === "Camp" ? [CAMP_STEP] : []), REVIEW_STEP];
+  const activeSteps = [...BASE_STEPS, QUESTIONS_STEP, ...(tag === "Camp" ? [CAMP_STEP] : []), REVIEW_STEP];
 
   const buildData = (): CreateEventInput & { datetimeISO?: string } => {
     const data = form.getValues();
@@ -198,6 +210,8 @@ export function EventWizard({ churches, series, eventId, defaultValues }: EventW
       case 2:
         return <StepRegistration />;
       case 3:
+        return <StepQuestions libraryItems={libraryItems ?? []} />;
+      case 4:
         return <StepCampDetails />;
       default:
         return null;

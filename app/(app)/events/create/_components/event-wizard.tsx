@@ -63,9 +63,9 @@ export function EventWizard({ churches, series, eventId, defaultValues }: EventW
   const seedDatetime = datetimeISO ? utcIsoToLocalInputs(datetimeISO) : null;
 
   const form = useForm<CreateEventInput>({
-    resolver: zodResolver(createEventSchema),
+    resolver: zodResolver(createEventSchema) as any,
     defaultValues: defaultValues
-      ? { date: seedDatetime?.date ?? "", time: seedDatetime?.time ?? "", ...restDefaultValues }
+      ? { date: seedDatetime?.date ?? "", time: seedDatetime?.time ?? "", questions: [], ...restDefaultValues }
       : {
           title: "",
           date: "",
@@ -86,11 +86,12 @@ export function EventWizard({ churches, series, eventId, defaultValues }: EventW
           campEndDate: undefined,
           campAllowPartialRegistration: false,
           campAgenda: [],
+          questions: [],
         },
   });
 
   const { draftId, setDraftId, autoSaveStatus, markPublished } = useEventAutoSave({
-    form: form as UseFormReturn<CreateEventInput>,
+    form: form as any,
     initialDraftId: eventId,
     initialIsDraft: defaultValues?.isDraft ?? true,
     isBusy: isSaving || isPublishing,

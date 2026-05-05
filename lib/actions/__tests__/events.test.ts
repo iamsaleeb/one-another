@@ -108,6 +108,7 @@ const validData = {
   tag: 'Youth Meeting',
   description: 'Weekly Sunday service',
   churchId: 'ch-1',
+  questions: [],
 }
 
 beforeEach(() => {

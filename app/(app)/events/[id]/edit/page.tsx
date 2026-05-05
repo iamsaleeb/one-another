@@ -51,6 +51,7 @@ export default async function EditEventPage({ params }: Props) {
             campEndDate: camp?.endDate ?? undefined,
             campAllowPartialRegistration: camp?.allowPartialRegistration ?? false,
             campAgenda: camp?.agenda ?? [],
+            questions: [],
           }}
         />
       </div>

@@ -99,13 +99,18 @@ export async function saveDraftAction(
   const parsed = saveDraftSchema.safeParse(data);
   if (!parsed.success) return { fieldErrors: parsed.error.flatten().fieldErrors };
 
+  const dataWithDefaults = {
+    ...parsed.data,
+    questions: parsed.data.questions ?? [],
+  };
+
   if (!id) {
-    const result = await createEvent({ ...parsed.data, isDraft: true }, session.user.id, session.user.role);
+    const result = await createEvent({ ...dataWithDefaults, isDraft: true }, session.user.id, session.user.role);
     if ("error" in result || "fieldErrors" in result) return result;
     invalidateEventFields(result.id, result.churchId, result.seriesId ?? null);
     return { eventId: result.id };
   } else {
-    const result = await updateEvent(id, { ...parsed.data, isDraft: parsed.data.isDraft ?? true }, session.user.id, session.user.role);
+    const result = await updateEvent(id, { ...dataWithDefaults, isDraft: dataWithDefaults.isDraft ?? true }, session.user.id, session.user.role);
     if ("error" in result || "fieldErrors" in result) return result;
     invalidateEventUpdate(id, result);
     return { eventId: id };

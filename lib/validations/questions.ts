@@ -8,9 +8,9 @@ export const questionSchema = z.object({
   id: z.string().optional(),
   type: z.nativeEnum(QuestionType),
   label: z.string().min(1, "Question text is required"),
-  options: z.array(z.string().min(1)).optional(),
-  required: z.boolean().optional(),
-  order: z.number().int().min(0).optional(),
+  options: z.array(z.string().min(1)).default([]),
+  required: z.boolean().default(false),
+  order: z.number().int().min(0).default(0),
   libraryItemId: z.string().optional(),
 });
 

@@ -66,16 +66,13 @@ export function PhotoUploadField({ variant, value, onChange }: PhotoUploadFieldP
 
   async function handleRemove() {
     if (!localUrl) return;
-    const urlToDelete = localUrl;
     setError(null);
-    setLocalUrl(undefined);
-    onChange(undefined);
     setIsDeleting(true);
     try {
-      await deleteUploadedFileAction(urlToDelete);
+      await deleteUploadedFileAction(localUrl);
+      setLocalUrl(undefined);
+      onChange(undefined);
     } catch {
-      setLocalUrl(urlToDelete);
-      onChange(urlToDelete);
       setError("Failed to remove photo. Please try again.");
     } finally {
       setIsDeleting(false);

@@ -139,7 +139,7 @@ describe("PhotoUploadField", () => {
   });
 
   describe("remove", () => {
-    it("calls onChange with undefined immediately on remove click", async () => {
+    it("calls onChange with undefined after delete settles", async () => {
       const onChange = jest.fn();
       render(<PhotoUploadField variant="cover" value={BLOB_URL} onChange={onChange} />);
       await act(async () => {

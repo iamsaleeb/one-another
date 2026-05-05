@@ -93,8 +93,8 @@ Errors: 401 unauthenticated, 403 insufficient role, 400 invalid file
 - `cover` variant requires `ORGANISER` or `ADMIN` — 403 otherwise
 - `contentType` must match `image/*` — 400 if not
 - `fileSize` must be ≤ 4MB (4,194,304 bytes) — 400 if exceeded
-- Calls `handleUpload()` from `@vercel/blob/next` to generate client token
-- Blob pathname: `{variant}/{userId}/{timestamp}-{filename}`
+- Calls `handleUpload()` from `@vercel/blob/client` to generate client token
+- Blob pathname: determined by the client (`file.name`); Vercel Blob appends a random suffix for uniqueness. No server-side pathname template is enforced.
 
 ### `lib/actions/upload.ts` (updated)
 
@@ -138,7 +138,7 @@ Add: `BLOB_READ_WRITE_TOKEN` (from Vercel dashboard → Storage → Blob)
 
 ### Client-side (after network request)
 - Upload failure → inline error + retry button (re-triggers same file)
-- Delete failure → inline error, preview stays visible (no optimistic removal)
+- Delete failure → inline error, preview stays visible; `handleRemove` waits for deletion to settle before clearing state, so there is no race between a failing delete and a concurrent new upload
 
 ### Server-side
 - All errors return `{ error: string }` JSON shape

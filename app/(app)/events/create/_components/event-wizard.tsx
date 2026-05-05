@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useForm, useWatch, type UseFormReturn } from "react-hook-form";
+import { useForm, useWatch, type Resolver } from "react-hook-form";
 import { useEventAutoSave } from "./use-event-auto-save";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -75,7 +75,7 @@ export function EventWizard({ churches, series, eventId, defaultValues, libraryI
   const seedDatetime = datetimeISO ? utcIsoToLocalInputs(datetimeISO) : null;
 
   const form = useForm<CreateEventInput>({
-    resolver: zodResolver(createEventSchema) as any,
+    resolver: zodResolver(createEventSchema) as Resolver<CreateEventInput>,
     defaultValues: defaultValues
       ? { date: seedDatetime?.date ?? "", time: seedDatetime?.time ?? "", questions: [], ...restDefaultValues }
       : {
@@ -103,7 +103,7 @@ export function EventWizard({ churches, series, eventId, defaultValues, libraryI
   });
 
   const { draftId, setDraftId, autoSaveStatus, markPublished } = useEventAutoSave({
-    form: form as any,
+    form,
     initialDraftId: eventId,
     initialIsDraft: defaultValues?.isDraft ?? true,
     isBusy: isSaving || isPublishing,

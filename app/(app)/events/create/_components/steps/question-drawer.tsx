@@ -1,7 +1,7 @@
 // app/(app)/events/create/_components/steps/question-drawer.tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import {
   Drawer,
@@ -60,15 +60,6 @@ export function QuestionDrawer({
   const [required, setRequired] = useState(false);
   const [options, setOptions] = useState<string[]>([""]);
   const [libraryOpen, setLibraryOpen] = useState(false);
-
-  useEffect(() => {
-    if (open) {
-      setLabel(initial?.label ?? "");
-      setType(initial?.type ?? QuestionType.SHORT_TEXT);
-      setRequired(initial?.required ?? false);
-      setOptions(initial?.options?.length ? initial.options : [""]);
-    }
-  }, [open, initial]);
 
   function handleLibrarySelect(item: LibraryItem) {
     setLabel(item.label);
@@ -138,6 +129,7 @@ export function QuestionDrawer({
               <div className="flex flex-col gap-2">
                 <Label>Options</Label>
                 {options.map((opt, i) => (
+                  // eslint-disable-next-line react/no-array-index-key
                   <div key={i} className="flex gap-2">
                     <Input
                       placeholder={`Option ${i + 1}`}

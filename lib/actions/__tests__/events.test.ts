@@ -557,6 +557,7 @@ describe('registerEventAction', () => {
         phone: '07700000000',
         notes: 'Vegetarian',
       },
+      select: { id: true },
     })
     expect(result.success).toBe(true)
     expect(mockUpdateTag).toHaveBeenCalledWith('event-evt-1')
@@ -570,6 +571,7 @@ describe('registerEventAction', () => {
 
     expect(mockEventAttendeeCreate).toHaveBeenCalledWith({
       data: { eventId: 'evt-1', userId: 'user-1', phone: undefined, notes: undefined },
+      select: { id: true },
     })
     expect(result.success).toBe(true)
   })

@@ -548,6 +548,7 @@ describe('getEventAttendees', () => {
         notes: true,
         metadata: true,
         user: { select: { id: true, name: true, email: true } },
+        _count: { select: { responses: true } },
       },
       orderBy: { createdAt: 'asc' },
     })
@@ -567,6 +568,7 @@ describe('getEventAttendees', () => {
         notes: true,
         metadata: true,
         user: { select: { id: true, name: true, email: true } },
+        _count: { select: { responses: true } },
       },
       orderBy: { createdAt: 'asc' },
     })

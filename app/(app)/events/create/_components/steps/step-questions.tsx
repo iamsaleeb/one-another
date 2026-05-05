@@ -13,7 +13,7 @@ import {
   FormItem,
 } from "@/components/ui/form";
 import { QuestionDrawer } from "./question-drawer";
-import { QuestionType, type QuestionInput } from "@/lib/validations/questions";
+import type { QuestionType, QuestionInput } from "@/lib/validations/questions";
 import type { CreateEventInput } from "@/lib/validations/event";
 
 const TYPE_LABELS: Record<QuestionType, string> = {
@@ -164,6 +164,7 @@ export function StepQuestions({ libraryItems }: StepQuestionsProps) {
       </Button>
 
       <QuestionDrawer
+        key={editingIndex !== null ? (fields[editingIndex]?.id ?? `idx-${editingIndex}`) : "new"}
         open={drawerOpen}
         onOpenChange={(o) => {
           setDrawerOpen(o);

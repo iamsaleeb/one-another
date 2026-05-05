@@ -17,7 +17,7 @@ interface Question { id: string; label: string; type: string }
 interface Attendee {
   id: string;
   user: { id: string; name: string | null; email: string };
-  responses: { questionId: string; answer: string | null; fileUrl: string | null }[];
+  responses: Array<{ questionId: string; answer: string | null; fileUrl: string | null }>;
 }
 
 interface ResponsesTableProps {

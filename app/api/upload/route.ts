@@ -16,7 +16,9 @@ export async function POST(request: Request): Promise<NextResponse> {
           throw new Error("Unauthorized");
         }
 
-        const variant = clientPayload === "cover" ? "cover" : "profile";
+        const variant = clientPayload === "cover" ? "cover"
+          : clientPayload === "response" ? "response"
+          : "profile";
 
         if (variant === "cover") {
           if (
@@ -28,14 +30,15 @@ export async function POST(request: Request): Promise<NextResponse> {
         }
 
         return {
-          allowedContentTypes: [
-            "image/jpeg",
-            "image/png",
-            "image/webp",
-            "image/gif",
-            "image/avif",
-          ],
-          maximumSizeInBytes: 4 * 1024 * 1024,
+          allowedContentTypes: variant === "response"
+            ? [
+                "image/jpeg", "image/png", "image/webp", "image/gif", "image/avif",
+                "application/pdf",
+                "application/msword",
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+              ]
+            : ["image/jpeg", "image/png", "image/webp", "image/gif", "image/avif"],
+          maximumSizeInBytes: variant === "response" ? 10 * 1024 * 1024 : 4 * 1024 * 1024,
           tokenPayload: JSON.stringify({
             userId: session.user.id,
             variant,

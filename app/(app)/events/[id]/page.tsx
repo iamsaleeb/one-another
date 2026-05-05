@@ -99,7 +99,7 @@ export default async function EventDetailPage({ params }: Props) {
                   }
                   <DeleteEventButton eventId={id} />
                 </div>
-                {questions.length > 0 && (
+                {event.requiresRegistration && questions.length > 0 && (
                   <Button asChild variant="outline" size="sm" className="mt-2">
                     <Link href={`/events/${id}/responses`}>
                       <TableProperties className="size-4 mr-1.5" />

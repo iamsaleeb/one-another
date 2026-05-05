@@ -103,7 +103,7 @@ export function EventActionBar({
               </Button>
             )}
 
-            {!isCancelled && !isDraft && (requiresRegistration || (questions && questions.length > 0) ? (
+            {!isCancelled && !isDraft && (requiresRegistration ? (
               <Button
                 onClick={() => setDrawerOpen(true)}
                 variant={isAttending ? "outline" : "default"}
@@ -111,10 +111,7 @@ export function EventActionBar({
                 disabled={isFull}
               >
                 {isAttending && <Check className="size-4" />}
-                {isAttending
-                  ? requiresRegistration ? "Registered" : "Going"
-                  : isFull ? "Fully booked"
-                  : requiresRegistration ? "Register" : "I'm going"}
+                {isAttending ? "Registered" : isFull ? "Fully booked" : "Register"}
               </Button>
             ) : (
               <AttendButton eventId={eventId} isAttending={isAttending} />
@@ -123,7 +120,7 @@ export function EventActionBar({
         </div>
       </div>
 
-      {(requiresRegistration || (questions && questions.length > 0)) && (
+      {requiresRegistration && (
         <RegistrationDrawer
           eventId={eventId}
           eventTitle={eventTitle}
@@ -138,7 +135,6 @@ export function EventActionBar({
           campStartDate={campStartDate}
           questions={questions}
           existingResponses={existingResponses}
-          mode={requiresRegistration ? "register" : "attend"}
         />
       )}
 
@@ -150,7 +146,7 @@ export function EventActionBar({
           collectNotes={collectNotes}
           open={attendeesDrawerOpen}
           onOpenChange={setAttendeesDrawerOpen}
-          questionCount={questions?.length ?? 0}
+          questionCount={requiresRegistration ? (questions?.length ?? 0) : 0}
           camp={camp}
           campStartDate={campStartDate}
         />

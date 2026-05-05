@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useTransition, useEffect, useState, useRef } from "react";
+import { useActionState, useTransition, useEffect, useState } from "react";
 import { Check } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -16,7 +16,7 @@ import {
   DrawerFooter,
   DrawerClose,
 } from "@/components/ui/drawer";
-import { registerEventAction, unattendEventAction, attendWithQuestionsAction, type RegisterEventState } from "@/lib/actions/events-attendance";
+import { registerEventAction, unattendEventAction, type RegisterEventState } from "@/lib/actions/events-attendance";
 import type { EventMetadata } from "@/lib/validations/event";
 import { getCampDays, formatDayLabel } from "@/lib/datetime";
 import { QuestionsForm } from "./questions-form";
@@ -43,9 +43,7 @@ interface RegistrationDrawerProps {
   campStartDate?: string;
   questions?: Question[];
   existingResponses?: Record<string, { answer: string | null; fileUrl: string | null }>;
-  mode?: "register" | "attend";
 }
-
 
 export function RegistrationDrawer({
   eventId,
@@ -61,17 +59,9 @@ export function RegistrationDrawer({
   campStartDate,
   questions,
   existingResponses,
-  mode: modeProp,
 }: RegistrationDrawerProps) {
-  const mode = modeProp ?? "register";
-
-  const boundAction =
-    mode === "attend"
-      ? attendWithQuestionsAction.bind(null, eventId)
-      : registerEventAction.bind(null, eventId);
-
   const [state, formAction, isPending] = useActionState<RegisterEventState, FormData>(
-    boundAction as (prevState: RegisterEventState, formData: FormData) => Promise<RegisterEventState>,
+    registerEventAction.bind(null, eventId),
     {}
   );
   const [unattendPending, startUnattendTransition] = useTransition();
@@ -88,23 +78,9 @@ export function RegistrationDrawer({
 
   const [selectedDays, setSelectedDays] = useState<string[]>(allDays);
 
-  // Track whether the form has been submitted so we can close on success for both modes
-  const submittedRef = useRef(false);
-
   useEffect(() => {
-    if (state.success) {
-      onOpenChange(false);
-    } else if (submittedRef.current && !isPending && !state.error) {
-      // attend mode: no success flag, but no error either — treat as success
-      onOpenChange(false);
-    }
-  }, [state.success, state.error, isPending, onOpenChange]);
-
-  function handleFormAction(formData: FormData) {
-    submittedRef.current = false;
-    submittedRef.current = true;
-    formAction(formData);
-  }
+    if (state.success) onOpenChange(false);
+  }, [state.success, onOpenChange]);
 
   function toggleDay(day: string) {
     setSelectedDays((prev) =>
@@ -124,10 +100,8 @@ export function RegistrationDrawer({
   // Show confirmation screen only when registered and there are no questions to fill
   const showConfirmation = isRegistered && !hasQuestions;
 
-  // Determine button text
   function getButtonLabel(pending: boolean) {
-    if (isRegistered) return pending ? "Updating..." : "Update response";
-    if (mode === "attend") return pending ? "Confirming..." : "Confirm attendance";
+    if (isRegistered) return pending ? "Updating..." : "Update responses";
     return pending ? "Registering..." : "Confirm Registration";
   }
 
@@ -149,7 +123,7 @@ export function RegistrationDrawer({
               </p>
             </div>
           ) : (
-            <form action={handleFormAction} className="flex flex-col gap-4">
+            <form action={formAction} className="flex flex-col gap-4">
               {state.error && (
                 <Alert variant="destructive">
                   <AlertDescription>{state.error}</AlertDescription>

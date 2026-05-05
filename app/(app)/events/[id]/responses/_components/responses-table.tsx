@@ -31,10 +31,7 @@ export function ResponsesTable({ questions, attendees, eventTitle }: ResponsesTa
     name: a.user.name ?? a.user.email,
     email: a.user.email,
     responses: Object.fromEntries(
-      a.responses.map((r) => {
-        const q = questions.find((q) => q.id === r.questionId);
-        return [q?.label ?? r.questionId, { answer: r.answer, fileUrl: r.fileUrl }];
-      })
+      a.responses.map((r) => [r.questionId, { answer: r.answer, fileUrl: r.fileUrl }])
     ),
   }));
 
@@ -42,7 +39,7 @@ export function ResponsesTable({ questions, attendees, eventTitle }: ResponsesTa
     <div className="flex flex-col gap-4">
       <div className="flex justify-end">
         <CsvExportButton
-          columns={questions.map((q) => ({ label: q.label, type: q.type }))}
+          columns={questions.map((q) => ({ id: q.id, label: q.label, type: q.type }))}
           rows={responseMap}
           filename={`${eventTitle.toLowerCase().replace(/\s+/g, "-")}-responses.csv`}
         />

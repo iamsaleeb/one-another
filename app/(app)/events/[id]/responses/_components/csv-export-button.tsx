@@ -3,7 +3,7 @@
 import { Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-interface Column { label: string; type: string }
+interface Column { id: string; label: string; type: string }
 interface AttendeeRow {
   name: string;
   email: string;
@@ -31,7 +31,7 @@ export function CsvExportButton({ columns, rows, filename = "responses.csv" }: C
         row.name,
         row.email,
         ...columns.map((col) => {
-          const r = row.responses[col.label];
+          const r = row.responses[col.id];
           if (!r) return "—";
           if (r.fileUrl) return r.fileUrl;
           return r.answer ?? "—";

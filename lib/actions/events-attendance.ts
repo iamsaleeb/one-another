@@ -3,7 +3,7 @@
 import { updateTag } from "next/cache";
 import { auth } from "@/auth";
 import { registerEventSchema } from "@/lib/validations/event";
-import { attendEvent, unattendEvent, registerEvent, attendWithResponses } from "@/lib/dal/attendance";
+import { attendEvent, unattendEvent, registerEvent } from "@/lib/dal/attendance";
 import type { ResponseInput } from "@/lib/validations/questions";
 
 export interface AttendEventState {
@@ -105,21 +105,4 @@ export async function registerEventAction(
 
   invalidateEventCaches(eventId);
   return { success: true };
-}
-
-export async function attendWithQuestionsAction(
-  eventId: string,
-  _prevState: AttendEventState,
-  formData: FormData
-): Promise<AttendEventState> {
-  const session = await auth();
-  if (!session?.user?.id) return { error: "You must be signed in." };
-
-  const responses = extractResponses(formData);
-
-  const result = await attendWithResponses(eventId, session.user.id, responses);
-  if ("error" in result && result.error) return { error: result.error };
-
-  invalidateEventCaches(eventId);
-  return {};
 }

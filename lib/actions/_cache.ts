@@ -12,6 +12,7 @@ export function broadcastEventChange(
 ) {
   updateTag("events");
   updateTag(`event-${id}`);
+  updateTag(`event-questions-${id}`);
   if (churchId) {
     updateTag("churches");
     updateTag(`church-${churchId}`);
@@ -33,6 +34,7 @@ export function invalidateEventFields(
 ) {
   updateTag("events");
   updateTag(`event-${id}`);
+  updateTag(`event-questions-${id}`);
   if (churchId) updateTag(`church-${churchId}`);
   if (seriesId) updateTag(`series-${seriesId}`);
 }

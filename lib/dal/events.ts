@@ -2,6 +2,7 @@ import "server-only";
 
 import { prisma } from "@/lib/db";
 import { canManageChurch } from "@/lib/permissions";
+import { syncEventQuestions } from "@/lib/dal/questions";
 import {
   queueNotification,
   cancelManyNotifications,
@@ -75,6 +76,7 @@ export async function createEvent(
     campEndDate,
     campAllowPartialRegistration,
     campAgenda,
+    questions,
   } = data;
   let { churchId } = data;
 
@@ -136,6 +138,14 @@ export async function createEvent(
     select: { id: true },
   });
 
+  if (questions && questions.length > 0) {
+    try {
+      await syncEventQuestions(created.id, questions, userId);
+    } catch (err) {
+      console.error("Failed to sync event questions:", err);
+    }
+  }
+
   if (!isDraft && seriesId) {
     try {
       await notifySeriesFollowers(seriesId, title, created.id);
@@ -176,6 +186,7 @@ export async function updateEvent(
     campEndDate,
     campAllowPartialRegistration,
     campAgenda,
+    questions,
   } = data;
   let { churchId } = data;
 
@@ -245,6 +256,14 @@ export async function updateEvent(
       seriesId: seriesId ?? null,
     },
   });
+
+  if (questions !== undefined) {
+    try {
+      await syncEventQuestions(id, questions ?? [], userId);
+    } catch (err) {
+      console.error("Failed to sync event questions on update:", err);
+    }
+  }
 
   if (!existing.isDraft && newDatetime && existing.datetime && newDatetime.getTime() !== existing.datetime.getTime()) {
     try {

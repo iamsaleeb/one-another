@@ -150,6 +150,7 @@ export function EventActionBar({
           collectNotes={collectNotes}
           open={attendeesDrawerOpen}
           onOpenChange={setAttendeesDrawerOpen}
+          questionCount={questions?.length ?? 0}
           camp={camp}
           campStartDate={campStartDate}
         />

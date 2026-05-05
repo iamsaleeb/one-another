@@ -1,6 +1,7 @@
 "use client";
 
 import { Users } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import {
   Drawer,
   DrawerContent,
@@ -21,6 +22,7 @@ interface AttendeesDrawerProps {
   collectNotes: boolean;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  questionCount?: number;
   camp?: EventMetadata["camp"];
   campStartDate?: string;
 }
@@ -32,6 +34,7 @@ export function AttendeesDrawer({
   collectNotes,
   open,
   onOpenChange,
+  questionCount,
   camp,
   campStartDate,
 }: AttendeesDrawerProps) {
@@ -66,6 +69,18 @@ export function AttendeesDrawer({
                 <div key={a.id} className="rounded-xl bg-muted/50 px-4 py-3 flex flex-col gap-0.5">
                   <p className="text-sm font-semibold">{a.user.name}</p>
                   <p className="text-xs text-muted-foreground">{a.user.email}</p>
+                  {questionCount != null && questionCount > 0 && (
+                    <Badge
+                      variant="secondary"
+                      className={
+                        a._count.responses >= questionCount
+                          ? "text-xs bg-green-100 text-green-700 border-green-200"
+                          : "text-xs bg-yellow-100 text-yellow-700 border-yellow-200"
+                      }
+                    >
+                      {a._count.responses >= questionCount ? "Answered" : "Partial"}
+                    </Badge>
+                  )}
                   {collectPhone && a.phone && (
                     <p className="text-xs text-muted-foreground">{a.phone}</p>
                   )}

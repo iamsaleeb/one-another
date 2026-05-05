@@ -42,6 +42,7 @@ export async function getEventAttendees(eventId: string) {
       notes: true,
       metadata: true,
       user: { select: { id: true, name: true, email: true } },
+      _count: { select: { responses: true } },
     },
     orderBy: { createdAt: "asc" },
   });

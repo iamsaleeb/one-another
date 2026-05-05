@@ -1,0 +1,25 @@
+// lib/validations/questions.ts
+import { z } from "zod";
+import { QuestionType } from "@prisma/client";
+
+export { QuestionType };
+
+export const questionSchema = z.object({
+  id: z.string().optional(),
+  type: z.nativeEnum(QuestionType),
+  label: z.string().min(1, "Question text is required"),
+  options: z.array(z.string().min(1)).optional(),
+  required: z.boolean().optional(),
+  order: z.number().int().min(0).optional(),
+  libraryItemId: z.string().optional(),
+});
+
+export type QuestionInput = z.infer<typeof questionSchema>;
+
+export const responseInputSchema = z.object({
+  questionId: z.string(),
+  answer: z.string().nullable().optional(),
+  fileUrl: z.string().url().nullable().optional(),
+});
+
+export type ResponseInput = z.infer<typeof responseInputSchema>;

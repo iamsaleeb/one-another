@@ -4,6 +4,8 @@ import { prisma } from "@/lib/db";
 import { Prisma } from "@prisma/client";
 import { parseEventMetadata } from "@/lib/validations/event";
 import { scheduleEventReminderNotification, cancelNotification } from "@/lib/notifications/queue";
+import { saveResponses } from "@/lib/dal/responses";
+import type { ResponseInput } from "@/lib/validations/questions";
 interface DalError { error: string }
 
 export async function attendEvent(
@@ -62,6 +64,7 @@ export interface RegisterEventData {
   phone?: string;
   notes?: string;
   selectedDays?: string[];
+  responses?: ResponseInput[];
 }
 
 export async function registerEvent(
@@ -106,8 +109,9 @@ export async function registerEvent(
     validatedSelectedDays = filtered;
   }
 
+  let created: { id: string };
   try {
-    await prisma.eventAttendee.create({
+    created = await prisma.eventAttendee.create({
       data: {
         eventId,
         userId,
@@ -115,12 +119,21 @@ export async function registerEvent(
         notes: data.notes,
         ...(validatedSelectedDays ? { metadata: { selectedDays: validatedSelectedDays } } : {}),
       },
+      select: { id: true },
     });
   } catch (err) {
     if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
       return { error: "You're already registered for this event." };
     }
     throw err;
+  }
+
+  if (data.responses && data.responses.length > 0) {
+    try {
+      await saveResponses(created.id, data.responses);
+    } catch (err) {
+      console.error("Failed to save responses:", err);
+    }
   }
 
   try {
@@ -134,4 +147,52 @@ export async function registerEvent(
   }
 
   return { success: true };
+}
+
+export async function attendWithResponses(
+  eventId: string,
+  userId: string,
+  responses: ResponseInput[]
+): Promise<DalError | Record<string, never>> {
+  const event = await prisma.event.findUnique({
+    where: { id: eventId },
+    select: { id: true, title: true, datetime: true, isDraft: true },
+  });
+  if (!event || event.isDraft) return { error: "Event not found." };
+
+  let attendeeId: string;
+
+  try {
+    const created = await prisma.eventAttendee.create({
+      data: { eventId, userId },
+      select: { id: true },
+    });
+    attendeeId = created.id;
+  } catch (err) {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
+      // Already attending — just update responses
+      const existing = await prisma.eventAttendee.findUnique({
+        where: { eventId_userId: { eventId, userId } },
+        select: { id: true },
+      });
+      if (!existing) return {};
+      attendeeId = existing.id;
+    } else {
+      throw err;
+    }
+  }
+
+  try {
+    await saveResponses(attendeeId, responses);
+  } catch (err) {
+    console.error("Failed to save responses for attend:", err);
+  }
+
+  try {
+    await scheduleEventReminderNotification(userId, event);
+  } catch (err) {
+    console.error("Failed to schedule event reminder:", err);
+  }
+
+  return {};
 }

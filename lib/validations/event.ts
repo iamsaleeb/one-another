@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { questionSchema } from "./questions";
 
 // --- Event form schemas ---
 
@@ -34,6 +35,7 @@ export const createEventSchema = z.object({
       })
     )
     .optional(),
+  questions: z.array(questionSchema).optional(),
 });
 
 export type CreateEventInput = z.infer<typeof createEventSchema>;
@@ -57,6 +59,7 @@ export const saveDraftSchema = createEventSchema.extend({
       })
     )
     .optional(),
+  questions: z.array(questionSchema).optional(),
 });
 export type SaveDraftInput = z.infer<typeof saveDraftSchema>;
 

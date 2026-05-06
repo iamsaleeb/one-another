@@ -59,7 +59,6 @@ export const saveDraftSchema = createEventSchema.extend({
       })
     )
     .optional(),
-  questions: z.array(questionSchema).optional().default([]),
 });
 export type SaveDraftInput = z.infer<typeof saveDraftSchema>;
 

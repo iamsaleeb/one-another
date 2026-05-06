@@ -48,14 +48,7 @@ export function StepQuestions({ libraryItems, locked }: StepQuestionsProps) {
   }
 
   return (
-    <div className="flex flex-col gap-3">
-      <div>
-        <p className="text-sm font-semibold">Custom Questions</p>
-        <p className="text-xs text-muted-foreground mt-0.5">
-          Questions will be shown to attendees when they sign up or confirm attendance.
-        </p>
-      </div>
-
+    <div className="flex flex-col gap-5">
       {locked && (
         <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-3 text-amber-700">
           <Lock className="size-4 mt-0.5 shrink-0" />
@@ -65,17 +58,18 @@ export function StepQuestions({ libraryItems, locked }: StepQuestionsProps) {
         </div>
       )}
 
-      {fields.length === 0 && (
-        <p className="text-xs text-muted-foreground text-center py-2">
-          No questions added yet.
-        </p>
-      )}
+      <div className="flex flex-col gap-3 rounded-xl border px-4 py-3">
+        <p className="text-sm font-medium">Custom Questions</p>
 
-      {fields.map((field, index) => (
-        <div
-          key={field.id}
-          className="flex items-start justify-between gap-2 rounded-xl border bg-white px-3 py-3"
-        >
+        {fields.length === 0 && (
+          <p className="text-xs text-muted-foreground">No questions added yet.</p>
+        )}
+
+        {fields.map((field, index) => (
+          <div
+            key={field.id}
+            className="flex items-start justify-between gap-2 rounded-xl border bg-white px-3 py-3"
+          >
             <div className="flex flex-col gap-1 flex-1 min-w-0">
               <p className="text-sm font-medium line-clamp-2">{field.label}</p>
               <div className="flex items-center gap-1.5">
@@ -134,21 +128,22 @@ export function StepQuestions({ libraryItems, locked }: StepQuestionsProps) {
                 <Trash2 className="size-3.5" />
               </Button>
             </div>
-        </div>
-      ))}
+          </div>
+        ))}
 
-      {!locked && (
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="w-full"
-          onClick={openAdd}
-        >
-          <Plus className="size-4 mr-1" />
-          Add question
-        </Button>
-      )}
+        {!locked && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="w-full"
+            onClick={openAdd}
+          >
+            <Plus className="size-4 mr-1" />
+            Add question
+          </Button>
+        )}
+      </div>
 
       <QuestionDrawer
         key={drawerKey}

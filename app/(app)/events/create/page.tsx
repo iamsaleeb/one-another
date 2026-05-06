@@ -23,7 +23,7 @@ export default async function CreateEventPage({ searchParams }: Props) {
   const [churches, series, libraryItems] = await Promise.all([
     getChurchesByManager(session.user.id),
     seriesId ? getSeriesForEvent(seriesId) : null,
-    session?.user?.id ? getQuestionLibraryForUser(session.user.id) : Promise.resolve([]),
+    getQuestionLibraryForUser(session.user.id),
   ]);
 
   return (

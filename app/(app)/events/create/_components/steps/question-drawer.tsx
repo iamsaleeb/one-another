@@ -57,13 +57,14 @@ export function QuestionDrawer({
   }
 
   const validOptions = options.filter((o) => o.trim().length > 0);
-  const canSave = questionSchema.safeParse({
-    type,
-    label: label.trim(),
-    options: type === QuestionType.MULTIPLE_CHOICE ? validOptions : [],
-    required,
-    order: 0,
-  }).success;
+  const canSave =
+    questionSchema.safeParse({
+      type,
+      label: label.trim(),
+      options: type === QuestionType.MULTIPLE_CHOICE ? validOptions : [],
+      required,
+      order: 0,
+    }).success && (type !== QuestionType.MULTIPLE_CHOICE || validOptions.length >= 1);
 
   function handleSave() {
     if (!canSave) return;

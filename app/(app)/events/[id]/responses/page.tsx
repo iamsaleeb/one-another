@@ -3,6 +3,7 @@ import { auth } from "@/auth";
 import { getEventById } from "@/lib/actions/data-events";
 import { getEventResponses } from "@/lib/actions/data-questions";
 import { canManageChurch } from "@/lib/permissions";
+import { PageHeader } from "@/components/ui/page-header";
 import { ResponsesTable } from "./_components/responses-table";
 
 interface Props {
@@ -27,27 +28,26 @@ export default async function EventResponsesPage({ params }: Props) {
   const { questions, attendees } = await getEventResponses(id);
 
   return (
-    <div className="flex flex-col gap-6 px-4 pt-6 pb-28">
-      <div className="flex flex-col gap-1">
-        <h1 className="text-xl font-bold">Responses</h1>
-        <p className="text-sm text-muted-foreground">{event.title}</p>
-      </div>
+    <div className="flex flex-col pb-28">
+      <PageHeader title="Responses" description={event.title} />
 
-      {questions.length === 0 ? (
-        <div className="rounded-2xl border bg-white shadow-card p-8 flex flex-col items-center gap-3">
-          <p className="text-sm text-muted-foreground text-center">
-            This event has no custom questions.
-          </p>
-        </div>
-      ) : (
-        <div className="rounded-2xl border bg-white shadow-card p-4">
-          <ResponsesTable
-            questions={questions}
-            attendees={attendees}
-            eventTitle={event.title}
-          />
-        </div>
-      )}
+      <div className="flex flex-col gap-6 px-4">
+        {questions.length === 0 ? (
+          <div className="rounded-2xl border bg-white shadow-card p-8 flex flex-col items-center gap-3">
+            <p className="text-sm text-muted-foreground text-center">
+              This event has no custom questions.
+            </p>
+          </div>
+        ) : (
+          <div className="rounded-2xl border bg-white shadow-card p-4">
+            <ResponsesTable
+              questions={questions}
+              attendees={attendees}
+              eventTitle={event.title}
+            />
+          </div>
+        )}
+      </div>
     </div>
   );
 }

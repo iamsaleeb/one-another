@@ -20,14 +20,7 @@ import { registerEventAction, unattendEventAction, type RegisterEventState } fro
 import type { EventMetadata } from "@/lib/validations/event";
 import { getCampDays, formatDayLabel } from "@/lib/datetime";
 import { QuestionsForm } from "./questions-form";
-
-interface Question {
-  id: string;
-  type: string;
-  label: string;
-  options: string[];
-  required: boolean;
-}
+import type { Question } from "@/lib/validations/questions";
 
 interface RegistrationDrawerProps {
   eventId: string;

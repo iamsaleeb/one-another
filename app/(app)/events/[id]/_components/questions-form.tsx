@@ -10,15 +10,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Paperclip, X } from "lucide-react";
-import { QuestionType } from "@/lib/validations/questions";
-
-interface Question {
-  id: string;
-  type: string;
-  label: string;
-  options: string[];
-  required: boolean;
-}
+import { QuestionType, type Question } from "@/lib/validations/questions";
 
 interface QuestionsFormProps {
   questions: Question[];

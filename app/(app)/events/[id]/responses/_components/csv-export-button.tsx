@@ -47,7 +47,7 @@ export function CsvExportButton({ columns, rows, filename = "responses.csv" }: C
     a.href = url;
     a.download = filename;
     a.click();
-    URL.revokeObjectURL(url);
+    setTimeout(() => URL.revokeObjectURL(url), 100);
   }
 
   return (

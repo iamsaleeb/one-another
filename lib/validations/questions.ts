@@ -12,6 +12,14 @@ export const TYPE_LABELS: Record<QuestionType, string> = {
   FILE_UPLOAD: "File upload",
 };
 
+export interface Question {
+  id: string;
+  type: QuestionType;
+  label: string;
+  options: string[];
+  required: boolean;
+}
+
 export interface LibraryItem {
   id: string;
   type: QuestionType;

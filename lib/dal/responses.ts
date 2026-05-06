@@ -57,21 +57,3 @@ export async function saveResponses(
     )
   );
 }
-
-export async function getMyResponsesForEvent(
-  eventId: string,
-  userId: string
-): Promise<Record<string, { answer: string | null; fileUrl: string | null }>> {
-  const attendee = await prisma.eventAttendee.findUnique({
-    where: { eventId_userId: { eventId, userId } },
-    select: {
-      responses: { select: { questionId: true, answer: true, fileUrl: true } },
-    },
-  });
-
-  if (!attendee) return {};
-
-  return Object.fromEntries(
-    attendee.responses.map((r) => [r.questionId, { answer: r.answer, fileUrl: r.fileUrl }])
-  );
-}

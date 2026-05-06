@@ -8,14 +8,7 @@ import { RegistrationDrawer } from "./registration-drawer";
 import { AttendeesDrawer } from "./attendees-drawer";
 import type { getEventAttendees } from "@/lib/actions/data-events";
 import type { EventMetadata } from "@/lib/validations/event";
-
-interface Question {
-  id: string;
-  type: string;
-  label: string;
-  options: string[];
-  required: boolean;
-}
+import type { Question } from "@/lib/validations/questions";
 
 interface EventActionBarProps {
   eventId: string;

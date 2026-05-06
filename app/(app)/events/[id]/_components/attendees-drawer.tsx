@@ -71,12 +71,8 @@ export function AttendeesDrawer({
                   <p className="text-xs text-muted-foreground">{a.user.email}</p>
                   {questionCount != null && questionCount > 0 && (
                     <Badge
-                      variant="secondary"
-                      className={
-                        a._count.responses >= questionCount
-                          ? "text-xs bg-green-100 text-green-700 border-green-200"
-                          : "text-xs bg-yellow-100 text-yellow-700 border-yellow-200"
-                      }
+                      variant={a._count.responses >= questionCount ? "default" : "outline"}
+                      className="text-xs w-fit"
                     >
                       {a._count.responses >= questionCount ? "Answered" : "Partial"}
                     </Badge>

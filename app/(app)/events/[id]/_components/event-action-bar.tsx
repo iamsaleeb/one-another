@@ -8,6 +8,7 @@ import { RegistrationDrawer } from "./registration-drawer";
 import { AttendeesDrawer } from "./attendees-drawer";
 import type { getEventAttendees } from "@/lib/actions/data-events";
 import type { EventMetadata } from "@/lib/validations/event";
+import type { Question } from "@/lib/validations/questions";
 
 interface EventActionBarProps {
   eventId: string;
@@ -26,6 +27,8 @@ interface EventActionBarProps {
   attendees?: Awaited<ReturnType<typeof getEventAttendees>>;
   camp?: EventMetadata["camp"];
   campStartDate?: string;
+  questions?: Question[];
+  existingResponses?: Record<string, { answer: string | null; fileUrl: string | null }>;
 }
 
 export function EventActionBar({
@@ -45,6 +48,8 @@ export function EventActionBar({
   attendees,
   camp,
   campStartDate,
+  questions,
+  existingResponses,
 }: EventActionBarProps) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [attendeesDrawerOpen, setAttendeesDrawerOpen] = useState(false);
@@ -121,6 +126,8 @@ export function EventActionBar({
           onOpenChange={setDrawerOpen}
           camp={camp}
           campStartDate={campStartDate}
+          questions={questions}
+          existingResponses={existingResponses}
         />
       )}
 
@@ -132,6 +139,7 @@ export function EventActionBar({
           collectNotes={collectNotes}
           open={attendeesDrawerOpen}
           onOpenChange={setAttendeesDrawerOpen}
+          questionCount={requiresRegistration ? (questions?.length ?? 0) : 0}
           camp={camp}
           campStartDate={campStartDate}
         />

@@ -19,6 +19,8 @@ import {
 import { registerEventAction, unattendEventAction, type RegisterEventState } from "@/lib/actions/events-attendance";
 import type { EventMetadata } from "@/lib/validations/event";
 import { getCampDays, formatDayLabel } from "@/lib/datetime";
+import { QuestionsForm } from "./questions-form";
+import type { Question } from "@/lib/validations/questions";
 
 interface RegistrationDrawerProps {
   eventId: string;
@@ -32,8 +34,9 @@ interface RegistrationDrawerProps {
   onOpenChange: (open: boolean) => void;
   camp?: EventMetadata["camp"];
   campStartDate?: string;
+  questions?: Question[];
+  existingResponses?: Record<string, { answer: string | null; fileUrl: string | null }>;
 }
-
 
 export function RegistrationDrawer({
   eventId,
@@ -47,10 +50,11 @@ export function RegistrationDrawer({
   onOpenChange,
   camp,
   campStartDate,
+  questions,
+  existingResponses,
 }: RegistrationDrawerProps) {
-  const boundAction = registerEventAction.bind(null, eventId);
   const [state, formAction, isPending] = useActionState<RegisterEventState, FormData>(
-    boundAction,
+    registerEventAction.bind(null, eventId),
     {}
   );
   const [unattendPending, startUnattendTransition] = useTransition();
@@ -84,6 +88,16 @@ export function RegistrationDrawer({
     });
   }
 
+  const hasQuestions = questions && questions.length > 0;
+
+  // Show confirmation screen only when registered and there are no questions to fill
+  const showConfirmation = isRegistered && !hasQuestions;
+
+  function getButtonLabel(pending: boolean) {
+    if (isRegistered) return pending ? "Updating..." : "Update responses";
+    return pending ? "Registering..." : "Confirm Registration";
+  }
+
   return (
     <Drawer open={open} onOpenChange={onOpenChange} direction="bottom">
       <DrawerContent aria-describedby={undefined}>
@@ -92,7 +106,7 @@ export function RegistrationDrawer({
         </DrawerHeader>
 
         <div className="px-4 pb-2 flex flex-col gap-4">
-          {isRegistered ? (
+          {showConfirmation ? (
             <div className="flex flex-col items-center gap-3 py-4">
               <div className="flex size-12 items-center justify-center rounded-full bg-primary/10">
                 <Check className="size-6 text-primary" />
@@ -166,12 +180,20 @@ export function RegistrationDrawer({
                 </div>
               )}
 
+              {hasQuestions && (
+                <QuestionsForm
+                  questions={questions}
+                  defaultResponses={existingResponses ?? {}}
+                  disabled={isPending}
+                />
+              )}
+
               <Button
                 type="submit"
                 className="w-full"
                 disabled={isPending || (showPartialDays ? selectedDays.length === 0 : false)}
               >
-                {isPending ? "Registering..." : "Confirm Registration"}
+                {getButtonLabel(isPending)}
               </Button>
               {showPartialDays && selectedDays.length === 0 && (
                 <p className="text-xs text-muted-foreground text-center">

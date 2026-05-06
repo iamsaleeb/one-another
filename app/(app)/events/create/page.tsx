@@ -5,6 +5,7 @@ import { UserRole } from "@prisma/client";
 import { PageHeader } from "@/components/ui/page-header";
 import { getChurchesByManager } from "@/lib/actions/data-churches";
 import { getSeriesForEvent } from "@/lib/actions/data-series";
+import { getQuestionLibraryForUser } from "@/lib/dal/questions";
 
 interface Props {
   searchParams: Promise<{ seriesId?: string }>;
@@ -19,9 +20,10 @@ export default async function CreateEventPage({ searchParams }: Props) {
 
   const { seriesId } = await searchParams;
 
-  const [churches, series] = await Promise.all([
+  const [churches, series, libraryItems] = await Promise.all([
     getChurchesByManager(session.user.id),
     seriesId ? getSeriesForEvent(seriesId) : null,
+    getQuestionLibraryForUser(session.user.id),
   ]);
 
   return (
@@ -31,6 +33,7 @@ export default async function CreateEventPage({ searchParams }: Props) {
         <EventWizard
           churches={churches}
           series={series ? { id: series.id, name: series.name, churchId: series.church.id, churchName: series.church.name } : undefined}
+          libraryItems={libraryItems}
         />
       </div>
     </div>

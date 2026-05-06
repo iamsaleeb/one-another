@@ -21,6 +21,7 @@ jest.mock('@/lib/db', () => ({
       create: jest.fn(),
       delete: jest.fn(),
       findMany: jest.fn(),
+      findUnique: jest.fn(),
     },
     seriesFollower: {
       findMany: jest.fn(),
@@ -57,6 +58,11 @@ jest.mock('@/lib/permissions', () => ({
   canManageChurch: jest.fn(),
 }))
 
+jest.mock('@/lib/dal/questions', () => ({
+  syncEventQuestions: jest.fn().mockResolvedValue(undefined),
+  getQuestionLibraryForUser: jest.fn().mockResolvedValue([]),
+}))
+
 import { redirect } from 'next/navigation'
 import { updateTag } from 'next/cache'
 import {
@@ -73,6 +79,7 @@ import {
   unattendEventAction,
   registerEventAction,
 } from '@/lib/actions/events-attendance'
+import { extractResponses } from '@/lib/utils/forms'
 import { prisma } from '@/lib/db'
 import { auth } from '@/auth'
 import { canManageChurch } from '@/lib/permissions'
@@ -87,6 +94,7 @@ const mockEventDelete = prisma.event.delete as jest.Mock
 const mockEventAttendeeCreate = prisma.eventAttendee.create as jest.Mock
 const mockEventAttendeeDelete = prisma.eventAttendee.delete as jest.Mock
 const mockEventAttendeeFindMany = prisma.eventAttendee.findMany as jest.Mock
+const mockEventAttendeeFindUnique = prisma.eventAttendee.findUnique as jest.Mock
 const mockSeriesFollowerFindMany = prisma.seriesFollower.findMany as jest.Mock
 const mockAuth = auth as jest.Mock
 const mockCanManageChurch = canManageChurch as jest.Mock
@@ -108,6 +116,7 @@ const validData = {
   tag: 'Youth Meeting',
   description: 'Weekly Sunday service',
   churchId: 'ch-1',
+  questions: [],
 }
 
 beforeEach(() => {
@@ -116,6 +125,7 @@ beforeEach(() => {
   mockCanManageChurch.mockResolvedValue(true)
   mockSeriesFollowerFindMany.mockResolvedValue([])
   mockEventAttendeeFindMany.mockResolvedValue([])
+  mockEventAttendeeFindUnique.mockResolvedValue(null) // not already registered by default
 })
 
 describe('createEventAction', () => {
@@ -556,6 +566,7 @@ describe('registerEventAction', () => {
         phone: '07700000000',
         notes: 'Vegetarian',
       },
+      select: { id: true },
     })
     expect(result.success).toBe(true)
     expect(mockUpdateTag).toHaveBeenCalledWith('event-evt-1')
@@ -569,6 +580,7 @@ describe('registerEventAction', () => {
 
     expect(mockEventAttendeeCreate).toHaveBeenCalledWith({
       data: { eventId: 'evt-1', userId: 'user-1', phone: undefined, notes: undefined },
+      select: { id: true },
     })
     expect(result.success).toBe(true)
   })
@@ -979,6 +991,57 @@ describe('publishEventAction', () => {
     await publishEventAction('evt-1')
 
     expect(mockRedirect).toHaveBeenCalledWith('/events/evt-1')
+  })
+})
+
+describe('extractResponses', () => {
+  it('extracts a text response', () => {
+    const fd = makeFormData({ 'response_q1': 'hello' })
+    expect(extractResponses(fd)).toEqual([{ questionId: 'q1', answer: 'hello', fileUrl: null }])
+  })
+
+  it('extracts a file response', () => {
+    const fd = makeFormData({ 'response_file_q1': 'https://blob.example.com/file.pdf' })
+    expect(extractResponses(fd)).toEqual([{ questionId: 'q1', answer: null, fileUrl: 'https://blob.example.com/file.pdf' }])
+  })
+
+  it('converts empty string answer to null', () => {
+    const fd = makeFormData({ 'response_q1': '' })
+    expect(extractResponses(fd)).toEqual([{ questionId: 'q1', answer: null, fileUrl: null }])
+  })
+
+  it('converts empty string fileUrl to null (cleared file signal)', () => {
+    const fd = makeFormData({ 'response_file_q1': '' })
+    expect(extractResponses(fd)).toEqual([{ questionId: 'q1', answer: null, fileUrl: null }])
+  })
+
+  it('merges answer and fileUrl onto the same entry when both keys exist', () => {
+    const fd = makeFormData({ 'response_q1': 'true', 'response_file_q1': 'https://blob.example.com/file.pdf' })
+    expect(extractResponses(fd)).toEqual([
+      { questionId: 'q1', answer: 'true', fileUrl: 'https://blob.example.com/file.pdf' },
+    ])
+  })
+
+  it('handles multiple questions independently', () => {
+    const fd = makeFormData({ 'response_q1': 'answer1', 'response_q2': 'answer2' })
+    const result = extractResponses(fd)
+    expect(result).toHaveLength(2)
+    expect(result).toEqual(
+      expect.arrayContaining([
+        { questionId: 'q1', answer: 'answer1', fileUrl: null },
+        { questionId: 'q2', answer: 'answer2', fileUrl: null },
+      ])
+    )
+  })
+
+  it('ignores non-response_ keys', () => {
+    const fd = makeFormData({ phone: '07700', notes: 'veg', response_q1: 'yes' })
+    expect(extractResponses(fd)).toEqual([{ questionId: 'q1', answer: 'yes', fileUrl: null }])
+  })
+
+  it('returns an empty array when no response_ keys are present', () => {
+    const fd = makeFormData({ phone: '07700', notes: 'veg' })
+    expect(extractResponses(fd)).toEqual([])
   })
 })
 

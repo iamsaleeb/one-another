@@ -4,6 +4,7 @@ import { updateTag } from "next/cache";
 import { auth } from "@/auth";
 import { registerEventSchema } from "@/lib/validations/event";
 import { attendEvent, unattendEvent, registerEvent } from "@/lib/dal/attendance";
+import { extractResponses } from "@/lib/utils/forms";
 
 export interface AttendEventState {
   error?: string;
@@ -67,10 +68,13 @@ export async function registerEventAction(
 
   if (!parsed.success) return { error: "Invalid form data." };
 
+  const responses = extractResponses(formData);
+
   const result = await registerEvent(eventId, session.user.id, {
     phone: parsed.data.phone,
     notes: parsed.data.notes,
     selectedDays: parsed.data.selectedDays,
+    responses,
   });
 
   if ("error" in result) return { error: result.error };

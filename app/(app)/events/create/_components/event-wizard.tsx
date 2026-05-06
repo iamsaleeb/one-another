@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useForm, useWatch, type UseFormReturn } from "react-hook-form";
+import { useState, useEffect } from "react";
+import { useForm, useWatch, type Resolver } from "react-hook-form";
 import { useEventAutoSave } from "./use-event-auto-save";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -18,6 +18,8 @@ import { StepWhenWhere } from "./steps/step-when-where";
 import { StepRegistration } from "./steps/step-registration";
 import { StepCampDetails } from "./steps/step-camp-details";
 import { StepReview } from "./steps/step-review";
+import { StepQuestions } from "./steps/step-questions";
+import type { LibraryItem } from "@/lib/validations/questions";
 
 interface Church {
   id: string;
@@ -36,24 +38,14 @@ interface EventWizardProps {
   series?: Series | null;
   eventId?: string;
   defaultValues?: Partial<CreateEventInput> & { datetimeISO?: string };
+  libraryItems?: LibraryItem[];
+  questionsLocked?: boolean;
 }
 
-const BASE_STEPS = [
-  { label: "Basics" },
-  { label: "When & Where" },
-  { label: "Registration" },
-];
-const CAMP_STEP = { label: "Camp Details" };
-const REVIEW_STEP = { label: "Review" };
+type StepKey = "basics" | "whenWhere" | "registration" | "questions" | "campDetails" | "review";
+interface WizardStep { label: string; key: StepKey; fields: Array<keyof CreateEventInput> }
 
-const STEP_FIELDS: Array<Array<keyof CreateEventInput>> = [
-  ["title", "description", "tag", "churchId", "photoUrl"],
-  ["date", "time", "location", "host"],
-  ["price", "requiresRegistration", "capacity", "collectPhone", "collectNotes"],
-  ["campEndDate", "campAllowPartialRegistration", "campAgenda"],
-];
-
-export function EventWizard({ churches, series, eventId, defaultValues }: EventWizardProps) {
+export function EventWizard({ churches, series, eventId, defaultValues, libraryItems, questionsLocked }: EventWizardProps) {
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
@@ -63,9 +55,9 @@ export function EventWizard({ churches, series, eventId, defaultValues }: EventW
   const seedDatetime = datetimeISO ? utcIsoToLocalInputs(datetimeISO) : null;
 
   const form = useForm<CreateEventInput>({
-    resolver: zodResolver(createEventSchema),
+    resolver: zodResolver(createEventSchema) as Resolver<CreateEventInput>,
     defaultValues: defaultValues
-      ? { date: seedDatetime?.date ?? "", time: seedDatetime?.time ?? "", ...restDefaultValues }
+      ? { date: seedDatetime?.date ?? "", time: seedDatetime?.time ?? "", questions: [], ...restDefaultValues }
       : {
           title: "",
           date: "",
@@ -86,11 +78,12 @@ export function EventWizard({ churches, series, eventId, defaultValues }: EventW
           campEndDate: undefined,
           campAllowPartialRegistration: false,
           campAgenda: [],
+          questions: [],
         },
   });
 
   const { draftId, setDraftId, autoSaveStatus, markPublished } = useEventAutoSave({
-    form: form as UseFormReturn<CreateEventInput>,
+    form,
     initialDraftId: eventId,
     initialIsDraft: defaultValues?.isDraft ?? true,
     isBusy: isSaving || isPublishing,
@@ -98,8 +91,28 @@ export function EventWizard({ churches, series, eventId, defaultValues }: EventW
 
   const tag = useWatch({ control: form.control, name: "tag" });
   const isDraft = useWatch({ control: form.control, name: "isDraft" });
+  const requiresRegistration = useWatch({ control: form.control, name: "requiresRegistration" });
 
-  const activeSteps = [...BASE_STEPS, ...(tag === "Camp" ? [CAMP_STEP] : []), REVIEW_STEP];
+  const activeSteps: WizardStep[] = [
+    { label: "Basics", key: "basics", fields: ["title", "description", "tag", "churchId", "photoUrl"] },
+    { label: "When & Where", key: "whenWhere", fields: ["date", "time", "location", "host"] },
+    { label: "Registration", key: "registration", fields: ["price", "requiresRegistration", "capacity", "collectPhone", "collectNotes"] },
+    ...(requiresRegistration ? [{ label: "Questions", key: "questions" as StepKey, fields: ["questions"] as Array<keyof CreateEventInput> }] : []),
+    ...(tag === "Camp" ? [{ label: "Camp Details", key: "campDetails" as StepKey, fields: ["campEndDate", "campAllowPartialRegistration", "campAgenda"] as Array<keyof CreateEventInput> }] : []),
+    { label: "Review", key: "review", fields: [] },
+  ];
+
+  // Clamp currentStep when steps are removed (e.g. requiresRegistration toggled off)
+  useEffect(() => {
+    setCurrentStep((s) => Math.min(s, activeSteps.length - 1));
+  }, [activeSteps.length]);
+
+  // Clear questions from form state when registration is disabled so they aren't persisted
+  useEffect(() => {
+    if (!requiresRegistration) {
+      form.setValue("questions", [], { shouldDirty: false });
+    }
+  }, [requiresRegistration, form]);
 
   const buildData = (): CreateEventInput & { datetimeISO?: string } => {
     const data = form.getValues();
@@ -111,12 +124,12 @@ export function EventWizard({ churches, series, eventId, defaultValues }: EventW
 
   // Validate the current step's fields then advance — auto-save persists in the background
   const handleNext = async () => {
-    const fields = STEP_FIELDS[currentStep];
-    if (!fields) return;
-    const valid = await form.trigger(fields as Array<keyof CreateEventInput>);
+    const step = activeSteps[currentStep];
+    if (!step) return;
+    const valid = await form.trigger(step.fields);
     if (!valid) return;
     // campEndDate is optional in schema (allows partial drafts) but required to publish
-    if (fields.includes("campEndDate") && tag === "Camp" && !form.getValues("campEndDate")) {
+    if (step.key === "campDetails" && !form.getValues("campEndDate")) {
       form.setError("campEndDate", { message: "End date is required for camp events" });
       return;
     }
@@ -173,33 +186,28 @@ export function EventWizard({ churches, series, eventId, defaultValues }: EventW
     }
   };
 
-  const isReviewStep = currentStep === activeSteps.length - 1;
+  const currentStepKey = activeSteps[currentStep]?.key;
+  const isReviewStep = currentStepKey === "review";
 
   const renderStep = () => {
-    if (isReviewStep) {
-      return (
-        <StepReview
-          onPublish={handlePublish}
-          onSaveDraft={handleSaveDraft}
-          isPublishing={isPublishing}
-          isSaving={isSaving}
-          isDraftEvent={!!isDraft}
-          churches={churches}
-        />
-      );
-    }
-
-    switch (currentStep) {
-      case 0:
-        return <StepBasics churches={churches} series={series} />;
-      case 1:
-        return <StepWhenWhere />;
-      case 2:
-        return <StepRegistration />;
-      case 3:
-        return <StepCampDetails />;
-      default:
-        return null;
+    switch (currentStepKey) {
+      case "basics": return <StepBasics churches={churches} series={series} />;
+      case "whenWhere": return <StepWhenWhere />;
+      case "registration": return <StepRegistration />;
+      case "questions": return <StepQuestions libraryItems={libraryItems ?? []} locked={questionsLocked} />;
+      case "campDetails": return <StepCampDetails />;
+      case "review":
+        return (
+          <StepReview
+            onPublish={handlePublish}
+            onSaveDraft={handleSaveDraft}
+            isPublishing={isPublishing}
+            isSaving={isSaving}
+            isDraftEvent={!!isDraft}
+            churches={churches}
+          />
+        );
+      default: return null;
     }
   };
 

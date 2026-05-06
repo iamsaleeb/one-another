@@ -1,10 +1,11 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { AlertTriangle, Calendar, Church, FileEdit, MapPin, Pencil, Repeat, User } from "lucide-react";
+import { AlertTriangle, Calendar, Church, FileEdit, MapPin, Pencil, Repeat, TableProperties, User } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { auth } from "@/auth";
 import { getEventById, getEventAttendees } from "@/lib/actions/data-events";
+import { getEventQuestions, getMyResponses } from "@/lib/actions/data-questions";
 import { parseEventMetadata } from "@/lib/validations/event";
 import { canManageChurch } from "@/lib/permissions";
 import { EventDatetime } from "@/components/event-datetime";
@@ -45,6 +46,12 @@ export default async function EventDetailPage({ params }: Props) {
 
   const isAttending = event.attendees.length > 0;
 
+  const questions = await getEventQuestions(id);
+
+  const myResponses = session?.user?.id && questions.length > 0 && isAttending
+    ? await getMyResponses(id, session.user.id)
+    : {};
+
   const { registration, camp } = parseEventMetadata(event.metadata);
 
   return (
@@ -78,17 +85,27 @@ export default async function EventDetailPage({ params }: Props) {
           <div className="flex items-start justify-between gap-2">
             <h1 className="text-xl font-bold leading-snug">{event.title}</h1>
             {canManage && (
-              <div className="flex items-center gap-2 shrink-0">
-                <Button asChild variant="outline" size="icon" className="size-9">
-                  <Link href={`/events/${id}/edit`}>
-                    <Pencil className="size-4" />
-                  </Link>
-                </Button>
-                {event.cancelledAt
-                  ? <UncancelEventButton eventId={id} />
-                  : <CancelEventButton eventId={id} />
-                }
-                <DeleteEventButton eventId={id} />
+              <div className="flex flex-col items-end gap-2 shrink-0">
+                <div className="flex items-center gap-2">
+                  <Button asChild variant="outline" size="icon" className="size-9">
+                    <Link href={`/events/${id}/edit`}>
+                      <Pencil className="size-4" />
+                    </Link>
+                  </Button>
+                  {event.cancelledAt
+                    ? <UncancelEventButton eventId={id} />
+                    : <CancelEventButton eventId={id} />
+                  }
+                  <DeleteEventButton eventId={id} />
+                </div>
+                {event.requiresRegistration && questions.length > 0 && (
+                  <Button asChild variant="outline" size="sm" className="mt-2">
+                    <Link href={`/events/${id}/responses`}>
+                      <TableProperties className="size-4 mr-1.5" />
+                      View responses
+                    </Link>
+                  </Button>
+                )}
               </div>
             )}
           </div>
@@ -164,6 +181,8 @@ export default async function EventDetailPage({ params }: Props) {
         attendees={attendees}
         camp={camp}
         campStartDate={event.datetime?.toISOString().slice(0, 10) ?? ""}
+        questions={questions}
+        existingResponses={myResponses}
       />
     </div>
   );

@@ -4,6 +4,7 @@
 import { useState } from "react";
 import { useFormContext, useFieldArray } from "react-hook-form";
 import { ChevronUp, ChevronDown, Lock, Pencil, Trash2, Plus } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { QuestionDrawer } from "./question-drawer";
@@ -50,12 +51,12 @@ export function StepQuestions({ libraryItems, locked }: StepQuestionsProps) {
   return (
     <div className="flex flex-col gap-5">
       {locked && (
-        <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-3 text-amber-700">
-          <Lock className="size-4 mt-0.5 shrink-0" />
-          <p className="text-xs">
+        <Alert>
+          <Lock className="size-4" />
+          <AlertDescription>
             Questions are locked because attendees have already submitted responses. To change questions, you must first remove all responses.
-          </p>
-        </div>
+          </AlertDescription>
+        </Alert>
       )}
 
       <div className="flex flex-col gap-3 rounded-xl border px-4 py-3">

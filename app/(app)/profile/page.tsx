@@ -5,11 +5,10 @@ import { getProfileUser } from "@/lib/actions/data-user";
 import { signOutAction } from "@/lib/actions/auth";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Bell, CalendarDays, ChevronRight, Info, KeyRound, LogOut, Phone, ScrollText, Settings, Shield, Tag, UserPen } from "lucide-react";
+import { Bell, CalendarDays, ChevronRight, Info, KeyRound, LogOut, Phone, ScrollText, Settings, Shield, Tag, UserCog, UserPen, UserX } from "lucide-react";
 import { getInitials } from "@/lib/utils";
 import { InfoField } from "@/components/ui/info-field";
 import { RoleBadge } from "./_components/role-badge";
-import { DeleteAccountButton } from "./_components/delete-account-button";
 import { version } from "@/package.json";
 import { formatDateOnly } from "@/lib/datetime";
 
@@ -156,8 +155,22 @@ export default async function ProfilePage() {
           </Button>
         </form>
 
-        {/* Danger zone */}
-        <DeleteAccountButton />
+        {/* Account */}
+        <div className="rounded-2xl bg-white shadow-card divide-y divide-border overflow-hidden">
+          <div className="px-4 py-3 flex items-center gap-2">
+            <UserCog className="w-3.5 h-3.5 text-primary" />
+            <span className="text-sm font-semibold">Account</span>
+          </div>
+          <Link href="/profile/account">
+            <div className="px-4 py-3 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <UserX className="w-3.5 h-3.5 text-destructive" />
+                <span className="text-sm font-medium text-destructive">Delete Account</span>
+              </div>
+              <ChevronRight className="w-4 h-4 text-muted-foreground" />
+            </div>
+          </Link>
+        </div>
       </div>
     </div>
   );

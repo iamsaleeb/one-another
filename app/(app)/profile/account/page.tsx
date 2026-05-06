@@ -13,7 +13,7 @@ export default function DeleteAccountPage() {
         {/* Header */}
         <div className="flex flex-col items-center gap-3 py-4">
           <div className="flex items-center justify-center w-12 h-12 rounded-full bg-destructive/10">
-            <TriangleAlert className="w-6 h-6 text-destructive" />
+            <TriangleAlert className="w-6 h-6 text-destructive" aria-hidden="true" />
           </div>
           <div className="text-center">
             <h1 className="text-xl font-bold">Delete Account</h1>

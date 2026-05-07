@@ -158,13 +158,13 @@ export default async function ProfilePage() {
         {/* Account */}
         <div className="rounded-2xl bg-white shadow-card divide-y divide-border overflow-hidden">
           <div className="px-4 py-3 flex items-center gap-2">
-            <UserCog className="w-3.5 h-3.5 text-primary" />
+            <UserCog className="w-3.5 h-3.5 text-primary" aria-hidden="true" />
             <span className="text-sm font-semibold">Account</span>
           </div>
           <Link href="/profile/account">
             <div className="px-4 py-3 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <UserX className="w-3.5 h-3.5 text-destructive" />
+                <UserX className="w-3.5 h-3.5 text-destructive" aria-hidden="true" />
                 <span className="text-sm font-medium text-destructive">Delete Account</span>
               </div>
               <ChevronRight className="w-4 h-4 text-muted-foreground" />

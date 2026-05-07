@@ -39,6 +39,30 @@ describe('getInboxNotifications', () => {
     await getInboxNotifications({ userId: 'u-1', page: 2, pageSize: 20 })
     expect(mockFindMany).toHaveBeenCalledWith(expect.objectContaining({ skip: 20 }))
   })
+
+  it('serializes Date fields to ISO strings for RSC boundary', async () => {
+    const sentAt = new Date('2026-01-15T10:00:00.000Z')
+    const readAt = new Date('2026-01-15T11:00:00.000Z')
+    mockFindMany.mockResolvedValue([
+      { id: 'n-1', type: 'EVENT_REMINDER', title: 'T', body: 'B', data: null, sentAt, readAt },
+    ])
+
+    const results = await getInboxNotifications({ userId: 'u-1', page: 1, pageSize: 20 })
+
+    expect(results[0].sentAt).toBe('2026-01-15T10:00:00.000Z')
+    expect(results[0].readAt).toBe('2026-01-15T11:00:00.000Z')
+  })
+
+  it('serializes null readAt as null', async () => {
+    const sentAt = new Date('2026-01-15T10:00:00.000Z')
+    mockFindMany.mockResolvedValue([
+      { id: 'n-1', type: 'EVENT_REMINDER', title: 'T', body: 'B', data: null, sentAt, readAt: null },
+    ])
+
+    const results = await getInboxNotifications({ userId: 'u-1', page: 1, pageSize: 20 })
+
+    expect(results[0].readAt).toBeNull()
+  })
 })
 
 describe('getUnreadCount', () => {

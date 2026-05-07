@@ -10,7 +10,7 @@ const TYPE_ICON: Record<string, ElementType> = {
   EVENT_CANCELLED: CalendarX,
 };
 
-function getHref(type: string, data: unknown): string | null {
+function getHref(data: unknown): string | null {
   if (!data || typeof data !== 'object' || Array.isArray(data)) return null;
   const d = data as Record<string, unknown>;
   if (typeof d.eventId === 'string') return `/events/${d.eventId}`;
@@ -21,7 +21,7 @@ function getHref(type: string, data: unknown): string | null {
 export function NotificationItem({ notification }: { notification: InboxNotification }) {
   const isUnread = notification.readAt === null;
   const Icon = TYPE_ICON[notification.type] ?? Bell;
-  const href = getHref(notification.type, notification.data);
+  const href = getHref(notification.data);
 
   const content = (
     <>

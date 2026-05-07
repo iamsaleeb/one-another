@@ -1,6 +1,8 @@
 import { prisma } from '@/lib/db';
 import { getFirebaseAdmin } from '@/lib/firebase-admin';
 
+const FCM_BATCH_SIZE = 500;
+
 export async function processNotifications(): Promise<{ processed: number }> {
   const due = await prisma.notification.findMany({
     where: { scheduledFor: { lte: new Date() }, sentAt: null, cancelledAt: null },
@@ -53,26 +55,29 @@ export async function processNotifications(): Promise<{ processed: number }> {
         : undefined;
 
     try {
-      const response = await messaging.sendEachForMulticast({
-        tokens,
-        notification: { title: notif.title, body: notif.body },
-        data: data ?? {},
-      });
+      for (let i = 0; i < tokens.length; i += FCM_BATCH_SIZE) {
+        const batch = tokens.slice(i, i + FCM_BATCH_SIZE);
+        const response = await messaging.sendEachForMulticast({
+          tokens: batch,
+          notification: { title: notif.title, body: notif.body },
+          data: data ?? {},
+        });
 
-      response.responses.forEach((res, idx) => {
-        if (!res.success) {
-          const code = res.error?.code;
-          if (
-            code === 'messaging/invalid-registration-token' ||
-            code === 'messaging/registration-token-not-registered' ||
-            code === 'messaging/unregistered'
-          ) {
-            staleTokens.push(tokens[idx]);
-          } else if (code === 'messaging/mismatched-credential') {
-            console.error('FCM credential mismatch — check FIREBASE_PROJECT_ID and FIREBASE_CLIENT_EMAIL env vars');
+        response.responses.forEach((res, idx) => {
+          if (!res.success) {
+            const code = res.error?.code;
+            if (
+              code === 'messaging/invalid-registration-token' ||
+              code === 'messaging/registration-token-not-registered' ||
+              code === 'messaging/unregistered'
+            ) {
+              staleTokens.push(batch[idx]);
+            } else if (code === 'messaging/mismatched-credential') {
+              console.error('FCM credential mismatch — check FIREBASE_PROJECT_ID and FIREBASE_CLIENT_EMAIL env vars');
+            }
           }
-        }
-      });
+        });
+      }
 
       sentIds.push(notif.id);
     } catch (err) {

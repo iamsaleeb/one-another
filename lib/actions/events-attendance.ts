@@ -35,7 +35,8 @@ export async function unattendEventAction(eventId: string): Promise<AttendEventS
   const session = await auth();
   if (!session?.user?.id) return { error: "You must be signed in." };
 
-  await unattendEvent(eventId, session.user.id);
+  const result = await unattendEvent(eventId, session.user.id);
+  if ("error" in result) return { error: result.error };
 
   invalidateEventCaches(eventId);
   return {};

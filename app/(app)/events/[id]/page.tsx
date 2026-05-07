@@ -170,7 +170,6 @@ export default async function EventDetailPage({ params }: Props) {
         requiresRegistration={event.requiresRegistration}
         isAttending={isAttending}
         userName={session?.user?.name ?? ""}
-        userEmail={session?.user?.email ?? ""}
         capacity={registration.capacity}
         spotsUsed={event._count.attendees}
         collectPhone={registration.collectPhone}

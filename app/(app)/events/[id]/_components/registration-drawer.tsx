@@ -35,7 +35,6 @@ interface RegistrationDrawerProps {
   eventTitle: string;
   isRegistered: boolean;
   userName: string;
-  userEmail: string;
   collectPhone: boolean;
   collectNotes: boolean;
   open: boolean;
@@ -73,7 +72,6 @@ export function RegistrationDrawer({
   eventTitle,
   isRegistered,
   userName,
-  userEmail: _userEmail,
   collectPhone,
   collectNotes,
   open,

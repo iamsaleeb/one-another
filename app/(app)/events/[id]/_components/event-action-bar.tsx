@@ -16,7 +16,6 @@ interface EventActionBarProps {
   requiresRegistration: boolean;
   isAttending: boolean;
   userName: string;
-  userEmail: string;
   capacity?: number | null;
   spotsUsed: number;
   collectPhone: boolean;
@@ -37,7 +36,6 @@ export function EventActionBar({
   requiresRegistration,
   isAttending,
   userName,
-  userEmail,
   capacity,
   spotsUsed,
   collectPhone,
@@ -119,7 +117,6 @@ export function EventActionBar({
           eventTitle={eventTitle}
           isRegistered={isAttending}
           userName={userName}
-          userEmail={userEmail}
           collectPhone={collectPhone}
           collectNotes={collectNotes}
           open={drawerOpen}

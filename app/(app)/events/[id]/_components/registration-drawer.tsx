@@ -126,13 +126,14 @@ export function RegistrationDrawer({
   const onQuestionStep = typeof step === "number";
   const showConfirmation = isRegistered && !hasQuestions;
   const isLastQuestion = onQuestionStep && hasQuestions && step === questions!.length - 1;
+  const selectedDays = form.watch("selectedDays");
 
   function getSubmitLabel() {
     if (isPending) return isRegistered ? "Updating..." : "Registering...";
     return isRegistered ? "Update responses" : "Register";
   }
 
-  async function handleNext() {
+  function handleNext() {
     if (step === "details") {
       setStep(0);
       return;
@@ -232,9 +233,11 @@ export function RegistrationDrawer({
             </Button>
           </div>
 
-          <p className="text-xs text-muted-foreground text-center mt-0.5">
-            Registering as {abbreviateName(userName)}
-          </p>
+          {!showConfirmation && (
+            <p className="text-xs text-muted-foreground text-center mt-0.5">
+              Registering as {abbreviateName(userName)}
+            </p>
+          )}
 
           {onQuestionStep && hasQuestions && (
             <div className="flex items-center justify-center gap-1.5 mt-2">
@@ -265,18 +268,10 @@ export function RegistrationDrawer({
                 See you at {eventTitle}.
               </p>
             </div>
-            <DrawerFooter className="flex-none px-4 pb-6 gap-2">
+            <DrawerFooter className="flex-none px-4 pb-6">
               <Button variant="outline" className="w-full" onClick={() => onOpenChange(false)}>
                 Close
               </Button>
-              <button
-                type="button"
-                onClick={handleUnregister}
-                disabled={unattendPending}
-                className="text-xs text-destructive text-center w-full py-1 disabled:opacity-50"
-              >
-                {unattendPending ? "Cancelling..." : "Cancel registration"}
-              </button>
             </DrawerFooter>
           </>
         ) : (
@@ -394,7 +389,7 @@ export function RegistrationDrawer({
                       disabled={
                         isPending ||
                         (showPartialDays
-                          ? (form.watch("selectedDays") ?? []).length === 0
+                          ? (selectedDays ?? []).length === 0
                           : false)
                       }
                       className="w-full"
@@ -406,7 +401,7 @@ export function RegistrationDrawer({
                       {getSubmitLabel()}
                     </Button>
                   )}
-                  {showPartialDays && (form.watch("selectedDays") ?? []).length === 0 && (
+                  {showPartialDays && (selectedDays ?? []).length === 0 && (
                     <p className="text-xs text-muted-foreground text-center">
                       Select at least one day to continue.
                     </p>

@@ -64,6 +64,13 @@ jest.mock('@/lib/dal/questions', () => ({
   getQuestionLibraryForUser: jest.fn().mockResolvedValue([]),
 }))
 
+jest.mock('@/lib/dal/attendance', () => ({
+  attendEvent: jest.fn(),
+  unattendEvent: jest.fn(),
+  registerEvent: jest.fn(),
+}))
+
+
 import { redirect } from 'next/navigation'
 import { updateTag } from 'next/cache'
 import {
@@ -84,6 +91,7 @@ import { extractResponses } from '@/lib/utils/forms'
 import { prisma } from '@/lib/db'
 import { auth } from '@/auth'
 import { canManageChurch } from '@/lib/permissions'
+import { registerEvent as _registerEvent, attendEvent as _attendEvent, unattendEvent as _unattendEvent } from '@/lib/dal/attendance'
 
 const mockRedirect = redirect as unknown as jest.Mock
 const mockUpdateTag = updateTag as jest.Mock
@@ -100,6 +108,9 @@ const mockSeriesFollowerFindMany = prisma.seriesFollower.findMany as jest.Mock
 const mockNotificationCreateMany = prisma.notification.createMany as jest.Mock
 const mockAuth = auth as jest.Mock
 const mockCanManageChurch = canManageChurch as jest.Mock
+const mockRegisterEvent = _registerEvent as jest.Mock
+const mockAttendEvent = _attendEvent as jest.Mock
+const mockUnattendEvent = _unattendEvent as jest.Mock
 
 function makeFormData(fields: Record<string, string>): FormData {
   const fd = new FormData()
@@ -128,6 +139,10 @@ beforeEach(() => {
   mockSeriesFollowerFindMany.mockResolvedValue([])
   mockEventAttendeeFindMany.mockResolvedValue([])
   mockEventAttendeeFindUnique.mockResolvedValue(null) // not already registered by default
+  // DAL attendance defaults
+  mockAttendEvent.mockResolvedValue({})
+  mockUnattendEvent.mockResolvedValue({})
+  mockRegisterEvent.mockResolvedValue({ success: true })
 })
 
 describe('createEventAction', () => {
@@ -463,36 +478,19 @@ describe('uncancelEventAction', () => {
 })
 
 describe('attendEventAction', () => {
-  const publishedEvent = { id: 'evt-1', title: 'Test', datetime: new Date('2026-05-01T09:00:00Z'), isDraft: false }
-
-  it('creates an EventAttendee and invalidates event cache tags', async () => {
-    mockEventFindUnique.mockResolvedValue(publishedEvent)
-    mockEventAttendeeCreate.mockResolvedValue({})
-
+  it('calls attendEvent DAL and invalidates event cache tags', async () => {
     await attendEventAction('evt-1')
 
-    expect(mockEventAttendeeCreate).toHaveBeenCalledWith({
-      data: { eventId: 'evt-1', userId: 'user-1' },
-    })
+    expect(mockAttendEvent).toHaveBeenCalledWith('evt-1', 'user-1')
     expect(mockUpdateTag).toHaveBeenCalledWith('event-evt-1')
   })
 
-  it('returns an error when the event is a draft', async () => {
-    mockEventFindUnique.mockResolvedValue({ ...publishedEvent, isDraft: true })
+  it('returns an error from the DAL when the event is not found or a draft', async () => {
+    mockAttendEvent.mockResolvedValue({ error: 'Event not found.' })
 
     const result = await attendEventAction('evt-1')
 
     expect(result.error).toBeDefined()
-    expect(mockEventAttendeeCreate).not.toHaveBeenCalled()
-  })
-
-  it('returns an error when the event does not exist', async () => {
-    mockEventFindUnique.mockResolvedValue(null)
-
-    const result = await attendEventAction('evt-1')
-
-    expect(result.error).toBeDefined()
-    expect(mockEventAttendeeCreate).not.toHaveBeenCalled()
   })
 
   it('returns an error when the user is not signed in', async () => {
@@ -501,31 +499,15 @@ describe('attendEventAction', () => {
     const result = await attendEventAction('evt-1')
 
     expect(result.error).toBeDefined()
-    expect(mockEventAttendeeCreate).not.toHaveBeenCalled()
-  })
-
-  it('handles scheduleEventReminderNotification failure gracefully', async () => {
-    const mockScheduleReminder = jest.requireMock('@/lib/notifications/queue').scheduleEventReminderNotification as jest.Mock
-    mockEventFindUnique.mockResolvedValue(publishedEvent)
-    mockEventAttendeeCreate.mockResolvedValue({})
-    mockScheduleReminder.mockRejectedValueOnce(new Error('scheduler down'))
-
-    const result = await attendEventAction('evt-1')
-
-    expect(result.error).toBeUndefined()
-    expect(mockUpdateTag).toHaveBeenCalledWith('event-evt-1')
+    expect(mockAttendEvent).not.toHaveBeenCalled()
   })
 })
 
 describe('unattendEventAction', () => {
-  it('deletes the EventAttendee and invalidates event cache tags', async () => {
-    mockEventAttendeeDelete.mockResolvedValue({})
-
+  it('calls unattendEvent DAL and invalidates event cache tags', async () => {
     await unattendEventAction('evt-1')
 
-    expect(mockEventAttendeeDelete).toHaveBeenCalledWith({
-      where: { eventId_userId: { eventId: 'evt-1', userId: 'user-1' } },
-    })
+    expect(mockUnattendEvent).toHaveBeenCalledWith('evt-1', 'user-1')
     expect(mockUpdateTag).toHaveBeenCalledWith('event-evt-1')
   })
 
@@ -535,53 +517,31 @@ describe('unattendEventAction', () => {
     const result = await unattendEventAction('evt-1')
 
     expect(result.error).toBeDefined()
-    expect(mockEventAttendeeDelete).not.toHaveBeenCalled()
-  })
-
-  it('handles cancelNotification failure gracefully', async () => {
-    const mockCancelReminder = jest.requireMock('@/lib/notifications/queue').cancelNotification as jest.Mock
-    mockEventAttendeeDelete.mockResolvedValue({})
-    mockCancelReminder.mockRejectedValueOnce(new Error('scheduler down'))
-
-    const result = await unattendEventAction('evt-1')
-
-    expect(result.error).toBeUndefined()
-    expect(mockUpdateTag).toHaveBeenCalledWith('event-evt-1')
+    expect(mockUnattendEvent).not.toHaveBeenCalled()
   })
 })
 
 describe('registerEventAction', () => {
-  const publishedRegEvent = { id: 'evt-1', title: 'Test', datetime: new Date('2026-05-01T09:00:00Z'), isDraft: false, metadata: { registration: { capacity: null, collectPhone: false, collectNotes: false } }, _count: { attendees: 0 } }
-
-  it('creates an EventAttendee with phone and notes', async () => {
-    mockEventFindUnique.mockResolvedValue(publishedRegEvent)
-    mockEventAttendeeCreate.mockResolvedValue({})
-
+  it('calls registerEvent DAL with phone and notes, returns success', async () => {
     const result = await registerEventAction('evt-1', { phone: '07700000000', notes: 'Vegetarian' })
 
-    expect(mockEventAttendeeCreate).toHaveBeenCalledWith({
-      data: {
-        eventId: 'evt-1',
-        userId: 'user-1',
-        phone: '07700000000',
-        notes: 'Vegetarian',
-      },
-      select: { id: true },
-    })
+    expect(mockRegisterEvent).toHaveBeenCalledWith(
+      'evt-1',
+      'user-1',
+      expect.objectContaining({ phone: '07700000000', notes: 'Vegetarian' })
+    )
     expect(result.success).toBe(true)
     expect(mockUpdateTag).toHaveBeenCalledWith('event-evt-1')
   })
 
-  it('creates an EventAttendee with no optional fields when form is empty', async () => {
-    mockEventFindUnique.mockResolvedValue(publishedRegEvent)
-    mockEventAttendeeCreate.mockResolvedValue({})
-
+  it('calls registerEvent DAL with no optional fields when form is empty', async () => {
     const result = await registerEventAction('evt-1', {})
 
-    expect(mockEventAttendeeCreate).toHaveBeenCalledWith({
-      data: { eventId: 'evt-1', userId: 'user-1', phone: undefined, notes: undefined },
-      select: { id: true },
-    })
+    expect(mockRegisterEvent).toHaveBeenCalledWith(
+      'evt-1',
+      'user-1',
+      expect.objectContaining({ phone: undefined, notes: undefined })
+    )
     expect(result.success).toBe(true)
   })
 
@@ -591,66 +551,42 @@ describe('registerEventAction', () => {
     const result = await registerEventAction('evt-1', {})
 
     expect(result.error).toBeDefined()
-    expect(mockEventAttendeeCreate).not.toHaveBeenCalled()
+    expect(mockRegisterEvent).not.toHaveBeenCalled()
   })
 
-  it('returns an error when the event is a draft', async () => {
-    mockEventFindUnique.mockResolvedValue({ ...publishedRegEvent, isDraft: true })
+  it('returns a DAL error when the event is a draft or does not exist', async () => {
+    mockRegisterEvent.mockResolvedValue({ error: 'Event not found.' })
 
     const result = await registerEventAction('evt-1', {})
 
     expect(result.error).toBeDefined()
-    expect(mockEventAttendeeCreate).not.toHaveBeenCalled()
   })
 
-  it('returns an error when the event does not exist', async () => {
-    mockEventFindUnique.mockResolvedValue(null)
-
-    const result = await registerEventAction('evt-1', {})
-
-    expect(result.error).toBeDefined()
-    expect(mockEventAttendeeCreate).not.toHaveBeenCalled()
-  })
-
-  it('allows registration when capacity is not set', async () => {
-    mockEventFindUnique.mockResolvedValue({ ...publishedRegEvent, metadata: { registration: { capacity: null, collectPhone: false, collectNotes: false } }, _count: { attendees: 10 } })
-    mockEventAttendeeCreate.mockResolvedValue({})
-
-    const result = await registerEventAction('evt-1', {})
-
-    expect(result.success).toBe(true)
-    expect(mockEventAttendeeCreate).toHaveBeenCalled()
-  })
-
-  it('allows registration when spots are still available', async () => {
-    mockEventFindUnique.mockResolvedValue({ ...publishedRegEvent, metadata: { registration: { capacity: 10, collectPhone: false, collectNotes: false } }, _count: { attendees: 9 } })
-    mockEventAttendeeCreate.mockResolvedValue({})
-
-    const result = await registerEventAction('evt-1', {})
-
-    expect(result.success).toBe(true)
-    expect(mockEventAttendeeCreate).toHaveBeenCalled()
-  })
-
-  it('returns a fully booked error when capacity is reached', async () => {
-    mockEventFindUnique.mockResolvedValue({ ...publishedRegEvent, metadata: { registration: { capacity: 10, collectPhone: false, collectNotes: false } }, _count: { attendees: 10 } })
+  it('returns a fully booked error from the DAL', async () => {
+    mockRegisterEvent.mockResolvedValue({ error: 'Sorry, this event is fully booked.' })
 
     const result = await registerEventAction('evt-1', {})
 
     expect(result.error).toBe('Sorry, this event is fully booked.')
-    expect(mockEventAttendeeCreate).not.toHaveBeenCalled()
   })
 
-  it('handles scheduleEventReminderNotification failure gracefully', async () => {
-    const mockScheduleReminder = jest.requireMock('@/lib/notifications/queue').scheduleEventReminderNotification as jest.Mock
-    mockEventFindUnique.mockResolvedValue(publishedRegEvent)
-    mockEventAttendeeCreate.mockResolvedValue({})
-    mockScheduleReminder.mockRejectedValueOnce(new Error('scheduler down'))
-
-    const result = await registerEventAction('evt-1', {})
-
-    expect(result.success).toBe(true)
-    expect(mockUpdateTag).toHaveBeenCalledWith('event-evt-1')
+  it('passes mapped responses to registerEvent', async () => {
+    await registerEventAction('evt-1', {
+      responses: {
+        'q1': { answer: 'yes', fileUrl: null },
+        'q2': { answer: null, fileUrl: 'https://example.com/file.pdf' },
+      },
+    })
+    expect(mockRegisterEvent).toHaveBeenCalledWith(
+      'evt-1',
+      expect.any(String), // userId
+      expect.objectContaining({
+        responses: expect.arrayContaining([
+          { questionId: 'q1', answer: 'yes', fileUrl: null },
+          { questionId: 'q2', answer: null, fileUrl: 'https://example.com/file.pdf' },
+        ]),
+      })
+    )
   })
 })
 

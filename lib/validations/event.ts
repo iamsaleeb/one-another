@@ -70,13 +70,10 @@ export const registerEventSchema = z.object({
 
 export type RegisterEventInput = z.infer<typeof registerEventSchema>;
 
-export const registrationFormSchema = z.object({
-  phone: z.string().optional(),
-  notes: z.string().optional(),
-  selectedDays: z.array(z.string()).optional(),
+export const registrationFormSchema = registerEventSchema.extend({
   responses: z
     .record(
-      z.string(),
+      z.string().min(1),
       z.object({
         answer: z.string().nullable().optional(),
         fileUrl: z.string().url().nullable().optional(),

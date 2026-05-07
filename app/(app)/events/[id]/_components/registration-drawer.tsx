@@ -1,6 +1,8 @@
 "use client";
 
 import { useTransition, useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
+import { type RegistrationFormValues } from "@/lib/validations/event";
 import { Check, ChevronLeft, ChevronRight } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -54,6 +56,7 @@ export function RegistrationDrawer({
   existingResponses,
 }: RegistrationDrawerProps) {
   const [state, setState] = useState<RegisterEventState>({});
+  const { control } = useForm<RegistrationFormValues>();
   const [isPending, startRegisterTransition] = useTransition();
   const [unattendPending, startUnattendTransition] = useTransition();
   const [step, setStep] = useState<"details" | number>("details");
@@ -256,7 +259,7 @@ export function RegistrationDrawer({
                 <div hidden={!onQuestionStep}>
                   <QuestionsForm
                     questions={questions!}
-                    defaultResponses={existingResponses ?? {}}
+                    control={control}
                     disabled={isPending}
                     activeIndex={onQuestionStep ? (step as number) : undefined}
                   />

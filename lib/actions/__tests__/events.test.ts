@@ -32,6 +32,7 @@ jest.mock('@/lib/db', () => ({
     },
     notification: {
       create: jest.fn(),
+      createMany: jest.fn(),
       upsert: jest.fn(),
       update: jest.fn(),
       updateMany: jest.fn(),
@@ -96,6 +97,7 @@ const mockEventAttendeeDelete = prisma.eventAttendee.delete as jest.Mock
 const mockEventAttendeeFindMany = prisma.eventAttendee.findMany as jest.Mock
 const mockEventAttendeeFindUnique = prisma.eventAttendee.findUnique as jest.Mock
 const mockSeriesFollowerFindMany = prisma.seriesFollower.findMany as jest.Mock
+const mockNotificationCreateMany = prisma.notification.createMany as jest.Mock
 const mockAuth = auth as jest.Mock
 const mockCanManageChurch = canManageChurch as jest.Mock
 
@@ -291,11 +293,10 @@ describe('createEventAction', () => {
   })
 
   it('handles series push notification failure gracefully', async () => {
-    const mockSendPush = jest.requireMock('@/lib/notifications/queue').queueNotification as jest.Mock
     mockSeriesFindUnique.mockResolvedValue({ churchId: 'ch-1' })
     mockEventCreate.mockResolvedValue({ id: 'evt-series-fail' })
     mockSeriesFollowerFindMany.mockResolvedValue([{ userId: 'follower-1' }])
-    mockSendPush.mockRejectedValueOnce(new Error('push failed'))
+    mockNotificationCreateMany.mockRejectedValueOnce(new Error('push failed'))
 
     await createEventAction({ ...validData, seriesId: 'ser-1' })
 
@@ -303,33 +304,33 @@ describe('createEventAction', () => {
   })
 
   it('does not send series push notification when saving as draft', async () => {
-    const mockSendPush = jest.requireMock('@/lib/notifications/queue').queueNotification as jest.Mock
     mockSeriesFindUnique.mockResolvedValue({ churchId: 'ch-1' })
     mockEventCreate.mockResolvedValue({ id: 'evt-draft-series' })
 
     await createEventAction({ ...validData, seriesId: 'ser-1', isDraft: true })
 
-    expect(mockSendPush).not.toHaveBeenCalled()
+    expect(mockNotificationCreateMany).not.toHaveBeenCalled()
     expect(mockRedirect).toHaveBeenCalledWith('/organiser')
   })
 
   it('sends series push notification when publishing with seriesId and followers exist', async () => {
-    const mockSendPush = jest.requireMock('@/lib/notifications/queue').queueNotification as jest.Mock
     mockSeriesFindUnique.mockResolvedValue({ churchId: 'ch-1' })
     mockEventCreate.mockResolvedValue({ id: 'evt-series' })
     mockSeriesFollowerFindMany.mockResolvedValue([{ userId: 'follower-1' }])
 
     await createEventAction({ ...validData, seriesId: 'ser-1' })
 
-    expect(mockSendPush).toHaveBeenCalledWith(
-      expect.objectContaining({
-        userId: 'follower-1',
-        type: 'NEW_SERIES_SESSION',
-        title: 'New Session Added',
-        body: expect.stringContaining(validData.title),
-        data: expect.objectContaining({ type: 'new_session', seriesId: 'ser-1' }),
-      })
-    )
+    expect(mockNotificationCreateMany).toHaveBeenCalledWith({
+      data: expect.arrayContaining([
+        expect.objectContaining({
+          userId: 'follower-1',
+          type: 'NEW_SERIES_SESSION',
+          title: 'New Session Added',
+          body: expect.stringContaining(validData.title),
+          data: expect.objectContaining({ type: 'new_session', seriesId: 'ser-1' }),
+        }),
+      ]),
+    })
   })
 
   it('persists photoUrl when provided', async () => {
@@ -404,30 +405,30 @@ describe('cancelEventAction', () => {
   })
 
   it('sends push notification to attendees on cancel', async () => {
-    const mockSendPush = jest.requireMock('@/lib/notifications/queue').queueNotification as jest.Mock
     mockEventFindUnique.mockResolvedValue({ churchId: 'ch-1', title: 'Test Event' })
     mockEventUpdate.mockResolvedValue({})
     mockEventAttendeeFindMany.mockResolvedValue([{ userId: 'user-2' }])
 
     await cancelEventAction('evt-1', 'Venue unavailable')
 
-    expect(mockSendPush).toHaveBeenCalledWith(
-      expect.objectContaining({
-        userId: 'user-2',
-        type: 'EVENT_CANCELLED',
-        title: 'Event Cancelled',
-        body: expect.stringContaining('Test Event'),
-        data: expect.objectContaining({ type: 'event_cancelled', eventId: 'evt-1' }),
-      })
-    )
+    expect(mockNotificationCreateMany).toHaveBeenCalledWith({
+      data: expect.arrayContaining([
+        expect.objectContaining({
+          userId: 'user-2',
+          type: 'EVENT_CANCELLED',
+          title: 'Event Cancelled',
+          body: expect.stringContaining('Test Event'),
+          data: expect.objectContaining({ type: 'event_cancelled', eventId: 'evt-1' }),
+        }),
+      ]),
+    })
   })
 
   it('handles EVENT_CANCELLED push failure gracefully', async () => {
-    const mockSendPush = jest.requireMock('@/lib/notifications/queue').queueNotification as jest.Mock
     mockEventFindUnique.mockResolvedValue({ churchId: 'ch-1', title: 'Test Event' })
     mockEventUpdate.mockResolvedValue({})
     mockEventAttendeeFindMany.mockResolvedValue([{ userId: 'user-2' }])
-    mockSendPush.mockRejectedValueOnce(new Error('push failed'))
+    mockNotificationCreateMany.mockRejectedValueOnce(new Error('push failed'))
 
     await cancelEventAction('evt-1', 'reason')
 
@@ -949,7 +950,6 @@ describe('publishEventAction', () => {
   })
 
   it('sends series push notification to followers when publishing a series event', async () => {
-    const mockSendPush = jest.requireMock('@/lib/notifications/queue').queueNotification as jest.Mock
     const datetime = new Date('2026-05-01T09:00:00Z')
     mockEventFindUnique.mockResolvedValue({ churchId: 'ch-1', seriesId: 'ser-1', title: 'Bible Study', isDraft: true, datetime })
     mockEventUpdate.mockResolvedValue({})
@@ -958,15 +958,17 @@ describe('publishEventAction', () => {
 
     await publishEventAction('evt-1')
 
-    expect(mockSendPush).toHaveBeenCalledWith(
-      expect.objectContaining({
-        userId: 'follower-1',
-        type: 'NEW_SERIES_SESSION',
-        title: 'New Session Added',
-        body: expect.stringContaining('Bible Study'),
-        data: expect.objectContaining({ type: 'new_session', seriesId: 'ser-1', eventId: 'evt-1' }),
-      })
-    )
+    expect(mockNotificationCreateMany).toHaveBeenCalledWith({
+      data: expect.arrayContaining([
+        expect.objectContaining({
+          userId: 'follower-1',
+          type: 'NEW_SERIES_SESSION',
+          title: 'New Session Added',
+          body: expect.stringContaining('Bible Study'),
+          data: expect.objectContaining({ type: 'new_session', seriesId: 'ser-1', eventId: 'evt-1' }),
+        }),
+      ]),
+    })
   })
 
   it('handles reminder scheduling failure gracefully', async () => {
@@ -981,12 +983,11 @@ describe('publishEventAction', () => {
   })
 
   it('handles NEW_SERIES_SESSION push failure gracefully', async () => {
-    const mockSendPush = jest.requireMock('@/lib/notifications/queue').queueNotification as jest.Mock
     mockEventFindUnique.mockResolvedValue({ churchId: 'ch-1', seriesId: 'ser-1', title: 'Test', isDraft: true, datetime: new Date() })
     mockEventUpdate.mockResolvedValue({})
     mockEventAttendeeFindMany.mockResolvedValue([])
     mockSeriesFollowerFindMany.mockResolvedValue([{ userId: 'follower-1' }])
-    mockSendPush.mockRejectedValueOnce(new Error('push failed'))
+    mockNotificationCreateMany.mockRejectedValueOnce(new Error('push failed'))
 
     await publishEventAction('evt-1')
 

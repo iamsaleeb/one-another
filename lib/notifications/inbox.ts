@@ -6,8 +6,8 @@ export interface InboxNotification {
   title: string;
   body: string;
   data: unknown;
-  sentAt: Date;
-  readAt: Date | null;
+  sentAt: string;
+  readAt: string | null;
 }
 
 export async function getInboxNotifications(input: {
@@ -16,13 +16,18 @@ export async function getInboxNotifications(input: {
   pageSize: number;
 }): Promise<InboxNotification[]> {
   const { userId, page, pageSize } = input;
-  return prisma.notification.findMany({
+  const rows = await prisma.notification.findMany({
     where: { userId, sentAt: { not: null } },
     orderBy: { sentAt: 'desc' },
     skip: (page - 1) * pageSize,
     take: pageSize,
     select: { id: true, type: true, title: true, body: true, data: true, sentAt: true, readAt: true },
-  }) as Promise<InboxNotification[]>;
+  });
+  return rows.map((n) => ({
+    ...n,
+    sentAt: (n.sentAt as Date).toISOString(),
+    readAt: n.readAt?.toISOString() ?? null,
+  }));
 }
 
 export async function getUnreadCount(userId: string): Promise<number> {

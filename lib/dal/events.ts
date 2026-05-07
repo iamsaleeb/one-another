@@ -4,7 +4,6 @@ import { prisma } from "@/lib/db";
 import { canManageChurch } from "@/lib/permissions";
 import { syncEventQuestions } from "@/lib/dal/questions";
 import {
-  queueNotification,
   cancelManyNotifications,
   rescheduleEventReminderNotifications,
   scheduleEventReminderNotification,
@@ -17,17 +16,16 @@ async function notifySeriesFollowers(seriesId: string, title: string, eventId: s
     select: { userId: true },
   });
   if (followers.length === 0) return;
-  await Promise.all(
-    followers.map((f) =>
-      queueNotification({
-        userId: f.userId,
-        type: "NEW_SERIES_SESSION",
-        title: "New Session Added",
-        body: `A new session has been added: ${title}`,
-        data: { type: "new_session", seriesId, eventId },
-      })
-    )
-  );
+  await prisma.notification.createMany({
+    data: followers.map((f) => ({
+      userId: f.userId,
+      type: "NEW_SERIES_SESSION",
+      title: "New Session Added",
+      body: `A new session has been added: ${title}`,
+      data: { type: "new_session", seriesId, eventId },
+      scheduledFor: new Date(),
+    })),
+  });
 }
 
 async function notifyEventAttendees(eventId: string, title: string) {
@@ -36,17 +34,16 @@ async function notifyEventAttendees(eventId: string, title: string) {
     select: { userId: true },
   });
   if (attendees.length === 0) return;
-  await Promise.all(
-    attendees.map((a) =>
-      queueNotification({
-        userId: a.userId,
-        type: "EVENT_CANCELLED",
-        title: "Event Cancelled",
-        body: `${title} has been cancelled`,
-        data: { type: "event_cancelled", eventId },
-      })
-    )
-  );
+  await prisma.notification.createMany({
+    data: attendees.map((a) => ({
+      userId: a.userId,
+      type: "EVENT_CANCELLED",
+      title: "Event Cancelled",
+      body: `${title} has been cancelled`,
+      data: { type: "event_cancelled", eventId },
+      scheduledFor: new Date(),
+    })),
+  });
 }
 
 type DalError = { error: string } | { fieldErrors: Record<string, string[]> };

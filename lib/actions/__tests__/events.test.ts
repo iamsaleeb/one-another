@@ -557,8 +557,7 @@ describe('registerEventAction', () => {
     mockEventFindUnique.mockResolvedValue(publishedRegEvent)
     mockEventAttendeeCreate.mockResolvedValue({})
 
-    const fd = makeFormData({ phone: '07700000000', notes: 'Vegetarian' })
-    const result = await registerEventAction('evt-1', {}, fd)
+    const result = await registerEventAction('evt-1', { phone: '07700000000', notes: 'Vegetarian' })
 
     expect(mockEventAttendeeCreate).toHaveBeenCalledWith({
       data: {
@@ -577,7 +576,7 @@ describe('registerEventAction', () => {
     mockEventFindUnique.mockResolvedValue(publishedRegEvent)
     mockEventAttendeeCreate.mockResolvedValue({})
 
-    const result = await registerEventAction('evt-1', {}, makeFormData({}))
+    const result = await registerEventAction('evt-1', {})
 
     expect(mockEventAttendeeCreate).toHaveBeenCalledWith({
       data: { eventId: 'evt-1', userId: 'user-1', phone: undefined, notes: undefined },
@@ -589,7 +588,7 @@ describe('registerEventAction', () => {
   it('returns an error when the user is not signed in', async () => {
     mockAuth.mockResolvedValue(null)
 
-    const result = await registerEventAction('evt-1', {}, makeFormData({}))
+    const result = await registerEventAction('evt-1', {})
 
     expect(result.error).toBeDefined()
     expect(mockEventAttendeeCreate).not.toHaveBeenCalled()
@@ -598,7 +597,7 @@ describe('registerEventAction', () => {
   it('returns an error when the event is a draft', async () => {
     mockEventFindUnique.mockResolvedValue({ ...publishedRegEvent, isDraft: true })
 
-    const result = await registerEventAction('evt-1', {}, makeFormData({}))
+    const result = await registerEventAction('evt-1', {})
 
     expect(result.error).toBeDefined()
     expect(mockEventAttendeeCreate).not.toHaveBeenCalled()
@@ -607,7 +606,7 @@ describe('registerEventAction', () => {
   it('returns an error when the event does not exist', async () => {
     mockEventFindUnique.mockResolvedValue(null)
 
-    const result = await registerEventAction('evt-1', {}, makeFormData({}))
+    const result = await registerEventAction('evt-1', {})
 
     expect(result.error).toBeDefined()
     expect(mockEventAttendeeCreate).not.toHaveBeenCalled()
@@ -617,7 +616,7 @@ describe('registerEventAction', () => {
     mockEventFindUnique.mockResolvedValue({ ...publishedRegEvent, metadata: { registration: { capacity: null, collectPhone: false, collectNotes: false } }, _count: { attendees: 10 } })
     mockEventAttendeeCreate.mockResolvedValue({})
 
-    const result = await registerEventAction('evt-1', {}, makeFormData({}))
+    const result = await registerEventAction('evt-1', {})
 
     expect(result.success).toBe(true)
     expect(mockEventAttendeeCreate).toHaveBeenCalled()
@@ -627,7 +626,7 @@ describe('registerEventAction', () => {
     mockEventFindUnique.mockResolvedValue({ ...publishedRegEvent, metadata: { registration: { capacity: 10, collectPhone: false, collectNotes: false } }, _count: { attendees: 9 } })
     mockEventAttendeeCreate.mockResolvedValue({})
 
-    const result = await registerEventAction('evt-1', {}, makeFormData({}))
+    const result = await registerEventAction('evt-1', {})
 
     expect(result.success).toBe(true)
     expect(mockEventAttendeeCreate).toHaveBeenCalled()
@@ -636,7 +635,7 @@ describe('registerEventAction', () => {
   it('returns a fully booked error when capacity is reached', async () => {
     mockEventFindUnique.mockResolvedValue({ ...publishedRegEvent, metadata: { registration: { capacity: 10, collectPhone: false, collectNotes: false } }, _count: { attendees: 10 } })
 
-    const result = await registerEventAction('evt-1', {}, makeFormData({}))
+    const result = await registerEventAction('evt-1', {})
 
     expect(result.error).toBe('Sorry, this event is fully booked.')
     expect(mockEventAttendeeCreate).not.toHaveBeenCalled()
@@ -648,7 +647,7 @@ describe('registerEventAction', () => {
     mockEventAttendeeCreate.mockResolvedValue({})
     mockScheduleReminder.mockRejectedValueOnce(new Error('scheduler down'))
 
-    const result = await registerEventAction('evt-1', {}, makeFormData({}))
+    const result = await registerEventAction('evt-1', {})
 
     expect(result.success).toBe(true)
     expect(mockUpdateTag).toHaveBeenCalledWith('event-evt-1')

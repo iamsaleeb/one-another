@@ -70,6 +70,23 @@ export const registerEventSchema = z.object({
 
 export type RegisterEventInput = z.infer<typeof registerEventSchema>;
 
+export const registrationFormSchema = z.object({
+  phone: z.string().optional(),
+  notes: z.string().optional(),
+  selectedDays: z.array(z.string()).optional(),
+  responses: z
+    .record(
+      z.string(),
+      z.object({
+        answer: z.string().nullable().optional(),
+        fileUrl: z.string().url().nullable().optional(),
+      })
+    )
+    .optional(),
+});
+
+export type RegistrationFormValues = z.infer<typeof registrationFormSchema>;
+
 // --- Event metadata types and parsing ---
 
 export interface CampAgendaItem {

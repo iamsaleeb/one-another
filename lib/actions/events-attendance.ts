@@ -2,9 +2,9 @@
 
 import { updateTag } from "next/cache";
 import { auth } from "@/auth";
-import { registerEventSchema } from "@/lib/validations/event";
+import { type RegistrationFormValues } from "@/lib/validations/event";
 import { attendEvent, unattendEvent, registerEvent } from "@/lib/dal/attendance";
-import { extractResponses } from "@/lib/utils/forms";
+import type { ResponseInput } from "@/lib/validations/questions";
 
 export interface AttendEventState {
   error?: string;
@@ -43,37 +43,23 @@ export async function unattendEventAction(eventId: string): Promise<AttendEventS
 
 export async function registerEventAction(
   eventId: string,
-  _prevState: RegisterEventState,
-  formData: FormData
+  data: RegistrationFormValues
 ): Promise<RegisterEventState> {
   const session = await auth();
   if (!session?.user?.id) return { error: "You must be signed in." };
 
-  const rawSelectedDays = formData.get("selectedDays");
-  let selectedDays: string[] | undefined;
-  if (typeof rawSelectedDays === "string" && rawSelectedDays) {
-    try {
-      const parsed = JSON.parse(rawSelectedDays);
-      if (Array.isArray(parsed)) selectedDays = parsed.filter((d): d is string => typeof d === "string");
-    } catch {
-      // ignore malformed JSON
-    }
-  }
-
-  const parsed = registerEventSchema.safeParse({
-    phone: formData.get("phone") || undefined,
-    notes: formData.get("notes") || undefined,
-    selectedDays,
-  });
-
-  if (!parsed.success) return { error: "Invalid form data." };
-
-  const responses = extractResponses(formData);
+  const responses: ResponseInput[] = Object.entries(data.responses ?? {}).map(
+    ([questionId, { answer, fileUrl }]) => ({
+      questionId,
+      answer: answer ?? null,
+      fileUrl: fileUrl ?? null,
+    })
+  );
 
   const result = await registerEvent(eventId, session.user.id, {
-    phone: parsed.data.phone,
-    notes: parsed.data.notes,
-    selectedDays: parsed.data.selectedDays,
+    phone: data.phone,
+    notes: data.notes,
+    selectedDays: data.selectedDays,
     responses,
   });
 

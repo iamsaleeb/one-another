@@ -127,9 +127,9 @@ export function RegistrationDrawer({
         responses: buildDefaultResponses(questions, existingResponses),
       });
       setStep(skipDetailsStep ? 0 : "details");
-      setShowSummary(isRegistered);
       setServerError(null);
     }
+    setShowSummary(isRegistered);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 

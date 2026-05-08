@@ -1,4 +1,3 @@
-// app/(app)/events/[id]/_components/questions-form.tsx
 "use client";
 
 import { useRef, useState } from "react";
@@ -53,14 +52,12 @@ export function QuestionsForm({ questions, control, activeIndex, disabled }: Que
     }
   }
 
+  const labelClass = activeIndex !== undefined ? "text-xl font-semibold" : "text-sm font-medium";
+
   return (
     <div className="flex flex-col gap-6">
       {questions.map((q, index) => {
         if (activeIndex !== undefined && index !== activeIndex) return null;
-
-        const labelClass = activeIndex !== undefined
-          ? "text-xl font-semibold"
-          : "text-sm font-medium";
 
         return (
           <div key={q.id} className="flex flex-col gap-3">

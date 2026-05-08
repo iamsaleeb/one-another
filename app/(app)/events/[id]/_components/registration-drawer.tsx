@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Check, ChevronLeft, X } from "lucide-react";
+import { Check } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -67,6 +67,16 @@ function buildDefaultResponses(
   return out;
 }
 
+function getDisplayAnswer(
+  q: Question,
+  resp: { answer: string | null; fileUrl: string | null } | undefined
+): string | null {
+  if (!resp) return null;
+  if (q.type === QuestionType.FILE_UPLOAD) return resp.fileUrl ? "File uploaded" : null;
+  if (q.type === QuestionType.YES_NO) return resp.answer === "true" ? "Yes" : "No";
+  return resp.answer || null;
+}
+
 export function RegistrationDrawer({
   eventId,
   eventTitle,
@@ -83,10 +93,10 @@ export function RegistrationDrawer({
 }: RegistrationDrawerProps) {
   const showPartialDays =
     camp?.allowPartialRegistration === true && !!campStartDate && !!camp.endDate;
-  const allDays =
-    showPartialDays && campStartDate && camp?.endDate
-      ? getCampDays(campStartDate, camp.endDate)
-      : [];
+  const allDays = useMemo(
+    () => (showPartialDays ? getCampDays(campStartDate!, camp!.endDate!) : []),
+    [showPartialDays, campStartDate, camp?.endDate]
+  );
 
   const hasQuestions = !!questions?.length;
   const hasOptionalFields = collectPhone || collectNotes || showPartialDays;
@@ -103,6 +113,7 @@ export function RegistrationDrawer({
   });
 
   const [step, setStep] = useState<"details" | number>(skipDetailsStep ? 0 : "details");
+  const [showSummary, setShowSummary] = useState(isRegistered);
   const [serverError, setServerError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const [unattendPending, startUnattendTransition] = useTransition();
@@ -116,15 +127,19 @@ export function RegistrationDrawer({
         responses: buildDefaultResponses(questions, existingResponses),
       });
       setStep(skipDetailsStep ? 0 : "details");
+      setShowSummary(isRegistered);
       setServerError(null);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
   const onQuestionStep = typeof step === "number";
-  const showConfirmation = isRegistered && !hasQuestions;
   const isLastQuestion = onQuestionStep && hasQuestions && step === questions!.length - 1;
   const selectedDays = form.watch("selectedDays");
+
+  const answeredQuestions = hasQuestions
+    ? questions!.filter((q) => getDisplayAnswer(q, existingResponses?.[q.id]) !== null)
+    : [];
 
   function getSubmitLabel() {
     if (isPending) return isRegistered ? "Updating..." : "Registering...";
@@ -166,11 +181,7 @@ export function RegistrationDrawer({
 
   function handleBack() {
     form.clearErrors();
-    if (skipDetailsStep && step === 0) {
-      onOpenChange(false);
-      return;
-    }
-    setStep((s) => (typeof s === "number" && s > 0 ? s - 1 : "details"));
+    setStep((s) => ((s as number) > 0 ? (s as number) - 1 : "details"));
   }
 
   function handleUnregister() {
@@ -195,50 +206,20 @@ export function RegistrationDrawer({
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange} direction="bottom">
-      <DrawerContent
-        aria-describedby={undefined}
-        className="h-[100dvh] mt-0 rounded-t-none flex flex-col"
-      >
-        {/* Header */}
-        <DrawerHeader className="flex-none px-4 pt-4 pb-2">
-          <div className="flex items-center gap-2">
-            <div className="w-8 flex items-center justify-start">
-              {onQuestionStep && (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="size-8 -ml-2"
-                  onClick={handleBack}
-                  disabled={isPending}
-                >
-                  <ChevronLeft className="size-5" />
-                </Button>
-              )}
-            </div>
-            <DrawerTitle className="flex-1 text-center text-base">
-              {isRegistered ? "Your Registration" : `Register for ${eventTitle}`}
-            </DrawerTitle>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="size-8 -mr-2"
-              onClick={() => onOpenChange(false)}
-              disabled={isPending}
-            >
-              <X className="size-5" />
-            </Button>
-          </div>
+      <DrawerContent aria-describedby={undefined}>
+        <DrawerHeader className="px-4 pt-4 pb-2">
+          <DrawerTitle className="text-base">
+            {isRegistered ? "Your Registration" : `Register for ${eventTitle}`}
+          </DrawerTitle>
 
-          {!showConfirmation && (
-            <p className="text-xs text-muted-foreground text-center mt-0.5">
+          {!showSummary && (
+            <p className="text-xs text-muted-foreground mt-0.5">
               Registering as {abbreviateName(userName)}
             </p>
           )}
 
-          {onQuestionStep && hasQuestions && (
-            <div className="flex items-center justify-center gap-1.5 mt-2">
+          {!showSummary && onQuestionStep && hasQuestions && (
+            <div className="flex items-center gap-1.5 mt-2">
               {questions!.map((_, i) => (
                 <span
                   key={i}
@@ -254,38 +235,58 @@ export function RegistrationDrawer({
           )}
         </DrawerHeader>
 
-        {/* Confirmation state */}
-        {showConfirmation ? (
+        {showSummary ? (
           <>
-            <div className="flex-1 flex flex-col items-center justify-center gap-3 px-4">
-              <div className="flex size-16 items-center justify-center rounded-full bg-primary/10">
-                <Check className="size-8 text-primary" />
+            <div className="px-4 pb-2 flex flex-col gap-4">
+              <div className="flex items-center gap-2">
+                <div className="flex size-8 items-center justify-center rounded-full bg-primary/10 shrink-0">
+                  <Check className="size-4 text-primary" />
+                </div>
+                <p className="text-sm font-medium">You&apos;re registered for {eventTitle}</p>
               </div>
-              <p className="text-base font-medium">You&apos;re registered!</p>
-              <p className="text-sm text-muted-foreground text-center">
-                See you at {eventTitle}.
-              </p>
+
+              {answeredQuestions.length > 0 && (
+                <div className="flex flex-col gap-3 rounded-xl border px-4 py-3">
+                  {answeredQuestions.map((q) => (
+                    <div key={q.id} className="flex flex-col gap-0.5">
+                      <p className="text-xs text-muted-foreground">{q.label}</p>
+                      <p className="text-sm">{getDisplayAnswer(q, existingResponses?.[q.id])}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
-            <DrawerFooter className="flex-none px-4 pb-6">
-              <Button variant="outline" className="w-full" onClick={() => onOpenChange(false)}>
-                Close
-              </Button>
+
+            <DrawerFooter className="px-4 pb-6 gap-2">
+              {hasQuestions && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => setShowSummary(false)}
+                >
+                  Update responses
+                </Button>
+              )}
+              <button
+                type="button"
+                onClick={handleUnregister}
+                disabled={unattendPending}
+                className="text-xs text-destructive text-center w-full py-1 disabled:opacity-50"
+              >
+                {unattendPending ? "Cancelling..." : "Cancel registration"}
+              </button>
             </DrawerFooter>
           </>
         ) : (
-          /* Registration form */
-          <form
-            onSubmit={form.handleSubmit(onSubmit)}
-            className="flex-1 flex flex-col min-h-0"
-          >
-            <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-4">
+          <div>
+            <div className="px-4 pb-2 flex flex-col gap-4">
               {serverError && (
                 <Alert variant="destructive">
                   <AlertDescription>{serverError}</AlertDescription>
                 </Alert>
               )}
 
-              {/* Details step */}
               {!onQuestionStep && (
                 <div className="flex flex-col gap-4">
                   {showPartialDays && allDays.length > 0 && (
@@ -365,7 +366,6 @@ export function RegistrationDrawer({
                 </div>
               )}
 
-              {/* Question step */}
               {onQuestionStep && hasQuestions && (
                 <QuestionsForm
                   questions={questions!}
@@ -376,26 +376,25 @@ export function RegistrationDrawer({
               )}
             </div>
 
-            {/* Single CTA footer */}
-            <DrawerFooter className="flex-none px-4 pb-6 gap-2">
+            <DrawerFooter className="px-4 pb-6 gap-2">
               {!onQuestionStep && (
                 <>
                   {hasQuestions ? (
                     <Button
                       type="button"
                       onClick={handleNext}
-                      disabled={
-                        isPending ||
-                        (showPartialDays
-                          ? (selectedDays ?? []).length === 0
-                          : false)
-                      }
+                      disabled={isPending || (showPartialDays && (selectedDays ?? []).length === 0)}
                       className="w-full"
                     >
                       Continue
                     </Button>
                   ) : (
-                    <Button type="submit" disabled={isPending} className="w-full">
+                    <Button
+                      type="button"
+                      onClick={() => form.handleSubmit(onSubmit)()}
+                      disabled={isPending}
+                      className="w-full"
+                    >
                       {getSubmitLabel()}
                     </Button>
                   )}
@@ -404,23 +403,29 @@ export function RegistrationDrawer({
                       Select at least one day to continue.
                     </p>
                   )}
-                  {isRegistered && (
-                    <button
-                      type="button"
-                      onClick={handleUnregister}
-                      disabled={unattendPending}
-                      className="text-xs text-destructive text-center w-full py-1 disabled:opacity-50"
-                    >
-                      {unattendPending ? "Cancelling..." : "Cancel registration"}
-                    </button>
-                  )}
                 </>
               )}
 
               {onQuestionStep && (
-                <>
+                <div className="flex gap-2">
+                  {(step > 0 || !skipDetailsStep) && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleBack}
+                      disabled={isPending}
+                      className="flex-1"
+                    >
+                      Back
+                    </Button>
+                  )}
                   {isLastQuestion ? (
-                    <Button type="submit" disabled={isPending} className="w-full">
+                    <Button
+                      type="button"
+                      onClick={() => form.handleSubmit(onSubmit)()}
+                      disabled={isPending}
+                      className="flex-1"
+                    >
                       {getSubmitLabel()}
                     </Button>
                   ) : (
@@ -428,15 +433,15 @@ export function RegistrationDrawer({
                       type="button"
                       onClick={handleNext}
                       disabled={isPending}
-                      className="w-full"
+                      className="flex-1"
                     >
                       Next
                     </Button>
                   )}
-                </>
+                </div>
               )}
             </DrawerFooter>
-          </form>
+          </div>
         )}
       </DrawerContent>
     </Drawer>

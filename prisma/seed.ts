@@ -357,7 +357,7 @@ async function main() {
     },
   });
 
-  await prisma.event.create({
+  const orientationEvent = await prisma.event.create({
     data: {
       datetime: future(18, "17:00"),
       title: "New Servants Orientation Evening",
@@ -422,7 +422,7 @@ async function main() {
 
   const campDay = 32;
 
-  await prisma.event.create({
+  const campEvent = await prisma.event.create({
     data: {
       datetime: future(campDay, "08:00"),
       title: "St. Mary Summer Camp 2026 — \"Called by Name\"",
@@ -649,6 +649,242 @@ async function main() {
   });
 
   await prisma.churchAdmin.create({ data: { userId: admin1.id, churchId: stMary.id } });
+
+  // ── Question Library Items ───────────────────────────────────────────────────
+
+  // organiser1 (Fr. Bishoy) — camp / retreat questions
+  const lib1 = await prisma.$transaction([
+    prisma.questionLibraryItem.create({
+      data: {
+        createdById: organiser1.id,
+        type: "MULTIPLE_CHOICE",
+        label: "T-shirt size",
+        options: ["XS", "S", "M", "L", "XL", "XXL"],
+      },
+    }),
+    prisma.questionLibraryItem.create({
+      data: {
+        createdById: organiser1.id,
+        type: "MULTIPLE_CHOICE",
+        label: "Age group",
+        options: ["13–15", "16–18", "19–22"],
+      },
+    }),
+    prisma.questionLibraryItem.create({
+      data: {
+        createdById: organiser1.id,
+        type: "YES_NO",
+        label: "Can you swim?",
+        options: [],
+      },
+    }),
+    prisma.questionLibraryItem.create({
+      data: {
+        createdById: organiser1.id,
+        type: "SHORT_TEXT",
+        label: "Emergency contact name and phone number",
+        options: [],
+      },
+    }),
+    prisma.questionLibraryItem.create({
+      data: {
+        createdById: organiser1.id,
+        type: "MULTIPLE_CHOICE",
+        label: "Dietary restrictions",
+        options: ["None", "Vegetarian", "Vegan", "Gluten-free", "Other"],
+      },
+    }),
+    prisma.questionLibraryItem.create({
+      data: {
+        createdById: organiser1.id,
+        type: "LONG_TEXT",
+        label: "Medical conditions or allergies we should know about",
+        options: [],
+      },
+    }),
+  ]);
+
+  // organiser2 (Deacon Mina) — general reusables
+  await prisma.$transaction([
+    prisma.questionLibraryItem.create({
+      data: {
+        createdById: organiser2.id,
+        type: "YES_NO",
+        label: "Have you read the required material?",
+        options: [],
+      },
+    }),
+    prisma.questionLibraryItem.create({
+      data: {
+        createdById: organiser2.id,
+        type: "SHORT_TEXT",
+        label: "What is your deacon name (if ordained)?",
+        options: [],
+      },
+    }),
+    prisma.questionLibraryItem.create({
+      data: {
+        createdById: organiser2.id,
+        type: "MULTIPLE_CHOICE",
+        label: "Dietary restrictions",
+        options: ["None", "Vegetarian", "Vegan", "Gluten-free", "Other"],
+      },
+    }),
+    prisma.questionLibraryItem.create({
+      data: {
+        createdById: organiser2.id,
+        type: "LONG_TEXT",
+        label: "Any questions you would like addressed?",
+        options: [],
+      },
+    }),
+  ]);
+
+  // organiser3 (Fr. Antonious) — servants / formation questions
+  const lib3 = await prisma.$transaction([
+    prisma.questionLibraryItem.create({
+      data: {
+        createdById: organiser3.id,
+        type: "MULTIPLE_CHOICE",
+        label: "Which ministry are you interested in serving?",
+        options: ["Youth", "Sunday School", "Choir", "Deaconate", "Outreach", "Other"],
+      },
+    }),
+    prisma.questionLibraryItem.create({
+      data: {
+        createdById: organiser3.id,
+        type: "MULTIPLE_CHOICE",
+        label: "How long have you been a member of St. George?",
+        options: ["Less than 1 year", "1–3 years", "3–5 years", "5+ years"],
+      },
+    }),
+    prisma.questionLibraryItem.create({
+      data: {
+        createdById: organiser3.id,
+        type: "YES_NO",
+        label: "Do you currently serve in any ministry?",
+        options: [],
+      },
+    }),
+    prisma.questionLibraryItem.create({
+      data: {
+        createdById: organiser3.id,
+        type: "LONG_TEXT",
+        label: "What do you hope to get out of this orientation?",
+        options: [],
+      },
+    }),
+    prisma.questionLibraryItem.create({
+      data: {
+        createdById: organiser3.id,
+        type: "SHORT_TEXT",
+        label: "Emergency contact name and phone number",
+        options: [],
+      },
+    }),
+  ]);
+
+  // ── Event Questions ──────────────────────────────────────────────────────────
+
+  await prisma.eventQuestion.createMany({
+    data: [
+      {
+        eventId: campEvent.id,
+        type: "MULTIPLE_CHOICE",
+        label: "T-shirt size",
+        options: ["XS", "S", "M", "L", "XL", "XXL"],
+        required: true,
+        order: 0,
+        libraryItemId: lib1[0].id,
+      },
+      {
+        eventId: campEvent.id,
+        type: "MULTIPLE_CHOICE",
+        label: "Age group",
+        options: ["13–15", "16–18", "19–22"],
+        required: true,
+        order: 1,
+        libraryItemId: lib1[1].id,
+      },
+      {
+        eventId: campEvent.id,
+        type: "YES_NO",
+        label: "Can you swim?",
+        options: [],
+        required: true,
+        order: 2,
+        libraryItemId: lib1[2].id,
+      },
+      {
+        eventId: campEvent.id,
+        type: "SHORT_TEXT",
+        label: "Emergency contact name and phone number",
+        options: [],
+        required: true,
+        order: 3,
+        libraryItemId: lib1[3].id,
+      },
+      {
+        eventId: campEvent.id,
+        type: "MULTIPLE_CHOICE",
+        label: "Dietary restrictions",
+        options: ["None", "Vegetarian", "Vegan", "Gluten-free", "Other"],
+        required: false,
+        order: 4,
+        libraryItemId: lib1[4].id,
+      },
+      {
+        eventId: campEvent.id,
+        type: "LONG_TEXT",
+        label: "Medical conditions or allergies we should know about",
+        options: [],
+        required: false,
+        order: 5,
+        libraryItemId: lib1[5].id,
+      },
+    ],
+  });
+
+  await prisma.eventQuestion.createMany({
+    data: [
+      {
+        eventId: orientationEvent.id,
+        type: "MULTIPLE_CHOICE",
+        label: "Which ministry are you interested in serving?",
+        options: ["Youth", "Sunday School", "Choir", "Deaconate", "Outreach", "Other"],
+        required: true,
+        order: 0,
+        libraryItemId: lib3[0].id,
+      },
+      {
+        eventId: orientationEvent.id,
+        type: "MULTIPLE_CHOICE",
+        label: "How long have you been a member of St. George?",
+        options: ["Less than 1 year", "1–3 years", "3–5 years", "5+ years"],
+        required: false,
+        order: 1,
+        libraryItemId: lib3[1].id,
+      },
+      {
+        eventId: orientationEvent.id,
+        type: "YES_NO",
+        label: "Do you currently serve in any ministry?",
+        options: [],
+        required: false,
+        order: 2,
+        libraryItemId: lib3[2].id,
+      },
+      {
+        eventId: orientationEvent.id,
+        type: "LONG_TEXT",
+        label: "What do you hope to get out of this orientation?",
+        options: [],
+        required: false,
+        order: 3,
+        libraryItemId: lib3[3].id,
+      },
+    ],
+  });
 
   await prisma.user.create({
     data: {

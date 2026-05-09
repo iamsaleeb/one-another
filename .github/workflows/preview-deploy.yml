@@ -115,7 +115,7 @@ jobs:
           npx ts-node --compiler-options '{"module":"CommonJS"}' prisma/seed.ts
 
       - name: Install Vercel CLI
-        run: npm install -g vercel
+        run: npm install -g vercel@53.3.1
 
       - name: Deploy to Vercel
         id: deploy

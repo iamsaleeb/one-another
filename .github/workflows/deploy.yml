@@ -60,7 +60,7 @@ jobs:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
         run: |
-          npm install -g vercel
+          npm install -g vercel@53.3.1
           if [ "${{ inputs.environment }}" = "production" ]; then
             DEPLOY_URL=$(vercel deploy --prod --token=$VERCEL_TOKEN)
           else

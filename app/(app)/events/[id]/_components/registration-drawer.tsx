@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, useTransition } from "react";
-import { useForm, Controller } from "react-hook-form";
+import { useForm, useWatch, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Check, Loader2 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -131,13 +131,15 @@ export function RegistrationDrawer({
       setStep(skipDetailsStep ? 0 : "details");
       setServerError(null);
     }
+  }, [open, form, allDays, questions, existingResponses, skipDetailsStep]);
+
+  useEffect(() => {
     setShowSummary(isRegistered);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]);
+  }, [open, isRegistered]);
 
   const onQuestionStep = typeof step === "number";
   const isLastQuestion = onQuestionStep && hasQuestions && step === questions!.length - 1;
-  const selectedDays = form.watch("selectedDays");
+  const selectedDays = useWatch({ control: form.control, name: "selectedDays" });
 
   const answeredQuestions = hasQuestions
     ? questions!.filter((q) => getDisplayAnswer(q, existingResponses?.[q.id]) !== null)

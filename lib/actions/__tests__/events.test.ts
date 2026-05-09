@@ -70,7 +70,6 @@ jest.mock('@/lib/dal/attendance', () => ({
   registerEvent: jest.fn(),
 }))
 
-
 import { redirect } from 'next/navigation'
 import { updateTag } from 'next/cache'
 import {

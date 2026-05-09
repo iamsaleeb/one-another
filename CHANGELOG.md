@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.16.0](https://github.com/iamsaleeb/one-another/compare/one-another-v0.15.0...one-another-v0.16.0) (2026-05-09)
+
+
+### Features
+
+* added further seeding ([#104](https://github.com/iamsaleeb/one-another/issues/104)) ([1160460](https://github.com/iamsaleeb/one-another/commit/116046021cbb83a54c5e9d83cd29b0a62c5a515b))
+* custom questions for registration events ([#97](https://github.com/iamsaleeb/one-another/issues/97)) ([489a2b8](https://github.com/iamsaleeb/one-another/commit/489a2b8b223267b6ef9aa4a50aaa3bf89185b657))
+* fixed notifications refactoring ([#102](https://github.com/iamsaleeb/one-another/issues/102)) ([ddb9d98](https://github.com/iamsaleeb/one-another/commit/ddb9d988cc7c20d9a667d6f1914cca47fd18cbf2))
+* register for an event ([#103](https://github.com/iamsaleeb/one-another/issues/103)) ([7fdfb52](https://github.com/iamsaleeb/one-another/commit/7fdfb52432927f66a379f24153693f025da282ac))
+* remove account fixes ([#101](https://github.com/iamsaleeb/one-another/issues/101)) ([6c5e105](https://github.com/iamsaleeb/one-another/commit/6c5e105d665522394b2973bd4f659bb7a9ec7a8f))
+* replace Uploadthing with Vercel Blob for photo uploads ([#95](https://github.com/iamsaleeb/one-another/issues/95)) ([9b121ff](https://github.com/iamsaleeb/one-another/commit/9b121ffbe5799f69d649fc29f3e41faa12206e6a))
+
+
+### Bug Fixes
+
+* fixes existing event creation page issues ([#93](https://github.com/iamsaleeb/one-another/issues/93)) ([f8e0324](https://github.com/iamsaleeb/one-another/commit/f8e0324d76fb44b46b143de7190298c109f0be7a))
+* remove unused files ([#96](https://github.com/iamsaleeb/one-another/issues/96)) ([e62714c](https://github.com/iamsaleeb/one-another/commit/e62714c927720adadc0bc23fa73b357852ef724f))
+
 ## [0.15.0](https://github.com/iamsaleeb/one-another/compare/one-another-v0.14.0...one-another-v0.15.0) (2026-05-01)
 
 

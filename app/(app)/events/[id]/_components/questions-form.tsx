@@ -111,17 +111,22 @@ export function QuestionsForm({ questions, control, activeIndex, disabled }: Que
               <Controller
                 control={control}
                 name={`responses.${q.id}.answer`}
-                render={({ field }) => (
-                  <div className="flex items-center justify-between gap-3 rounded-xl border bg-background px-4 py-3 min-h-[56px]">
-                    <span className="text-sm text-muted-foreground">
-                      {field.value === "true" ? "Yes" : "No"}
-                    </span>
-                    <Switch
-                      checked={field.value === "true"}
-                      disabled={disabled}
-                      onCheckedChange={(checked) => field.onChange(checked ? "true" : "false")}
-                    />
-                  </div>
+                render={({ field, fieldState }) => (
+                  <>
+                    <div className="flex items-center justify-between gap-3 rounded-xl border bg-background px-4 py-3 min-h-[56px]">
+                      <span className="text-sm text-muted-foreground">
+                        {field.value === "true" ? "Yes" : field.value === "false" ? "No" : "—"}
+                      </span>
+                      <Switch
+                        checked={field.value === "true"}
+                        disabled={disabled}
+                        onCheckedChange={(checked) => field.onChange(checked ? "true" : "false")}
+                      />
+                    </div>
+                    {fieldState.error && (
+                      <p className="text-xs text-destructive">{fieldState.error.message}</p>
+                    )}
+                  </>
                 )}
               />
             )}

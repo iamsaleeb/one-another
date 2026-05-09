@@ -62,7 +62,7 @@ function buildDefaultResponses(
   for (const q of questions) {
     const prev = existing?.[q.id];
     out[q.id] = {
-      answer: prev?.answer ?? (q.type === QuestionType.YES_NO ? "false" : null),
+      answer: prev?.answer ?? null,
       fileUrl: prev?.fileUrl ?? null,
     };
   }
@@ -75,7 +75,10 @@ function getDisplayAnswer(
 ): string | null {
   if (!resp) return null;
   if (q.type === QuestionType.FILE_UPLOAD) return resp.fileUrl ? "File uploaded" : null;
-  if (q.type === QuestionType.YES_NO) return resp.answer === "true" ? "Yes" : "No";
+  if (q.type === QuestionType.YES_NO) {
+    if (resp.answer === null || resp.answer === undefined) return null;
+    return resp.answer === "true" ? "Yes" : "No";
+  }
   return resp.answer || null;
 }
 

@@ -71,6 +71,14 @@ export const registerEventSchema = z.object({
 export type RegisterEventInput = z.infer<typeof registerEventSchema>;
 
 export const registrationFormSchema = registerEventSchema.extend({
+  phone: z
+    .string()
+    .transform((v) => v.trim() || undefined)
+    .optional(),
+  notes: z
+    .string()
+    .transform((v) => v.trim() || undefined)
+    .optional(),
   responses: z
     .record(
       z.string().min(1),

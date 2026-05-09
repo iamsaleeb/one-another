@@ -123,7 +123,8 @@ export function RegistrationDrawer({
   });
 
   const [step, setStep] = useState<"details" | number>(skipDetailsStep ? 0 : "details");
-  const [showSummary, setShowSummary] = useState(isRegistered);
+  const [isEditing, setIsEditing] = useState(false);
+  const showSummary = isRegistered && !isEditing;
   const [serverError, setServerError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const [unattendPending, startUnattendTransition] = useTransition();
@@ -145,9 +146,9 @@ export function RegistrationDrawer({
         responses: buildDefaultResponses(safeQuestions, existingResponses),
       });
       setStep(skipDetailsStep ? 0 : "details");
+      setIsEditing(false);
       setServerError(null);
     }
-    setShowSummary(isRegistered);
     onOpenChange(isOpen);
   }
 
@@ -274,7 +275,7 @@ export function RegistrationDrawer({
                   type="button"
                   variant="outline"
                   className="w-full"
-                  onClick={() => setShowSummary(false)}
+                  onClick={() => setIsEditing(true)}
                 >
                   Update responses
                 </Button>

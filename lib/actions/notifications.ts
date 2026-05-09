@@ -4,7 +4,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
 import { updateTag, revalidatePath } from "next/cache";
 import { type Prisma } from "@prisma/client";
-import { NOTIFICATION_TYPES, type NotificationTypeKey } from "@/lib/notification-types";
+import { NOTIFICATION_TYPES, NotificationType, type NotificationTypeKey } from "@/lib/notification-types";
 import { updateUserReminderSchedule } from "@/lib/notifications/queue";
 import { markNotificationsRead } from "@/lib/notifications/inbox";
 import { getStoredNotificationPreferences } from "@/lib/actions/data-user";
@@ -96,7 +96,7 @@ export async function updateNotificationPreferenceAction(
   }
 
   // If the user changed their EVENT_REMINDER timing, update pending scheduled notifications
-  if (type === "EVENT_REMINDER" && typeof config?.hoursBeforeEvent === "number") {
+  if (type === NotificationType.EVENT_REMINDER && typeof config?.hoursBeforeEvent === "number") {
     await updateUserReminderSchedule(session.user.id, config.hoursBeforeEvent);
   }
 

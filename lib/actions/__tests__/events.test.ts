@@ -70,6 +70,7 @@ jest.mock('@/lib/dal/attendance', () => ({
   registerEvent: jest.fn(),
 }))
 
+import { NotificationType } from '@prisma/client'
 import { redirect } from 'next/navigation'
 import { updateTag } from 'next/cache'
 import {
@@ -335,7 +336,7 @@ describe('createEventAction', () => {
       data: expect.arrayContaining([
         expect.objectContaining({
           userId: 'follower-1',
-          type: 'NEW_SERIES_SESSION',
+          type: NotificationType.NEW_SERIES_SESSION,
           title: 'New Session Added',
           body: expect.stringContaining(validData.title),
           data: expect.objectContaining({ type: 'new_session', seriesId: 'ser-1' }),
@@ -426,7 +427,7 @@ describe('cancelEventAction', () => {
       data: expect.arrayContaining([
         expect.objectContaining({
           userId: 'user-2',
-          type: 'EVENT_CANCELLED',
+          type: NotificationType.EVENT_CANCELLED,
           title: 'Event Cancelled',
           body: expect.stringContaining('Test Event'),
           data: expect.objectContaining({ type: 'event_cancelled', eventId: 'evt-1' }),
@@ -768,7 +769,7 @@ describe('deleteEventAction', () => {
 
     await deleteEventAction('evt-1')
 
-    expect(mockCancelAll).toHaveBeenCalledWith({ type: 'EVENT_REMINDER', dedupeKey: 'evt-1' })
+    expect(mockCancelAll).toHaveBeenCalledWith({ type: NotificationType.EVENT_REMINDER, dedupeKey: 'evt-1' })
     expect(mockEventDelete).toHaveBeenCalledWith({ where: { id: 'evt-1' } })
     expect(mockUpdateTag).toHaveBeenCalledWith('events')
     expect(mockUpdateTag).toHaveBeenCalledWith('event-evt-1')
@@ -893,7 +894,7 @@ describe('publishEventAction', () => {
       data: expect.arrayContaining([
         expect.objectContaining({
           userId: 'follower-1',
-          type: 'NEW_SERIES_SESSION',
+          type: NotificationType.NEW_SERIES_SESSION,
           title: 'New Session Added',
           body: expect.stringContaining('Bible Study'),
           data: expect.objectContaining({ type: 'new_session', seriesId: 'ser-1', eventId: 'evt-1' }),
@@ -990,7 +991,7 @@ describe('unpublishEventAction', () => {
       where: { id: 'evt-1' },
       data: { isDraft: true },
     })
-    expect(mockCancelAll).toHaveBeenCalledWith({ type: 'EVENT_REMINDER', dedupeKey: 'evt-1' })
+    expect(mockCancelAll).toHaveBeenCalledWith({ type: NotificationType.EVENT_REMINDER, dedupeKey: 'evt-1' })
     expect(mockUpdateTag).toHaveBeenCalledWith('events')
     expect(mockUpdateTag).toHaveBeenCalledWith('event-evt-1')
     expect(mockRedirect).toHaveBeenCalledWith('/events/evt-1')

@@ -15,6 +15,7 @@ jest.mock('@/lib/db', () => ({
   },
 }))
 
+import { NotificationType } from '@prisma/client'
 import { prisma } from '@/lib/db'
 import {
   queueNotification,
@@ -45,7 +46,7 @@ describe('queueNotification — deduped (EVENT_REMINDER)', () => {
 
     await queueNotification({
       userId: 'u-1',
-      type: 'EVENT_REMINDER',
+      type: NotificationType.EVENT_REMINDER,
       title: 'Reminder',
       body: 'Event starts soon',
       data: { type: 'EVENT_REMINDER', eventId: 'ev-1' },
@@ -55,7 +56,7 @@ describe('queueNotification — deduped (EVENT_REMINDER)', () => {
 
     expect(mockUpsert).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { userId_type_dedupeKey: { userId: 'u-1', type: 'EVENT_REMINDER', dedupeKey: 'ev-1' } },
+        where: { userId_type_dedupeKey: { userId: 'u-1', type: NotificationType.EVENT_REMINDER, dedupeKey: 'ev-1' } },
         create: expect.objectContaining({ userId: 'u-1', dedupeKey: 'ev-1', scheduledFor: future }),
         update: expect.objectContaining({ scheduledFor: future, cancelledAt: null }),
       })
@@ -69,7 +70,7 @@ describe('queueNotification — instant (EVENT_CANCELLED, NEW_SERIES_SESSION)', 
 
     await queueNotification({
       userId: 'u-2',
-      type: 'EVENT_CANCELLED',
+      type: NotificationType.EVENT_CANCELLED,
       title: 'Cancelled',
       body: 'Your event was cancelled',
       data: { type: 'EVENT_CANCELLED', eventId: 'ev-2' },
@@ -77,7 +78,7 @@ describe('queueNotification — instant (EVENT_CANCELLED, NEW_SERIES_SESSION)', 
 
     expect(mockCreate).toHaveBeenCalledWith(
       expect.objectContaining({
-        data: expect.objectContaining({ userId: 'u-2', type: 'EVENT_CANCELLED', dedupeKey: undefined }),
+        data: expect.objectContaining({ userId: 'u-2', type: NotificationType.EVENT_CANCELLED, dedupeKey: undefined }),
       })
     )
   })
@@ -87,10 +88,10 @@ describe('cancelNotification', () => {
   it('sets cancelledAt for unsent record matching userId+type+dedupeKey', async () => {
     mockUpdateMany.mockResolvedValue({ count: 1 })
 
-    await cancelNotification({ userId: 'u-1', type: 'EVENT_REMINDER', dedupeKey: 'ev-1' })
+    await cancelNotification({ userId: 'u-1', type: NotificationType.EVENT_REMINDER, dedupeKey: 'ev-1' })
 
     expect(mockUpdateMany).toHaveBeenCalledWith({
-      where: { userId: 'u-1', type: 'EVENT_REMINDER', dedupeKey: 'ev-1', sentAt: null, cancelledAt: null },
+      where: { userId: 'u-1', type: NotificationType.EVENT_REMINDER, dedupeKey: 'ev-1', sentAt: null, cancelledAt: null },
       data: { cancelledAt: expect.any(Date) },
     })
   })
@@ -100,10 +101,10 @@ describe('cancelManyNotifications', () => {
   it('cancels all unsent records for a type+dedupeKey across users', async () => {
     mockUpdateMany.mockResolvedValue({ count: 5 })
 
-    await cancelManyNotifications({ type: 'EVENT_REMINDER', dedupeKey: 'ev-1' })
+    await cancelManyNotifications({ type: NotificationType.EVENT_REMINDER, dedupeKey: 'ev-1' })
 
     expect(mockUpdateMany).toHaveBeenCalledWith({
-      where: { type: 'EVENT_REMINDER', dedupeKey: 'ev-1', sentAt: null, cancelledAt: null },
+      where: { type: NotificationType.EVENT_REMINDER, dedupeKey: 'ev-1', sentAt: null, cancelledAt: null },
       data: { cancelledAt: expect.any(Date) },
     })
   })
@@ -114,10 +115,10 @@ describe('rescheduleNotification', () => {
     const newTime = new Date(Date.now() + 7_200_000)
     mockUpdateMany.mockResolvedValue({ count: 3 })
 
-    await rescheduleNotification({ type: 'EVENT_REMINDER', dedupeKey: 'ev-1', scheduledFor: newTime })
+    await rescheduleNotification({ type: NotificationType.EVENT_REMINDER, dedupeKey: 'ev-1', scheduledFor: newTime })
 
     expect(mockUpdateMany).toHaveBeenCalledWith({
-      where: { type: 'EVENT_REMINDER', dedupeKey: 'ev-1', sentAt: null },
+      where: { type: NotificationType.EVENT_REMINDER, dedupeKey: 'ev-1', sentAt: null },
       data: { scheduledFor: newTime, cancelledAt: null },
     })
   })
@@ -126,7 +127,7 @@ describe('rescheduleNotification', () => {
     const newTime = new Date(Date.now() + 7_200_000)
     mockUpdateMany.mockResolvedValue({ count: 1 })
 
-    await rescheduleNotification({ userId: 'u-1', type: 'EVENT_REMINDER', dedupeKey: 'ev-1', scheduledFor: newTime })
+    await rescheduleNotification({ userId: 'u-1', type: NotificationType.EVENT_REMINDER, dedupeKey: 'ev-1', scheduledFor: newTime })
 
     expect(mockUpdateMany).toHaveBeenCalledWith(
       expect.objectContaining({ where: expect.objectContaining({ userId: 'u-1' }) })
@@ -149,7 +150,7 @@ describe('scheduleEventReminderNotification', () => {
 
     expect(mockUpsert).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { userId_type_dedupeKey: { userId: 'u-1', type: 'EVENT_REMINDER', dedupeKey: 'ev-1' } },
+        where: { userId_type_dedupeKey: { userId: 'u-1', type: NotificationType.EVENT_REMINDER, dedupeKey: 'ev-1' } },
         create: expect.objectContaining({
           body: 'Sunday Service starts in 2 hours',
           data: expect.objectContaining({ eventId: 'ev-1', eventTitle: 'Sunday Service' }),

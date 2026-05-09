@@ -9,8 +9,9 @@ export async function getEvents() {
   cacheTag("events");
   cacheLife("minutes");
   return prisma.event.findMany({
-    where: { isPast: false, isDraft: false },
-    orderBy: { createdAt: "asc" },
+    where: { datetime: { gte: new Date() }, isDraft: false },
+    orderBy: { datetime: "asc" },
+    take: 50,
     include: { church: { select: { name: true } } },
   });
 }
@@ -52,8 +53,8 @@ export async function getEventsByCreator(userId: string) {
   cacheTag("events", `user-events-${userId}`);
   cacheLife("minutes");
   return prisma.event.findMany({
-    where: { isPast: false, createdById: userId },
-    orderBy: { createdAt: "asc" },
+    where: { datetime: { gte: new Date() }, createdById: userId },
+    orderBy: { datetime: "asc" },
     include: {
       church: { select: { name: true } },
       createdBy: { select: { name: true } },
@@ -66,7 +67,7 @@ export async function getEventsNotByCreator(userId: string) {
   cacheLife("minutes");
   return prisma.event.findMany({
     where: {
-      isPast: false,
+      datetime: { gte: new Date() },
       isDraft: false,
       OR: [{ createdById: { not: userId } }, { createdById: null }],
     },
@@ -83,7 +84,7 @@ export async function getUserAttendedEvents(userId: string) {
   cacheTag("events", `user-events-${userId}`);
   cacheLife("minutes");
   return prisma.event.findMany({
-    where: { isPast: false, isDraft: false, attendees: { some: { userId } } },
+    where: { datetime: { gte: new Date() }, isDraft: false, attendees: { some: { userId } } },
     orderBy: { datetime: "asc" },
     include: { church: { select: { name: true } } },
   });
@@ -93,7 +94,7 @@ export async function getUserAttendedPastEvents(userId: string) {
   cacheTag("events", `user-events-${userId}`);
   cacheLife("hours");
   return prisma.event.findMany({
-    where: { isPast: true, isDraft: false, attendees: { some: { userId } } },
+    where: { datetime: { lt: new Date() }, isDraft: false, attendees: { some: { userId } } },
     orderBy: { datetime: "desc" },
     include: { church: { select: { name: true } } },
   });

@@ -107,7 +107,6 @@ export async function createEvent(
       host: host || null,
       tag: tag || "",
       description: description || "",
-      isPast: false,
       isDraft: isDraft ?? false,
       requiresRegistration: requiresRegistration ?? false,
       metadata: {

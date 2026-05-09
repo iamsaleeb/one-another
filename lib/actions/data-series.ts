@@ -9,7 +9,7 @@ export async function getSeries() {
     orderBy: { createdAt: "desc" },
     include: {
       _count: {
-        select: { events: { where: { isPast: false, isDraft: false } } },
+        select: { events: { where: { datetime: { gte: new Date() }, isDraft: false } } },
       },
     },
   });
@@ -22,7 +22,7 @@ export async function getSeriesById(id: string, currentUserId?: string) {
     include: {
       church: { select: { id: true, name: true } },
       events: {
-        where: { isPast: false, isDraft: false },
+        where: { datetime: { gte: new Date() }, isDraft: false },
         orderBy: { datetime: "asc" },
       },
       followers: currentUserId
@@ -39,7 +39,7 @@ export async function getSeriesByCreator(userId: string) {
     where: { createdById: userId },
     orderBy: { createdAt: "desc" },
     include: {
-      _count: { select: { events: { where: { isPast: false, isDraft: false } } } },
+      _count: { select: { events: { where: { datetime: { gte: new Date() }, isDraft: false } } } },
       createdBy: { select: { name: true } },
     },
   });
@@ -54,7 +54,7 @@ export async function getSeriesNotByCreator(userId: string) {
     orderBy: { createdAt: "desc" },
     take: 50,
     include: {
-      _count: { select: { events: { where: { isPast: false, isDraft: false } } } },
+      _count: { select: { events: { where: { datetime: { gte: new Date() }, isDraft: false } } } },
       createdBy: { select: { name: true } },
     },
   });
@@ -66,7 +66,7 @@ export async function getUserFollowedSeries(userId: string) {
     where: { followers: { some: { userId } } },
     orderBy: { createdAt: "desc" },
     include: {
-      _count: { select: { events: { where: { isPast: false, isDraft: false } } } },
+      _count: { select: { events: { where: { datetime: { gte: new Date() }, isDraft: false } } } },
     },
   });
 }

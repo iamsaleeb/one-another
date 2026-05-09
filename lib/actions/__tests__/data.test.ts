@@ -63,7 +63,6 @@ const sampleEvent = {
   location: 'Main Hall',
   host: 'Pastor John',
   tag: 'Youth Meeting',
-  isPast: false,
   createdAt: new Date(),
 }
 
@@ -96,8 +95,9 @@ describe('getEvents', () => {
     const result = await getEvents()
     expect(result).toEqual([sampleEvent])
     expect(mockEventFindMany).toHaveBeenCalledWith({
-      where: { isPast: false, isDraft: false },
-      orderBy: { createdAt: 'asc' },
+      where: { datetime: { gte: expect.any(Date) }, isDraft: false },
+      orderBy: { datetime: 'asc' },
+      take: 50,
       include: { church: { select: { name: true } } },
     })
   })
@@ -227,11 +227,11 @@ describe('getChurchById', () => {
       where: { id: 'ch-1' },
       include: {
         serviceTimes: true,
-        events: { where: { isPast: false, isDraft: false }, orderBy: { datetime: 'asc' }, take: 20 },
+        events: { where: { datetime: { gte: expect.any(Date) }, isDraft: false }, orderBy: { datetime: 'asc' }, take: 20 },
         series: {
           orderBy: { createdAt: 'desc' },
           include: {
-            _count: { select: { events: { where: { isPast: false, isDraft: false } } } },
+            _count: { select: { events: { where: { datetime: { gte: expect.any(Date) }, isDraft: false } } } },
           },
         },
         followers: { take: 0, select: { userId: true } },
@@ -247,11 +247,11 @@ describe('getChurchById', () => {
       where: { id: 'ch-1' },
       include: {
         serviceTimes: true,
-        events: { where: { isPast: false, isDraft: false }, orderBy: { datetime: 'asc' }, take: 20 },
+        events: { where: { datetime: { gte: expect.any(Date) }, isDraft: false }, orderBy: { datetime: 'asc' }, take: 20 },
         series: {
           orderBy: { createdAt: 'desc' },
           include: {
-            _count: { select: { events: { where: { isPast: false, isDraft: false } } } },
+            _count: { select: { events: { where: { datetime: { gte: expect.any(Date) }, isDraft: false } } } },
           },
         },
         followers: { where: { userId: 'user-1' }, select: { userId: true } },
@@ -285,7 +285,7 @@ describe('searchEventsAndChurches', () => {
     expect(mockEventFindMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: expect.objectContaining({
-          isPast: false,
+          datetime: expect.objectContaining({ gte: expect.any(Date) }),
           OR: [
             { title: { contains: 'worship', mode: 'insensitive' } },
             { location: { contains: 'worship', mode: 'insensitive' } },
@@ -361,7 +361,7 @@ describe('getSeries', () => {
       orderBy: { createdAt: 'desc' },
       include: {
         _count: {
-          select: { events: { where: { isPast: false, isDraft: false } } },
+          select: { events: { where: { datetime: { gte: expect.any(Date) }, isDraft: false } } },
         },
       },
     })
@@ -390,7 +390,7 @@ describe('getSeriesById', () => {
       include: {
         church: { select: { id: true, name: true } },
         events: {
-          where: { isPast: false, isDraft: false },
+          where: { datetime: { gte: expect.any(Date) }, isDraft: false },
           orderBy: { datetime: 'asc' },
         },
         followers: { take: 0, select: { userId: true } },
@@ -407,7 +407,7 @@ describe('getSeriesById', () => {
       include: {
         church: { select: { id: true, name: true } },
         events: {
-          where: { isPast: false, isDraft: false },
+          where: { datetime: { gte: expect.any(Date) }, isDraft: false },
           orderBy: { datetime: 'asc' },
         },
         followers: { where: { userId: 'user-1' }, select: { userId: true } },
@@ -428,8 +428,8 @@ describe('getEventsByCreator', () => {
     const result = await getEventsByCreator('user-1')
     expect(result).toEqual([sampleEvent])
     expect(mockEventFindMany).toHaveBeenCalledWith({
-      where: { isPast: false, createdById: 'user-1' },
-      orderBy: { createdAt: 'asc' },
+      where: { datetime: { gte: expect.any(Date) }, createdById: 'user-1' },
+      orderBy: { datetime: 'asc' },
       include: {
         church: { select: { name: true } },
         createdBy: { select: { name: true } },
@@ -453,7 +453,7 @@ describe('getSeriesByCreator', () => {
       where: { createdById: 'user-1' },
       orderBy: { createdAt: 'desc' },
       include: {
-        _count: { select: { events: { where: { isPast: false, isDraft: false } } } },
+        _count: { select: { events: { where: { datetime: { gte: expect.any(Date) }, isDraft: false } } } },
         createdBy: { select: { name: true } },
       },
     })
@@ -472,7 +472,7 @@ describe('getEventsNotByCreator', () => {
     expect(result).toEqual([sampleEvent])
     expect(mockEventFindMany).toHaveBeenCalledWith({
       where: {
-        isPast: false,
+        datetime: { gte: expect.any(Date) },
         isDraft: false,
         OR: [{ createdById: { not: 'user-1' } }, { createdById: null }],
       },
@@ -504,7 +504,7 @@ describe('getSeriesNotByCreator', () => {
       orderBy: { createdAt: 'desc' },
       take: 50,
       include: {
-        _count: { select: { events: { where: { isPast: false, isDraft: false } } } },
+        _count: { select: { events: { where: { datetime: { gte: expect.any(Date) }, isDraft: false } } } },
         createdBy: { select: { name: true } },
       },
     })
@@ -581,7 +581,7 @@ describe('getUserAttendedEvents', () => {
     const result = await getUserAttendedEvents('user-1')
     expect(result).toEqual([sampleEvent])
     expect(mockEventFindMany).toHaveBeenCalledWith({
-      where: { isPast: false, isDraft: false, attendees: { some: { userId: 'user-1' } } },
+      where: { datetime: { gte: expect.any(Date) }, isDraft: false, attendees: { some: { userId: 'user-1' } } },
       orderBy: { datetime: 'asc' },
       include: { church: { select: { name: true } } },
     })
@@ -595,12 +595,12 @@ describe('getUserAttendedEvents', () => {
 
 describe('getUserAttendedPastEvents', () => {
   it('returns past events attended by the given user ordered by datetime desc', async () => {
-    const pastEvent = { ...sampleEvent, id: 'evt-past', isPast: true }
+    const pastEvent = { ...sampleEvent, id: 'evt-past', datetime: '2020-01-01T10:00:00Z' }
     mockEventFindMany.mockResolvedValue([pastEvent])
     const result = await getUserAttendedPastEvents('user-1')
     expect(result).toEqual([pastEvent])
     expect(mockEventFindMany).toHaveBeenCalledWith({
-      where: { isPast: true, isDraft: false, attendees: { some: { userId: 'user-1' } } },
+      where: { datetime: { lt: expect.any(Date) }, isDraft: false, attendees: { some: { userId: 'user-1' } } },
       orderBy: { datetime: 'desc' },
       include: { church: { select: { name: true } } },
     })
@@ -622,7 +622,7 @@ describe('getUserFollowedSeries', () => {
       where: { followers: { some: { userId: 'user-1' } } },
       orderBy: { createdAt: 'desc' },
       include: {
-        _count: { select: { events: { where: { isPast: false, isDraft: false } } } },
+        _count: { select: { events: { where: { datetime: { gte: expect.any(Date) }, isDraft: false } } } },
       },
     })
   })

@@ -157,7 +157,6 @@ describe('createEventAction', () => {
           host: 'Pastor John',
           tag: 'Youth Meeting',
           description: 'Weekly Sunday service',
-          isPast: false,
           churchId: 'ch-1',
           createdById: 'user-1',
         }),

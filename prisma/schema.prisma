@@ -148,7 +148,6 @@ model Event {
   tag                  String
   description          String
   photoUrl             String?
-  isPast               Boolean         @default(false)
   isDraft              Boolean         @default(false)
   requiresRegistration Boolean         @default(false)
   metadata             Json            @db.JsonB
@@ -166,7 +165,7 @@ model Event {
   attendees            EventAttendee[]
   questions            EventQuestion[]
 
-  @@index([isPast, isDraft])
+  @@index([datetime, isDraft])
   @@index([churchId])
   @@index([createdById])
 }

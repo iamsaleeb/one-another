@@ -22,14 +22,14 @@ export async function getChurchById(id: string, currentUserId?: string) {
     include: {
       serviceTimes: true,
       events: {
-        where: { isPast: false, isDraft: false },
+        where: { datetime: { gte: new Date() }, isDraft: false },
         orderBy: { datetime: "asc" },
         take: 20,
       },
       series: {
         orderBy: { createdAt: "desc" },
         include: {
-          _count: { select: { events: { where: { isPast: false, isDraft: false } } } },
+          _count: { select: { events: { where: { datetime: { gte: new Date() }, isDraft: false } } } },
         },
       },
       followers: currentUserId

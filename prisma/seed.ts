@@ -650,6 +650,140 @@ async function main() {
 
   await prisma.churchAdmin.create({ data: { userId: admin1.id, churchId: stMary.id } });
 
+  // ── Question Library Items ───────────────────────────────────────────────────
+
+  // organiser1 (Fr. Bishoy) — camp / retreat questions
+  const lib1 = await prisma.$transaction([
+    prisma.questionLibraryItem.create({
+      data: {
+        createdById: organiser1.id,
+        type: "MULTIPLE_CHOICE",
+        label: "T-shirt size",
+        options: ["XS", "S", "M", "L", "XL", "XXL"],
+      },
+    }),
+    prisma.questionLibraryItem.create({
+      data: {
+        createdById: organiser1.id,
+        type: "MULTIPLE_CHOICE",
+        label: "Age group",
+        options: ["13–15", "16–18", "19–22"],
+      },
+    }),
+    prisma.questionLibraryItem.create({
+      data: {
+        createdById: organiser1.id,
+        type: "YES_NO",
+        label: "Can you swim?",
+        options: [],
+      },
+    }),
+    prisma.questionLibraryItem.create({
+      data: {
+        createdById: organiser1.id,
+        type: "SHORT_TEXT",
+        label: "Emergency contact name and phone number",
+        options: [],
+      },
+    }),
+    prisma.questionLibraryItem.create({
+      data: {
+        createdById: organiser1.id,
+        type: "MULTIPLE_CHOICE",
+        label: "Dietary restrictions",
+        options: ["None", "Vegetarian", "Vegan", "Gluten-free", "Other"],
+      },
+    }),
+    prisma.questionLibraryItem.create({
+      data: {
+        createdById: organiser1.id,
+        type: "LONG_TEXT",
+        label: "Medical conditions or allergies we should know about",
+        options: [],
+      },
+    }),
+  ]);
+
+  // organiser2 (Deacon Mina) — general reusables
+  await prisma.$transaction([
+    prisma.questionLibraryItem.create({
+      data: {
+        createdById: organiser2.id,
+        type: "YES_NO",
+        label: "Have you read the required material?",
+        options: [],
+      },
+    }),
+    prisma.questionLibraryItem.create({
+      data: {
+        createdById: organiser2.id,
+        type: "SHORT_TEXT",
+        label: "What is your deacon name (if ordained)?",
+        options: [],
+      },
+    }),
+    prisma.questionLibraryItem.create({
+      data: {
+        createdById: organiser2.id,
+        type: "MULTIPLE_CHOICE",
+        label: "Dietary restrictions",
+        options: ["None", "Vegetarian", "Vegan", "Gluten-free", "Other"],
+      },
+    }),
+    prisma.questionLibraryItem.create({
+      data: {
+        createdById: organiser2.id,
+        type: "LONG_TEXT",
+        label: "Any questions you would like addressed?",
+        options: [],
+      },
+    }),
+  ]);
+
+  // organiser3 (Fr. Antonious) — servants / formation questions
+  const lib3 = await prisma.$transaction([
+    prisma.questionLibraryItem.create({
+      data: {
+        createdById: organiser3.id,
+        type: "MULTIPLE_CHOICE",
+        label: "Which ministry are you interested in serving?",
+        options: ["Youth", "Sunday School", "Choir", "Deaconate", "Outreach", "Other"],
+      },
+    }),
+    prisma.questionLibraryItem.create({
+      data: {
+        createdById: organiser3.id,
+        type: "MULTIPLE_CHOICE",
+        label: "How long have you been a member of St. George?",
+        options: ["Less than 1 year", "1–3 years", "3–5 years", "5+ years"],
+      },
+    }),
+    prisma.questionLibraryItem.create({
+      data: {
+        createdById: organiser3.id,
+        type: "YES_NO",
+        label: "Do you currently serve in any ministry?",
+        options: [],
+      },
+    }),
+    prisma.questionLibraryItem.create({
+      data: {
+        createdById: organiser3.id,
+        type: "LONG_TEXT",
+        label: "What do you hope to get out of this orientation?",
+        options: [],
+      },
+    }),
+    prisma.questionLibraryItem.create({
+      data: {
+        createdById: organiser3.id,
+        type: "SHORT_TEXT",
+        label: "Emergency contact name and phone number",
+        options: [],
+      },
+    }),
+  ]);
+
   await prisma.user.create({
     data: {
       name: "Mark Girgis",

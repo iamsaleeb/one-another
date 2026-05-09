@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Check } from "lucide-react";
+import { Check, Loader2 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -13,10 +13,12 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Drawer,
   DrawerContent,
+  DrawerDescription,
   DrawerHeader,
   DrawerTitle,
   DrawerFooter,
 } from "@/components/ui/drawer";
+import { cn } from "@/lib/utils";
 import {
   registerEventAction,
   unattendEventAction,
@@ -206,17 +208,17 @@ export function RegistrationDrawer({
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange} direction="bottom">
-      <DrawerContent aria-describedby={undefined}>
-        <DrawerHeader className="px-4 pt-4 pb-2">
+      <DrawerContent>
+        <DrawerHeader className="px-4 pt-4 pb-2 shrink-0">
           <DrawerTitle className="text-base">
             {isRegistered ? "Your Registration" : `Register for ${eventTitle}`}
           </DrawerTitle>
 
-          {!showSummary && (
-            <p className="text-xs text-muted-foreground mt-0.5">
-              Registering as {abbreviateName(userName)}
-            </p>
-          )}
+          <DrawerDescription className={cn("text-xs", showSummary && "sr-only")}>
+            {showSummary
+              ? `You're registered for ${eventTitle}`
+              : `Registering as ${abbreviateName(userName)}`}
+          </DrawerDescription>
 
           {!showSummary && onQuestionStep && hasQuestions && (
             <div className="flex items-center gap-1.5 mt-2">
@@ -237,7 +239,7 @@ export function RegistrationDrawer({
 
         {showSummary ? (
           <>
-            <div className="px-4 pb-2 flex flex-col gap-4">
+            <div className="flex-1 min-h-0 overflow-y-auto px-4 pb-2 flex flex-col gap-4">
               <div className="flex items-center gap-2">
                 <div className="flex size-8 items-center justify-center rounded-full bg-primary/10 shrink-0">
                   <Check className="size-4 text-primary" />
@@ -257,7 +259,7 @@ export function RegistrationDrawer({
               )}
             </div>
 
-            <DrawerFooter className="px-4 pb-6 gap-2">
+            <DrawerFooter className="shrink-0">
               {hasQuestions && (
                 <Button
                   type="button"
@@ -268,19 +270,22 @@ export function RegistrationDrawer({
                   Update responses
                 </Button>
               )}
-              <button
+              <Button
                 type="button"
+                variant="ghost"
+                size="sm"
                 onClick={handleUnregister}
                 disabled={unattendPending}
-                className="text-xs text-destructive text-center w-full py-1 disabled:opacity-50"
+                className="w-full text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
               >
+                {unattendPending && <Loader2 className="size-3.5 animate-spin" />}
                 {unattendPending ? "Cancelling..." : "Cancel registration"}
-              </button>
+              </Button>
             </DrawerFooter>
           </>
         ) : (
-          <div>
-            <div className="px-4 pb-2 flex flex-col gap-4">
+          <>
+            <div className="flex-1 min-h-0 overflow-y-auto px-4 pb-2 flex flex-col gap-4">
               {serverError && (
                 <Alert variant="destructive">
                   <AlertDescription>{serverError}</AlertDescription>
@@ -376,7 +381,7 @@ export function RegistrationDrawer({
               )}
             </div>
 
-            <DrawerFooter className="px-4 pb-6 gap-2">
+            <DrawerFooter className="shrink-0">
               {!onQuestionStep && (
                 <>
                   {hasQuestions ? (
@@ -386,6 +391,7 @@ export function RegistrationDrawer({
                       disabled={isPending || (showPartialDays && (selectedDays ?? []).length === 0)}
                       className="w-full"
                     >
+                      {isPending && <Loader2 className="size-4 animate-spin" />}
                       Continue
                     </Button>
                   ) : (
@@ -395,6 +401,7 @@ export function RegistrationDrawer({
                       disabled={isPending}
                       className="w-full"
                     >
+                      {isPending && <Loader2 className="size-4 animate-spin" />}
                       {getSubmitLabel()}
                     </Button>
                   )}
@@ -426,6 +433,7 @@ export function RegistrationDrawer({
                       disabled={isPending}
                       className="flex-1"
                     >
+                      {isPending && <Loader2 className="size-4 animate-spin" />}
                       {getSubmitLabel()}
                     </Button>
                   ) : (
@@ -441,7 +449,7 @@ export function RegistrationDrawer({
                 </div>
               )}
             </DrawerFooter>
-          </div>
+          </>
         )}
       </DrawerContent>
     </Drawer>

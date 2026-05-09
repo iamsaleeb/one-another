@@ -20,10 +20,10 @@ interface QuestionsFormProps {
   disabled?: boolean;
 }
 
+interface UploadState { uploading: boolean; name?: string; error?: string }
+
 export function QuestionsForm({ questions, control, activeIndex, disabled }: QuestionsFormProps) {
-  const [fileNames, setFileNames] = useState<Record<string, string>>({});
-  const [fileErrors, setFileErrors] = useState<Record<string, string>>({});
-  const [uploading, setUploading] = useState<Record<string, boolean>>({});
+  const [uploadState, setUploadState] = useState<Record<string, UploadState>>({});
   const inputRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
   async function handleFileSelect(
@@ -32,11 +32,10 @@ export function QuestionsForm({ questions, control, activeIndex, disabled }: Que
     onChange: (url: string | null) => void
   ) {
     if (file.size > 10 * 1024 * 1024) {
-      setFileErrors((prev) => ({ ...prev, [questionId]: "File must be 10MB or less." }));
+      setUploadState((prev) => ({ ...prev, [questionId]: { uploading: false, error: "File must be 10MB or less." } }));
       return;
     }
-    setFileErrors((prev) => ({ ...prev, [questionId]: "" }));
-    setUploading((prev) => ({ ...prev, [questionId]: true }));
+    setUploadState((prev) => ({ ...prev, [questionId]: { uploading: true } }));
     try {
       const blob = await upload(file.name, file, {
         access: "public",
@@ -44,11 +43,9 @@ export function QuestionsForm({ questions, control, activeIndex, disabled }: Que
         clientPayload: "response",
       });
       onChange(blob.url);
-      setFileNames((prev) => ({ ...prev, [questionId]: file.name }));
+      setUploadState((prev) => ({ ...prev, [questionId]: { uploading: false, name: file.name } }));
     } catch {
-      setFileErrors((prev) => ({ ...prev, [questionId]: "Upload failed. Please try again." }));
-    } finally {
-      setUploading((prev) => ({ ...prev, [questionId]: false }));
+      setUploadState((prev) => ({ ...prev, [questionId]: { uploading: false, error: "Upload failed. Please try again." } }));
     }
   }
 
@@ -164,59 +161,66 @@ export function QuestionsForm({ questions, control, activeIndex, disabled }: Que
               <Controller
                 control={control}
                 name={`responses.${q.id}.fileUrl`}
-                render={({ field, fieldState }) => (
-                  <div className="flex flex-col gap-1.5">
-                    <input
-                      ref={(el) => { inputRefs.current[q.id] = el; }}
-                      type="file"
-                      className="hidden"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) handleFileSelect(q.id, file, field.onChange);
-                        e.target.value = "";
-                      }}
-                    />
-                    {field.value ? (
-                      <div className="flex items-center gap-2 rounded-xl border bg-background px-4 py-3">
-                        <Paperclip className="size-4 text-muted-foreground shrink-0" />
-                        <span className="text-sm flex-1 truncate">
-                          {fileNames[q.id] ?? "Uploaded file"}
-                        </span>
-                        {!disabled && (
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className="size-7 shrink-0"
-                            onClick={() => {
-                              field.onChange(null);
-                              setFileNames((prev) => { const n = { ...prev }; delete n[q.id]; return n; });
-                            }}
-                          >
-                            <X className="size-3.5" />
-                          </Button>
-                        )}
-                      </div>
-                    ) : (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="w-full"
-                        disabled={uploading[q.id] || disabled}
-                        onClick={() => inputRefs.current[q.id]?.click()}
-                      >
-                        <Paperclip className="size-4 mr-2" />
-                        {uploading[q.id] ? "Uploading..." : "Attach file"}
-                      </Button>
-                    )}
-                    {fileErrors[q.id] && (
-                      <p className="text-xs text-destructive">{fileErrors[q.id]}</p>
-                    )}
-                    {fieldState.error && (
-                      <p className="text-xs text-destructive">{fieldState.error.message}</p>
-                    )}
-                  </div>
-                )}
+                render={({ field, fieldState }) => {
+                  const state = uploadState[q.id];
+                  return (
+                    <div className="flex flex-col gap-1.5">
+                      <input
+                        ref={(el) => { inputRefs.current[q.id] = el; }}
+                        type="file"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) handleFileSelect(q.id, file, field.onChange);
+                          e.target.value = "";
+                        }}
+                      />
+                      {field.value ? (
+                        <div className="flex items-center gap-2 rounded-xl border bg-background px-4 py-3">
+                          <Paperclip className="size-4 text-muted-foreground shrink-0" />
+                          <span className="text-sm flex-1 truncate">
+                            {state?.name ?? "Uploaded file"}
+                          </span>
+                          {!disabled && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="size-7 shrink-0"
+                              onClick={() => {
+                                field.onChange(null);
+                                setUploadState((prev) => {
+                                  const next = { ...prev };
+                                  delete next[q.id];
+                                  return next;
+                                });
+                              }}
+                            >
+                              <X className="size-3.5" />
+                            </Button>
+                          )}
+                        </div>
+                      ) : (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="w-full"
+                          disabled={state?.uploading || disabled}
+                          onClick={() => inputRefs.current[q.id]?.click()}
+                        >
+                          <Paperclip className="size-4 mr-2" />
+                          {state?.uploading ? "Uploading..." : "Attach file"}
+                        </Button>
+                      )}
+                      {state?.error && (
+                        <p className="text-xs text-destructive">{state.error}</p>
+                      )}
+                      {fieldState.error && (
+                        <p className="text-xs text-destructive">{fieldState.error.message}</p>
+                      )}
+                    </div>
+                  );
+                }}
               />
             )}
           </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
-import { useForm, useWatch, Controller } from "react-hook-form";
+import { useForm, useWatch, Controller, type Path } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Check, Loader2 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -69,6 +69,19 @@ function buildDefaultResponses(
   return out;
 }
 
+function getDefaultValues(
+  questions: Question[],
+  existingResponses: Record<string, { answer: string | null; fileUrl: string | null }> | undefined,
+  allDays: string[]
+): RegistrationFormValues {
+  return {
+    phone: "",
+    notes: "",
+    selectedDays: allDays,
+    responses: buildDefaultResponses(questions, existingResponses),
+  };
+}
+
 function getDisplayAnswer(
   q: Question,
   resp: { answer: string | null; fileUrl: string | null } | undefined
@@ -114,12 +127,7 @@ export function RegistrationDrawer({
 
   const form = useForm<RegistrationFormValues>({
     resolver: zodResolver(registrationFormSchema),
-    defaultValues: {
-      phone: "",
-      notes: "",
-      selectedDays: allDays,
-      responses: buildDefaultResponses(safeQuestions, existingResponses),
-    },
+    defaultValues: getDefaultValues(safeQuestions, existingResponses, allDays),
   });
 
   const [step, setStep] = useState<"details" | number>(skipDetailsStep ? 0 : "details");
@@ -139,12 +147,7 @@ export function RegistrationDrawer({
 
   function handleOpenChange(isOpen: boolean) {
     if (!isOpen) {
-      form.reset({
-        phone: "",
-        notes: "",
-        selectedDays: allDays,
-        responses: buildDefaultResponses(safeQuestions, existingResponses),
-      });
+      form.reset(getDefaultValues(safeQuestions, existingResponses, allDays));
       setStep(skipDetailsStep ? 0 : "details");
       setIsEditing(false);
       setServerError(null);
@@ -175,14 +178,12 @@ export function RegistrationDrawer({
           : !!(response?.answer?.trim());
 
       if (!hasValue) {
-        const fieldName =
+        const fieldName = (
           currentQ.type === QuestionType.FILE_UPLOAD
             ? `responses.${currentQ.id}.fileUrl`
-            : `responses.${currentQ.id}.answer`;
-        form.setError(fieldName as Parameters<typeof form.setError>[0], {
-          type: "required",
-          message: "This field is required.",
-        });
+            : `responses.${currentQ.id}.answer`
+        ) as Path<RegistrationFormValues>;
+        form.setError(fieldName, { type: "required", message: "This field is required." });
         return;
       }
     }

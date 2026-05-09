@@ -25,7 +25,7 @@ export async function attendEventAction(eventId: string): Promise<AttendEventSta
   if (!session?.user?.id) return { error: "You must be signed in." };
 
   const result = await attendEvent(eventId, session.user.id);
-  if ("error" in result && result.error) return { error: result.error };
+  if ("error" in result) return { error: result.error };
 
   invalidateEventCaches(eventId);
   return {};

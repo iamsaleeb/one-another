@@ -28,6 +28,7 @@ interface EventActionBarProps {
   campStartDate?: string;
   questions?: Question[];
   existingResponses?: Record<string, { answer: string | null; fileUrl: string | null }>;
+  existingSelectedDays?: string[];
 }
 
 export function EventActionBar({
@@ -48,6 +49,7 @@ export function EventActionBar({
   campStartDate,
   questions,
   existingResponses,
+  existingSelectedDays,
 }: EventActionBarProps) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [attendeesDrawerOpen, setAttendeesDrawerOpen] = useState(false);
@@ -125,6 +127,7 @@ export function EventActionBar({
           campStartDate={campStartDate}
           questions={questions}
           existingResponses={existingResponses}
+          existingSelectedDays={existingSelectedDays}
         />
       )}
 

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { questionSchema } from "./questions";
+import { questionSchema, responseValueSchema } from "./questions";
 
 // --- Event form schemas ---
 
@@ -80,15 +80,7 @@ export const registrationFormSchema = z.object({
     .transform((v) => v.trim() || undefined)
     .optional(),
   selectedDays: z.array(z.string()).optional(),
-  responses: z
-    .record(
-      z.string().min(1),
-      z.object({
-        answer: z.string().nullable().optional(),
-        fileUrl: z.string().url().nullable().optional(),
-      })
-    )
-    .optional(),
+  responses: z.record(z.string().min(1), responseValueSchema).optional(),
 });
 
 export type RegistrationFormValues = z.infer<typeof registrationFormSchema>;

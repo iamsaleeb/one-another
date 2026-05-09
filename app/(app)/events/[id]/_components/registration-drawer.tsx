@@ -45,6 +45,7 @@ interface RegistrationDrawerProps {
   campStartDate?: string;
   questions?: Question[];
   existingResponses?: Record<string, { answer: string | null; fileUrl: string | null }>;
+  existingSelectedDays?: string[];
 }
 
 function abbreviateName(name: string): string {
@@ -72,12 +73,13 @@ function buildDefaultResponses(
 function getDefaultValues(
   questions: Question[],
   existingResponses: Record<string, { answer: string | null; fileUrl: string | null }> | undefined,
-  allDays: string[]
+  allDays: string[],
+  existingSelectedDays: string[] | undefined
 ): RegistrationFormValues {
   return {
     phone: "",
     notes: "",
-    selectedDays: allDays,
+    selectedDays: existingSelectedDays ?? allDays,
     responses: buildDefaultResponses(questions, existingResponses),
   };
 }
@@ -108,6 +110,7 @@ export function RegistrationDrawer({
   campStartDate,
   questions,
   existingResponses,
+  existingSelectedDays,
 }: RegistrationDrawerProps) {
   const safeQuestions = questions ?? [];
 
@@ -127,7 +130,7 @@ export function RegistrationDrawer({
 
   const form = useForm<RegistrationFormValues>({
     resolver: zodResolver(registrationFormSchema),
-    defaultValues: getDefaultValues(safeQuestions, existingResponses, allDays),
+    defaultValues: getDefaultValues(safeQuestions, existingResponses, allDays, existingSelectedDays),
   });
 
   const [step, setStep] = useState<"details" | number>(skipDetailsStep ? 0 : "details");
@@ -147,7 +150,7 @@ export function RegistrationDrawer({
 
   function handleOpenChange(isOpen: boolean) {
     if (!isOpen) {
-      form.reset(getDefaultValues(safeQuestions, existingResponses, allDays));
+      form.reset(getDefaultValues(safeQuestions, existingResponses, allDays, existingSelectedDays));
       setStep(skipDetailsStep ? 0 : "details");
       setIsEditing(false);
       setServerError(null);

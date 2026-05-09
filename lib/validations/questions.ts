@@ -39,10 +39,13 @@ export const questionSchema = z.object({
 
 export type QuestionInput = z.infer<typeof questionSchema>;
 
-export const responseInputSchema = z.object({
-  questionId: z.string(),
+export const responseValueSchema = z.object({
   answer: z.string().nullable().optional(),
   fileUrl: z.string().url().nullable().optional(),
+});
+
+export const responseInputSchema = responseValueSchema.extend({
+  questionId: z.string(),
 });
 
 export type ResponseInput = z.infer<typeof responseInputSchema>;

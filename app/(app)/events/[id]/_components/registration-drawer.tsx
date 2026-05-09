@@ -1,7 +1,9 @@
 "use client";
 
-import { useActionState, useTransition, useEffect, useState } from "react";
-import { Check } from "lucide-react";
+import { useMemo, useState, useTransition } from "react";
+import { useForm, useWatch, Controller, type Path } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Check, Loader2 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -11,23 +13,30 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Drawer,
   DrawerContent,
+  DrawerDescription,
   DrawerHeader,
   DrawerTitle,
   DrawerFooter,
-  DrawerClose,
 } from "@/components/ui/drawer";
-import { registerEventAction, unattendEventAction, type RegisterEventState } from "@/lib/actions/events-attendance";
-import type { EventMetadata } from "@/lib/validations/event";
+import { cn } from "@/lib/utils";
+import {
+  registerEventAction,
+  unattendEventAction,
+} from "@/lib/actions/events-attendance";
+import {
+  registrationFormSchema,
+  type RegistrationFormValues,
+  type EventMetadata,
+} from "@/lib/validations/event";
+import { QuestionType, type Question } from "@/lib/validations/questions";
 import { getCampDays, formatDayLabel } from "@/lib/datetime";
 import { QuestionsForm } from "./questions-form";
-import type { Question } from "@/lib/validations/questions";
 
 interface RegistrationDrawerProps {
   eventId: string;
   eventTitle: string;
   isRegistered: boolean;
   userName: string;
-  userEmail: string;
   collectPhone: boolean;
   collectNotes: boolean;
   open: boolean;
@@ -36,6 +45,56 @@ interface RegistrationDrawerProps {
   campStartDate?: string;
   questions?: Question[];
   existingResponses?: Record<string, { answer: string | null; fileUrl: string | null }>;
+  existingSelectedDays?: string[];
+}
+
+function abbreviateName(name: string): string {
+  const parts = name.trim().split(/\s+/);
+  if (parts.length < 2) return parts[0] ?? name;
+  return `${parts[0]} ${parts[parts.length - 1][0]}.`;
+}
+
+function buildDefaultResponses(
+  questions: Question[],
+  existing: Record<string, { answer: string | null; fileUrl: string | null }> | undefined
+): RegistrationFormValues["responses"] {
+  if (!questions.length) return {};
+  const out: RegistrationFormValues["responses"] = {};
+  for (const q of questions) {
+    const prev = existing?.[q.id];
+    out[q.id] = {
+      answer: prev?.answer ?? null,
+      fileUrl: prev?.fileUrl ?? null,
+    };
+  }
+  return out;
+}
+
+function getDefaultValues(
+  questions: Question[],
+  existingResponses: Record<string, { answer: string | null; fileUrl: string | null }> | undefined,
+  allDays: string[],
+  existingSelectedDays: string[] | undefined
+): RegistrationFormValues {
+  return {
+    phone: "",
+    notes: "",
+    selectedDays: existingSelectedDays ?? allDays,
+    responses: buildDefaultResponses(questions, existingResponses),
+  };
+}
+
+function getDisplayAnswer(
+  q: Question,
+  resp: { answer: string | null; fileUrl: string | null } | undefined
+): string | null {
+  if (!resp) return null;
+  if (q.type === QuestionType.FILE_UPLOAD) return resp.fileUrl ? "File uploaded" : null;
+  if (q.type === QuestionType.YES_NO) {
+    if (resp.answer === null || resp.answer === undefined) return null;
+    return resp.answer === "true" ? "Yes" : "No";
+  }
+  return resp.answer || null;
 }
 
 export function RegistrationDrawer({
@@ -43,7 +102,6 @@ export function RegistrationDrawer({
   eventTitle,
   isRegistered,
   userName,
-  userEmail,
   collectPhone,
   collectNotes,
   open,
@@ -52,175 +110,361 @@ export function RegistrationDrawer({
   campStartDate,
   questions,
   existingResponses,
+  existingSelectedDays,
 }: RegistrationDrawerProps) {
-  const [state, formAction, isPending] = useActionState<RegisterEventState, FormData>(
-    registerEventAction.bind(null, eventId),
-    {}
-  );
-  const [unattendPending, startUnattendTransition] = useTransition();
+  const safeQuestions = questions ?? [];
 
   const showPartialDays =
-    camp?.allowPartialRegistration === true &&
-    !!campStartDate &&
-    !!camp.endDate;
+    camp?.allowPartialRegistration === true && !!campStartDate && !!camp.endDate;
+  const allDays = useMemo(
+    () =>
+      showPartialDays && campStartDate && camp?.endDate
+        ? getCampDays(campStartDate, camp.endDate)
+        : [],
+    [showPartialDays, campStartDate, camp]
+  );
 
-  const allDays =
-    showPartialDays && campStartDate && camp?.endDate
-      ? getCampDays(campStartDate, camp.endDate)
-      : [];
+  const hasQuestions = safeQuestions.length > 0;
+  const hasOptionalFields = collectPhone || collectNotes || showPartialDays;
+  const skipDetailsStep = !hasOptionalFields && hasQuestions;
 
-  const [selectedDays, setSelectedDays] = useState<string[]>(allDays);
+  const form = useForm<RegistrationFormValues>({
+    resolver: zodResolver(registrationFormSchema),
+    defaultValues: getDefaultValues(safeQuestions, existingResponses, allDays, existingSelectedDays),
+  });
 
-  useEffect(() => {
-    if (state.success) onOpenChange(false);
-  }, [state.success, onOpenChange]);
+  const [step, setStep] = useState<"details" | number>(skipDetailsStep ? 0 : "details");
+  const [isEditing, setIsEditing] = useState(false);
+  const showSummary = isRegistered && !isEditing;
+  const [serverError, setServerError] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
+  const [unattendPending, startUnattendTransition] = useTransition();
 
-  function toggleDay(day: string) {
-    setSelectedDays((prev) =>
-      prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]
-    );
+  const onQuestionStep = typeof step === "number";
+  const isLastQuestion = onQuestionStep && step === safeQuestions.length - 1;
+  const selectedDays = useWatch({ control: form.control, name: "selectedDays" });
+
+  const answeredQuestions = safeQuestions.filter(
+    (q) => getDisplayAnswer(q, existingResponses?.[q.id]) !== null
+  );
+
+  function handleOpenChange(isOpen: boolean) {
+    if (!isOpen) {
+      form.reset(getDefaultValues(safeQuestions, existingResponses, allDays, existingSelectedDays));
+      setStep(skipDetailsStep ? 0 : "details");
+      setIsEditing(false);
+      setServerError(null);
+    }
+    onOpenChange(isOpen);
+  }
+
+  function getSubmitLabel() {
+    if (isPending) return isRegistered ? "Updating..." : "Registering...";
+    return isRegistered ? "Update responses" : "Register";
+  }
+
+  function handleNext() {
+    if (step === "details") {
+      setStep(0);
+      return;
+    }
+
+    const currentQ = safeQuestions[step as number];
+    if (!currentQ) return;
+
+    if (currentQ.required) {
+      const responses = form.getValues("responses") ?? {};
+      const response = responses[currentQ.id];
+      const hasValue =
+        currentQ.type === QuestionType.FILE_UPLOAD
+          ? !!response?.fileUrl
+          : !!(response?.answer?.trim());
+
+      if (!hasValue) {
+        const fieldName = (
+          currentQ.type === QuestionType.FILE_UPLOAD
+            ? `responses.${currentQ.id}.fileUrl`
+            : `responses.${currentQ.id}.answer`
+        ) as Path<RegistrationFormValues>;
+        form.setError(fieldName, { type: "required", message: "This field is required." });
+        return;
+      }
+    }
+
+    form.clearErrors();
+    setStep((s) => (s as number) + 1);
+  }
+
+  function handleBack() {
+    form.clearErrors();
+    setStep((s) => ((s as number) > 0 ? (s as number) - 1 : "details"));
   }
 
   function handleUnregister() {
     startUnattendTransition(async () => {
       await unattendEventAction(eventId);
-      onOpenChange(false);
+      handleOpenChange(false);
     });
   }
 
-  const hasQuestions = questions && questions.length > 0;
-
-  // Show confirmation screen only when registered and there are no questions to fill
-  const showConfirmation = isRegistered && !hasQuestions;
-
-  function getButtonLabel(pending: boolean) {
-    if (isRegistered) return pending ? "Updating..." : "Update responses";
-    return pending ? "Registering..." : "Confirm Registration";
+  function onSubmit(data: RegistrationFormValues) {
+    setServerError(null);
+    startTransition(async () => {
+      const result = await registerEventAction(eventId, data);
+      if (result.error) {
+        setServerError(result.error);
+        setStep(skipDetailsStep ? 0 : "details");
+      } else {
+        handleOpenChange(false);
+      }
+    });
   }
 
   return (
-    <Drawer open={open} onOpenChange={onOpenChange} direction="bottom">
-      <DrawerContent aria-describedby={undefined}>
-        <DrawerHeader>
-          <DrawerTitle>{isRegistered ? "Your Registration" : `Register for ${eventTitle}`}</DrawerTitle>
+    <Drawer open={open} onOpenChange={handleOpenChange} direction="bottom">
+      <DrawerContent>
+        <DrawerHeader className="px-4 pt-4 pb-2 shrink-0">
+          <DrawerTitle className="text-base">
+            {isRegistered ? "Your Registration" : `Register for ${eventTitle}`}
+          </DrawerTitle>
+
+          <DrawerDescription className={cn("text-xs", showSummary && "sr-only")}>
+            {showSummary
+              ? `You're registered for ${eventTitle}`
+              : `Registering as ${abbreviateName(userName)}`}
+          </DrawerDescription>
+
+          {!showSummary && onQuestionStep && hasQuestions && (
+            <div className="flex items-center gap-1.5 mt-2">
+              {safeQuestions.map((q, i) => (
+                <span
+                  key={q.id}
+                  className={`size-1.5 rounded-full transition-colors ${
+                    i <= (step as number) ? "bg-primary" : "bg-muted"
+                  }`}
+                />
+              ))}
+              <span className="text-xs text-muted-foreground ml-1">
+                Question {(step as number) + 1} of {safeQuestions.length}
+              </span>
+            </div>
+          )}
         </DrawerHeader>
 
-        <div className="px-4 pb-2 flex flex-col gap-4">
-          {showConfirmation ? (
-            <div className="flex flex-col items-center gap-3 py-4">
-              <div className="flex size-12 items-center justify-center rounded-full bg-primary/10">
-                <Check className="size-6 text-primary" />
+        {showSummary ? (
+          <>
+            <div className="flex-1 min-h-0 overflow-y-auto px-4 pb-2 flex flex-col gap-4">
+              <div className="flex items-center gap-2">
+                <div className="flex size-8 items-center justify-center rounded-full bg-primary/10 shrink-0">
+                  <Check className="size-4 text-primary" />
+                </div>
+                <p className="text-sm font-medium">You&apos;re registered for {eventTitle}</p>
               </div>
-              <p className="text-sm text-muted-foreground text-center">
-                You&apos;re registered for this event.
-              </p>
+
+              {answeredQuestions.length > 0 && (
+                <div className="flex flex-col gap-3 rounded-xl border px-4 py-3">
+                  {answeredQuestions.map((q) => (
+                    <div key={q.id} className="flex flex-col gap-0.5">
+                      <p className="text-xs text-muted-foreground">{q.label}</p>
+                      <p className="text-sm">{getDisplayAnswer(q, existingResponses?.[q.id])}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
-          ) : (
-            <form action={formAction} className="flex flex-col gap-4">
-              {state.error && (
+
+            <DrawerFooter className="shrink-0">
+              {hasQuestions && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => setIsEditing(true)}
+                >
+                  Update responses
+                </Button>
+              )}
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={handleUnregister}
+                disabled={unattendPending}
+                className="w-full text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
+              >
+                {unattendPending && <Loader2 className="size-3.5 animate-spin" />}
+                {unattendPending ? "Cancelling..." : "Cancel registration"}
+              </Button>
+            </DrawerFooter>
+          </>
+        ) : (
+          <>
+            <div className="flex-1 min-h-0 overflow-y-auto px-4 pb-2 flex flex-col gap-4">
+              {serverError && (
                 <Alert variant="destructive">
-                  <AlertDescription>{state.error}</AlertDescription>
+                  <AlertDescription>{serverError}</AlertDescription>
                 </Alert>
               )}
 
-              <div className="grid gap-1.5">
-                <Label>Name</Label>
-                <Input value={userName} disabled className="bg-muted" />
-              </div>
+              {!onQuestionStep && (
+                <div className="flex flex-col gap-4">
+                  {showPartialDays && allDays.length > 0 && (
+                    <Controller
+                      control={form.control}
+                      name="selectedDays"
+                      render={({ field }) => (
+                        <div className="flex flex-col gap-2">
+                          <Label>Which days will you attend?</Label>
+                          <div className="flex flex-col gap-2 rounded-xl border px-3 py-3">
+                            {allDays.map((day) => (
+                              <div key={day} className="flex items-center gap-2.5">
+                                <Checkbox
+                                  id={`day-${day}`}
+                                  checked={(field.value ?? []).includes(day)}
+                                  onCheckedChange={(checked) => {
+                                    const current = field.value ?? [];
+                                    field.onChange(
+                                      checked
+                                        ? [...current, day]
+                                        : current.filter((d) => d !== day)
+                                    );
+                                  }}
+                                  disabled={isPending}
+                                />
+                                <Label
+                                  htmlFor={`day-${day}`}
+                                  className="text-sm font-normal cursor-pointer"
+                                >
+                                  {formatDayLabel(day)}
+                                </Label>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    />
+                  )}
 
-              <div className="grid gap-1.5">
-                <Label>Email</Label>
-                <Input value={userEmail} disabled className="bg-muted" />
-              </div>
+                  {collectPhone && (
+                    <Controller
+                      control={form.control}
+                      name="phone"
+                      render={({ field }) => (
+                        <div className="grid gap-1.5">
+                          <Label htmlFor="phone">Phone number</Label>
+                          <Input
+                            id="phone"
+                            {...field}
+                            type="tel"
+                            placeholder="+44 7700 000000"
+                            disabled={isPending}
+                          />
+                        </div>
+                      )}
+                    />
+                  )}
 
-              {showPartialDays && allDays.length > 0 && (
-                <div className="flex flex-col gap-2">
-                  <Label>Which days will you attend?</Label>
-                  <div className="flex flex-col gap-2 rounded-xl border px-3 py-3">
-                    {allDays.map((day) => (
-                      <div key={day} className="flex items-center gap-2.5">
-                        <Checkbox
-                          id={`day-${day}`}
-                          checked={selectedDays.includes(day)}
-                          onCheckedChange={() => toggleDay(day)}
-                          disabled={isPending}
-                        />
-                        <Label htmlFor={`day-${day}`} className="text-sm font-normal cursor-pointer">
-                          {formatDayLabel(day)}
-                        </Label>
-                      </div>
-                    ))}
-                  </div>
-                  {/* Pass selected days as JSON to the server action */}
-                  <input
-                    type="hidden"
-                    name="selectedDays"
-                    value={JSON.stringify(selectedDays)}
-                  />
+                  {collectNotes && (
+                    <Controller
+                      control={form.control}
+                      name="notes"
+                      render={({ field }) => (
+                        <div className="grid gap-1.5">
+                          <Label htmlFor="notes">Dietary / accessibility needs</Label>
+                          <Textarea
+                            id="notes"
+                            {...field}
+                            rows={3}
+                            placeholder="Let us know if you have any requirements..."
+                            disabled={isPending}
+                          />
+                        </div>
+                      )}
+                    />
+                  )}
                 </div>
               )}
 
-              {collectPhone && (
-                <div className="grid gap-1.5">
-                  <Label htmlFor="phone">Phone number</Label>
-                  <Input id="phone" name="phone" type="tel" placeholder="+44 7700 000000" disabled={isPending} />
-                </div>
-              )}
-
-              {collectNotes && (
-                <div className="grid gap-1.5">
-                  <Label htmlFor="notes">Dietary / accessibility needs</Label>
-                  <Textarea
-                    id="notes"
-                    name="notes"
-                    rows={3}
-                    placeholder="Let us know if you have any requirements..."
-                    disabled={isPending}
-                  />
-                </div>
-              )}
-
-              {hasQuestions && (
+              {onQuestionStep && hasQuestions && (
                 <QuestionsForm
-                  questions={questions}
-                  defaultResponses={existingResponses ?? {}}
+                  questions={safeQuestions}
+                  control={form.control}
+                  activeIndex={step as number}
                   disabled={isPending}
                 />
               )}
+            </div>
 
-              <Button
-                type="submit"
-                className="w-full"
-                disabled={isPending || (showPartialDays ? selectedDays.length === 0 : false)}
-              >
-                {getButtonLabel(isPending)}
-              </Button>
-              {showPartialDays && selectedDays.length === 0 && (
-                <p className="text-xs text-muted-foreground text-center">
-                  Please select at least one day to attend.
-                </p>
+            <DrawerFooter className="shrink-0">
+              {!onQuestionStep && (
+                <>
+                  {hasQuestions ? (
+                    <Button
+                      type="button"
+                      onClick={handleNext}
+                      disabled={isPending || (showPartialDays && (selectedDays ?? []).length === 0)}
+                      className="w-full"
+                    >
+                      {isPending && <Loader2 className="size-4 animate-spin" />}
+                      Continue
+                    </Button>
+                  ) : (
+                    <Button
+                      type="button"
+                      onClick={() => form.handleSubmit(onSubmit)()}
+                      disabled={isPending}
+                      className="w-full"
+                    >
+                      {isPending && <Loader2 className="size-4 animate-spin" />}
+                      {getSubmitLabel()}
+                    </Button>
+                  )}
+                  {showPartialDays && (selectedDays ?? []).length === 0 && (
+                    <p className="text-xs text-muted-foreground text-center">
+                      Select at least one day to continue.
+                    </p>
+                  )}
+                </>
               )}
-            </form>
-          )}
-        </div>
 
-        <DrawerFooter>
-          {isRegistered ? (
-            <Button
-              variant="destructive"
-              onClick={handleUnregister}
-              disabled={unattendPending}
-              className="w-full"
-            >
-              {unattendPending ? "Cancelling..." : "Cancel Registration"}
-            </Button>
-          ) : null}
-          <DrawerClose asChild>
-            <Button variant="outline" className="w-full">
-              Close
-            </Button>
-          </DrawerClose>
-        </DrawerFooter>
+              {onQuestionStep && (
+                <div className="flex gap-2">
+                  {(step > 0 || !skipDetailsStep) && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleBack}
+                      disabled={isPending}
+                      className="flex-1"
+                    >
+                      Back
+                    </Button>
+                  )}
+                  {isLastQuestion ? (
+                    <Button
+                      type="button"
+                      onClick={() => form.handleSubmit(onSubmit)()}
+                      disabled={isPending}
+                      className="flex-1"
+                    >
+                      {isPending && <Loader2 className="size-4 animate-spin" />}
+                      {getSubmitLabel()}
+                    </Button>
+                  ) : (
+                    <Button
+                      type="button"
+                      onClick={handleNext}
+                      disabled={isPending}
+                      className="flex-1"
+                    >
+                      Next
+                    </Button>
+                  )}
+                </div>
+              )}
+            </DrawerFooter>
+          </>
+        )}
       </DrawerContent>
     </Drawer>
   );

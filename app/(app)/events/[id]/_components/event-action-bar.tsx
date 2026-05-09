@@ -16,7 +16,6 @@ interface EventActionBarProps {
   requiresRegistration: boolean;
   isAttending: boolean;
   userName: string;
-  userEmail: string;
   capacity?: number | null;
   spotsUsed: number;
   collectPhone: boolean;
@@ -29,6 +28,7 @@ interface EventActionBarProps {
   campStartDate?: string;
   questions?: Question[];
   existingResponses?: Record<string, { answer: string | null; fileUrl: string | null }>;
+  existingSelectedDays?: string[];
 }
 
 export function EventActionBar({
@@ -37,7 +37,6 @@ export function EventActionBar({
   requiresRegistration,
   isAttending,
   userName,
-  userEmail,
   capacity,
   spotsUsed,
   collectPhone,
@@ -50,6 +49,7 @@ export function EventActionBar({
   campStartDate,
   questions,
   existingResponses,
+  existingSelectedDays,
 }: EventActionBarProps) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [attendeesDrawerOpen, setAttendeesDrawerOpen] = useState(false);
@@ -119,7 +119,6 @@ export function EventActionBar({
           eventTitle={eventTitle}
           isRegistered={isAttending}
           userName={userName}
-          userEmail={userEmail}
           collectPhone={collectPhone}
           collectNotes={collectNotes}
           open={drawerOpen}
@@ -128,6 +127,7 @@ export function EventActionBar({
           campStartDate={campStartDate}
           questions={questions}
           existingResponses={existingResponses}
+          existingSelectedDays={existingSelectedDays}
         />
       )}
 

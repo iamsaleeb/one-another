@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { auth } from "@/auth";
 import { getEventById, getEventAttendees } from "@/lib/actions/data-events";
 import { getEventQuestions, getMyResponses } from "@/lib/actions/data-questions";
-import { parseEventMetadata } from "@/lib/validations/event";
+import { parseEventMetadata, parseEventAttendeeMetadata } from "@/lib/validations/event";
 import { canManageChurch } from "@/lib/permissions";
 import { EventDatetime } from "@/components/event-datetime";
 import { formatDateOnly, parseDateOfBirth } from "@/lib/datetime";
@@ -53,6 +53,9 @@ export default async function EventDetailPage({ params }: Props) {
     : {};
 
   const { registration, camp } = parseEventMetadata(event.metadata);
+  const myAttendeeMeta = event.attendees[0]
+    ? parseEventAttendeeMetadata(event.attendees[0].metadata)
+    : undefined;
 
   return (
     <div className="bg-background">
@@ -170,7 +173,6 @@ export default async function EventDetailPage({ params }: Props) {
         requiresRegistration={event.requiresRegistration}
         isAttending={isAttending}
         userName={session?.user?.name ?? ""}
-        userEmail={session?.user?.email ?? ""}
         capacity={registration.capacity}
         spotsUsed={event._count.attendees}
         collectPhone={registration.collectPhone}
@@ -183,6 +185,7 @@ export default async function EventDetailPage({ params }: Props) {
         campStartDate={event.datetime?.toISOString().slice(0, 10) ?? ""}
         questions={questions}
         existingResponses={myResponses}
+        existingSelectedDays={myAttendeeMeta?.selectedDays}
       />
     </div>
   );

@@ -24,8 +24,8 @@ export async function getEventById(id: string, currentUserId?: string) {
       church: { select: { id: true, name: true } },
       series: { select: { id: true, name: true } },
       attendees: currentUserId
-        ? { where: { userId: currentUserId }, select: { userId: true } }
-        : { take: 0, select: { userId: true } },
+        ? { where: { userId: currentUserId }, select: { userId: true, metadata: true } }
+        : { take: 0, select: { userId: true, metadata: true } },
       _count: { select: { attendees: true } },
     },
   });

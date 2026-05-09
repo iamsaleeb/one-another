@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { useForm, useWatch, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Check, Loader2 } from "lucide-react";
@@ -54,10 +54,10 @@ function abbreviateName(name: string): string {
 }
 
 function buildDefaultResponses(
-  questions: Question[] | undefined,
+  questions: Question[],
   existing: Record<string, { answer: string | null; fileUrl: string | null }> | undefined
 ): RegistrationFormValues["responses"] {
-  if (!questions?.length) return {};
+  if (!questions.length) return {};
   const out: RegistrationFormValues["responses"] = {};
   for (const q of questions) {
     const prev = existing?.[q.id];
@@ -93,14 +93,19 @@ export function RegistrationDrawer({
   questions,
   existingResponses,
 }: RegistrationDrawerProps) {
+  const safeQuestions = questions ?? [];
+
   const showPartialDays =
     camp?.allowPartialRegistration === true && !!campStartDate && !!camp.endDate;
   const allDays = useMemo(
-    () => (showPartialDays ? getCampDays(campStartDate!, camp!.endDate!) : []),
-    [showPartialDays, campStartDate, camp?.endDate]
+    () =>
+      showPartialDays && campStartDate && camp?.endDate
+        ? getCampDays(campStartDate, camp.endDate)
+        : [],
+    [showPartialDays, campStartDate, camp]
   );
 
-  const hasQuestions = !!questions?.length;
+  const hasQuestions = safeQuestions.length > 0;
   const hasOptionalFields = collectPhone || collectNotes || showPartialDays;
   const skipDetailsStep = !hasOptionalFields && hasQuestions;
 
@@ -110,7 +115,7 @@ export function RegistrationDrawer({
       phone: "",
       notes: "",
       selectedDays: allDays,
-      responses: buildDefaultResponses(questions, existingResponses),
+      responses: buildDefaultResponses(safeQuestions, existingResponses),
     },
   });
 
@@ -120,30 +125,28 @@ export function RegistrationDrawer({
   const [isPending, startTransition] = useTransition();
   const [unattendPending, startUnattendTransition] = useTransition();
 
-  useEffect(() => {
-    if (!open) {
+  const onQuestionStep = typeof step === "number";
+  const isLastQuestion = onQuestionStep && step === safeQuestions.length - 1;
+  const selectedDays = useWatch({ control: form.control, name: "selectedDays" });
+
+  const answeredQuestions = safeQuestions.filter(
+    (q) => getDisplayAnswer(q, existingResponses?.[q.id]) !== null
+  );
+
+  function handleOpenChange(isOpen: boolean) {
+    if (!isOpen) {
       form.reset({
         phone: "",
         notes: "",
         selectedDays: allDays,
-        responses: buildDefaultResponses(questions, existingResponses),
+        responses: buildDefaultResponses(safeQuestions, existingResponses),
       });
       setStep(skipDetailsStep ? 0 : "details");
       setServerError(null);
     }
-  }, [open, form, allDays, questions, existingResponses, skipDetailsStep]);
-
-  useEffect(() => {
     setShowSummary(isRegistered);
-  }, [open, isRegistered]);
-
-  const onQuestionStep = typeof step === "number";
-  const isLastQuestion = onQuestionStep && hasQuestions && step === questions!.length - 1;
-  const selectedDays = useWatch({ control: form.control, name: "selectedDays" });
-
-  const answeredQuestions = hasQuestions
-    ? questions!.filter((q) => getDisplayAnswer(q, existingResponses?.[q.id]) !== null)
-    : [];
+    onOpenChange(isOpen);
+  }
 
   function getSubmitLabel() {
     if (isPending) return isRegistered ? "Updating..." : "Registering...";
@@ -156,7 +159,8 @@ export function RegistrationDrawer({
       return;
     }
 
-    const currentQ = questions![step as number];
+    const currentQ = safeQuestions[step as number];
+    if (!currentQ) return;
 
     if (currentQ.required) {
       const responses = form.getValues("responses") ?? {};
@@ -209,7 +213,7 @@ export function RegistrationDrawer({
   }
 
   return (
-    <Drawer open={open} onOpenChange={onOpenChange} direction="bottom">
+    <Drawer open={open} onOpenChange={handleOpenChange} direction="bottom">
       <DrawerContent>
         <DrawerHeader className="px-4 pt-4 pb-2 shrink-0">
           <DrawerTitle className="text-base">
@@ -224,16 +228,16 @@ export function RegistrationDrawer({
 
           {!showSummary && onQuestionStep && hasQuestions && (
             <div className="flex items-center gap-1.5 mt-2">
-              {questions!.map((_, i) => (
+              {safeQuestions.map((q, i) => (
                 <span
-                  key={i}
+                  key={q.id}
                   className={`size-1.5 rounded-full transition-colors ${
                     i <= (step as number) ? "bg-primary" : "bg-muted"
                   }`}
                 />
               ))}
               <span className="text-xs text-muted-foreground ml-1">
-                Question {(step as number) + 1} of {questions!.length}
+                Question {(step as number) + 1} of {safeQuestions.length}
               </span>
             </div>
           )}
@@ -375,7 +379,7 @@ export function RegistrationDrawer({
 
               {onQuestionStep && hasQuestions && (
                 <QuestionsForm
-                  questions={questions!}
+                  questions={safeQuestions}
                   control={form.control}
                   activeIndex={step as number}
                   disabled={isPending}

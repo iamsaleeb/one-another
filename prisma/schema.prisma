@@ -270,20 +270,20 @@ model PushToken {
 }
 
 model NotificationPreference {
-  id      String  @id @default(cuid())
+  id      String           @id @default(cuid())
   userId  String
-  type    String
-  enabled Boolean @default(true)
+  type    NotificationType
+  enabled Boolean          @default(true)
   config  Json?
-  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user    User             @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, type])
 }
 
 model Notification {
-  id           String    @id @default(cuid())
+  id           String           @id @default(cuid())
   userId       String
-  type         String
+  type         NotificationType
   title        String
   body         String
   data         Json?
@@ -319,4 +319,10 @@ enum QuestionType {
   YES_NO
   MULTIPLE_CHOICE
   FILE_UPLOAD
+}
+
+enum NotificationType {
+  EVENT_REMINDER
+  NEW_SERIES_SESSION
+  EVENT_CANCELLED
 }

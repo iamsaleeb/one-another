@@ -1,6 +1,7 @@
 import "server-only";
 
 import { prisma } from "@/lib/db";
+import { NotificationType } from "@prisma/client";
 import { canManageChurch } from "@/lib/permissions";
 import { syncEventQuestions } from "@/lib/dal/questions";
 import {
@@ -19,7 +20,7 @@ async function notifySeriesFollowers(seriesId: string, title: string, eventId: s
   await prisma.notification.createMany({
     data: followers.map((f) => ({
       userId: f.userId,
-      type: "NEW_SERIES_SESSION",
+      type: NotificationType.NEW_SERIES_SESSION,
       title: "New Session Added",
       body: `A new session has been added: ${title}`,
       data: { type: "new_session", seriesId, eventId },
@@ -37,7 +38,7 @@ async function notifyEventAttendees(eventId: string, title: string) {
   await prisma.notification.createMany({
     data: attendees.map((a) => ({
       userId: a.userId,
-      type: "EVENT_CANCELLED",
+      type: NotificationType.EVENT_CANCELLED,
       title: "Event Cancelled",
       body: `${title} has been cancelled`,
       data: { type: "event_cancelled", eventId },
@@ -289,7 +290,7 @@ export async function cancelEvent(
   });
 
   try {
-    await cancelManyNotifications({ type: "EVENT_REMINDER", dedupeKey: id });
+    await cancelManyNotifications({ type: NotificationType.EVENT_REMINDER, dedupeKey: id });
     await notifyEventAttendees(id, event.title);
   } catch (err) {
     console.error("EVENT_CANCELLED push failed:", err);
@@ -382,7 +383,7 @@ export async function unpublishEvent(
   await prisma.event.update({ where: { id }, data: { isDraft: true } });
 
   try {
-    await cancelManyNotifications({ type: "EVENT_REMINDER", dedupeKey: id });
+    await cancelManyNotifications({ type: NotificationType.EVENT_REMINDER, dedupeKey: id });
   } catch (err) {
     console.error("Failed to cancel reminders on unpublish:", err);
   }
@@ -405,7 +406,7 @@ export async function deleteEvent(
   if (!allowed) return { error: "Unauthorised." };
 
   try {
-    await cancelManyNotifications({ type: "EVENT_REMINDER", dedupeKey: id });
+    await cancelManyNotifications({ type: NotificationType.EVENT_REMINDER, dedupeKey: id });
   } catch (err) {
     console.error("Failed to cancel reminders before delete:", err);
   }

@@ -118,7 +118,7 @@ describe('getEventById', () => {
       include: {
         church: { select: { id: true, name: true } },
         series: { select: { id: true, name: true } },
-        attendees: { take: 0, select: { userId: true } },
+        attendees: { take: 0, select: { userId: true, metadata: true } },
         _count: { select: { attendees: true } },
       },
     })
@@ -132,7 +132,7 @@ describe('getEventById', () => {
       include: {
         church: { select: { id: true, name: true } },
         series: { select: { id: true, name: true } },
-        attendees: { where: { userId: 'user-1' }, select: { userId: true } },
+        attendees: { where: { userId: 'user-1' }, select: { userId: true, metadata: true } },
         _count: { select: { attendees: true } },
       },
     })

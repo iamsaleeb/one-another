@@ -198,7 +198,7 @@ export function RegistrationDrawer({
   function handleUnregister() {
     startUnattendTransition(async () => {
       await unattendEventAction(eventId);
-      onOpenChange(false);
+      handleOpenChange(false);
     });
   }
 
@@ -210,7 +210,7 @@ export function RegistrationDrawer({
         setServerError(result.error);
         setStep(skipDetailsStep ? 0 : "details");
       } else {
-        onOpenChange(false);
+        handleOpenChange(false);
       }
     });
   }

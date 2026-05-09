@@ -357,7 +357,7 @@ async function main() {
     },
   });
 
-  await prisma.event.create({
+  const orientationEvent = await prisma.event.create({
     data: {
       datetime: future(18, "17:00"),
       title: "New Servants Orientation Evening",
@@ -422,7 +422,7 @@ async function main() {
 
   const campDay = 32;
 
-  await prisma.event.create({
+  const campEvent = await prisma.event.create({
     data: {
       datetime: future(campDay, "08:00"),
       title: "St. Mary Summer Camp 2026 — \"Called by Name\"",

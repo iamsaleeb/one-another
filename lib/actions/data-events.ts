@@ -16,7 +16,7 @@ export async function getEvents() {
   });
 }
 
-export async function getEventById(id: string, currentUserId?: string) {
+export async function getEventById(id: string) {
   cacheTag("events", `event-${id}`);
   cacheLife("hours");
   return prisma.event.findUnique({
@@ -24,11 +24,18 @@ export async function getEventById(id: string, currentUserId?: string) {
     include: {
       church: { select: { id: true, name: true } },
       series: { select: { id: true, name: true } },
-      attendees: currentUserId
-        ? { where: { userId: currentUserId }, select: { userId: true, metadata: true } }
-        : { take: 0, select: { userId: true, metadata: true } },
       _count: { select: { attendees: true } },
     },
+  });
+}
+
+// Per-user attendance — short TTL, separate cache key space
+export async function getMyEventAttendance(eventId: string, userId: string) {
+  cacheTag(`event-${eventId}`, `user-attendance-${userId}-${eventId}`);
+  cacheLife("seconds");
+  return prisma.eventAttendee.findUnique({
+    where: { eventId_userId: { eventId, userId } },
+    select: { userId: true, metadata: true },
   });
 }
 

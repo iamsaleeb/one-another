@@ -11,14 +11,16 @@ jest.mock('@/lib/db', () => ({
     user: { findUnique: jest.fn() },
     churchOrganiser: { findMany: jest.fn() },
     churchAdmin: { findMany: jest.fn() },
-    churchFollower: { findMany: jest.fn() },
-    eventAttendee: { findMany: jest.fn() },
+    churchFollower: { findMany: jest.fn(), findUnique: jest.fn() },
+    seriesFollower: { findUnique: jest.fn() },
+    eventAttendee: { findMany: jest.fn(), findUnique: jest.fn() },
   },
 }))
 
 import {
   getEvents,
   getEventById,
+  getMyEventAttendance,
   getEventsByCreator,
   getEventsNotByCreator,
   getEventAttendees,
@@ -28,12 +30,14 @@ import {
 import {
   getChurches,
   getChurchById,
+  getMyChurchFollow,
   getChurchesByManager,
   getOrganisersByChurch,
 } from '@/lib/actions/data-churches'
 import {
   getSeries,
   getSeriesById,
+  getMySeriesFollow,
   getSeriesByCreator,
   getSeriesNotByCreator,
   getUserFollowedSeries,
@@ -54,6 +58,9 @@ const mockSeriesFindUnique = prisma.series.findUnique as jest.Mock
 const mockChurchOrganiserFindMany = prisma.churchOrganiser.findMany as jest.Mock
 const mockChurchAdminFindMany = prisma.churchAdmin.findMany as jest.Mock
 const mockEventAttendeeFindMany = prisma.eventAttendee.findMany as jest.Mock
+const mockEventAttendeeFindUnique = prisma.eventAttendee.findUnique as jest.Mock
+const mockChurchFollowerFindUnique = prisma.churchFollower.findUnique as jest.Mock
+const mockSeriesFollowerFindUnique = prisma.seriesFollower.findUnique as jest.Mock
 const mockUserFindUnique = prisma.user.findUnique as jest.Mock
 
 const sampleEvent = {
@@ -109,7 +116,7 @@ describe('getEvents', () => {
 })
 
 describe('getEventById', () => {
-  it('returns the matching event without userId (no attendees fetched)', async () => {
+  it('returns the matching event without per-user attendance data', async () => {
     mockEventFindUnique.mockResolvedValue(sampleEvent)
     const result = await getEventById('evt-1')
     expect(result).toEqual(sampleEvent)
@@ -118,29 +125,44 @@ describe('getEventById', () => {
       include: {
         church: { select: { id: true, name: true } },
         series: { select: { id: true, name: true } },
-        attendees: { take: 0, select: { userId: true, metadata: true } },
         _count: { select: { attendees: true } },
       },
     })
   })
 
-  it('filters attendees to the current user when userId provided', async () => {
+  it('does not include attendees in the query', async () => {
     mockEventFindUnique.mockResolvedValue(sampleEvent)
-    await getEventById('evt-1', 'user-1')
-    expect(mockEventFindUnique).toHaveBeenCalledWith({
-      where: { id: 'evt-1' },
-      include: {
-        church: { select: { id: true, name: true } },
-        series: { select: { id: true, name: true } },
-        attendees: { where: { userId: 'user-1' }, select: { userId: true, metadata: true } },
-        _count: { select: { attendees: true } },
-      },
-    })
+    await getEventById('evt-1')
+    expect(mockEventFindUnique).toHaveBeenCalledWith(
+      expect.objectContaining({
+        include: expect.not.objectContaining({ attendees: expect.anything() }),
+      })
+    )
   })
 
   it('returns null when the event does not exist', async () => {
     mockEventFindUnique.mockResolvedValue(null)
     expect(await getEventById('not-found')).toBeNull()
+  })
+})
+
+describe('getMyEventAttendance', () => {
+  it('queries eventAttendee with compound key', async () => {
+    const attendanceRecord = { userId: 'user-1', metadata: null }
+    mockEventAttendeeFindUnique.mockResolvedValue(attendanceRecord)
+
+    const result = await getMyEventAttendance('evt-1', 'user-1')
+
+    expect(result).toEqual(attendanceRecord)
+    expect(mockEventAttendeeFindUnique).toHaveBeenCalledWith({
+      where: { eventId_userId: { eventId: 'evt-1', userId: 'user-1' } },
+      select: { userId: true, metadata: true },
+    })
+  })
+
+  it('returns null when user is not attending', async () => {
+    mockEventAttendeeFindUnique.mockResolvedValue(null)
+    expect(await getMyEventAttendance('evt-1', 'user-99')).toBeNull()
   })
 })
 
@@ -219,7 +241,7 @@ describe('getChurches', () => {
 })
 
 describe('getChurchById', () => {
-  it('returns the matching church without userId (no followers fetched)', async () => {
+  it('returns the matching church without per-user follow data', async () => {
     mockChurchFindUnique.mockResolvedValue(sampleChurch)
     const result = await getChurchById('ch-1')
     expect(result).toEqual(sampleChurch)
@@ -234,35 +256,44 @@ describe('getChurchById', () => {
             _count: { select: { events: { where: { datetime: { gte: expect.any(Date) }, isDraft: false } } } },
           },
         },
-        followers: { take: 0, select: { userId: true } },
         _count: { select: { followers: true } },
       },
     })
   })
 
-  it('filters followers to the current user when userId provided', async () => {
+  it('does not include followers in the query', async () => {
     mockChurchFindUnique.mockResolvedValue(sampleChurch)
-    await getChurchById('ch-1', 'user-1')
-    expect(mockChurchFindUnique).toHaveBeenCalledWith({
-      where: { id: 'ch-1' },
-      include: {
-        serviceTimes: true,
-        events: { where: { datetime: { gte: expect.any(Date) }, isDraft: false }, orderBy: { datetime: 'asc' }, take: 20 },
-        series: {
-          orderBy: { createdAt: 'desc' },
-          include: {
-            _count: { select: { events: { where: { datetime: { gte: expect.any(Date) }, isDraft: false } } } },
-          },
-        },
-        followers: { where: { userId: 'user-1' }, select: { userId: true } },
-        _count: { select: { followers: true } },
-      },
-    })
+    await getChurchById('ch-1')
+    expect(mockChurchFindUnique).toHaveBeenCalledWith(
+      expect.objectContaining({
+        include: expect.not.objectContaining({ followers: expect.anything() }),
+      })
+    )
   })
 
   it('returns null when the church does not exist', async () => {
     mockChurchFindUnique.mockResolvedValue(null)
     expect(await getChurchById('missing')).toBeNull()
+  })
+})
+
+describe('getMyChurchFollow', () => {
+  it('queries churchFollower with compound key', async () => {
+    const followRecord = { userId: 'user-1' }
+    mockChurchFollowerFindUnique.mockResolvedValue(followRecord)
+
+    const result = await getMyChurchFollow('ch-1', 'user-1')
+
+    expect(result).toEqual(followRecord)
+    expect(mockChurchFollowerFindUnique).toHaveBeenCalledWith({
+      where: { churchId_userId: { churchId: 'ch-1', userId: 'user-1' } },
+      select: { userId: true },
+    })
+  })
+
+  it('returns null when user is not following', async () => {
+    mockChurchFollowerFindUnique.mockResolvedValue(null)
+    expect(await getMyChurchFollow('ch-1', 'user-99')).toBeNull()
   })
 })
 
@@ -374,7 +405,7 @@ describe('getSeries', () => {
 })
 
 describe('getSeriesById', () => {
-  it('returns the matching series without userId (no followers fetched)', async () => {
+  it('returns the matching series without per-user follow data', async () => {
     const fullSeries = {
       ...sampleSeries,
       church: { id: 'ch-1', name: 'Grace Church' },
@@ -393,32 +424,44 @@ describe('getSeriesById', () => {
           where: { datetime: { gte: expect.any(Date) }, isDraft: false },
           orderBy: { datetime: 'asc' },
         },
-        followers: { take: 0, select: { userId: true } },
         _count: { select: { followers: true } },
       },
     })
   })
 
-  it('filters followers to the current user when userId provided', async () => {
+  it('does not include followers in the query', async () => {
     mockSeriesFindUnique.mockResolvedValue(null)
-    await getSeriesById('ser-1', 'user-1')
-    expect(mockSeriesFindUnique).toHaveBeenCalledWith({
-      where: { id: 'ser-1' },
-      include: {
-        church: { select: { id: true, name: true } },
-        events: {
-          where: { datetime: { gte: expect.any(Date) }, isDraft: false },
-          orderBy: { datetime: 'asc' },
-        },
-        followers: { where: { userId: 'user-1' }, select: { userId: true } },
-        _count: { select: { followers: true } },
-      },
-    })
+    await getSeriesById('ser-1')
+    expect(mockSeriesFindUnique).toHaveBeenCalledWith(
+      expect.objectContaining({
+        include: expect.not.objectContaining({ followers: expect.anything() }),
+      })
+    )
   })
 
   it('returns null when series does not exist', async () => {
     mockSeriesFindUnique.mockResolvedValue(null)
     expect(await getSeriesById('not-found')).toBeNull()
+  })
+})
+
+describe('getMySeriesFollow', () => {
+  it('queries seriesFollower with compound key', async () => {
+    const followRecord = { userId: 'user-1' }
+    mockSeriesFollowerFindUnique.mockResolvedValue(followRecord)
+
+    const result = await getMySeriesFollow('ser-1', 'user-1')
+
+    expect(result).toEqual(followRecord)
+    expect(mockSeriesFollowerFindUnique).toHaveBeenCalledWith({
+      where: { seriesId_userId: { seriesId: 'ser-1', userId: 'user-1' } },
+      select: { userId: true },
+    })
+  })
+
+  it('returns null when user is not following', async () => {
+    mockSeriesFollowerFindUnique.mockResolvedValue(null)
+    expect(await getMySeriesFollow('ser-1', 'user-99')).toBeNull()
   })
 })
 

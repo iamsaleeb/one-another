@@ -17,6 +17,7 @@ export async function followChurchAction(churchId: string): Promise<FollowChurch
   });
 
   updateTag(`church-${churchId}`);
+  updateTag(`user-follow-church-${session.user.id}-${churchId}`);
   return {};
 }
 
@@ -29,5 +30,6 @@ export async function unfollowChurchAction(churchId: string): Promise<FollowChur
   });
 
   updateTag(`church-${churchId}`);
+  updateTag(`user-follow-church-${session.user.id}-${churchId}`);
   return {};
 }

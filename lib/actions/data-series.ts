@@ -1,6 +1,6 @@
 "use cache: remote";
 
-import { cacheTag } from "next/cache";
+import { cacheTag, cacheLife } from "next/cache";
 import { prisma } from "@/lib/db";
 
 export async function getSeries() {
@@ -15,8 +15,9 @@ export async function getSeries() {
   });
 }
 
-export async function getSeriesById(id: string, currentUserId?: string) {
+export async function getSeriesById(id: string) {
   cacheTag("series", `series-${id}`);
+  cacheLife("hours");
   return prisma.series.findUnique({
     where: { id },
     include: {
@@ -25,11 +26,18 @@ export async function getSeriesById(id: string, currentUserId?: string) {
         where: { datetime: { gte: new Date() }, isDraft: false },
         orderBy: { datetime: "asc" },
       },
-      followers: currentUserId
-        ? { where: { userId: currentUserId }, select: { userId: true } }
-        : { take: 0, select: { userId: true } },
       _count: { select: { followers: true } },
     },
+  });
+}
+
+// Per-user series follow — short TTL, separate cache key space
+export async function getMySeriesFollow(seriesId: string, userId: string) {
+  cacheTag(`series-${seriesId}`, `user-follow-series-${userId}-${seriesId}`);
+  cacheLife("seconds");
+  return prisma.seriesFollower.findUnique({
+    where: { seriesId_userId: { seriesId, userId } },
+    select: { userId: true },
   });
 }
 

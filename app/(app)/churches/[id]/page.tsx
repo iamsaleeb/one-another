@@ -3,7 +3,7 @@ import { Globe, MapPin, Share2, Bell } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { getChurchById } from "@/lib/actions/data-churches";
+import { getChurchById, getMyChurchFollow } from "@/lib/actions/data-churches";
 import { auth } from "@/auth";
 import { ChurchTabs } from "./_components/church-tabs";
 import { FollowButton } from "./_components/follow-button";
@@ -20,11 +20,15 @@ export async function generateMetadata({ params }: Props) {
 
 export default async function ChurchDetailPage({ params }: Props) {
   const [{ id }, session] = await Promise.all([params, auth()]);
-  const church = await getChurchById(id, session?.user?.id ?? undefined);
+
+  const [church, myFollow] = await Promise.all([
+    getChurchById(id),
+    session?.user?.id ? getMyChurchFollow(id, session.user.id) : Promise.resolve(null),
+  ]);
 
   if (!church) notFound();
 
-  const isFollowing = church.followers.length > 0;
+  const isFollowing = myFollow !== null;
 
   return (
     <div className="bg-muted/20 pb-8">

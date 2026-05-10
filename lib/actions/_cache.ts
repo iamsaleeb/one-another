@@ -86,4 +86,5 @@ export function invalidateSeriesFields(id: string, churchId?: string | null) {
 export function invalidateSeriesFollowing(seriesId: string, userId: string) {
   updateTag(`series-${seriesId}`);
   updateTag(`user-series-${userId}`);
+  updateTag(`user-follow-series-${userId}-${seriesId}`);
 }

@@ -2,7 +2,7 @@
 
 import { usePathname, useParams } from "next/navigation";
 
-export function useIsDetailPage(): boolean {
+export function useShowBackButton(): boolean {
   const pathname = usePathname();
   const params = useParams();
   const id = params?.id ?? null;

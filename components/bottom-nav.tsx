@@ -4,7 +4,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home, Church, CalendarDays, Wrench, ShieldCheck, Bell } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useIsDetailPage } from "@/hooks/use-is-detail-page";
 
 const baseTabs = [
   { label: "Home", href: "/", icon: Home },
@@ -24,9 +23,6 @@ interface BottomNavProps {
 
 export function BottomNav({ isOrganiser, isAdmin, unreadCount = 0 }: BottomNavProps) {
   const pathname = usePathname();
-  const isDetailPage = useIsDetailPage();
-
-  if (isDetailPage) return null;
 
   const tabs = isAdmin
     ? [...baseTabs, organiserTab, adminTab]

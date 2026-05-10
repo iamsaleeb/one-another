@@ -103,7 +103,6 @@ const mockEventDelete = prisma.event.delete as jest.Mock
 const mockEventAttendeeFindMany = prisma.eventAttendee.findMany as jest.Mock
 const mockEventAttendeeFindUnique = prisma.eventAttendee.findUnique as jest.Mock
 const mockSeriesFollowerFindMany = prisma.seriesFollower.findMany as jest.Mock
-const mockNotificationCreateMany = prisma.notification.createMany as jest.Mock
 const mockQueueNotification = jest.requireMock('@/lib/notifications/queue').queueNotification as jest.Mock
 const mockAuth = auth as jest.Mock
 const mockCanManageChurch = canManageChurch as jest.Mock

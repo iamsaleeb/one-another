@@ -1,10 +1,5 @@
 import { NotificationType } from '@prisma/client'
 
-const mockQueueNotification = jest.fn().mockResolvedValue(undefined)
-const mockCancelManyNotifications = jest.fn().mockResolvedValue(undefined)
-const mockScheduleEventReminderNotification = jest.fn().mockResolvedValue(undefined)
-const mockRescheduleEventReminderNotifications = jest.fn().mockResolvedValue(undefined)
-
 jest.mock('@/lib/db', () => ({
   prisma: {
     event: { findUnique: jest.fn(), update: jest.fn() },
@@ -16,10 +11,11 @@ jest.mock('@/lib/db', () => ({
 }))
 
 jest.mock('@/lib/notifications/queue', () => ({
-  scheduleEventReminderNotification: mockScheduleEventReminderNotification,
-  rescheduleEventReminderNotifications: mockRescheduleEventReminderNotifications,
-  cancelManyNotifications: mockCancelManyNotifications,
-  queueNotification: mockQueueNotification,
+  scheduleEventReminderNotifications: jest.fn().mockResolvedValue(undefined),
+  scheduleEventReminderNotification: jest.fn().mockResolvedValue(undefined),
+  rescheduleEventReminderNotifications: jest.fn().mockResolvedValue(undefined),
+  cancelManyNotifications: jest.fn().mockResolvedValue(undefined),
+  queueNotification: jest.fn().mockResolvedValue(undefined),
 }))
 
 jest.mock('@/lib/permissions', () => ({
@@ -31,14 +27,18 @@ jest.mock('@/lib/dal/questions', () => ({
 }))
 
 import { prisma } from '@/lib/db'
+import { publishEvent, cancelEvent } from '../events'
+
 const mockPrisma = prisma as jest.Mocked<typeof prisma>
+const mockQueue = jest.requireMock('@/lib/notifications/queue') as {
+  queueNotification: jest.Mock
+  cancelManyNotifications: jest.Mock
+}
 
 describe('notifySeriesFollowers deduplication', () => {
   beforeEach(() => jest.clearAllMocks())
 
   it('upserts NEW_SERIES_SESSION rather than creating duplicates', async () => {
-    const { publishEvent } = require('../events')
-
     ;(mockPrisma.event.findUnique as jest.Mock).mockResolvedValue({
       id: 'evt-1',
       churchId: 'ch-1',
@@ -56,16 +56,15 @@ describe('notifySeriesFollowers deduplication', () => {
 
     await publishEvent('evt-1', 'admin-user', 'ADMIN')
 
-    // Should use queueNotification (dedup path), NOT createMany
     expect(mockPrisma.notification.createMany).not.toHaveBeenCalled()
-    expect(mockQueueNotification).toHaveBeenCalledWith(
+    expect(mockQueue.queueNotification).toHaveBeenCalledWith(
       expect.objectContaining({
         type: NotificationType.NEW_SERIES_SESSION,
         dedupeKey: 'series-1:evt-1',
         userId: 'user-1',
       })
     )
-    expect(mockQueueNotification).toHaveBeenCalledWith(
+    expect(mockQueue.queueNotification).toHaveBeenCalledWith(
       expect.objectContaining({
         type: NotificationType.NEW_SERIES_SESSION,
         dedupeKey: 'series-1:evt-1',
@@ -79,8 +78,6 @@ describe('notifyEventAttendees deduplication', () => {
   beforeEach(() => jest.clearAllMocks())
 
   it('upserts EVENT_CANCELLED rather than creating duplicates', async () => {
-    const { cancelEvent } = require('../events')
-
     ;(mockPrisma.event.findUnique as jest.Mock).mockResolvedValue({
       id: 'evt-2',
       churchId: 'ch-1',
@@ -95,16 +92,15 @@ describe('notifyEventAttendees deduplication', () => {
 
     await cancelEvent('evt-2', 'Venue unavailable', 'admin-user', 'ADMIN')
 
-    // Should use queueNotification (dedup path), NOT createMany
     expect(mockPrisma.notification.createMany).not.toHaveBeenCalled()
-    expect(mockQueueNotification).toHaveBeenCalledWith(
+    expect(mockQueue.queueNotification).toHaveBeenCalledWith(
       expect.objectContaining({
         type: NotificationType.EVENT_CANCELLED,
         dedupeKey: 'cancelled:evt-2',
         userId: 'user-3',
       })
     )
-    expect(mockQueueNotification).toHaveBeenCalledWith(
+    expect(mockQueue.queueNotification).toHaveBeenCalledWith(
       expect.objectContaining({
         type: NotificationType.EVENT_CANCELLED,
         dedupeKey: 'cancelled:evt-2',

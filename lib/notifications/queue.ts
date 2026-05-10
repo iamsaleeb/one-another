@@ -135,6 +135,8 @@ export async function scheduleEventReminderNotifications(
 ): Promise<void> {
   if (userIds.length === 0 || !event.datetime) return;
 
+  const datetime = event.datetime;
+
   const prefs = await prisma.notificationPreference.findMany({
     where: { userId: { in: userIds }, type: NotificationType.EVENT_REMINDER },
     select: { userId: true, config: true },
@@ -152,7 +154,7 @@ export async function scheduleEventReminderNotifications(
   await Promise.all(
     userIds.map((userId) => {
       const hours = hoursMap.get(userId) ?? DEFAULT_HOURS_BEFORE_EVENT;
-      const scheduledFor = subHours(event.datetime!, hours);
+      const scheduledFor = subHours(datetime, hours);
       if (scheduledFor <= now) return Promise.resolve();
       return queueNotification({
         userId,
@@ -163,7 +165,7 @@ export async function scheduleEventReminderNotifications(
           type: 'event_reminder',
           eventId: event.id,
           eventTitle: event.title,
-          eventDatetime: event.datetime!.toISOString(),
+          eventDatetime: datetime.toISOString(),
         },
         scheduledFor,
         dedupeKey: event.id,

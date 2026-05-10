@@ -103,8 +103,8 @@ export default async function Home({
         ) : (
           /* ── Default home content ── */
           <>
-            <EventList events={events!} />
-            <SeriesRail series={allSeries!} />
+            {events && <EventList events={events} />}
+            {allSeries && <SeriesRail series={allSeries} />}
           </>
         )}
       </div>

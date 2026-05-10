@@ -1,42 +1,32 @@
 import "server-only";
 import { updateTag } from "next/cache";
 
+interface EventCacheOptions {
+  broadcastToChurchList?: boolean;
+}
+
 /**
- * Broadcasts to list caches when an event is created, deleted,
- * published, or unpublished (i.e. its presence in public lists changes).
+ * Invalidates all event-related caches. Pass `broadcastToChurchList: true`
+ * when the event's presence in public lists changes (create, delete, publish,
+ * unpublish) so that the global churches list is also busted.
  */
-export function broadcastEventChange(
+export function invalidateEventCaches(
   id: string,
   churchId?: string | null,
-  seriesId?: string | null
+  seriesId?: string | null,
+  options?: EventCacheOptions
 ) {
   updateTag("events");
   updateTag(`event-${id}`);
   updateTag(`event-questions-${id}`);
   if (churchId) {
-    updateTag("churches");
+    if (options?.broadcastToChurchList) updateTag("churches");
     updateTag(`church-${churchId}`);
   }
   if (seriesId) {
     updateTag("series");
     updateTag(`series-${seriesId}`);
   }
-}
-
-/**
- * Invalidates event lists and the specific event when it is updated
- * or its state changes (cancel/uncancel).
- */
-export function invalidateEventFields(
-  id: string,
-  churchId?: string | null,
-  seriesId?: string | null
-) {
-  updateTag("events");
-  updateTag(`event-${id}`);
-  updateTag(`event-questions-${id}`);
-  if (churchId) updateTag(`church-${churchId}`);
-  if (seriesId) updateTag(`series-${seriesId}`);
 }
 
 /**
@@ -60,7 +50,7 @@ export function invalidateEventUpdate(
   id: string,
   result: { oldChurchId: string | null; newChurchId: string | null; affectedSeriesIds: string[] }
 ) {
-  invalidateEventFields(id, result.oldChurchId);
+  invalidateEventCaches(id, result.oldChurchId);
   if (result.newChurchId && result.newChurchId !== result.oldChurchId) updateTag(`church-${result.newChurchId}`);
   if (result.affectedSeriesIds.length > 0) {
     updateTag("series");

@@ -16,7 +16,7 @@ export async function getChurches() {
 
 export async function getChurchById(id: string) {
   cacheTag("churches", `church-${id}`);
-  cacheLife("hours");
+  cacheLife("minutes");
   return prisma.church.findUnique({
     where: { id },
     include: {

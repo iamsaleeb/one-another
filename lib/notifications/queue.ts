@@ -151,27 +151,30 @@ export async function scheduleEventReminderNotifications(
   }
 
   const now = new Date();
-  await Promise.all(
-    userIds.map((userId) => {
-      const hours = hoursMap.get(userId) ?? DEFAULT_HOURS_BEFORE_EVENT;
-      const scheduledFor = subHours(datetime, hours);
-      if (scheduledFor <= now) return Promise.resolve();
-      return queueNotification({
-        userId,
-        type: NotificationType.EVENT_REMINDER,
-        title: 'Event Reminder',
-        body: `${event.title} starts in ${hours === 1 ? '1 hour' : `${hours} hours`}`,
-        data: {
-          type: 'event_reminder',
-          eventId: event.id,
-          eventTitle: event.title,
-          eventDatetime: datetime.toISOString(),
-        },
-        scheduledFor,
-        dedupeKey: event.id,
-      });
-    })
-  );
+  const CONCURRENCY = 20;
+  for (let i = 0; i < userIds.length; i += CONCURRENCY) {
+    await Promise.all(
+      userIds.slice(i, i + CONCURRENCY).map((userId) => {
+        const hours = hoursMap.get(userId) ?? DEFAULT_HOURS_BEFORE_EVENT;
+        const scheduledFor = subHours(datetime, hours);
+        if (scheduledFor <= now) return Promise.resolve();
+        return queueNotification({
+          userId,
+          type: NotificationType.EVENT_REMINDER,
+          title: 'Event Reminder',
+          body: `${event.title} starts in ${hours === 1 ? '1 hour' : `${hours} hours`}`,
+          data: {
+            type: 'event_reminder',
+            eventId: event.id,
+            eventTitle: event.title,
+            eventDatetime: datetime.toISOString(),
+          },
+          scheduledFor,
+          dedupeKey: event.id,
+        });
+      })
+    );
+  }
 }
 
 /**

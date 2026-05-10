@@ -12,25 +12,29 @@ import {
 } from "@/lib/notifications/queue";
 import type { CreateEventInput } from "@/lib/validations/event";
 
+const NOTIFY_CONCURRENCY = 20;
+
 async function notifySeriesFollowers(seriesId: string, title: string, eventId: string) {
   const followers = await prisma.seriesFollower.findMany({
     where: { seriesId },
     select: { userId: true },
   });
   if (followers.length === 0) return;
-  await Promise.all(
-    followers.map((f) =>
-      queueNotification({
-        userId: f.userId,
-        type: NotificationType.NEW_SERIES_SESSION,
-        title: "New Session Added",
-        body: `A new session has been added: ${title}`,
-        data: { type: "new_session", seriesId, eventId },
-        scheduledFor: new Date(),
-        dedupeKey: `${seriesId}:${eventId}`,
-      })
-    )
-  );
+  for (let i = 0; i < followers.length; i += NOTIFY_CONCURRENCY) {
+    await Promise.all(
+      followers.slice(i, i + NOTIFY_CONCURRENCY).map((f) =>
+        queueNotification({
+          userId: f.userId,
+          type: NotificationType.NEW_SERIES_SESSION,
+          title: "New Session Added",
+          body: `A new session has been added: ${title}`,
+          data: { type: "new_session", seriesId, eventId },
+          scheduledFor: new Date(),
+          dedupeKey: `${seriesId}:${eventId}`,
+        })
+      )
+    );
+  }
 }
 
 async function notifyEventAttendees(eventId: string, title: string) {
@@ -39,19 +43,21 @@ async function notifyEventAttendees(eventId: string, title: string) {
     select: { userId: true },
   });
   if (attendees.length === 0) return;
-  await Promise.all(
-    attendees.map((a) =>
-      queueNotification({
-        userId: a.userId,
-        type: NotificationType.EVENT_CANCELLED,
-        title: "Event Cancelled",
-        body: `${title} has been cancelled`,
-        data: { type: "event_cancelled", eventId },
-        scheduledFor: new Date(),
-        dedupeKey: `cancelled:${eventId}`,
-      })
-    )
-  );
+  for (let i = 0; i < attendees.length; i += NOTIFY_CONCURRENCY) {
+    await Promise.all(
+      attendees.slice(i, i + NOTIFY_CONCURRENCY).map((a) =>
+        queueNotification({
+          userId: a.userId,
+          type: NotificationType.EVENT_CANCELLED,
+          title: "Event Cancelled",
+          body: `${title} has been cancelled`,
+          data: { type: "event_cancelled", eventId },
+          scheduledFor: new Date(),
+          dedupeKey: `cancelled:${eventId}`,
+        })
+      )
+    );
+  }
 }
 
 type DalError = { error: string } | { fieldErrors: Record<string, string[]> };

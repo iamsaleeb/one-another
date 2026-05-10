@@ -1,7 +1,3 @@
-import { NotificationType } from '@prisma/client'
-import { queueNotification, cancelNotification, scheduleEventReminderNotifications } from '../queue'
-
-// Mock prisma
 jest.mock('@/lib/db', () => ({
   prisma: {
     notification: {
@@ -16,7 +12,10 @@ jest.mock('@/lib/db', () => ({
   },
 }))
 
+import { NotificationType } from '@prisma/client'
+import { queueNotification, cancelNotification, scheduleEventReminderNotifications } from '../queue'
 import { prisma } from '@/lib/db'
+
 const mockPrisma = prisma as jest.Mocked<typeof prisma>
 
 describe('queueNotification', () => {
@@ -75,7 +74,6 @@ describe('scheduleEventReminderNotifications (batch)', () => {
   beforeEach(() => jest.clearAllMocks())
 
   it('fetches all preferences in a single findMany', async () => {
-    // Setup: mock findMany
     ;(mockPrisma.notificationPreference.findMany as jest.Mock).mockResolvedValue([
       { userId: 'user-1', config: { hoursBeforeEvent: 2 } },
       { userId: 'user-2', config: { hoursBeforeEvent: 24 } },
@@ -97,7 +95,6 @@ describe('scheduleEventReminderNotifications (batch)', () => {
     ;(mockPrisma.notificationPreference.findMany as jest.Mock).mockResolvedValue([])
     ;(mockPrisma.notification.upsert as jest.Mock).mockResolvedValue({})
 
-    // Past event — reminder already passed
     const pastEvent = { id: 'evt-past', title: 'Past Event', datetime: new Date('2020-01-01') }
     await scheduleEventReminderNotifications(['user-1'], pastEvent)
 

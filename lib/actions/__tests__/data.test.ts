@@ -478,12 +478,12 @@ describe('getMySeriesFollow', () => {
 })
 
 describe('getEventsByCreator', () => {
-  it('returns upcoming events created by the given user', async () => {
+  it('returns all events created by the given user including drafts', async () => {
     mockEventFindMany.mockResolvedValue([sampleEvent])
     const result = await getEventsByCreator('user-1')
     expect(result).toEqual([sampleEvent])
     expect(mockEventFindMany).toHaveBeenCalledWith({
-      where: { datetime: { gte: expect.any(Date) }, createdById: 'user-1' },
+      where: { createdById: 'user-1' },
       orderBy: { datetime: 'asc' },
       include: {
         church: { select: { name: true } },

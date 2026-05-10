@@ -17,7 +17,7 @@ export async function getSeries() {
 
 export async function getSeriesById(id: string) {
   cacheTag("series", `series-${id}`);
-  cacheLife("hours");
+  cacheLife("minutes");
   return prisma.series.findUnique({
     where: { id },
     include: {

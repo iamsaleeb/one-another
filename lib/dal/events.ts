@@ -8,7 +8,7 @@ import {
   cancelManyNotifications,
   queueNotification,
   rescheduleEventReminderNotifications,
-  scheduleEventReminderNotification,
+  scheduleEventReminderNotifications,
 } from "@/lib/notifications/queue";
 import type { CreateEventInput } from "@/lib/validations/event";
 
@@ -353,11 +353,10 @@ export async function publishEvent(
       where: { eventId: id },
       select: { userId: true },
     });
-    await Promise.all(
-      attendees.map((a) =>
-        scheduleEventReminderNotification(a.userId, { id, title: event.title, datetime: event.datetime })
-      )
-    );
+    if (attendees.length > 0) {
+      const userIds = attendees.map((a) => a.userId);
+      await scheduleEventReminderNotifications(userIds, { id, title: event.title, datetime: event.datetime });
+    }
   } catch (err) {
     console.error("Failed to schedule reminders on publish:", err);
   }

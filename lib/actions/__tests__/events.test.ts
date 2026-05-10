@@ -47,7 +47,7 @@ jest.mock('@/lib/notifications/queue', () => ({
   cancelNotification: jest.fn(),
   cancelManyNotifications: jest.fn(),
   rescheduleEventReminderNotifications: jest.fn(),
-  scheduleEventReminderNotification: jest.fn(),
+  scheduleEventReminderNotifications: jest.fn(),
   updateUserReminderSchedule: jest.fn(),
 }))
 
@@ -818,7 +818,7 @@ describe('deleteEventAction', () => {
 })
 
 describe('publishEventAction', () => {
-  const mockScheduleReminderNotif = jest.requireMock('@/lib/notifications/queue').scheduleEventReminderNotification as jest.Mock
+  const mockScheduleReminderNotifs = jest.requireMock('@/lib/notifications/queue').scheduleEventReminderNotifications as jest.Mock
   const mockEventAttendeeFindMany = prisma.eventAttendee.findMany as jest.Mock
 
   it('sets isDraft to false, schedules reminders for attendees, and redirects to the event page', async () => {
@@ -833,9 +833,8 @@ describe('publishEventAction', () => {
       where: { id: 'evt-1' },
       data: { isDraft: false },
     })
-    expect(mockScheduleReminderNotif).toHaveBeenCalledTimes(2)
-    expect(mockScheduleReminderNotif).toHaveBeenCalledWith('user-2', { id: 'evt-1', title: 'Test', datetime })
-    expect(mockScheduleReminderNotif).toHaveBeenCalledWith('user-3', { id: 'evt-1', title: 'Test', datetime })
+    expect(mockScheduleReminderNotifs).toHaveBeenCalledTimes(1)
+    expect(mockScheduleReminderNotifs).toHaveBeenCalledWith(['user-2', 'user-3'], { id: 'evt-1', title: 'Test', datetime })
     expect(mockUpdateTag).toHaveBeenCalledWith('events')
     expect(mockUpdateTag).toHaveBeenCalledWith('event-evt-1')
     expect(mockRedirect).toHaveBeenCalledWith('/events/evt-1')
@@ -848,7 +847,7 @@ describe('publishEventAction', () => {
 
     await publishEventAction('evt-1')
 
-    expect(mockScheduleReminderNotif).not.toHaveBeenCalled()
+    expect(mockScheduleReminderNotifs).not.toHaveBeenCalled()
   })
 
   it('short-circuits without updating when the event is already published', async () => {
@@ -905,7 +904,7 @@ describe('publishEventAction', () => {
     mockEventFindUnique.mockResolvedValue({ churchId: 'ch-1', seriesId: null, title: 'Test', isDraft: true, datetime: new Date() })
     mockEventUpdate.mockResolvedValue({})
     mockEventAttendeeFindMany.mockResolvedValue([{ userId: 'user-2' }])
-    mockScheduleReminderNotif.mockRejectedValueOnce(new Error('scheduler down'))
+    mockScheduleReminderNotifs.mockRejectedValueOnce(new Error('scheduler down'))
 
     await publishEventAction('evt-1')
 

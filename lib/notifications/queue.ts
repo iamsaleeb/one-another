@@ -125,6 +125,54 @@ export async function scheduleEventReminderNotification(userId: string, event: E
 }
 
 /**
+ * Schedule EVENT_REMINDER notifications for multiple attendees in a single batch.
+ * Fetches all hoursBeforeEvent preferences in one findMany query instead of N findUniques.
+ * Skips any user whose reminder window has already passed.
+ */
+export async function scheduleEventReminderNotifications(
+  userIds: string[],
+  event: EventRef
+): Promise<void> {
+  if (userIds.length === 0 || !event.datetime) return;
+
+  const prefs = await prisma.notificationPreference.findMany({
+    where: { userId: { in: userIds }, type: NotificationType.EVENT_REMINDER },
+    select: { userId: true, config: true },
+  });
+
+  const hoursMap = new Map<string, number>();
+  for (const pref of prefs) {
+    if (pref.config && typeof pref.config === 'object' && !Array.isArray(pref.config)) {
+      const h = (pref.config as Record<string, unknown>).hoursBeforeEvent;
+      if (typeof h === 'number') hoursMap.set(pref.userId, h);
+    }
+  }
+
+  const now = new Date();
+  await Promise.all(
+    userIds.map((userId) => {
+      const hours = hoursMap.get(userId) ?? DEFAULT_HOURS_BEFORE_EVENT;
+      const scheduledFor = subHours(event.datetime!, hours);
+      if (scheduledFor <= now) return Promise.resolve();
+      return queueNotification({
+        userId,
+        type: NotificationType.EVENT_REMINDER,
+        title: 'Event Reminder',
+        body: `${event.title} starts in ${hours === 1 ? '1 hour' : `${hours} hours`}`,
+        data: {
+          type: 'event_reminder',
+          eventId: event.id,
+          eventTitle: event.title,
+          eventDatetime: event.datetime!.toISOString(),
+        },
+        scheduledFor,
+        dedupeKey: event.id,
+      });
+    })
+  );
+}
+
+/**
  * Reschedule all pending EVENT_REMINDER notifications for an event when its datetime changes.
  * Preserves each attendee's hoursBeforeEvent preference and updates body + data.eventDatetime.
  */

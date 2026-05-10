@@ -11,6 +11,7 @@ jest.mock('@/lib/db', () => ({
     },
     notificationPreference: {
       findUnique: jest.fn().mockResolvedValue(null),
+      findMany: jest.fn().mockResolvedValue([]),
     },
   },
 }))
@@ -67,5 +68,42 @@ describe('cancelNotification', () => {
         }),
       })
     )
+  })
+})
+
+describe('scheduleEventReminderNotifications (batch)', () => {
+  beforeEach(() => jest.clearAllMocks())
+
+  it('fetches all preferences in a single findMany', async () => {
+    const { scheduleEventReminderNotifications } = require('../queue')
+
+    // Setup: mock findMany
+    ;(mockPrisma.notificationPreference.findMany as jest.Mock).mockResolvedValue([
+      { userId: 'user-1', config: { hoursBeforeEvent: 2 } },
+      { userId: 'user-2', config: { hoursBeforeEvent: 24 } },
+    ])
+    ;(mockPrisma.notification.upsert as jest.Mock).mockResolvedValue({})
+
+    const event = { id: 'evt-1', title: 'Sunday Service', datetime: new Date(Date.now() + 86400000) }
+    await scheduleEventReminderNotifications(['user-1', 'user-2'], event)
+
+    expect(mockPrisma.notificationPreference.findMany).toHaveBeenCalledTimes(1)
+    expect(mockPrisma.notificationPreference.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ userId: { in: ['user-1', 'user-2'] }, type: NotificationType.EVENT_REMINDER }),
+      })
+    )
+  })
+
+  it('skips users whose reminder window has already passed', async () => {
+    const { scheduleEventReminderNotifications } = require('../queue')
+    ;(mockPrisma.notificationPreference.findMany as jest.Mock).mockResolvedValue([])
+    ;(mockPrisma.notification.upsert as jest.Mock).mockResolvedValue({})
+
+    // Past event — reminder already passed
+    const pastEvent = { id: 'evt-past', title: 'Past Event', datetime: new Date('2020-01-01') }
+    await scheduleEventReminderNotifications(['user-1'], pastEvent)
+
+    expect(mockPrisma.notification.upsert).not.toHaveBeenCalled()
   })
 })

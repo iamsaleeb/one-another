@@ -104,6 +104,7 @@ const mockEventAttendeeFindMany = prisma.eventAttendee.findMany as jest.Mock
 const mockEventAttendeeFindUnique = prisma.eventAttendee.findUnique as jest.Mock
 const mockSeriesFollowerFindMany = prisma.seriesFollower.findMany as jest.Mock
 const mockNotificationCreateMany = prisma.notification.createMany as jest.Mock
+const mockQueueNotification = jest.requireMock('@/lib/notifications/queue').queueNotification as jest.Mock
 const mockAuth = auth as jest.Mock
 const mockCanManageChurch = canManageChurch as jest.Mock
 const mockRegisterEvent = _registerEvent as jest.Mock
@@ -308,7 +309,7 @@ describe('createEventAction', () => {
     mockSeriesFindUnique.mockResolvedValue({ churchId: 'ch-1' })
     mockEventCreate.mockResolvedValue({ id: 'evt-series-fail' })
     mockSeriesFollowerFindMany.mockResolvedValue([{ userId: 'follower-1' }])
-    mockNotificationCreateMany.mockRejectedValueOnce(new Error('push failed'))
+    mockQueueNotification.mockRejectedValueOnce(new Error('push failed'))
 
     await createEventAction({ ...validData, seriesId: 'ser-1' })
 
@@ -321,7 +322,7 @@ describe('createEventAction', () => {
 
     await createEventAction({ ...validData, seriesId: 'ser-1', isDraft: true })
 
-    expect(mockNotificationCreateMany).not.toHaveBeenCalled()
+    expect(mockQueueNotification).not.toHaveBeenCalled()
     expect(mockRedirect).toHaveBeenCalledWith('/organiser')
   })
 
@@ -332,17 +333,16 @@ describe('createEventAction', () => {
 
     await createEventAction({ ...validData, seriesId: 'ser-1' })
 
-    expect(mockNotificationCreateMany).toHaveBeenCalledWith({
-      data: expect.arrayContaining([
-        expect.objectContaining({
-          userId: 'follower-1',
-          type: NotificationType.NEW_SERIES_SESSION,
-          title: 'New Session Added',
-          body: expect.stringContaining(validData.title),
-          data: expect.objectContaining({ type: 'new_session', seriesId: 'ser-1' }),
-        }),
-      ]),
-    })
+    expect(mockQueueNotification).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: 'follower-1',
+        type: NotificationType.NEW_SERIES_SESSION,
+        title: 'New Session Added',
+        body: expect.stringContaining(validData.title),
+        data: expect.objectContaining({ type: 'new_session', seriesId: 'ser-1' }),
+        dedupeKey: expect.stringContaining('ser-1'),
+      })
+    )
   })
 
   it('persists photoUrl when provided', async () => {
@@ -423,24 +423,23 @@ describe('cancelEventAction', () => {
 
     await cancelEventAction('evt-1', 'Venue unavailable')
 
-    expect(mockNotificationCreateMany).toHaveBeenCalledWith({
-      data: expect.arrayContaining([
-        expect.objectContaining({
-          userId: 'user-2',
-          type: NotificationType.EVENT_CANCELLED,
-          title: 'Event Cancelled',
-          body: expect.stringContaining('Test Event'),
-          data: expect.objectContaining({ type: 'event_cancelled', eventId: 'evt-1' }),
-        }),
-      ]),
-    })
+    expect(mockQueueNotification).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: 'user-2',
+        type: NotificationType.EVENT_CANCELLED,
+        title: 'Event Cancelled',
+        body: expect.stringContaining('Test Event'),
+        data: expect.objectContaining({ type: 'event_cancelled', eventId: 'evt-1' }),
+        dedupeKey: 'cancelled:evt-1',
+      })
+    )
   })
 
   it('handles EVENT_CANCELLED push failure gracefully', async () => {
     mockEventFindUnique.mockResolvedValue({ churchId: 'ch-1', title: 'Test Event' })
     mockEventUpdate.mockResolvedValue({})
     mockEventAttendeeFindMany.mockResolvedValue([{ userId: 'user-2' }])
-    mockNotificationCreateMany.mockRejectedValueOnce(new Error('push failed'))
+    mockQueueNotification.mockRejectedValueOnce(new Error('push failed'))
 
     await cancelEventAction('evt-1', 'reason')
 
@@ -890,17 +889,16 @@ describe('publishEventAction', () => {
 
     await publishEventAction('evt-1')
 
-    expect(mockNotificationCreateMany).toHaveBeenCalledWith({
-      data: expect.arrayContaining([
-        expect.objectContaining({
-          userId: 'follower-1',
-          type: NotificationType.NEW_SERIES_SESSION,
-          title: 'New Session Added',
-          body: expect.stringContaining('Bible Study'),
-          data: expect.objectContaining({ type: 'new_session', seriesId: 'ser-1', eventId: 'evt-1' }),
-        }),
-      ]),
-    })
+    expect(mockQueueNotification).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: 'follower-1',
+        type: NotificationType.NEW_SERIES_SESSION,
+        title: 'New Session Added',
+        body: expect.stringContaining('Bible Study'),
+        data: expect.objectContaining({ type: 'new_session', seriesId: 'ser-1', eventId: 'evt-1' }),
+        dedupeKey: 'ser-1:evt-1',
+      })
+    )
   })
 
   it('handles reminder scheduling failure gracefully', async () => {
@@ -919,7 +917,7 @@ describe('publishEventAction', () => {
     mockEventUpdate.mockResolvedValue({})
     mockEventAttendeeFindMany.mockResolvedValue([])
     mockSeriesFollowerFindMany.mockResolvedValue([{ userId: 'follower-1' }])
-    mockNotificationCreateMany.mockRejectedValueOnce(new Error('push failed'))
+    mockQueueNotification.mockRejectedValueOnce(new Error('push failed'))
 
     await publishEventAction('evt-1')
 

@@ -6,6 +6,7 @@ import { canManageChurch } from "@/lib/permissions";
 import { syncEventQuestions } from "@/lib/dal/questions";
 import {
   cancelManyNotifications,
+  queueNotification,
   rescheduleEventReminderNotifications,
   scheduleEventReminderNotification,
 } from "@/lib/notifications/queue";
@@ -17,16 +18,19 @@ async function notifySeriesFollowers(seriesId: string, title: string, eventId: s
     select: { userId: true },
   });
   if (followers.length === 0) return;
-  await prisma.notification.createMany({
-    data: followers.map((f) => ({
-      userId: f.userId,
-      type: NotificationType.NEW_SERIES_SESSION,
-      title: "New Session Added",
-      body: `A new session has been added: ${title}`,
-      data: { type: "new_session", seriesId, eventId },
-      scheduledFor: new Date(),
-    })),
-  });
+  await Promise.all(
+    followers.map((f) =>
+      queueNotification({
+        userId: f.userId,
+        type: NotificationType.NEW_SERIES_SESSION,
+        title: "New Session Added",
+        body: `A new session has been added: ${title}`,
+        data: { type: "new_session", seriesId, eventId },
+        scheduledFor: new Date(),
+        dedupeKey: `${seriesId}:${eventId}`,
+      })
+    )
+  );
 }
 
 async function notifyEventAttendees(eventId: string, title: string) {
@@ -35,16 +39,19 @@ async function notifyEventAttendees(eventId: string, title: string) {
     select: { userId: true },
   });
   if (attendees.length === 0) return;
-  await prisma.notification.createMany({
-    data: attendees.map((a) => ({
-      userId: a.userId,
-      type: NotificationType.EVENT_CANCELLED,
-      title: "Event Cancelled",
-      body: `${title} has been cancelled`,
-      data: { type: "event_cancelled", eventId },
-      scheduledFor: new Date(),
-    })),
-  });
+  await Promise.all(
+    attendees.map((a) =>
+      queueNotification({
+        userId: a.userId,
+        type: NotificationType.EVENT_CANCELLED,
+        title: "Event Cancelled",
+        body: `${title} has been cancelled`,
+        data: { type: "event_cancelled", eventId },
+        scheduledFor: new Date(),
+        dedupeKey: `cancelled:${eventId}`,
+      })
+    )
+  );
 }
 
 type DalError = { error: string } | { fieldErrors: Record<string, string[]> };

@@ -2,6 +2,7 @@ import { prisma } from '@/lib/db';
 import { getFirebaseAdmin } from '@/lib/firebase-admin';
 
 const FCM_BATCH_SIZE = 500;
+const CONCURRENCY = 20;
 
 export async function processNotifications(): Promise<{ processed: number }> {
   const due = await prisma.notification.findMany({
@@ -37,51 +38,65 @@ export async function processNotifications(): Promise<{ processed: number }> {
   const sentIds: string[] = [];
   const staleTokens: string[] = [];
 
-  for (const notif of due) {
-    if (disabledSet.has(`${notif.userId}:${notif.type}`)) {
-      sentIds.push(notif.id);
-      continue;
-    }
+  for (let i = 0; i < due.length; i += CONCURRENCY) {
+    const concurrentBatch = due.slice(i, i + CONCURRENCY);
+    const batchResults = await Promise.all(
+      concurrentBatch.map(async (notif) => {
+        const localSentIds: string[] = [];
+        const localStaleTokens: string[] = [];
 
-    const tokens = tokensByUser.get(notif.userId) ?? [];
-    if (tokens.length === 0) {
-      sentIds.push(notif.id);
-      continue;
-    }
+        if (disabledSet.has(`${notif.userId}:${notif.type}`)) {
+          localSentIds.push(notif.id);
+          return { localSentIds, localStaleTokens };
+        }
 
-    const data =
-      notif.data != null && typeof notif.data === 'object' && !Array.isArray(notif.data)
-        ? (notif.data as Record<string, string>)
-        : undefined;
+        const tokens = tokensByUser.get(notif.userId) ?? [];
+        if (tokens.length === 0) {
+          localSentIds.push(notif.id);
+          return { localSentIds, localStaleTokens };
+        }
 
-    try {
-      for (let i = 0; i < tokens.length; i += FCM_BATCH_SIZE) {
-        const batch = tokens.slice(i, i + FCM_BATCH_SIZE);
-        const response = await messaging.sendEachForMulticast({
-          tokens: batch,
-          notification: { title: notif.title, body: notif.body },
-          data: data ?? {},
-        });
+        const data =
+          notif.data != null && typeof notif.data === 'object' && !Array.isArray(notif.data)
+            ? (notif.data as Record<string, string>)
+            : undefined;
 
-        response.responses.forEach((res, idx) => {
-          if (!res.success) {
-            const code = res.error?.code;
-            if (
-              code === 'messaging/invalid-registration-token' ||
-              code === 'messaging/registration-token-not-registered' ||
-              code === 'messaging/unregistered'
-            ) {
-              staleTokens.push(batch[idx]);
-            } else if (code === 'messaging/mismatched-credential') {
-              console.error('FCM credential mismatch — check FIREBASE_PROJECT_ID and FIREBASE_CLIENT_EMAIL env vars');
-            }
+        try {
+          for (let j = 0; j < tokens.length; j += FCM_BATCH_SIZE) {
+            const tokenBatch = tokens.slice(j, j + FCM_BATCH_SIZE);
+            const response = await messaging.sendEachForMulticast({
+              tokens: tokenBatch,
+              notification: { title: notif.title, body: notif.body },
+              data: data ?? {},
+            });
+
+            response.responses.forEach((res, idx) => {
+              if (!res.success) {
+                const code = res.error?.code;
+                if (
+                  code === 'messaging/invalid-registration-token' ||
+                  code === 'messaging/registration-token-not-registered' ||
+                  code === 'messaging/unregistered'
+                ) {
+                  localStaleTokens.push(tokenBatch[idx]);
+                } else if (code === 'messaging/mismatched-credential') {
+                  console.error('FCM credential mismatch — check FIREBASE_PROJECT_ID and FIREBASE_CLIENT_EMAIL env vars');
+                }
+              }
+            });
           }
-        });
-      }
+          localSentIds.push(notif.id);
+        } catch (err) {
+          console.error(`[process-notifications] failed to send notification ${notif.id}:`, err);
+        }
 
-      sentIds.push(notif.id);
-    } catch (err) {
-      console.error(`[process-notifications] failed to send notification ${notif.id}:`, err);
+        return { localSentIds, localStaleTokens };
+      })
+    );
+
+    for (const { localSentIds, localStaleTokens } of batchResults) {
+      sentIds.push(...localSentIds);
+      staleTokens.push(...localStaleTokens);
     }
   }
 

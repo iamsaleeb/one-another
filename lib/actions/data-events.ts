@@ -29,6 +29,15 @@ export async function getEventById(id: string) {
   });
 }
 
+export async function getEventMeta(id: string) {
+  cacheTag(`event-${id}`);
+  cacheLife("hours");
+  return prisma.event.findUnique({
+    where: { id },
+    select: { title: true, isDraft: true, churchId: true },
+  });
+}
+
 // Per-user attendance — short TTL, separate cache key space
 export async function getMyEventAttendance(eventId: string, userId: string) {
   cacheTag(`event-${eventId}`, `user-attendance-${userId}-${eventId}`);

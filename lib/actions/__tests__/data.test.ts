@@ -20,6 +20,7 @@ jest.mock('@/lib/db', () => ({
 import {
   getEvents,
   getEventById,
+  getEventMeta,
   getMyEventAttendance,
   getEventsByCreator,
   getEventsNotByCreator,
@@ -143,6 +144,17 @@ describe('getEventById', () => {
   it('returns null when the event does not exist', async () => {
     mockEventFindUnique.mockResolvedValue(null)
     expect(await getEventById('not-found')).toBeNull()
+  })
+})
+
+describe('getEventMeta', () => {
+  it('fetches only title, isDraft, and churchId', async () => {
+    mockEventFindUnique.mockResolvedValue({ title: 'Test', isDraft: false, churchId: 'ch-1' })
+    await getEventMeta('evt-1')
+    expect(mockEventFindUnique).toHaveBeenCalledWith({
+      where: { id: 'evt-1' },
+      select: { title: true, isDraft: true, churchId: true },
+    })
   })
 })
 

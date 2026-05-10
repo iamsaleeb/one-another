@@ -4,7 +4,7 @@ import { AlertTriangle, Calendar, Church, FileEdit, MapPin, Pencil, Repeat, Tabl
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { auth } from "@/auth";
-import { getEventById, getEventAttendees, getMyEventAttendance } from "@/lib/actions/data-events";
+import { getEventById, getEventAttendees, getMyEventAttendance, getEventMeta } from "@/lib/actions/data-events";
 import { getEventQuestions, getMyResponses } from "@/lib/actions/data-questions";
 import { parseEventMetadata, parseEventAttendeeMetadata } from "@/lib/validations/event";
 import { canManageChurch } from "@/lib/permissions";
@@ -24,9 +24,11 @@ interface Props {
 
 export async function generateMetadata({ params }: Props) {
   const { id } = await params;
-  const [event, session] = await Promise.all([getEventById(id), auth()]);
+  const event = await getEventMeta(id);
   if (!event) return { title: "Event Not Found" };
   if (event.isDraft) {
+    // Draft: need auth check — infrequent, cost is acceptable
+    const session = await auth();
     const canManage = await canManageChurch(session?.user?.id, session?.user?.role, event.churchId);
     if (!canManage) return { title: "Event Not Found" };
   }

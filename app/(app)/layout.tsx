@@ -4,15 +4,16 @@ import { TopNav } from "@/components/top-nav";
 import { PushNotificationProvider } from "@/components/push-notification-provider";
 import { BackButtonProvider } from "@/components/back-button-provider";
 
-export default async function AppLayout({
+export default function AppLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const session = await auth();
   return (
     <div className="min-h-screen">
-      <TopNav user={session?.user} />
+      <Suspense>
+        <TopNavServer />
+      </Suspense>
       {children}
       <PushNotificationProvider />
       <Suspense>
@@ -20,4 +21,9 @@ export default async function AppLayout({
       </Suspense>
     </div>
   );
+}
+
+async function TopNavServer() {
+  const session = await auth();
+  return <TopNav user={session?.user} />;
 }

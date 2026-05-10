@@ -1,7 +1,6 @@
 import { Suspense } from "react";
 import { auth } from "@/auth";
 import { BottomNav } from "@/components/bottom-nav";
-import { TopNav } from "@/components/top-nav";
 import { CreateEventFAB } from "@/components/create-event-fab";
 import { getCachedUnreadCount } from "@/lib/actions/data-user";
 import { UserRole } from "@prisma/client";
@@ -27,7 +26,6 @@ async function NavShell() {
 
   return (
     <>
-      <TopNav user={session?.user} />
       <BottomNav isOrganiser={isOrganiser} isAdmin={isAdmin} unreadCount={unreadCount} />
       <CreateEventFAB isOrganiser={isOrganiser || isAdmin} />
     </>

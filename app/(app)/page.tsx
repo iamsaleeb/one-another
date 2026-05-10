@@ -29,8 +29,8 @@ export default async function Home({
           category: category ?? "",
         })
       : Promise.resolve(null),
-    getEvents(),
-    getSeries(),
+    hasFilters ? Promise.resolve(null) : getEvents(),
+    hasFilters ? Promise.resolve(null) : getSeries(),
   ]);
 
   const filteredEvents = searchResults?.events ?? null;
@@ -103,8 +103,8 @@ export default async function Home({
         ) : (
           /* ── Default home content ── */
           <>
-            <EventList events={events} />
-            <SeriesRail series={allSeries} />
+            <EventList events={events!} />
+            <SeriesRail series={allSeries!} />
           </>
         )}
       </div>

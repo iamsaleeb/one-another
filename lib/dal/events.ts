@@ -390,6 +390,9 @@ export async function unpublishEvent(
 
   try {
     await cancelManyNotifications({ type: NotificationType.EVENT_REMINDER, dedupeKey: id });
+    if (event.seriesId) {
+      await cancelManyNotifications({ type: NotificationType.NEW_SERIES_SESSION, dedupeKey: `${event.seriesId}:${id}` });
+    }
   } catch (err) {
     console.error("Failed to cancel reminders on unpublish:", err);
   }
@@ -413,6 +416,9 @@ export async function deleteEvent(
 
   try {
     await cancelManyNotifications({ type: NotificationType.EVENT_REMINDER, dedupeKey: id });
+    if (event.seriesId) {
+      await cancelManyNotifications({ type: NotificationType.NEW_SERIES_SESSION, dedupeKey: `${event.seriesId}:${id}` });
+    }
   } catch (err) {
     console.error("Failed to cancel reminders before delete:", err);
   }

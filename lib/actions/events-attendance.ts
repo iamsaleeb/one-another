@@ -15,7 +15,7 @@ export interface RegisterEventState {
   error?: string;
 }
 
-function invalidateEventCaches(id: string, userId?: string) {
+function invalidateAttendanceCaches(id: string, userId?: string) {
   updateTag("events");
   updateTag(`event-${id}`);
   if (userId) {
@@ -30,7 +30,7 @@ export async function attendEventAction(eventId: string): Promise<AttendEventSta
   const result = await attendEvent(eventId, session.user.id);
   if ("error" in result) return { error: result.error };
 
-  invalidateEventCaches(eventId, session.user.id);
+  invalidateAttendanceCaches(eventId, session.user.id);
   return {};
 }
 
@@ -41,7 +41,7 @@ export async function unattendEventAction(eventId: string): Promise<AttendEventS
   const result = await unattendEvent(eventId, session.user.id);
   if ("error" in result) return { error: result.error };
 
-  invalidateEventCaches(eventId, session.user.id);
+  invalidateAttendanceCaches(eventId, session.user.id);
   return {};
 }
 
@@ -72,6 +72,6 @@ export async function registerEventAction(
 
   if ("error" in result) return { error: result.error };
 
-  invalidateEventCaches(eventId, session.user.id);
+  invalidateAttendanceCaches(eventId, session.user.id);
   return { success: true };
 }

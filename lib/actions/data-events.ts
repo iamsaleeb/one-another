@@ -30,7 +30,7 @@ export async function getEventById(id: string) {
 }
 
 export async function getEventMeta(id: string) {
-  cacheTag(`event-${id}`);
+  cacheTag("events", `event-${id}`);
   cacheLife("hours");
   return prisma.event.findUnique({
     where: { id },

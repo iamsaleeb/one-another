@@ -109,12 +109,12 @@ model ChurchOrganiser {
 }
 
 model ServiceTime {
-  id       String @id @default(cuid())
-  day      String
+  id       String          @id @default(cuid())
+  day      DayOfWeek
   time     String
-  type     String
+  type     ServiceTimeType
   churchId String
-  church   Church @relation(fields: [churchId], references: [id], onDelete: Cascade)
+  church   Church          @relation(fields: [churchId], references: [id], onDelete: Cascade)
 }
 
 model Series {
@@ -325,4 +325,23 @@ enum NotificationType {
   EVENT_REMINDER
   NEW_SERIES_SESSION
   EVENT_CANCELLED
+}
+
+enum DayOfWeek {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+  SUNDAY
+}
+
+enum ServiceTimeType {
+  MORNING
+  AFTERNOON
+  EVENING
+  MIDWEEK
+  YOUTH
+  OTHER
 }

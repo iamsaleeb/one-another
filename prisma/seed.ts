@@ -52,10 +52,10 @@ async function main() {
       founded: "1972",
       serviceTimes: {
         create: [
-          { day: "Sunday", time: "7:00 AM - 9:30 AM", type: "Divine Liturgy (Arabic)" },
-          { day: "Sunday", time: "9:30 AM - 12:00 PM", type: "Divine Liturgy (English/Coptic)" },
-          { day: "Friday", time: "10:00 PM - 2:00 AM", type: "Midnight Praise (Tasbeha)" },
-          { day: "Wednesday", time: "7:30 PM - 9:00 PM", type: "Bible Study" },
+          { day: "SUNDAY", time: "7:00 AM - 9:30 AM", type: "MORNING" },
+          { day: "SUNDAY", time: "9:30 AM - 12:00 PM", type: "MORNING" },
+          { day: "FRIDAY", time: "10:00 PM - 2:00 AM", type: "OTHER" },
+          { day: "WEDNESDAY", time: "7:30 PM - 9:00 PM", type: "MIDWEEK" },
         ],
       },
     },
@@ -72,9 +72,9 @@ async function main() {
       founded: "1985",
       serviceTimes: {
         create: [
-          { day: "Sunday", time: "8:00 AM - 11:00 AM", type: "Divine Liturgy" },
-          { day: "Saturday", time: "7:00 PM - 9:00 PM", type: "Vespers & Agpeya" },
-          { day: "Sunday", time: "6:00 PM - 7:30 PM", type: "Evening Vespers" },
+          { day: "SUNDAY", time: "8:00 AM - 11:00 AM", type: "MORNING" },
+          { day: "SATURDAY", time: "7:00 PM - 9:00 PM", type: "EVENING" },
+          { day: "SUNDAY", time: "6:00 PM - 7:30 PM", type: "EVENING" },
         ],
       },
     },
@@ -91,9 +91,9 @@ async function main() {
       founded: "1998",
       serviceTimes: {
         create: [
-          { day: "Sunday", time: "9:00 AM - 12:00 PM", type: "Divine Liturgy" },
-          { day: "Friday", time: "10:30 PM - 1:30 AM", type: "Midnight Praise (Tasbeha)" },
-          { day: "Thursday", time: "7:00 PM - 8:30 PM", type: "Youth Meeting (Halaqa)" },
+          { day: "SUNDAY", time: "9:00 AM - 12:00 PM", type: "MORNING" },
+          { day: "FRIDAY", time: "10:30 PM - 1:30 AM", type: "OTHER" },
+          { day: "THURSDAY", time: "7:00 PM - 8:30 PM", type: "YOUTH" },
         ],
       },
     },
@@ -110,8 +110,8 @@ async function main() {
       founded: "2005",
       serviceTimes: {
         create: [
-          { day: "Sunday", time: "9:30 AM - 12:30 PM", type: "Divine Liturgy" },
-          { day: "Saturday", time: "6:30 PM - 8:00 PM", type: "Agpeya & Vespers" },
+          { day: "SUNDAY", time: "9:30 AM - 12:30 PM", type: "MORNING" },
+          { day: "SATURDAY", time: "6:30 PM - 8:00 PM", type: "EVENING" },
         ],
       },
     },

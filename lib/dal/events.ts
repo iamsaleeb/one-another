@@ -1,14 +1,18 @@
 import "server-only";
 
 import { prisma } from "@/lib/db";
+import { NotificationType } from "@prisma/client";
 import { canManageChurch } from "@/lib/permissions";
 import { syncEventQuestions } from "@/lib/dal/questions";
 import {
   cancelManyNotifications,
+  queueNotification,
   rescheduleEventReminderNotifications,
-  scheduleEventReminderNotification,
+  scheduleEventReminderNotifications,
 } from "@/lib/notifications/queue";
 import type { CreateEventInput } from "@/lib/validations/event";
+
+const NOTIFY_CONCURRENCY = 20;
 
 async function notifySeriesFollowers(seriesId: string, title: string, eventId: string) {
   const followers = await prisma.seriesFollower.findMany({
@@ -16,16 +20,21 @@ async function notifySeriesFollowers(seriesId: string, title: string, eventId: s
     select: { userId: true },
   });
   if (followers.length === 0) return;
-  await prisma.notification.createMany({
-    data: followers.map((f) => ({
-      userId: f.userId,
-      type: "NEW_SERIES_SESSION",
-      title: "New Session Added",
-      body: `A new session has been added: ${title}`,
-      data: { type: "new_session", seriesId, eventId },
-      scheduledFor: new Date(),
-    })),
-  });
+  for (let i = 0; i < followers.length; i += NOTIFY_CONCURRENCY) {
+    await Promise.all(
+      followers.slice(i, i + NOTIFY_CONCURRENCY).map((f) =>
+        queueNotification({
+          userId: f.userId,
+          type: NotificationType.NEW_SERIES_SESSION,
+          title: "New Session Added",
+          body: `A new session has been added: ${title}`,
+          data: { type: "new_session", seriesId, eventId },
+          scheduledFor: new Date(),
+          dedupeKey: `${seriesId}:${eventId}`,
+        })
+      )
+    );
+  }
 }
 
 async function notifyEventAttendees(eventId: string, title: string) {
@@ -34,16 +43,21 @@ async function notifyEventAttendees(eventId: string, title: string) {
     select: { userId: true },
   });
   if (attendees.length === 0) return;
-  await prisma.notification.createMany({
-    data: attendees.map((a) => ({
-      userId: a.userId,
-      type: "EVENT_CANCELLED",
-      title: "Event Cancelled",
-      body: `${title} has been cancelled`,
-      data: { type: "event_cancelled", eventId },
-      scheduledFor: new Date(),
-    })),
-  });
+  for (let i = 0; i < attendees.length; i += NOTIFY_CONCURRENCY) {
+    await Promise.all(
+      attendees.slice(i, i + NOTIFY_CONCURRENCY).map((a) =>
+        queueNotification({
+          userId: a.userId,
+          type: NotificationType.EVENT_CANCELLED,
+          title: "Event Cancelled",
+          body: `${title} has been cancelled`,
+          data: { type: "event_cancelled", eventId },
+          scheduledFor: new Date(),
+          dedupeKey: `cancelled:${eventId}`,
+        })
+      )
+    );
+  }
 }
 
 type DalError = { error: string } | { fieldErrors: Record<string, string[]> };
@@ -107,7 +121,6 @@ export async function createEvent(
       host: host || null,
       tag: tag || "",
       description: description || "",
-      isPast: false,
       isDraft: isDraft ?? false,
       requiresRegistration: requiresRegistration ?? false,
       metadata: {
@@ -290,7 +303,7 @@ export async function cancelEvent(
   });
 
   try {
-    await cancelManyNotifications({ type: "EVENT_REMINDER", dedupeKey: id });
+    await cancelManyNotifications({ type: NotificationType.EVENT_REMINDER, dedupeKey: id });
     await notifyEventAttendees(id, event.title);
   } catch (err) {
     console.error("EVENT_CANCELLED push failed:", err);
@@ -346,11 +359,10 @@ export async function publishEvent(
       where: { eventId: id },
       select: { userId: true },
     });
-    await Promise.all(
-      attendees.map((a) =>
-        scheduleEventReminderNotification(a.userId, { id, title: event.title, datetime: event.datetime })
-      )
-    );
+    if (attendees.length > 0) {
+      const userIds = attendees.map((a) => a.userId);
+      await scheduleEventReminderNotifications(userIds, { id, title: event.title, datetime: event.datetime });
+    }
   } catch (err) {
     console.error("Failed to schedule reminders on publish:", err);
   }
@@ -383,7 +395,10 @@ export async function unpublishEvent(
   await prisma.event.update({ where: { id }, data: { isDraft: true } });
 
   try {
-    await cancelManyNotifications({ type: "EVENT_REMINDER", dedupeKey: id });
+    await cancelManyNotifications({ type: NotificationType.EVENT_REMINDER, dedupeKey: id });
+    if (event.seriesId) {
+      await cancelManyNotifications({ type: NotificationType.NEW_SERIES_SESSION, dedupeKey: `${event.seriesId}:${id}` });
+    }
   } catch (err) {
     console.error("Failed to cancel reminders on unpublish:", err);
   }
@@ -406,7 +421,10 @@ export async function deleteEvent(
   if (!allowed) return { error: "Unauthorised." };
 
   try {
-    await cancelManyNotifications({ type: "EVENT_REMINDER", dedupeKey: id });
+    await cancelManyNotifications({ type: NotificationType.EVENT_REMINDER, dedupeKey: id });
+    if (event.seriesId) {
+      await cancelManyNotifications({ type: NotificationType.NEW_SERIES_SESSION, dedupeKey: `${event.seriesId}:${id}` });
+    }
   } catch (err) {
     console.error("Failed to cancel reminders before delete:", err);
   }

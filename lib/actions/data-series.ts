@@ -1,6 +1,6 @@
 "use cache: remote";
 
-import { cacheTag } from "next/cache";
+import { cacheTag, cacheLife } from "next/cache";
 import { prisma } from "@/lib/db";
 
 export async function getSeries() {
@@ -9,37 +9,46 @@ export async function getSeries() {
     orderBy: { createdAt: "desc" },
     include: {
       _count: {
-        select: { events: { where: { isPast: false, isDraft: false } } },
+        select: { events: { where: { datetime: { gte: new Date() }, isDraft: false } } },
       },
     },
   });
 }
 
-export async function getSeriesById(id: string, currentUserId?: string) {
+export async function getSeriesById(id: string) {
   cacheTag("series", `series-${id}`);
+  cacheLife("minutes");
   return prisma.series.findUnique({
     where: { id },
     include: {
       church: { select: { id: true, name: true } },
       events: {
-        where: { isPast: false, isDraft: false },
+        where: { datetime: { gte: new Date() }, isDraft: false },
         orderBy: { datetime: "asc" },
       },
-      followers: currentUserId
-        ? { where: { userId: currentUserId }, select: { userId: true } }
-        : { take: 0, select: { userId: true } },
       _count: { select: { followers: true } },
     },
   });
 }
 
+// Per-user series follow — short TTL, separate cache key space
+export async function getMySeriesFollow(seriesId: string, userId: string) {
+  cacheTag(`series-${seriesId}`, `user-follow-series-${userId}-${seriesId}`);
+  cacheLife("seconds");
+  return prisma.seriesFollower.findUnique({
+    where: { seriesId_userId: { seriesId, userId } },
+    select: { userId: true },
+  });
+}
+
 export async function getSeriesByCreator(userId: string) {
   cacheTag("series", `user-series-${userId}`);
+  cacheLife("minutes");
   return prisma.series.findMany({
     where: { createdById: userId },
     orderBy: { createdAt: "desc" },
     include: {
-      _count: { select: { events: { where: { isPast: false, isDraft: false } } } },
+      _count: { select: { events: { where: { datetime: { gte: new Date() }, isDraft: false } } } },
       createdBy: { select: { name: true } },
     },
   });
@@ -54,7 +63,7 @@ export async function getSeriesNotByCreator(userId: string) {
     orderBy: { createdAt: "desc" },
     take: 50,
     include: {
-      _count: { select: { events: { where: { isPast: false, isDraft: false } } } },
+      _count: { select: { events: { where: { datetime: { gte: new Date() }, isDraft: false } } } },
       createdBy: { select: { name: true } },
     },
   });
@@ -66,7 +75,7 @@ export async function getUserFollowedSeries(userId: string) {
     where: { followers: { some: { userId } } },
     orderBy: { createdAt: "desc" },
     include: {
-      _count: { select: { events: { where: { isPast: false, isDraft: false } } } },
+      _count: { select: { events: { where: { datetime: { gte: new Date() }, isDraft: false } } } },
     },
   });
 }

@@ -52,10 +52,10 @@ async function main() {
       founded: "1972",
       serviceTimes: {
         create: [
-          { day: "Sunday", time: "7:00 AM - 9:30 AM", type: "Divine Liturgy (Arabic)" },
-          { day: "Sunday", time: "9:30 AM - 12:00 PM", type: "Divine Liturgy (English/Coptic)" },
-          { day: "Friday", time: "10:00 PM - 2:00 AM", type: "Midnight Praise (Tasbeha)" },
-          { day: "Wednesday", time: "7:30 PM - 9:00 PM", type: "Bible Study" },
+          { day: "SUNDAY", time: "7:00 AM - 9:30 AM", type: "MORNING" },
+          { day: "SUNDAY", time: "9:30 AM - 12:00 PM", type: "MORNING" },
+          { day: "FRIDAY", time: "10:00 PM - 2:00 AM", type: "OTHER" },
+          { day: "WEDNESDAY", time: "7:30 PM - 9:00 PM", type: "MIDWEEK" },
         ],
       },
     },
@@ -72,9 +72,9 @@ async function main() {
       founded: "1985",
       serviceTimes: {
         create: [
-          { day: "Sunday", time: "8:00 AM - 11:00 AM", type: "Divine Liturgy" },
-          { day: "Saturday", time: "7:00 PM - 9:00 PM", type: "Vespers & Agpeya" },
-          { day: "Sunday", time: "6:00 PM - 7:30 PM", type: "Evening Vespers" },
+          { day: "SUNDAY", time: "8:00 AM - 11:00 AM", type: "MORNING" },
+          { day: "SATURDAY", time: "7:00 PM - 9:00 PM", type: "EVENING" },
+          { day: "SUNDAY", time: "6:00 PM - 7:30 PM", type: "EVENING" },
         ],
       },
     },
@@ -91,9 +91,9 @@ async function main() {
       founded: "1998",
       serviceTimes: {
         create: [
-          { day: "Sunday", time: "9:00 AM - 12:00 PM", type: "Divine Liturgy" },
-          { day: "Friday", time: "10:30 PM - 1:30 AM", type: "Midnight Praise (Tasbeha)" },
-          { day: "Thursday", time: "7:00 PM - 8:30 PM", type: "Youth Meeting (Halaqa)" },
+          { day: "SUNDAY", time: "9:00 AM - 12:00 PM", type: "MORNING" },
+          { day: "FRIDAY", time: "10:30 PM - 1:30 AM", type: "OTHER" },
+          { day: "THURSDAY", time: "7:00 PM - 8:30 PM", type: "YOUTH" },
         ],
       },
     },
@@ -110,8 +110,8 @@ async function main() {
       founded: "2005",
       serviceTimes: {
         create: [
-          { day: "Sunday", time: "9:30 AM - 12:30 PM", type: "Divine Liturgy" },
-          { day: "Saturday", time: "6:30 PM - 8:00 PM", type: "Agpeya & Vespers" },
+          { day: "SUNDAY", time: "9:30 AM - 12:30 PM", type: "MORNING" },
+          { day: "SATURDAY", time: "6:30 PM - 8:00 PM", type: "EVENING" },
         ],
       },
     },
@@ -169,7 +169,6 @@ async function main() {
       tag: "Youth Meeting",
       description:
         "The first Tasbeha of Great Lent, focused on the theme of repentance. We chanted the midnight praises in Coptic and Arabic, and Fr. Bishoy reflected on the parable of the Prodigal Son.",
-      isPast: true,
       metadata: { registration: { capacity: null, collectPhone: false, collectNotes: false } },
       churchId: stMary.id,
       seriesId: lentSeries.id,
@@ -185,7 +184,6 @@ async function main() {
       tag: "Youth Meeting",
       description:
         "Week two of our Lenten Tasbeha journey. Fr. Bishoy meditated on the mystery of the Cross and what it means to bear our own cross daily as followers of Christ.",
-      isPast: true,
       metadata: { registration: { capacity: null, collectPhone: false, collectNotes: false } },
       churchId: stMary.id,
       seriesId: lentSeries.id,
@@ -201,7 +199,6 @@ async function main() {
       tag: "Youth Meeting",
       description:
         "This week Fr. Bishoy Lamie will guide us through the praises of the Resurrection — Christos Anesti. Come experience the triumphant hope of the risen Christ through the ancient melodies of the Coptic Church.",
-      isPast: false,
       metadata: { registration: { capacity: null, collectPhone: false, collectNotes: false } },
       churchId: stMary.id,
       seriesId: lentSeries.id,
@@ -217,7 +214,6 @@ async function main() {
       tag: "Youth Meeting",
       description:
         "The fourth and final Tasbeha of our Lenten series. Fr. Bishoy will lead us in the praises of the Ascension and close with a reflection on waiting for the coming of the Holy Spirit.",
-      isPast: false,
       metadata: { registration: { capacity: null, collectPhone: false, collectNotes: false } },
       churchId: stMary.id,
       seriesId: lentSeries.id,
@@ -235,7 +231,6 @@ async function main() {
       tag: "Bible Study",
       description:
         "We opened our series with the outpouring of the Holy Spirit at Pentecost. Deacon Mina walked through Acts 1–2, discussing the apostles' transformation and the Church's first days in Jerusalem.",
-      isPast: true,
       metadata: { registration: { capacity: null, collectPhone: false, collectNotes: false } },
       churchId: stMark.id,
       seriesId: youthBibleSeries.id,
@@ -251,7 +246,6 @@ async function main() {
       tag: "Bible Study",
       description:
         "Session 2 covers Acts 6–7 and the witness of St. Stephen, the protomartyr. We will explore how his boldness and forgiveness echo the spirit of the Coptic martyrs throughout history.",
-      isPast: false,
       metadata: { registration: { capacity: null, collectPhone: false, collectNotes: false } },
       churchId: stMark.id,
       seriesId: youthBibleSeries.id,
@@ -267,7 +261,6 @@ async function main() {
       tag: "Bible Study",
       description:
         "Acts 8 brings us to one of the most celebrated passages in Coptic history — the baptism of the Ethiopian eunuch, marking the early spread of Christianity to Africa. We will discuss what this means for our own evangelism today.",
-      isPast: false,
       metadata: { registration: { capacity: null, collectPhone: false, collectNotes: false } },
       churchId: stMark.id,
       seriesId: youthBibleSeries.id,
@@ -283,7 +276,6 @@ async function main() {
       tag: "Bible Study",
       description:
         "We trace St. Paul's first missionary journey through Acts 13–14, examining how the early Church spread the Gospel across the Roman Empire and what we can learn about cross-cultural ministry today.",
-      isPast: false,
       metadata: { registration: { capacity: null, collectPhone: false, collectNotes: false } },
       churchId: stMark.id,
       seriesId: youthBibleSeries.id,
@@ -301,7 +293,6 @@ async function main() {
       tag: "Servants Meeting",
       description:
         "The inaugural session of the Servants Formation Program. Fr. Antonious opened with a theological framework for diakonia — what it means to serve in the Church, rooted in the example of Christ the Servant-King.",
-      isPast: true,
       metadata: { registration: { capacity: null, collectPhone: false, collectNotes: false } },
       churchId: stGeorge.id,
       seriesId: servantsFormation.id,
@@ -317,7 +308,6 @@ async function main() {
       tag: "Servants Meeting",
       description:
         "This month Fr. Antonious addresses the sacrament of confession from the servant's perspective — how to guide those in your ministry to their confession father, and how a servant's own spiritual life is the foundation of their service.",
-      isPast: false,
       metadata: { registration: { capacity: null, collectPhone: false, collectNotes: false } },
       churchId: stGeorge.id,
       seriesId: servantsFormation.id,
@@ -333,7 +323,6 @@ async function main() {
       tag: "Servants Meeting",
       description:
         "Session three focuses on practical skills: how to prepare and lead an engaging Bible study, adapt content for different age groups, and handle difficult questions with grace. Includes a hands-on workshop component.",
-      isPast: false,
       metadata: { registration: { capacity: null, collectPhone: false, collectNotes: false } },
       churchId: stGeorge.id,
       seriesId: servantsFormation.id,
@@ -351,7 +340,6 @@ async function main() {
       tag: "Youth Meeting",
       description:
         "Come celebrate the Feast of the Annunciation with a solemn Divine Liturgy in honor of the Virgin St. Mary. The service will be conducted in Coptic, Arabic, and English. All are welcome.",
-      isPast: false,
       metadata: { registration: { capacity: null, collectPhone: false, collectNotes: false } },
       churchId: stMary.id,
     },
@@ -366,7 +354,6 @@ async function main() {
       tag: "Servants Meeting",
       description:
         "An evening dedicated to welcoming new servants to St. George Church. We will walk through the church's ministry structure, servant responsibilities, and how to get connected. Light dinner provided. All new and prospective servants welcome.",
-      isPast: false,
       requiresRegistration: true,
       metadata: { registration: { capacity: 60, collectPhone: true, collectNotes: false } },
       churchId: stGeorge.id,
@@ -382,7 +369,6 @@ async function main() {
       tag: "Youth Meeting",
       description:
         "A standalone youth halaqa on the Person and work of the Holy Spirit in the life of a Coptic Christian. The session included group discussion, clips from Pope Shenouda III's lectures, and an open Q&A.",
-      isPast: true,
       metadata: { registration: { capacity: null, collectPhone: false, collectNotes: false } },
       churchId: stMark.id,
     },
@@ -397,7 +383,6 @@ async function main() {
       tag: "Servants Meeting",
       description:
         "The annual vestry meeting reviewed the church's financial report, elected new board members, and discussed the renovation project for the baptistry. Minutes are available from the church office.",
-      isPast: true,
       metadata: { registration: { capacity: null, collectPhone: false, collectNotes: false } },
       churchId: stMark.id,
     },
@@ -412,7 +397,6 @@ async function main() {
       tag: "Bible Study",
       description:
         "Dr. Hany Takla of the St. Shenouda Coptic Society delivered a compelling lecture on the life and legacy of St. Moses the Black — from bandit to monk to martyr. His story is a testament to the transforming grace of God and the ascetic tradition of the Desert Fathers.",
-      isPast: true,
       metadata: { registration: { capacity: null, collectPhone: false, collectNotes: false } },
       churchId: archangel.id,
     },
@@ -431,7 +415,6 @@ async function main() {
       tag: "Camp",
       description:
         "Join us for St. Mary's annual summer camp for youth and young adults (ages 13–22). This year's theme is \"Called by Name\" — exploring our identity in Christ, our vocation, and what it means to be Coptic Orthodox in today's world. Five days of liturgies, talks, workshops, swimming, hiking, and deep community. Registration required. Cost covers lodging and all meals.",
-      isPast: false,
       requiresRegistration: true,
       price: "$175",
       metadata: {

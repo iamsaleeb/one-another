@@ -1,7 +1,7 @@
 import "server-only";
 
 import { prisma } from "@/lib/db";
-import { Prisma } from "@prisma/client";
+import { Prisma, NotificationType } from "@prisma/client";
 import { parseEventMetadata } from "@/lib/validations/event";
 import { scheduleEventReminderNotification, cancelNotification } from "@/lib/notifications/queue";
 import { saveResponses } from "@/lib/dal/responses";
@@ -52,7 +52,7 @@ export async function unattendEvent(
   }
 
   try {
-    await cancelNotification({ userId, type: "EVENT_REMINDER", dedupeKey: eventId });
+    await cancelNotification({ userId, type: NotificationType.EVENT_REMINDER, dedupeKey: eventId });
   } catch (err) {
     console.error("Failed to cancel event reminder:", err);
   }

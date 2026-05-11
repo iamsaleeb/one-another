@@ -4,6 +4,18 @@ CREATE TYPE "UserRole" AS ENUM ('ATTENDEE', 'ORGANISER', 'ADMIN');
 -- CreateEnum
 CREATE TYPE "Cadence" AS ENUM ('WEEKLY', 'BIWEEKLY', 'MONTHLY', 'CUSTOM');
 
+-- CreateEnum
+CREATE TYPE "QuestionType" AS ENUM ('SHORT_TEXT', 'LONG_TEXT', 'YES_NO', 'MULTIPLE_CHOICE', 'FILE_UPLOAD');
+
+-- CreateEnum
+CREATE TYPE "NotificationType" AS ENUM ('EVENT_REMINDER', 'NEW_SERIES_SESSION', 'EVENT_CANCELLED');
+
+-- CreateEnum
+CREATE TYPE "DayOfWeek" AS ENUM ('MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY');
+
+-- CreateEnum
+CREATE TYPE "ServiceTimeType" AS ENUM ('MORNING', 'AFTERNOON', 'EVENING', 'MIDWEEK', 'YOUTH', 'OTHER');
+
 -- CreateTable
 CREATE TABLE "User" (
     "id" TEXT NOT NULL,
@@ -95,9 +107,9 @@ CREATE TABLE "ChurchOrganiser" (
 -- CreateTable
 CREATE TABLE "ServiceTime" (
     "id" TEXT NOT NULL,
-    "day" TEXT NOT NULL,
+    "day" "DayOfWeek" NOT NULL,
     "time" TEXT NOT NULL,
-    "type" TEXT NOT NULL,
+    "type" "ServiceTimeType" NOT NULL,
     "churchId" TEXT NOT NULL,
 
     CONSTRAINT "ServiceTime_pkey" PRIMARY KEY ("id")
@@ -124,21 +136,20 @@ CREATE TABLE "Series" (
 -- CreateTable
 CREATE TABLE "Event" (
     "id" TEXT NOT NULL,
-    "datetime" TIMESTAMP(3) NOT NULL,
+    "datetime" TIMESTAMP(3),
     "title" TEXT NOT NULL,
-    "location" TEXT NOT NULL,
-    "host" TEXT NOT NULL,
+    "location" TEXT,
+    "host" TEXT,
     "tag" TEXT NOT NULL,
     "description" TEXT NOT NULL,
     "photoUrl" TEXT,
-    "isPast" BOOLEAN NOT NULL DEFAULT false,
     "isDraft" BOOLEAN NOT NULL DEFAULT false,
     "requiresRegistration" BOOLEAN NOT NULL DEFAULT false,
     "metadata" JSONB NOT NULL,
     "price" TEXT,
     "cancelledAt" TIMESTAMP(3),
     "cancellationReason" TEXT,
-    "churchId" TEXT,
+    "churchId" TEXT NOT NULL,
     "seriesId" TEXT,
     "createdById" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -158,6 +169,47 @@ CREATE TABLE "EventAttendee" (
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "EventAttendee_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "QuestionLibraryItem" (
+    "id" TEXT NOT NULL,
+    "createdById" TEXT NOT NULL,
+    "type" "QuestionType" NOT NULL,
+    "label" TEXT NOT NULL,
+    "options" TEXT[],
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "QuestionLibraryItem_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "EventQuestion" (
+    "id" TEXT NOT NULL,
+    "eventId" TEXT NOT NULL,
+    "libraryItemId" TEXT,
+    "type" "QuestionType" NOT NULL,
+    "label" TEXT NOT NULL,
+    "options" TEXT[],
+    "required" BOOLEAN NOT NULL DEFAULT false,
+    "order" INTEGER NOT NULL,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "EventQuestion_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "EventAttendeeResponse" (
+    "id" TEXT NOT NULL,
+    "eventAttendeeId" TEXT NOT NULL,
+    "questionId" TEXT NOT NULL,
+    "answer" TEXT,
+    "fileUrl" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "EventAttendeeResponse_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -195,7 +247,7 @@ CREATE TABLE "PushToken" (
 CREATE TABLE "NotificationPreference" (
     "id" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
-    "type" TEXT NOT NULL,
+    "type" "NotificationType" NOT NULL,
     "enabled" BOOLEAN NOT NULL DEFAULT true,
     "config" JSONB,
 
@@ -206,7 +258,7 @@ CREATE TABLE "NotificationPreference" (
 CREATE TABLE "Notification" (
     "id" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
-    "type" TEXT NOT NULL,
+    "type" "NotificationType" NOT NULL,
     "title" TEXT NOT NULL,
     "body" TEXT NOT NULL,
     "data" JSONB,
@@ -233,7 +285,7 @@ CREATE INDEX "Series_churchId_idx" ON "Series"("churchId");
 CREATE INDEX "Series_createdById_idx" ON "Series"("createdById");
 
 -- CreateIndex
-CREATE INDEX "Event_isPast_isDraft_idx" ON "Event"("isPast", "isDraft");
+CREATE INDEX "Event_datetime_isDraft_idx" ON "Event"("datetime", "isDraft");
 
 -- CreateIndex
 CREATE INDEX "Event_churchId_idx" ON "Event"("churchId");
@@ -246,6 +298,24 @@ CREATE INDEX "EventAttendee_userId_idx" ON "EventAttendee"("userId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "EventAttendee_eventId_userId_key" ON "EventAttendee"("eventId", "userId");
+
+-- CreateIndex
+CREATE INDEX "QuestionLibraryItem_createdById_idx" ON "QuestionLibraryItem"("createdById");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "QuestionLibraryItem_createdById_label_type_key" ON "QuestionLibraryItem"("createdById", "label", "type");
+
+-- CreateIndex
+CREATE INDEX "EventQuestion_eventId_idx" ON "EventQuestion"("eventId");
+
+-- CreateIndex
+CREATE INDEX "EventQuestion_eventId_order_idx" ON "EventQuestion"("eventId", "order");
+
+-- CreateIndex
+CREATE INDEX "EventAttendeeResponse_questionId_idx" ON "EventAttendeeResponse"("questionId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "EventAttendeeResponse_eventAttendeeId_questionId_key" ON "EventAttendeeResponse"("eventAttendeeId", "questionId");
 
 -- CreateIndex
 CREATE INDEX "ChurchFollower_userId_idx" ON "ChurchFollower"("userId");
@@ -284,16 +354,16 @@ ALTER TABLE "Account" ADD CONSTRAINT "Account_userId_fkey" FOREIGN KEY ("userId"
 ALTER TABLE "Session" ADD CONSTRAINT "Session_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "ChurchAdmin" ADD CONSTRAINT "ChurchAdmin_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
 ALTER TABLE "ChurchAdmin" ADD CONSTRAINT "ChurchAdmin_churchId_fkey" FOREIGN KEY ("churchId") REFERENCES "Church"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "ChurchOrganiser" ADD CONSTRAINT "ChurchOrganiser_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "ChurchAdmin" ADD CONSTRAINT "ChurchAdmin_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "ChurchOrganiser" ADD CONSTRAINT "ChurchOrganiser_churchId_fkey" FOREIGN KEY ("churchId") REFERENCES "Church"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "ChurchOrganiser" ADD CONSTRAINT "ChurchOrganiser_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "ServiceTime" ADD CONSTRAINT "ServiceTime_churchId_fkey" FOREIGN KEY ("churchId") REFERENCES "Church"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -305,19 +375,34 @@ ALTER TABLE "Series" ADD CONSTRAINT "Series_churchId_fkey" FOREIGN KEY ("churchI
 ALTER TABLE "Series" ADD CONSTRAINT "Series_createdById_fkey" FOREIGN KEY ("createdById") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Event" ADD CONSTRAINT "Event_churchId_fkey" FOREIGN KEY ("churchId") REFERENCES "Church"("id") ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "Event" ADD CONSTRAINT "Event_seriesId_fkey" FOREIGN KEY ("seriesId") REFERENCES "Series"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "Event" ADD CONSTRAINT "Event_churchId_fkey" FOREIGN KEY ("churchId") REFERENCES "Church"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Event" ADD CONSTRAINT "Event_createdById_fkey" FOREIGN KEY ("createdById") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Event" ADD CONSTRAINT "Event_seriesId_fkey" FOREIGN KEY ("seriesId") REFERENCES "Series"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "EventAttendee" ADD CONSTRAINT "EventAttendee_eventId_fkey" FOREIGN KEY ("eventId") REFERENCES "Event"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "EventAttendee" ADD CONSTRAINT "EventAttendee_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "QuestionLibraryItem" ADD CONSTRAINT "QuestionLibraryItem_createdById_fkey" FOREIGN KEY ("createdById") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "EventQuestion" ADD CONSTRAINT "EventQuestion_eventId_fkey" FOREIGN KEY ("eventId") REFERENCES "Event"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "EventQuestion" ADD CONSTRAINT "EventQuestion_libraryItemId_fkey" FOREIGN KEY ("libraryItemId") REFERENCES "QuestionLibraryItem"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "EventAttendeeResponse" ADD CONSTRAINT "EventAttendeeResponse_eventAttendeeId_fkey" FOREIGN KEY ("eventAttendeeId") REFERENCES "EventAttendee"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "EventAttendeeResponse" ADD CONSTRAINT "EventAttendeeResponse_questionId_fkey" FOREIGN KEY ("questionId") REFERENCES "EventQuestion"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "ChurchFollower" ADD CONSTRAINT "ChurchFollower_churchId_fkey" FOREIGN KEY ("churchId") REFERENCES "Church"("id") ON DELETE CASCADE ON UPDATE CASCADE;

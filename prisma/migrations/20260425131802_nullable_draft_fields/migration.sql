@@ -1,4 +1,0 @@
--- AlterTable
-ALTER TABLE "Event" ALTER COLUMN "datetime" DROP NOT NULL,
-ALTER COLUMN "location" DROP NOT NULL,
-ALTER COLUMN "host" DROP NOT NULL;

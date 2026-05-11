@@ -9,13 +9,14 @@ export async function getEvents() {
   cacheTag("events");
   cacheLife("minutes");
   return prisma.event.findMany({
-    where: { isPast: false, isDraft: false },
-    orderBy: { createdAt: "asc" },
+    where: { datetime: { gte: new Date() }, isDraft: false },
+    orderBy: { datetime: "asc" },
+    take: 50,
     include: { church: { select: { name: true } } },
   });
 }
 
-export async function getEventById(id: string, currentUserId?: string) {
+export async function getEventById(id: string) {
   cacheTag("events", `event-${id}`);
   cacheLife("hours");
   return prisma.event.findUnique({
@@ -23,11 +24,27 @@ export async function getEventById(id: string, currentUserId?: string) {
     include: {
       church: { select: { id: true, name: true } },
       series: { select: { id: true, name: true } },
-      attendees: currentUserId
-        ? { where: { userId: currentUserId }, select: { userId: true, metadata: true } }
-        : { take: 0, select: { userId: true, metadata: true } },
       _count: { select: { attendees: true } },
     },
+  });
+}
+
+export async function getEventMeta(id: string) {
+  cacheTag("events", `event-${id}`);
+  cacheLife("hours");
+  return prisma.event.findUnique({
+    where: { id },
+    select: { title: true, isDraft: true, churchId: true },
+  });
+}
+
+// Per-user attendance — short TTL, separate cache key space
+export async function getMyEventAttendance(eventId: string, userId: string) {
+  cacheTag(`event-${eventId}`, `user-attendance-${userId}-${eventId}`);
+  cacheLife("seconds");
+  return prisma.eventAttendee.findUnique({
+    where: { eventId_userId: { eventId, userId } },
+    select: { userId: true, metadata: true },
   });
 }
 
@@ -52,8 +69,8 @@ export async function getEventsByCreator(userId: string) {
   cacheTag("events", `user-events-${userId}`);
   cacheLife("minutes");
   return prisma.event.findMany({
-    where: { isPast: false, createdById: userId },
-    orderBy: { createdAt: "asc" },
+    where: { createdById: userId },
+    orderBy: { datetime: "asc" },
     include: {
       church: { select: { name: true } },
       createdBy: { select: { name: true } },
@@ -66,7 +83,7 @@ export async function getEventsNotByCreator(userId: string) {
   cacheLife("minutes");
   return prisma.event.findMany({
     where: {
-      isPast: false,
+      datetime: { gte: new Date() },
       isDraft: false,
       OR: [{ createdById: { not: userId } }, { createdById: null }],
     },
@@ -83,7 +100,7 @@ export async function getUserAttendedEvents(userId: string) {
   cacheTag("events", `user-events-${userId}`);
   cacheLife("minutes");
   return prisma.event.findMany({
-    where: { isPast: false, isDraft: false, attendees: { some: { userId } } },
+    where: { datetime: { gte: new Date() }, isDraft: false, attendees: { some: { userId } } },
     orderBy: { datetime: "asc" },
     include: { church: { select: { name: true } } },
   });
@@ -91,9 +108,9 @@ export async function getUserAttendedEvents(userId: string) {
 
 export async function getUserAttendedPastEvents(userId: string) {
   cacheTag("events", `user-events-${userId}`);
-  cacheLife("hours");
+  cacheLife("minutes");
   return prisma.event.findMany({
-    where: { isPast: true, isDraft: false, attendees: { some: { userId } } },
+    where: { datetime: { lt: new Date() }, isDraft: false, attendees: { some: { userId } } },
     orderBy: { datetime: "desc" },
     include: { church: { select: { name: true } } },
   });

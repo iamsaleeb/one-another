@@ -1,12 +1,7 @@
-import NextAuth from "next-auth";
-import { authConfig } from "./auth.config";
-
-const { auth } = NextAuth(authConfig);
-
-export default auth;
+export { auth as proxy } from "@/auth"
 
 export const config = {
-  matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|api/upload|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
-  ],
-};
+  // Exclude API routes, static files, and image optimisation paths.
+  // All /(app) pages are protected by the `authorized` callback in auth.config.ts.
+  matcher: ["/((?!api|_next/static|_next/image|favicon\\.ico|.*\\..*).*)" ],
+}

@@ -7,7 +7,7 @@ import { getEventQuestions, hasEventResponses } from "@/lib/actions/data-questio
 import { getQuestionLibraryForUser } from "@/lib/dal/questions";
 import { parseEventMetadata } from "@/lib/validations/event";
 import { PageHeader } from "@/components/ui/page-header";
-import { EventWizard } from "@/app/(app)/events/create/_components/event-wizard";
+import { EventWizard } from "@/app/(app)/(no-nav)/events/create/_components/event-wizard";
 
 interface Props {
   params: Promise<{ id: string }>;

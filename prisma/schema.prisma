@@ -109,12 +109,12 @@ model ChurchOrganiser {
 }
 
 model ServiceTime {
-  id       String @id @default(cuid())
-  day      String
+  id       String          @id @default(cuid())
+  day      DayOfWeek
   time     String
-  type     String
+  type     ServiceTimeType
   churchId String
-  church   Church @relation(fields: [churchId], references: [id], onDelete: Cascade)
+  church   Church          @relation(fields: [churchId], references: [id], onDelete: Cascade)
 }
 
 model Series {
@@ -148,25 +148,24 @@ model Event {
   tag                  String
   description          String
   photoUrl             String?
-  isPast               Boolean         @default(false)
   isDraft              Boolean         @default(false)
   requiresRegistration Boolean         @default(false)
   metadata             Json            @db.JsonB
   price                String?
   cancelledAt          DateTime?
   cancellationReason   String?
-  churchId             String?
+  churchId             String
   seriesId             String?
   createdById          String?
   createdAt            DateTime        @default(now())
   updatedAt            DateTime        @updatedAt
-  church               Church?         @relation(fields: [churchId], references: [id])
+  church               Church          @relation(fields: [churchId], references: [id])
   createdBy            User?           @relation("UserEvents", fields: [createdById], references: [id])
   series               Series?         @relation(fields: [seriesId], references: [id])
   attendees            EventAttendee[]
   questions            EventQuestion[]
 
-  @@index([isPast, isDraft])
+  @@index([datetime, isDraft])
   @@index([churchId])
   @@index([createdById])
 }
@@ -271,20 +270,20 @@ model PushToken {
 }
 
 model NotificationPreference {
-  id      String  @id @default(cuid())
+  id      String           @id @default(cuid())
   userId  String
-  type    String
-  enabled Boolean @default(true)
+  type    NotificationType
+  enabled Boolean          @default(true)
   config  Json?
-  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user    User             @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, type])
 }
 
 model Notification {
-  id           String    @id @default(cuid())
+  id           String           @id @default(cuid())
   userId       String
-  type         String
+  type         NotificationType
   title        String
   body         String
   data         Json?
@@ -320,4 +319,29 @@ enum QuestionType {
   YES_NO
   MULTIPLE_CHOICE
   FILE_UPLOAD
+}
+
+enum NotificationType {
+  EVENT_REMINDER
+  NEW_SERIES_SESSION
+  EVENT_CANCELLED
+}
+
+enum DayOfWeek {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+  SUNDAY
+}
+
+enum ServiceTimeType {
+  MORNING
+  AFTERNOON
+  EVENING
+  MIDWEEK
+  YOUTH
+  OTHER
 }

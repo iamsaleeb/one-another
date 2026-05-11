@@ -4,7 +4,7 @@ import { AlertTriangle, Calendar, Church, FileEdit, MapPin, Pencil, Repeat, Tabl
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { auth } from "@/auth";
-import { getEventById, getEventAttendees } from "@/lib/actions/data-events";
+import { getEventById, getEventAttendees, getMyEventAttendance, getEventMeta } from "@/lib/actions/data-events";
 import { getEventQuestions, getMyResponses } from "@/lib/actions/data-questions";
 import { parseEventMetadata, parseEventAttendeeMetadata } from "@/lib/validations/event";
 import { canManageChurch } from "@/lib/permissions";
@@ -24,9 +24,11 @@ interface Props {
 
 export async function generateMetadata({ params }: Props) {
   const { id } = await params;
-  const [event, session] = await Promise.all([getEventById(id), auth()]);
+  const event = await getEventMeta(id);
   if (!event) return { title: "Event Not Found" };
   if (event.isDraft) {
+    // Draft: need auth check — infrequent, cost is acceptable
+    const session = await auth();
     const canManage = await canManageChurch(session?.user?.id, session?.user?.role, event.churchId);
     if (!canManage) return { title: "Event Not Found" };
   }
@@ -35,7 +37,11 @@ export async function generateMetadata({ params }: Props) {
 
 export default async function EventDetailPage({ params }: Props) {
   const [{ id }, session] = await Promise.all([params, auth()]);
-  const event = await getEventById(id, session?.user?.id ?? undefined);
+
+  const [event, myAttendance] = await Promise.all([
+    getEventById(id),
+    session?.user?.id ? getMyEventAttendance(id, session.user.id) : Promise.resolve(null),
+  ]);
 
   if (!event) notFound();
 
@@ -44,7 +50,7 @@ export default async function EventDetailPage({ params }: Props) {
   if (event.isDraft && !canManage) notFound();
   const attendees = canManage ? await getEventAttendees(id) : undefined;
 
-  const isAttending = event.attendees.length > 0;
+  const isAttending = myAttendance !== null;
 
   const questions = await getEventQuestions(id);
 
@@ -53,8 +59,8 @@ export default async function EventDetailPage({ params }: Props) {
     : {};
 
   const { registration, camp } = parseEventMetadata(event.metadata);
-  const myAttendeeMeta = event.attendees[0]
-    ? parseEventAttendeeMetadata(event.attendees[0].metadata)
+  const myAttendeeMeta = myAttendance
+    ? parseEventAttendeeMetadata(myAttendance.metadata)
     : undefined;
 
   return (

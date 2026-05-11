@@ -14,29 +14,36 @@ export async function getChurches() {
   });
 }
 
-export async function getChurchById(id: string, currentUserId?: string) {
+export async function getChurchById(id: string) {
   cacheTag("churches", `church-${id}`);
-  cacheLife("hours");
+  cacheLife("minutes");
   return prisma.church.findUnique({
     where: { id },
     include: {
       serviceTimes: true,
       events: {
-        where: { isPast: false, isDraft: false },
+        where: { datetime: { gte: new Date() }, isDraft: false },
         orderBy: { datetime: "asc" },
         take: 20,
       },
       series: {
         orderBy: { createdAt: "desc" },
         include: {
-          _count: { select: { events: { where: { isPast: false, isDraft: false } } } },
+          _count: { select: { events: { where: { datetime: { gte: new Date() }, isDraft: false } } } },
         },
       },
-      followers: currentUserId
-        ? { where: { userId: currentUserId }, select: { userId: true } }
-        : { take: 0, select: { userId: true } },
       _count: { select: { followers: true } },
     },
+  });
+}
+
+// Per-user follow status — short TTL, separate cache key space
+export async function getMyChurchFollow(churchId: string, userId: string) {
+  cacheTag(`church-${churchId}`, `user-follow-church-${userId}-${churchId}`);
+  cacheLife("seconds");
+  return prisma.churchFollower.findUnique({
+    where: { churchId_userId: { churchId, userId } },
+    select: { userId: true },
   });
 }
 

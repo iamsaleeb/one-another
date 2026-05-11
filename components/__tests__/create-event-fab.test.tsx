@@ -1,37 +1,13 @@
 import { render, screen, fireEvent } from '@testing-library/react'
 import { CreateEventFAB } from '@/components/create-event-fab'
 
-jest.mock('next/navigation', () => ({
-  usePathname: jest.fn(),
-  useParams: jest.fn(),
-}))
-
-jest.mock('@/hooks/use-is-detail-page', () => ({
-  useIsDetailPage: jest.fn(),
-}))
-
-import { useIsDetailPage } from '@/hooks/use-is-detail-page'
-
-const mockUseIsDetailPage = useIsDetailPage as jest.Mock
-
-beforeEach(() => {
-  jest.clearAllMocks()
-  mockUseIsDetailPage.mockReturnValue(false)
-})
-
 describe('CreateEventFAB', () => {
   it('renders nothing when isOrganiser is false', () => {
     const { container } = render(<CreateEventFAB isOrganiser={false} />)
     expect(container.firstChild).toBeNull()
   })
 
-  it('renders nothing on a detail page even for organisers', () => {
-    mockUseIsDetailPage.mockReturnValue(true)
-    const { container } = render(<CreateEventFAB isOrganiser={true} />)
-    expect(container.firstChild).toBeNull()
-  })
-
-  it('renders the FAB button for organisers on non-detail pages', () => {
+  it('renders the FAB button for organisers', () => {
     render(<CreateEventFAB isOrganiser={true} />)
     expect(screen.getByRole('button', { name: /create new/i })).toBeInTheDocument()
   })

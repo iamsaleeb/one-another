@@ -3,10 +3,8 @@
 import Link from "next/link";
 import { CalendarPlus, Plus, X, Repeat } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
-import { useIsDetailPage } from "@/hooks/use-is-detail-page";
 
 export function CreateEventFAB({ isOrganiser }: { isOrganiser: boolean }) {
-  const isDetailPage = useIsDetailPage();
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -21,7 +19,7 @@ export function CreateEventFAB({ isOrganiser }: { isOrganiser: boolean }) {
     return () => document.removeEventListener("mousedown", handleClick);
   }, [open]);
 
-  if (!isOrganiser || isDetailPage) return null;
+  if (!isOrganiser) return null;
 
   return (
     <div ref={containerRef} className="fixed bottom-nav-fab right-4 z-50 flex flex-col items-end gap-3">

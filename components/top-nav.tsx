@@ -7,7 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft } from "lucide-react";
 import { getInitials } from "@/lib/utils";
-import { useIsDetailPage } from "@/hooks/use-is-detail-page";
+import { useShowBackButton } from "@/hooks/use-show-back-button";
 import { SearchBar } from "@/components/search-bar";
 import type { WhenFilter, TypeFilter } from "@/types/search";
 
@@ -25,12 +25,12 @@ function TopNavInner({ user }: TopNavProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const isDetailPage = useIsDetailPage();
+  const showBackButton = useShowBackButton();
 
   return (
     <header className="sticky top-0 z-50 bg-primary pt-safe">
       <div className="flex h-14 items-center justify-between px-4">
-        {isDetailPage ? (
+        {showBackButton ? (
           <button
             onClick={() => router.back()}
             className="flex items-center text-primary-foreground"
@@ -57,7 +57,7 @@ function TopNavInner({ user }: TopNavProps) {
         </Link>
       </div>
 
-      {!isDetailPage && (
+      {!showBackButton && (
         <div className="bg-white px-4 py-2.5 border-b border-border">
           <SearchBar
             initialQuery={searchParams.get("q") ?? ""}

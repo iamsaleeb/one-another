@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { Church, MapPin, Pencil, Plus, Tag, User } from "lucide-react";
 import { auth } from "@/auth";
-import { getSeriesById } from "@/lib/actions/data-series";
+import { getSeriesById, getMySeriesFollow } from "@/lib/actions/data-series";
 import { canManageChurch } from "@/lib/permissions";
 import { InfoField } from "@/components/ui/info-field";
 import { HeroBanner } from "@/components/ui/hero-banner";
@@ -24,12 +24,16 @@ export async function generateMetadata({ params }: Props) {
 
 export default async function SeriesDetailPage({ params }: Props) {
   const [{ id }, session] = await Promise.all([params, auth()]);
-  const series = await getSeriesById(id, session?.user?.id ?? undefined);
+
+  const [series, myFollow] = await Promise.all([
+    getSeriesById(id),
+    session?.user?.id ? getMySeriesFollow(id, session.user.id) : Promise.resolve(null),
+  ]);
 
   if (!series) notFound();
 
   const canManage = await canManageChurch(session?.user?.id, session?.user?.role, series.churchId);
-  const isFollowing = series.followers.length > 0;
+  const isFollowing = myFollow !== null;
 
   return (
     <div className="bg-background">

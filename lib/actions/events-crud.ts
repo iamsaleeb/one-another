@@ -6,7 +6,7 @@ import { UserRole } from "@prisma/client";
 import { createEventSchema, saveDraftSchema, type CreateEventInput, type SaveDraftInput } from "@/lib/validations/event";
 import { createEvent, updateEvent, cancelEvent, uncancelEvent, publishEvent, unpublishEvent, deleteEvent } from "@/lib/dal/events";
 import type { ActionResult } from "@/lib/actions/auth";
-import { broadcastEventChange, invalidateEventFields, invalidateEventUpdate } from "@/lib/actions/_cache";
+import { invalidateEventCaches, invalidateEventUpdate } from "@/lib/actions/_cache";
 
 export async function createEventAction(data: CreateEventInput): Promise<ActionResult> {
   const session = await auth();
@@ -20,7 +20,7 @@ export async function createEventAction(data: CreateEventInput): Promise<ActionR
   const result = await createEvent(parsed.data, session.user.id, session.user.role);
   if ("error" in result || "fieldErrors" in result) return result;
 
-  broadcastEventChange(result.id, result.churchId, result.seriesId);
+  invalidateEventCaches(result.id, result.churchId, result.seriesId, { broadcastToChurchList: true });
   redirect(result.isDraft ? "/organiser" : result.seriesId ? `/series/${result.seriesId}` : "/my-events");
 }
 
@@ -46,7 +46,7 @@ export async function cancelEventAction(id: string, reason: string): Promise<voi
   const result = await cancelEvent(id, reason, session.user.id, session.user.role);
   if ("error" in result) redirect("/organiser");
 
-  invalidateEventFields(id, result.churchId, result.seriesId);
+  invalidateEventCaches(id, result.churchId, result.seriesId);
   redirect(`/events/${id}`);
 }
 
@@ -57,7 +57,7 @@ export async function uncancelEventAction(id: string): Promise<void> {
   const result = await uncancelEvent(id, session.user.id, session.user.role);
   if ("error" in result) redirect("/organiser");
 
-  invalidateEventFields(id, result.churchId, result.seriesId);
+  invalidateEventCaches(id, result.churchId, result.seriesId);
   redirect(`/events/${id}`);
 }
 
@@ -70,7 +70,7 @@ export async function publishEventAction(id: string): Promise<ActionResult> {
   const result = await publishEvent(id, session.user.id, session.user.role);
   if ("error" in result) return result;
 
-  broadcastEventChange(id, result.churchId, result.seriesId);
+  invalidateEventCaches(id, result.churchId, result.seriesId, { broadcastToChurchList: true });
   redirect(`/events/${id}`);
 }
 
@@ -83,7 +83,7 @@ export async function unpublishEventAction(id: string): Promise<ActionResult> {
   const result = await unpublishEvent(id, session.user.id, session.user.role);
   if ("error" in result) return result;
 
-  broadcastEventChange(id, result.churchId, result.seriesId);
+  invalidateEventCaches(id, result.churchId, result.seriesId, { broadcastToChurchList: true });
   redirect(`/events/${id}`);
 }
 
@@ -107,7 +107,7 @@ export async function saveDraftAction(
   if (!id) {
     const result = await createEvent({ ...dataWithDefaults, isDraft: true }, session.user.id, session.user.role);
     if ("error" in result || "fieldErrors" in result) return result;
-    invalidateEventFields(result.id, result.churchId, result.seriesId ?? null);
+    invalidateEventCaches(result.id, result.churchId, result.seriesId ?? null);
     return { eventId: result.id };
   } else {
     const result = await updateEvent(id, { ...dataWithDefaults, isDraft: dataWithDefaults.isDraft ?? true }, session.user.id, session.user.role);
@@ -144,6 +144,6 @@ export async function deleteEventAction(id: string): Promise<void> {
   const result = await deleteEvent(id, session.user.id, session.user.role);
   if ("error" in result) redirect("/organiser");
 
-  broadcastEventChange(id, result.churchId, result.seriesId);
+  invalidateEventCaches(id, result.churchId, result.seriesId, { broadcastToChurchList: true });
   redirect("/organiser");
 }

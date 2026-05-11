@@ -8,8 +8,8 @@ import { getSeries } from "@/lib/actions/data-series";
 import { PageHeader } from "@/components/ui/page-header";
 import { WHEN_LABELS, TYPE_LABELS, type WhenFilter } from "@/types/search";
 import { searchParamsSchema } from "@/lib/validations/search";
-import { EventList } from "./_components/event-list";
-import { SeriesRail } from "./_components/series-rail";
+import { EventList } from "@/app/(app)/_components/event-list";
+import { SeriesRail } from "@/app/(app)/_components/series-rail";
 
 export default async function Home({
   searchParams,
@@ -29,8 +29,8 @@ export default async function Home({
           category: category ?? "",
         })
       : Promise.resolve(null),
-    getEvents(),
-    getSeries(),
+    hasFilters ? Promise.resolve(null) : getEvents(),
+    hasFilters ? Promise.resolve(null) : getSeries(),
   ]);
 
   const filteredEvents = searchResults?.events ?? null;
@@ -103,8 +103,8 @@ export default async function Home({
         ) : (
           /* ── Default home content ── */
           <>
-            <EventList events={events} />
-            <SeriesRail series={allSeries} />
+            {events && <EventList events={events} />}
+            {allSeries && <SeriesRail series={allSeries} />}
           </>
         )}
       </div>

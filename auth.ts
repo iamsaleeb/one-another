@@ -13,7 +13,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   session: {
     strategy: "jwt",
     maxAge: 14 * 24 * 60 * 60,  // 14 days
-    updateAge: 24 * 60 * 60,    // re-issue JWT daily to extend expiry
+    updateAge: 60 * 60,          // re-issue JWT hourly to shorten stale-role window
   },
   providers: [
     Credentials({

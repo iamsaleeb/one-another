@@ -98,9 +98,20 @@ jobs:
         env:
           DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
 
-      - name: Assert DATABASE_URL is not production
+      - name: Install Vercel CLI
+        run: npm install -g vercel@53.3.1
+
+      - name: Pull env from Vercel
+        run: |
+          vercel env pull .env.local --environment=preview --token=$VERCEL_TOKEN --yes
+          DATABASE_URL=$(grep ^DATABASE_URL .env.local | sed 's/^DATABASE_URL=//; s/^"//; s/"$//')
+          echo "DATABASE_URL=$DATABASE_URL" >> $GITHUB_ENV
         env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+      - name: Assert DATABASE_URL is not production
         run: |
           if echo "$DATABASE_URL" | grep -qiE "prod[^a-z]|production"; then
             echo "ERROR: DATABASE_URL appears to be a production database. Aborting." >&2
@@ -108,21 +119,23 @@ jobs:
           fi
 
       - name: Wipe and reseed preview database
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
           npx prisma migrate reset --force
           npx ts-node --compiler-options '{"module":"CommonJS"}' prisma/seed.ts
-
-      - name: Install Vercel CLI
-        run: npm install -g vercel@53.3.1
 
       - name: Deploy to Vercel
         id: deploy
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         run: |
-          DEPLOY_URL=$(vercel deploy | tail -1)
+          DEPLOY_OUTPUT=$(vercel deploy --token="$VERCEL_TOKEN" 2>&1)
+          DEPLOY_EXIT=$?
+          if [ $DEPLOY_EXIT -ne 0 ]; then
+            echo "::error::Vercel deployment failed (exit $DEPLOY_EXIT)"
+            echo "$DEPLOY_OUTPUT"
+            exit $DEPLOY_EXIT
+          fi
+          DEPLOY_URL=$(echo "$DEPLOY_OUTPUT" | tail -1)
           {
             echo "url<<EOF"
             echo "$DEPLOY_URL"

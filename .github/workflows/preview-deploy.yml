@@ -105,6 +105,7 @@ jobs:
         run: |
           vercel env pull .env.local --environment=preview --token=$VERCEL_TOKEN --yes
           set -a && source .env.local && set +a
+          DATABASE_URL="${DATABASE_URL:-${POSTGRES_URL:-$PRISMA_DATABASE_URL}}"
           echo "DATABASE_URL=$DATABASE_URL" >> $GITHUB_ENV
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.16.1](https://github.com/iamsaleeb/one-another/compare/one-another-v0.16.0...one-another-v0.16.1) (2026-05-11)
+
+
+### Bug Fixes
+
+* giant refactoring ([#105](https://github.com/iamsaleeb/one-another/issues/105)) ([23e87b2](https://github.com/iamsaleeb/one-another/commit/23e87b27bd82c30bfddcf8ced14058eebf2dee13))
+
 ## [0.16.0](https://github.com/iamsaleeb/one-another/compare/one-another-v0.15.0...one-another-v0.16.0) (2026-05-09)
 
 

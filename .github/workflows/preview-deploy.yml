@@ -104,8 +104,11 @@ jobs:
       - name: Pull env from Vercel
         run: |
           vercel env pull .env.local --environment=preview --token=$VERCEL_TOKEN --yes
-          set -a && source .env.local && set +a
-          DATABASE_URL="${DATABASE_URL:-${POSTGRES_URL:-$PRISMA_DATABASE_URL}}"
+          DATABASE_URL=$(grep -m1 -E '^(DATABASE_URL|POSTGRES_URL|PRISMA_DATABASE_URL)=' .env.local | sed 's/^[^=]*=//' | tr -d '"')
+          if [ -z "$DATABASE_URL" ]; then
+            echo "::error::Could not extract DATABASE_URL from Vercel env pull output"
+            exit 1
+          fi
           echo "DATABASE_URL=$DATABASE_URL" >> $GITHUB_ENV
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}

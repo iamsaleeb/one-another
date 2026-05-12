@@ -159,8 +159,8 @@ export function OnboardingForm() {
                           setCalendarOpen(false);
                         }}
                         disabled={(date) => date > new Date()}
-                        fromYear={1920}
-                        toYear={new Date().getFullYear()}
+                        startMonth={new Date(1920, 0)}
+                        endMonth={new Date()}
                         defaultMonth={
                           field.value
                             ? parse(field.value, "yyyy-MM-dd", new Date())

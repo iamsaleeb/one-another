@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { PriceInput } from "@/components/ui/price-input";
+import { PriceInput } from "@/components/price-input";
 import {
   FormControl,
   FormField,

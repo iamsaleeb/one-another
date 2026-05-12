@@ -4,32 +4,41 @@ import { useState } from "react";
 import { cn } from "@/lib/utils";
 
 interface PriceInputProps {
-  name: string;
-  defaultValue?: string | null;
+  value?: string | null;
+  onChange?: (value: string) => void;
+  onBlur?: () => void;
+  name?: string;
   disabled?: boolean;
   className?: string;
 }
 
-export function PriceInput({ name, defaultValue, disabled, className }: PriceInputProps) {
-  const [value, setValue] = useState(
-    defaultValue ? parseFloat(defaultValue).toFixed(2) : ""
-  );
+export function PriceInput({ value, onChange, onBlur, name, disabled, className }: PriceInputProps) {
+  const [displayValue, setDisplayValue] = useState(() => {
+    if (!value) return "";
+    const num = parseFloat(value);
+    return isNaN(num) ? "" : num.toFixed(2);
+  });
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     const raw = e.target.value;
-    // Allow only digits and a single decimal point
     if (!/^(\d+\.?\d{0,2}|\.?\d{0,2})$/.test(raw) && raw !== "") return;
-    setValue(raw);
+    setDisplayValue(raw);
+    onChange?.(raw);
   }
 
   function handleBlur() {
-    if (value === "" || value === ".") {
-      setValue("");
-      return;
+    if (displayValue === "" || displayValue === ".") {
+      setDisplayValue("");
+      onChange?.("");
+    } else {
+      const num = parseFloat(displayValue);
+      if (!isNaN(num)) {
+        const normalized = num.toFixed(2);
+        setDisplayValue(normalized);
+        onChange?.(normalized);
+      }
     }
-    // Normalise to 2 decimal places on blur
-    const num = parseFloat(value);
-    if (!isNaN(num)) setValue(num.toFixed(2));
+    onBlur?.();
   }
 
   return (
@@ -41,7 +50,7 @@ export function PriceInput({ name, defaultValue, disabled, className }: PriceInp
         name={name}
         type="text"
         inputMode="decimal"
-        value={value}
+        value={displayValue}
         onChange={handleChange}
         onBlur={handleBlur}
         placeholder="0.00"

@@ -104,7 +104,20 @@ jobs:
       - name: Pull env from Vercel
         run: |
           vercel env pull .env.local --environment=preview --token=$VERCEL_TOKEN --yes
-          DATABASE_URL=$(grep -m1 -E '^(DATABASE_URL|POSTGRES_URL|PRISMA_DATABASE_URL)=' .env.local | sed 's/^[^=]*=//' | tr -d '"')
+          echo "=== .env.local content (first 30 lines, cat -A) ==="
+          head -30 .env.local | cat -A || true
+          echo "==================================================="
+          DATABASE_URL=$(node -e "
+            const fs = require('fs');
+            const raw = fs.readFileSync('.env.local');
+            // Strip UTF-8 BOM if present, handle any encoding
+            const content = raw.toString('utf8').replace(/^﻿/, '');
+            const lines = content.split(/\r?\n/);
+            for (const line of lines) {
+              const m = line.match(/^(DATABASE_URL|POSTGRES_URL|PRISMA_DATABASE_URL)=(.*)/);
+              if (m) { process.stdout.write(m[2].replace(/^\"|\"$/g, '').trim()); break; }
+            }
+          ")
           if [ -z "$DATABASE_URL" ]; then
             echo "::error::Could not extract DATABASE_URL from Vercel env pull output"
             exit 1

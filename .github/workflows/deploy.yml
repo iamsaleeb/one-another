@@ -23,8 +23,6 @@ jobs:
     name: Run migrations (${{ inputs.environment }})
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment }}
-    env:
-      DATABASE_URL: ${{ secrets.DATABASE_URL }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -35,8 +33,12 @@ jobs:
           cache: 'npm'
       - run: npm ci
       - name: Generate Prisma client
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: npx prisma generate
       - name: Deploy migrations
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: npx prisma migrate deploy
 
   deploy:
@@ -62,10 +64,18 @@ jobs:
         run: |
           npm install -g vercel@53.3.1
           if [ "${{ inputs.environment }}" = "production" ]; then
-            DEPLOY_URL=$(vercel deploy --prod --token=$VERCEL_TOKEN)
+            DEPLOY_OUTPUT=$(vercel deploy --prod --token="$VERCEL_TOKEN" 2>&1)
+            DEPLOY_EXIT=$?
           else
-            DEPLOY_URL=$(vercel deploy --token=$VERCEL_TOKEN)
+            DEPLOY_OUTPUT=$(vercel deploy --token="$VERCEL_TOKEN" 2>&1)
+            DEPLOY_EXIT=$?
           fi
+          if [ $DEPLOY_EXIT -ne 0 ]; then
+            echo "::error::Vercel deployment failed (exit $DEPLOY_EXIT)"
+            echo "$DEPLOY_OUTPUT"
+            exit $DEPLOY_EXIT
+          fi
+          DEPLOY_URL=$(echo "$DEPLOY_OUTPUT" | tail -1)
           echo "url=$DEPLOY_URL" >> $GITHUB_OUTPUT
       - name: Deployment summary
         run: |

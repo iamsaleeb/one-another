@@ -119,7 +119,7 @@ jobs:
             echo "$DEPLOY_OUTPUT"
             exit $DEPLOY_EXIT
           fi
-          DEPLOY_URL=$(echo "$DEPLOY_OUTPUT" | tail -1)
+          DEPLOY_URL=$(echo "$DEPLOY_OUTPUT" | grep -oE 'https://[a-zA-Z0-9.-]+\.vercel\.app' | tail -1)
           {
             echo "url<<EOF"
             echo "$DEPLOY_URL"

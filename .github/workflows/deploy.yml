@@ -32,32 +32,13 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
       - run: npm ci
-      - name: Pull env from Vercel
-        run: |
-          npm install -g vercel@53.3.1
-          vercel env pull .env.local --environment=${{ inputs.environment }} --token=$VERCEL_TOKEN --yes
-          DATABASE_URL=$(node -e "
-            const fs = require('fs');
-            const raw = fs.readFileSync('.env.local');
-            const content = raw.toString('utf8').replace(/^﻿/, '');
-            const lines = content.split(/\r?\n/);
-            for (const line of lines) {
-              const m = line.match(/^(DATABASE_URL|POSTGRES_URL|PRISMA_DATABASE_URL)=(.*)/);
-              if (m) { process.stdout.write(m[2].replace(/^\"|\"$/g, '').trim()); break; }
-            }
-          ")
-          if [ -z "$DATABASE_URL" ]; then
-            echo "::error::Could not extract DATABASE_URL from Vercel env pull output"
-            exit 1
-          fi
-          echo "DATABASE_URL=$DATABASE_URL" >> $GITHUB_ENV
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
       - name: Generate Prisma client
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: npx prisma generate
       - name: Deploy migrations
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: npx prisma migrate deploy
 
   deploy:

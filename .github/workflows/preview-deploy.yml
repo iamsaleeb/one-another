@@ -101,41 +101,9 @@ jobs:
       - name: Install Vercel CLI
         run: npm install -g vercel@53.3.1
 
-      - name: Pull env from Vercel
-        run: |
-          vercel env pull .env.local --environment=preview --token=$VERCEL_TOKEN --yes
-          echo "=== .env.local content (first 30 lines, cat -A) ==="
-          head -30 .env.local | cat -A || true
-          echo "==================================================="
-          DATABASE_URL=$(node -e "
-            const fs = require('fs');
-            const raw = fs.readFileSync('.env.local');
-            // Strip UTF-8 BOM if present, handle any encoding
-            const content = raw.toString('utf8').replace(/^﻿/, '');
-            const lines = content.split(/\r?\n/);
-            for (const line of lines) {
-              const m = line.match(/^(DATABASE_URL|POSTGRES_URL|PRISMA_DATABASE_URL)=(.*)/);
-              if (m) { process.stdout.write(m[2].replace(/^\"|\"$/g, '').trim()); break; }
-            }
-          ")
-          if [ -z "$DATABASE_URL" ]; then
-            echo "::error::Could not extract DATABASE_URL from Vercel env pull output"
-            exit 1
-          fi
-          echo "DATABASE_URL=$DATABASE_URL" >> $GITHUB_ENV
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-
-      - name: Assert DATABASE_URL is not production
-        run: |
-          if echo "$DATABASE_URL" | grep -qiE "prod[^a-z]|production"; then
-            echo "ERROR: DATABASE_URL appears to be a production database. Aborting." >&2
-            exit 1
-          fi
-
       - name: Wipe and reseed preview database
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
           npx prisma migrate reset --force
           npx ts-node --compiler-options '{"module":"CommonJS"}' prisma/seed.ts

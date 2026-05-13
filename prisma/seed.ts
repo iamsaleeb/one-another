@@ -21,7 +21,6 @@ function past(days: number, time = "10:00"): Date {
   return future(-days, time);
 }
 
-/** ISO date string (YYYY-MM-DD) for `days` from today. Used in camp metadata. */
 function futureDate(days: number): string {
   const d = new Date();
   d.setDate(d.getDate() + days);
@@ -30,22 +29,24 @@ function futureDate(days: number): string {
 
 async function main() {
   // Clean up (FK order)
+  await prisma.eventAttendeeResponse.deleteMany();
+  await prisma.eventAttendee.deleteMany();
+  await prisma.eventQuestion.deleteMany();
+  await prisma.questionLibraryItem.deleteMany();
+  await prisma.notification.deleteMany();
+  await prisma.notificationPreference.deleteMany();
+  await prisma.pushToken.deleteMany();
+  await prisma.seriesFollower.deleteMany();
+  await prisma.churchFollower.deleteMany();
   await prisma.event.deleteMany();
   await prisma.series.deleteMany();
   await prisma.churchOrganiser.deleteMany();
   await prisma.churchAdmin.deleteMany();
   await prisma.serviceTime.deleteMany();
-  await prisma.user.deleteMany({
-    where: {
-      OR: [
-        { role: { in: ["ORGANISER", "ADMIN"] } },
-        { email: "user@example.com" },
-      ],
-    },
-  });
+  await prisma.user.deleteMany();
   await prisma.church.deleteMany();
 
-  // ── Churches ────────────────────────────────────────────────────────────────
+  // ── Churches ─────────────────────────────────────────────────────────────────
 
   const stMary = await prisma.church.create({
     data: {
@@ -58,10 +59,11 @@ async function main() {
       founded: "1972",
       serviceTimes: {
         create: [
-          { day: "SUNDAY", time: "7:00 AM - 9:30 AM", type: "MORNING" },
-          { day: "SUNDAY", time: "9:30 AM - 12:00 PM", type: "MORNING" },
-          { day: "FRIDAY", time: "10:00 PM - 2:00 AM", type: "OTHER" },
-          { day: "WEDNESDAY", time: "7:30 PM - 9:00 PM", type: "MIDWEEK" },
+          { day: "SUNDAY", time: "7:00 AM – 9:30 AM", type: "MORNING" },
+          { day: "SUNDAY", time: "9:30 AM – 12:00 PM", type: "MORNING" },
+          { day: "FRIDAY", time: "10:00 PM – 2:00 AM", type: "OTHER" },
+          { day: "WEDNESDAY", time: "7:30 PM – 9:00 PM", type: "MIDWEEK" },
+          { day: "SATURDAY", time: "6:00 PM – 7:30 PM", type: "EVENING" },
         ],
       },
     },
@@ -78,9 +80,11 @@ async function main() {
       founded: "1985",
       serviceTimes: {
         create: [
-          { day: "SUNDAY", time: "8:00 AM - 11:00 AM", type: "MORNING" },
-          { day: "SATURDAY", time: "7:00 PM - 9:00 PM", type: "EVENING" },
-          { day: "SUNDAY", time: "6:00 PM - 7:30 PM", type: "EVENING" },
+          { day: "SUNDAY", time: "8:00 AM – 11:00 AM", type: "MORNING" },
+          { day: "SATURDAY", time: "7:00 PM – 9:00 PM", type: "EVENING" },
+          { day: "SUNDAY", time: "6:00 PM – 7:30 PM", type: "EVENING" },
+          { day: "WEDNESDAY", time: "7:00 PM – 8:30 PM", type: "MIDWEEK" },
+          { day: "FRIDAY", time: "9:30 PM – 1:00 AM", type: "OTHER" },
         ],
       },
     },
@@ -97,9 +101,10 @@ async function main() {
       founded: "1998",
       serviceTimes: {
         create: [
-          { day: "SUNDAY", time: "9:00 AM - 12:00 PM", type: "MORNING" },
-          { day: "FRIDAY", time: "10:30 PM - 1:30 AM", type: "OTHER" },
-          { day: "THURSDAY", time: "7:00 PM - 8:30 PM", type: "YOUTH" },
+          { day: "SUNDAY", time: "9:00 AM – 12:00 PM", type: "MORNING" },
+          { day: "FRIDAY", time: "10:30 PM – 1:30 AM", type: "OTHER" },
+          { day: "THURSDAY", time: "7:00 PM – 8:30 PM", type: "YOUTH" },
+          { day: "TUESDAY", time: "7:00 PM – 8:30 PM", type: "MIDWEEK" },
         ],
       },
     },
@@ -116,14 +121,55 @@ async function main() {
       founded: "2005",
       serviceTimes: {
         create: [
-          { day: "SUNDAY", time: "9:30 AM - 12:30 PM", type: "MORNING" },
-          { day: "SATURDAY", time: "6:30 PM - 8:00 PM", type: "EVENING" },
+          { day: "SUNDAY", time: "9:30 AM – 12:30 PM", type: "MORNING" },
+          { day: "SATURDAY", time: "6:30 PM – 8:00 PM", type: "EVENING" },
+          { day: "WEDNESDAY", time: "7:00 PM – 8:30 PM", type: "MIDWEEK" },
         ],
       },
     },
   });
 
-  // ── Series ──────────────────────────────────────────────────────────────────
+  const stPishoy = await prisma.church.create({
+    data: {
+      name: "St. Pishoy & St. Bishoy Coptic Orthodox Church",
+      address: "3200 Timberloch Pl, The Woodlands, TX 77380",
+      phone: "(832) 555-0633",
+      website: "stpishoy-woodlands.org",
+      description:
+        "St. Pishoy & St. Bishoy Coptic Orthodox Church was established in 2010 to serve the rapidly growing Coptic community in The Woodlands and surrounding suburbs north of Houston. We draw inspiration from the monastic witness of our patron saints, Abba Pishoy and Abba Bishoy of Wadi El Natrun. We offer a rich liturgical life, a Coptic language program, and a growing Desert Fathers reading community.",
+      founded: "2010",
+      serviceTimes: {
+        create: [
+          { day: "SUNDAY", time: "8:30 AM – 11:30 AM", type: "MORNING" },
+          { day: "FRIDAY", time: "9:00 PM – 12:00 AM", type: "OTHER" },
+          { day: "SATURDAY", time: "5:00 PM – 6:30 PM", type: "EVENING" },
+          { day: "MONDAY", time: "7:00 PM – 8:30 PM", type: "MIDWEEK" },
+        ],
+      },
+    },
+  });
+
+  const stAnthony = await prisma.church.create({
+    data: {
+      name: "St. Anthony & St. Paul Coptic Orthodox Church",
+      address: "5500 Boat Club Rd, Fort Worth, TX 76135",
+      phone: "(817) 555-0744",
+      website: "stanthony-fw.org",
+      description:
+        "St. Anthony & St. Paul Coptic Orthodox Church was founded in 2015 in Fort Worth, bringing the Coptic Orthodox faith to the western DFW metroplex. Named after the two great fathers of Christian monasticism, we aspire to a contemplative and rooted parish life. Our congregation includes many young families drawn by our strong Sunday School program and welcoming pastoral care.",
+      founded: "2015",
+      serviceTimes: {
+        create: [
+          { day: "SUNDAY", time: "9:00 AM – 12:00 PM", type: "MORNING" },
+          { day: "SUNDAY", time: "6:00 PM – 7:30 PM", type: "EVENING" },
+          { day: "THURSDAY", time: "7:00 PM – 9:00 PM", type: "YOUTH" },
+          { day: "SATURDAY", time: "6:00 PM – 7:30 PM", type: "EVENING" },
+        ],
+      },
+    },
+  });
+
+  // ── Series ────────────────────────────────────────────────────────────────────
 
   const lentSeries = await prisma.series.create({
     data: {
@@ -164,7 +210,85 @@ async function main() {
     },
   });
 
-  // ── Lenten Tasbeha Series Events (2 past, 2 upcoming) ──────────────────────
+  const sundaySchoolTraining = await prisma.series.create({
+    data: {
+      name: "Sunday School Teacher Training",
+      description:
+        "A monthly training series for Sunday School teachers at St. Mary Church. Topics include child theology, age-appropriate lesson planning, classroom management, and spiritual formation of young servants. Led by the Sunday School committee with occasional guest speakers.",
+      cadence: "MONTHLY",
+      location: "Education Wing",
+      host: "Maryam Iskander",
+      tag: "Servants Meeting",
+      churchId: stMary.id,
+    },
+  });
+
+  const marriagePrep = await prisma.series.create({
+    data: {
+      name: "Marriage Preparation Course",
+      description:
+        "A comprehensive bi-weekly marriage preparation course for engaged couples at St. George Church. Fr. Antonious Farag and Dr. Nadia Habib walk couples through the theology of Coptic marriage, communication, finances, family planning, and the sacramental life of a Christian household.",
+      cadence: "BIWEEKLY",
+      location: "Conference Room",
+      host: "Fr. Antonious Farag & Dr. Nadia Habib",
+      tag: "Parish Meeting",
+      churchId: stGeorge.id,
+    },
+  });
+
+  const desertFathers = await prisma.series.create({
+    data: {
+      name: "Desert Fathers Reading Group",
+      description:
+        "A monthly reading and discussion group at St. Pishoy Church exploring the writings of the Desert Fathers — the Sayings of the Fathers (Apophthegmata Patrum), the writings of St. Antony, St. Macarius, and Abba Isaiah. Open to all adults seeking to deepen their contemplative life.",
+      cadence: "MONTHLY",
+      location: "Library Room",
+      host: "Fr. Demetrius Botros",
+      tag: "Bible Study",
+      churchId: stPishoy.id,
+    },
+  });
+
+  const copticLanguage = await prisma.series.create({
+    data: {
+      name: "Coptic Language Class — Beginner Level",
+      description:
+        "A weekly Coptic language course at St. Pishoy Church for beginners. Students learn the Coptic alphabet, basic vocabulary, liturgical phrases, and the pronunciation of common hymns and responses. Taught by Cantor George Mikhail, a Coptic language instructor with 15 years of experience.",
+      cadence: "WEEKLY",
+      location: "Classroom B",
+      host: "Cantor George Mikhail",
+      tag: "Parish Meeting",
+      churchId: stPishoy.id,
+    },
+  });
+
+  const youngAdults = await prisma.series.create({
+    data: {
+      name: "Young Adults Fellowship",
+      description:
+        "A bi-weekly gathering for young adults (ages 21–35) at St. Mark Church. Each session begins with a shared meal, followed by a discussion on faith, vocation, relationships, and what it means to live as a Coptic Christian in contemporary Austin. Facilitated by Deacon Mina Nashed.",
+      cadence: "BIWEEKLY",
+      location: "Fellowship Hall",
+      host: "Deacon Mina Nashed",
+      tag: "Young Adults",
+      churchId: stMark.id,
+    },
+  });
+
+  const parishPastoral = await prisma.series.create({
+    data: {
+      name: "Parish Pastoral Talks",
+      description:
+        "A monthly pastoral talk series at St. Anthony & St. Paul Church for the whole congregation. Fr. Marcos Khalil addresses one key topic per month — confession, prayer, fasting, marriage, raising children in faith — drawing on Scripture, the Fathers, and the lived experience of the parish.",
+      cadence: "MONTHLY",
+      location: "Main Hall",
+      host: "Fr. Marcos Khalil",
+      tag: "Parish Meeting",
+      churchId: stAnthony.id,
+    },
+  });
+
+  // ── Lenten Tasbeha Series Events ──────────────────────────────────────────────
 
   await prisma.event.create({
     data: {
@@ -250,7 +374,7 @@ async function main() {
     },
   });
 
-  // ── Youth Bible Series Events (1 past, 3 upcoming) ─────────────────────────
+  // ── Book of Acts Events ───────────────────────────────────────────────────────
 
   await prisma.event.create({
     data: {
@@ -318,7 +442,7 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: future(38, "19:00"),
-      title: "Book of Acts — Session 4: St. Paul's Missionary Journeys",
+      title: "Book of Acts — Session 4: St. Paul's First Missionary Journey",
       location: "Youth Hall",
       host: "Deacon Mina Nashed",
       tag: "Bible Study",
@@ -336,7 +460,28 @@ async function main() {
     },
   });
 
-  // ── Servants Formation Series Events (1 past, 2 upcoming) ──────────────────
+  await prisma.event.create({
+    data: {
+      datetime: future(52, "19:00"),
+      title: "Book of Acts — Session 5: The Jerusalem Council",
+      location: "Youth Hall",
+      host: "Deacon Mina Nashed",
+      tag: "Bible Study",
+      description:
+        "Acts 15 and the first church council. We examine how the early Church resolved doctrinal conflict, the role of tradition and Scripture in discernment, and what this means for the Coptic Church's conciliar identity.",
+      metadata: {
+        registration: {
+          capacity: null,
+          collectPhone: false,
+          collectNotes: false,
+        },
+      },
+      churchId: stMark.id,
+      seriesId: youthBibleSeries.id,
+    },
+  });
+
+  // ── Servants Formation Events ─────────────────────────────────────────────────
 
   await prisma.event.create({
     data: {
@@ -401,15 +546,686 @@ async function main() {
     },
   });
 
-  // ── Standalone Events ───────────────────────────────────────────────────────
+  await prisma.event.create({
+    data: {
+      datetime: future(68, "18:00"),
+      title: "Servants Formation — Month 4: Youth Ministry in Practice",
+      location: "Conference Room",
+      host: "Fr. Antonious Farag",
+      tag: "Servants Meeting",
+      description:
+        "A practical session on youth ministry — understanding the developmental stages of teenagers, building trust, handling crises, and creating safe spaces for young people to encounter Christ. Includes case study discussions.",
+      metadata: {
+        registration: {
+          capacity: null,
+          collectPhone: false,
+          collectNotes: false,
+        },
+      },
+      churchId: stGeorge.id,
+      seriesId: servantsFormation.id,
+    },
+  });
 
+  // ── Sunday School Teacher Training Events ────────────────────────────────────
+
+  await prisma.event.create({
+    data: {
+      datetime: past(63, "10:00"),
+      title:
+        "Sunday School Training — Session 1: Foundations of Coptic Pedagogy",
+      location: "Education Wing",
+      host: "Maryam Iskander",
+      tag: "Servants Meeting",
+      description:
+        "The opening session of our teacher training year. Maryam Iskander introduced the principles of Coptic Christian pedagogy — how our faith tradition understands childhood, formation, and the role of the Sunday School servant as a spiritual parent.",
+      metadata: {
+        registration: {
+          capacity: null,
+          collectPhone: false,
+          collectNotes: false,
+        },
+      },
+      churchId: stMary.id,
+      seriesId: sundaySchoolTraining.id,
+    },
+  });
+
+  await prisma.event.create({
+    data: {
+      datetime: past(28, "10:00"),
+      title:
+        "Sunday School Training — Session 2: Age-Appropriate Lesson Planning",
+      location: "Education Wing",
+      host: "Maryam Iskander",
+      tag: "Servants Meeting",
+      description:
+        "Practical session on adapting theological content for different age groups — from kindergarteners to teenagers. Teachers worked in small groups to redesign a sample lesson on the Eucharist for their specific age bracket.",
+      metadata: {
+        registration: {
+          capacity: null,
+          collectPhone: false,
+          collectNotes: false,
+        },
+      },
+      churchId: stMary.id,
+      seriesId: sundaySchoolTraining.id,
+    },
+  });
+
+  await prisma.event.create({
+    data: {
+      datetime: future(15, "10:00"),
+      title:
+        "Sunday School Training — Session 3: Classroom Management & Discipline",
+      location: "Education Wing",
+      host: "Maryam Iskander",
+      tag: "Servants Meeting",
+      description:
+        "How to maintain a prayerful, focused classroom environment while remaining compassionate and patient. Topics include setting expectations, de-escalation techniques, and engaging restless learners. Guest speaker: Dr. Christine Soliman, educational psychologist.",
+      metadata: {
+        registration: {
+          capacity: null,
+          collectPhone: false,
+          collectNotes: false,
+        },
+      },
+      churchId: stMary.id,
+      seriesId: sundaySchoolTraining.id,
+    },
+  });
+
+  await prisma.event.create({
+    data: {
+      datetime: future(45, "10:00"),
+      title:
+        "Sunday School Training — Session 4: Storytelling & the Church Fathers",
+      location: "Education Wing",
+      host: "Maryam Iskander",
+      tag: "Servants Meeting",
+      description:
+        "Exploring the power of narrative in faith formation. We examine how the early Church used storytelling — saints' lives, scripture narratives, and parables — and practice bringing these stories alive for children today.",
+      metadata: {
+        registration: {
+          capacity: null,
+          collectPhone: false,
+          collectNotes: false,
+        },
+      },
+      churchId: stMary.id,
+      seriesId: sundaySchoolTraining.id,
+    },
+  });
+
+  await prisma.event.create({
+    data: {
+      datetime: future(75, "10:00"),
+      title:
+        "Sunday School Training — Session 5: Parent Engagement & Communication",
+      location: "Education Wing",
+      host: "Maryam Iskander",
+      tag: "Servants Meeting",
+      description:
+        "The final session of the year covers building strong partnerships with parents, navigating sensitive conversations, and aligning home and church formation. Includes a panel of parents sharing what they most need from Sunday School servants.",
+      metadata: {
+        registration: {
+          capacity: null,
+          collectPhone: false,
+          collectNotes: false,
+        },
+      },
+      churchId: stMary.id,
+      seriesId: sundaySchoolTraining.id,
+    },
+  });
+
+  // ── Marriage Preparation Course Events ───────────────────────────────────────
+
+  await prisma.event.create({
+    data: {
+      datetime: past(42, "18:30"),
+      title: "Marriage Prep — Session 1: The Theology of Coptic Marriage",
+      location: "Conference Room",
+      host: "Fr. Antonious Farag",
+      tag: "Parish Meeting",
+      description:
+        "The first session established the theological foundation — marriage as a sacrament, the roles of husband and wife in the Coptic tradition, and the eschatological dimension of Christian matrimony. Fr. Antonious walked through the wedding liturgy and its hidden depths.",
+      metadata: {
+        registration: {
+          capacity: null,
+          collectPhone: false,
+          collectNotes: false,
+        },
+      },
+      churchId: stGeorge.id,
+      seriesId: marriagePrep.id,
+    },
+  });
+
+  await prisma.event.create({
+    data: {
+      datetime: future(6, "18:30"),
+      title: "Marriage Prep — Session 2: Communication & Conflict",
+      location: "Conference Room",
+      host: "Dr. Nadia Habib",
+      tag: "Parish Meeting",
+      description:
+        "Dr. Nadia Habib leads this session on the dynamics of healthy communication in marriage — listening deeply, expressing needs clearly, and navigating conflict without contempt. Includes practical exercises for couples to try at home.",
+      metadata: {
+        registration: {
+          capacity: null,
+          collectPhone: false,
+          collectNotes: false,
+        },
+      },
+      churchId: stGeorge.id,
+      seriesId: marriagePrep.id,
+    },
+  });
+
+  await prisma.event.create({
+    data: {
+      datetime: future(20, "18:30"),
+      title: "Marriage Prep — Session 3: Finances & Shared Life",
+      location: "Conference Room",
+      host: "Fr. Antonious Farag & Dr. Nadia Habib",
+      tag: "Parish Meeting",
+      description:
+        "A joint session on the practical side of shared life — budgeting, debt, financial goals, and how to make decisions together. Fr. Antonious opens with a reflection on stewardship and generosity as spiritual disciplines for married couples.",
+      metadata: {
+        registration: {
+          capacity: null,
+          collectPhone: false,
+          collectNotes: false,
+        },
+      },
+      churchId: stGeorge.id,
+      seriesId: marriagePrep.id,
+    },
+  });
+
+  await prisma.event.create({
+    data: {
+      datetime: future(34, "18:30"),
+      title:
+        "Marriage Prep — Session 4: Family Planning & Raising Children in Faith",
+      location: "Conference Room",
+      host: "Fr. Antonious Farag",
+      tag: "Parish Meeting",
+      description:
+        "An open discussion on family planning from a Coptic perspective, followed by a panel of parents from St. George sharing how they raise children in the faith — from baptism and chrismation through teenage years.",
+      metadata: {
+        registration: {
+          capacity: null,
+          collectPhone: false,
+          collectNotes: false,
+        },
+      },
+      churchId: stGeorge.id,
+      seriesId: marriagePrep.id,
+    },
+  });
+
+  await prisma.event.create({
+    data: {
+      datetime: future(48, "18:30"),
+      title: "Marriage Prep — Session 5: The Sacramental Life of the Home",
+      location: "Conference Room",
+      host: "Fr. Antonious Farag",
+      tag: "Parish Meeting",
+      description:
+        "The closing session brings everything together — confession, communion, fasting, prayer, and how the rhythms of the Coptic calendar shape a Christian home. Culminates in a blessing prayer for all the couples completing the course.",
+      metadata: {
+        registration: {
+          capacity: null,
+          collectPhone: false,
+          collectNotes: false,
+        },
+      },
+      churchId: stGeorge.id,
+      seriesId: marriagePrep.id,
+    },
+  });
+
+  // ── Desert Fathers Reading Group Events ──────────────────────────────────────
+
+  await prisma.event.create({
+    data: {
+      datetime: past(56, "19:00"),
+      title: "Desert Fathers — Month 1: The Sayings of Abba Anthony",
+      location: "Library Room",
+      host: "Fr. Demetrius Botros",
+      tag: "Bible Study",
+      description:
+        "We began our journey with the most celebrated of the Desert Fathers — St. Anthony the Great. Fr. Demetrius guided us through selected sayings from the Apophthegmata, focusing on Anthony's teachings on discernment, solitude, and the warfare of thoughts.",
+      metadata: {
+        registration: {
+          capacity: null,
+          collectPhone: false,
+          collectNotes: false,
+        },
+      },
+      churchId: stPishoy.id,
+      seriesId: desertFathers.id,
+    },
+  });
+
+  await prisma.event.create({
+    data: {
+      datetime: past(14, "19:00"),
+      title: "Desert Fathers — Month 2: Abba Macarius & the Life of Scetis",
+      location: "Library Room",
+      host: "Fr. Demetrius Botros",
+      tag: "Bible Study",
+      description:
+        "This session explored the Scetis desert community through the life and sayings of Abba Macarius the Great. We read selections from the Macarian homilies and discussed how his vision of the heart as a battlefield applies to modern spiritual life.",
+      metadata: {
+        registration: {
+          capacity: null,
+          collectPhone: false,
+          collectNotes: false,
+        },
+      },
+      churchId: stPishoy.id,
+      seriesId: desertFathers.id,
+    },
+  });
+
+  await prisma.event.create({
+    data: {
+      datetime: future(16, "19:00"),
+      title: "Desert Fathers — Month 3: Abba Pishoy & the Monastic Ideal",
+      location: "Library Room",
+      host: "Fr. Demetrius Botros",
+      tag: "Bible Study",
+      description:
+        "A fitting session for our community — we turn to Abba Pishoy himself, our patron saint. Fr. Demetrius will lead a reading of the Doxology of St. Pishoy alongside selections from his monastic rule, exploring what radical surrender to God looks like in any age.",
+      metadata: {
+        registration: {
+          capacity: null,
+          collectPhone: false,
+          collectNotes: false,
+        },
+      },
+      churchId: stPishoy.id,
+      seriesId: desertFathers.id,
+    },
+  });
+
+  await prisma.event.create({
+    data: {
+      datetime: future(46, "19:00"),
+      title: "Desert Fathers — Month 4: The Sayings of the Mothers (Ammas)",
+      location: "Library Room",
+      host: "Fr. Demetrius Botros",
+      tag: "Bible Study",
+      description:
+        "Often overlooked, the Desert Mothers — Amma Syncletica, Amma Theodora, Amma Sarah — offer profound wisdom on humility, perseverance, and the interior life. This session recovers their voices as essential guides for contemporary Christians.",
+      metadata: {
+        registration: {
+          capacity: null,
+          collectPhone: false,
+          collectNotes: false,
+        },
+      },
+      churchId: stPishoy.id,
+      seriesId: desertFathers.id,
+    },
+  });
+
+  // ── Coptic Language Class Events ──────────────────────────────────────────────
+
+  await prisma.event.create({
+    data: {
+      datetime: past(63, "18:00"),
+      title: "Coptic Language — Class 1: The Alphabet & Phonology",
+      location: "Classroom B",
+      host: "Cantor George Mikhail",
+      tag: "Parish Meeting",
+      description:
+        "Our first class introduced the Coptic alphabet (Bohairic dialect) — its 32 letters, their Coptic and Greek origins, and the unique sounds of the language. Students learned to read their names in Coptic script.",
+      metadata: {
+        registration: {
+          capacity: null,
+          collectPhone: false,
+          collectNotes: false,
+        },
+      },
+      churchId: stPishoy.id,
+      seriesId: copticLanguage.id,
+    },
+  });
+
+  await prisma.event.create({
+    data: {
+      datetime: past(42, "18:00"),
+      title: "Coptic Language — Class 2: Liturgical Responses",
+      location: "Classroom B",
+      host: "Cantor George Mikhail",
+      tag: "Parish Meeting",
+      description:
+        "Students began learning the most common liturgical responses — Pi-epnevma, Axios, Kyrie Eleison — their meaning, pronunciation, and context in the Divine Liturgy. We also covered basic grammar patterns.",
+      metadata: {
+        registration: {
+          capacity: null,
+          collectPhone: false,
+          collectNotes: false,
+        },
+      },
+      churchId: stPishoy.id,
+      seriesId: copticLanguage.id,
+    },
+  });
+
+  await prisma.event.create({
+    data: {
+      datetime: past(21, "18:00"),
+      title: "Coptic Language — Class 3: The Lord's Prayer in Coptic",
+      location: "Classroom B",
+      host: "Cantor George Mikhail",
+      tag: "Parish Meeting",
+      description:
+        "This class centered on the Lord's Prayer (Ti-eprosevkhi) — learning it word by word, parsing its vocabulary, and memorizing it as a living prayer. Students also practiced the Coptic numbers 1–20.",
+      metadata: {
+        registration: {
+          capacity: null,
+          collectPhone: false,
+          collectNotes: false,
+        },
+      },
+      churchId: stPishoy.id,
+      seriesId: copticLanguage.id,
+    },
+  });
+
+  await prisma.event.create({
+    data: {
+      datetime: future(7, "18:00"),
+      title: "Coptic Language — Class 4: Hymn Study — Pi-Oik",
+      location: "Classroom B",
+      host: "Cantor George Mikhail",
+      tag: "Parish Meeting",
+      description:
+        "A deep dive into the hymn Pi-Oik Ente Pivot — Bread of the Father. Students will parse each line, learn the vocabulary, and practice singing it in Bohairic. Cantor George will explain the hymn's theological content and its place in the liturgy.",
+      metadata: {
+        registration: {
+          capacity: null,
+          collectPhone: false,
+          collectNotes: false,
+        },
+      },
+      churchId: stPishoy.id,
+      seriesId: copticLanguage.id,
+    },
+  });
+
+  await prisma.event.create({
+    data: {
+      datetime: future(21, "18:00"),
+      title: "Coptic Language — Class 5: Verbs & Tenses",
+      location: "Classroom B",
+      host: "Cantor George Mikhail",
+      tag: "Parish Meeting",
+      description:
+        "An introduction to Coptic verb structure — the present, future, and imperative tenses. We focus on verbs that appear frequently in liturgy and scripture, giving students a grammatical foundation for reading simple Coptic texts.",
+      metadata: {
+        registration: {
+          capacity: null,
+          collectPhone: false,
+          collectNotes: false,
+        },
+      },
+      churchId: stPishoy.id,
+      seriesId: copticLanguage.id,
+    },
+  });
+
+  await prisma.event.create({
+    data: {
+      datetime: future(35, "18:00"),
+      title: "Coptic Language — Class 6: Reading the Agpeya",
+      location: "Classroom B",
+      host: "Cantor George Mikhail",
+      tag: "Parish Meeting",
+      description:
+        "Students will read the Third Hour prayer of the Agpeya directly from the Coptic text, supported by an interlinear translation. The goal is to experience the Agpeya in its original language for the first time.",
+      metadata: {
+        registration: {
+          capacity: null,
+          collectPhone: false,
+          collectNotes: false,
+        },
+      },
+      churchId: stPishoy.id,
+      seriesId: copticLanguage.id,
+    },
+  });
+
+  await prisma.event.create({
+    data: {
+      datetime: future(49, "18:00"),
+      title: "Coptic Language — Class 7: Doxologies of the Saints",
+      location: "Classroom B",
+      host: "Cantor George Mikhail",
+      tag: "Parish Meeting",
+      description:
+        "We explore the structure of Coptic doxologies — the poetic hymns that honor each saint. Students will learn the doxology of St. Mary (Epchois ari-epinivi) and the doxology of our patron St. Pishoy, then compare their literary structures.",
+      metadata: {
+        registration: {
+          capacity: null,
+          collectPhone: false,
+          collectNotes: false,
+        },
+      },
+      churchId: stPishoy.id,
+      seriesId: copticLanguage.id,
+    },
+  });
+
+  // ── Young Adults Fellowship Events ────────────────────────────────────────────
+
+  await prisma.event.create({
+    data: {
+      datetime: past(35, "19:30"),
+      title: "Young Adults — Session 1: What Does It Mean to Be Coptic?",
+      location: "Fellowship Hall",
+      host: "Deacon Mina Nashed",
+      tag: "Young Adults",
+      description:
+        "Our inaugural Young Adults gathering opened with a shared meal and an honest conversation: what does it actually mean to be Coptic Orthodox in Austin today? A wide-ranging discussion on identity, belonging, and faith.",
+      metadata: {
+        registration: {
+          capacity: null,
+          collectPhone: false,
+          collectNotes: false,
+        },
+      },
+      churchId: stMark.id,
+      seriesId: youngAdults.id,
+    },
+  });
+
+  await prisma.event.create({
+    data: {
+      datetime: past(7, "19:30"),
+      title: "Young Adults — Session 2: Vocation — Work, Faith & Purpose",
+      location: "Fellowship Hall",
+      host: "Deacon Mina Nashed",
+      tag: "Young Adults",
+      description:
+        "How do we integrate our faith with our careers, ambitions, and sense of calling? Deacon Mina led a discussion drawing on St. Paul's theology of vocation and a panel of young professionals sharing their own journeys.",
+      metadata: {
+        registration: {
+          capacity: null,
+          collectPhone: false,
+          collectNotes: false,
+        },
+      },
+      churchId: stMark.id,
+      seriesId: youngAdults.id,
+    },
+  });
+
+  await prisma.event.create({
+    data: {
+      datetime: future(14, "19:30"),
+      title: "Young Adults — Session 3: Relationships, Dating & the Church",
+      location: "Fellowship Hall",
+      host: "Deacon Mina Nashed",
+      tag: "Young Adults",
+      description:
+        "An open and honest conversation about relationships, dating as a Coptic Christian, the pressure of marriage expectations, and what the Church actually teaches — and doesn't teach — on these questions.",
+      metadata: {
+        registration: {
+          capacity: null,
+          collectPhone: false,
+          collectNotes: false,
+        },
+      },
+      churchId: stMark.id,
+      seriesId: youngAdults.id,
+    },
+  });
+
+  await prisma.event.create({
+    data: {
+      datetime: future(28, "19:30"),
+      title: "Young Adults — Session 4: Doubt, Faith & Intellectual Honesty",
+      location: "Fellowship Hall",
+      host: "Deacon Mina Nashed",
+      tag: "Young Adults",
+      description:
+        "A session for those wrestling with questions about faith — can doubt be part of the spiritual life? We look at the tradition of apophatic theology, the role of the intellect in Orthodox Christianity, and how to hold faith and reason together.",
+      metadata: {
+        registration: {
+          capacity: null,
+          collectPhone: false,
+          collectNotes: false,
+        },
+      },
+      churchId: stMark.id,
+      seriesId: youngAdults.id,
+    },
+  });
+
+  await prisma.event.create({
+    data: {
+      datetime: future(42, "19:30"),
+      title:
+        "Young Adults — Session 5: Service — Finding Your Place in the Church",
+      location: "Fellowship Hall",
+      host: "Deacon Mina Nashed",
+      tag: "Young Adults",
+      description:
+        "How do young adults get connected to serving in the Church? Deacon Mina maps out the different ministries at St. Mark, shares how to discern your gifts, and facilitates small group conversations about barriers to involvement.",
+      metadata: {
+        registration: {
+          capacity: null,
+          collectPhone: false,
+          collectNotes: false,
+        },
+      },
+      churchId: stMark.id,
+      seriesId: youngAdults.id,
+    },
+  });
+
+  // ── Parish Pastoral Talks Events ─────────────────────────────────────────────
+
+  await prisma.event.create({
+    data: {
+      datetime: past(28, "19:00"),
+      title: "Pastoral Talk — Month 1: The Sacrament of Confession",
+      location: "Main Hall",
+      host: "Fr. Marcos Khalil",
+      tag: "Parish Meeting",
+      description:
+        "Fr. Marcos opened the series with a deep exploration of confession — not as a transaction, but as a sacramental encounter with the healing Christ. He addressed common fears, misconceptions, and the gift of having a spiritual father.",
+      metadata: {
+        registration: {
+          capacity: null,
+          collectPhone: false,
+          collectNotes: false,
+        },
+      },
+      churchId: stAnthony.id,
+      seriesId: parishPastoral.id,
+    },
+  });
+
+  await prisma.event.create({
+    data: {
+      datetime: future(13, "19:00"),
+      title: "Pastoral Talk — Month 2: The Fasting Life",
+      location: "Main Hall",
+      host: "Fr. Marcos Khalil",
+      tag: "Parish Meeting",
+      description:
+        "An exploration of the Coptic fasting tradition — the seven fasts, the theology of bodily discipline, and how fasting unites body and soul in the praise of God. Fr. Marcos addresses practical questions about fasting for working adults and families.",
+      metadata: {
+        registration: {
+          capacity: null,
+          collectPhone: false,
+          collectNotes: false,
+        },
+      },
+      churchId: stAnthony.id,
+      seriesId: parishPastoral.id,
+    },
+  });
+
+  await prisma.event.create({
+    data: {
+      datetime: future(43, "19:00"),
+      title: "Pastoral Talk — Month 3: Raising Children in the Faith",
+      location: "Main Hall",
+      host: "Fr. Marcos Khalil",
+      tag: "Parish Meeting",
+      description:
+        "A talk for the whole parish — parents, grandparents, singles — on the community's shared responsibility for raising the next generation. Fr. Marcos draws on the Church Fathers and takes questions from the congregation.",
+      metadata: {
+        registration: {
+          capacity: null,
+          collectPhone: false,
+          collectNotes: false,
+        },
+      },
+      churchId: stAnthony.id,
+      seriesId: parishPastoral.id,
+    },
+  });
+
+  await prisma.event.create({
+    data: {
+      datetime: future(73, "19:00"),
+      title: "Pastoral Talk — Month 4: Preparing for Death & Eternal Life",
+      location: "Main Hall",
+      host: "Fr. Marcos Khalil",
+      tag: "Parish Meeting",
+      description:
+        "A talk on the Coptic Church's vision of death, resurrection, and eternal life. Fr. Marcos addresses grief, caring for the dying, the rites of burial, and how the hope of resurrection shapes the way we live now.",
+      metadata: {
+        registration: {
+          capacity: null,
+          collectPhone: false,
+          collectNotes: false,
+        },
+      },
+      churchId: stAnthony.id,
+      seriesId: parishPastoral.id,
+    },
+  });
+
+  // ── Standalone Events ─────────────────────────────────────────────────────────
+
+  // St. Mary
   await prisma.event.create({
     data: {
       datetime: future(5, "07:00"),
       title: "Feast of the Annunciation — Divine Liturgy",
       location: "Sanctuary",
       host: "Fr. Bishoy Lamie",
-      tag: "Youth Meeting",
+      tag: "Feast Day",
       description:
         "Come celebrate the Feast of the Annunciation with a solemn Divine Liturgy in honor of the Virgin St. Mary. The service will be conducted in Coptic, Arabic, and English. All are welcome.",
       metadata: {
@@ -423,6 +1239,47 @@ async function main() {
     },
   });
 
+  await prisma.event.create({
+    data: {
+      datetime: future(12, "18:00"),
+      title: 'Women of the Church — Monthly Meeting: "Prayer in the Home"',
+      location: "Fellowship Hall",
+      host: "Tasoni Mariam Lamie",
+      tag: "Women's Meeting",
+      description:
+        "The monthly women's meeting at St. Mary, led by Tasoni Mariam. This month's topic is building a culture of prayer in the family home — morning prayers, evening prayers, and the Agpeya as a family practice. Light refreshments provided.",
+      metadata: {
+        registration: {
+          capacity: null,
+          collectPhone: false,
+          collectNotes: false,
+        },
+      },
+      churchId: stMary.id,
+    },
+  });
+
+  await prisma.event.create({
+    data: {
+      datetime: future(20, "17:00"),
+      title: 'Youth Talent Night — "Glory in the Making"',
+      location: "Main Hall",
+      host: "Maryam Iskander",
+      tag: "Youth Meeting",
+      description:
+        "An evening showcasing the creative gifts of our youth — music, spoken word, art, drama, and dance. All performances are rooted in faith themes. Family and friends welcome. Light dinner from 5 PM, show starts at 6 PM.",
+      metadata: {
+        registration: {
+          capacity: null,
+          collectPhone: false,
+          collectNotes: false,
+        },
+      },
+      churchId: stMary.id,
+    },
+  });
+
+  // St. George
   const orientationEvent = await prisma.event.create({
     data: {
       datetime: future(18, "17:00"),
@@ -440,6 +1297,61 @@ async function main() {
     },
   });
 
+  await prisma.event.create({
+    data: {
+      datetime: future(11, "08:00"),
+      title: "Deacons Training Day — Liturgical Rites & Responses",
+      location: "Sanctuary",
+      host: "Fr. Antonious Farag",
+      tag: "Servants Meeting",
+      description:
+        "A full-day training for the deaconate of St. George — covering proper liturgical responses, the order of deacons' roles in the Divine Liturgy, vestment care, and the spirituality of the diaconate vocation. Breakfast and lunch included.",
+      requiresRegistration: true,
+      metadata: {
+        registration: { capacity: 40, collectPhone: true, collectNotes: false },
+      },
+      churchId: stGeorge.id,
+    },
+  });
+
+  await prisma.event.create({
+    data: {
+      datetime: past(10, "18:30"),
+      title: "Annual Vestry Meeting — St. George Church",
+      location: "Conference Room",
+      host: "Fr. Antonious Farag",
+      tag: "Parish Meeting",
+      description:
+        "The annual vestry meeting reviewed the church's financial report for the year, approved the 2026 budget, elected two new board members, and received updates on the fellowship hall renovation project.",
+      metadata: {
+        registration: {
+          capacity: null,
+          collectPhone: false,
+          collectNotes: false,
+        },
+      },
+      churchId: stGeorge.id,
+    },
+  });
+
+  await prisma.event.create({
+    data: {
+      datetime: future(25, "08:00"),
+      title: 'Parish Day Retreat — "Stillness & the City"',
+      location: "Holy Cross Retreat Center, Cedar Hill, TX",
+      host: "Fr. Antonious Farag",
+      tag: "Retreat",
+      description:
+        "A full Saturday of silence, prayer, and spiritual renewal at the Holy Cross Retreat Center. The day includes Agpeya prayers, a morning talk by Fr. Antonious on the interior life, a silent lunch, and small group confession opportunities. No phones — just presence.",
+      requiresRegistration: true,
+      metadata: {
+        registration: { capacity: 80, collectPhone: true, collectNotes: true },
+      },
+      churchId: stGeorge.id,
+    },
+  });
+
+  // St. Mark
   await prisma.event.create({
     data: {
       datetime: past(12, "19:00"),
@@ -466,7 +1378,7 @@ async function main() {
       title: "Annual Vestry Meeting — St. Mark Church",
       location: "Main Hall",
       host: "Fr. Cyril Mikhail",
-      tag: "Servants Meeting",
+      tag: "Parish Meeting",
       description:
         "The annual vestry meeting reviewed the church's financial report, elected new board members, and discussed the renovation project for the baptistry. Minutes are available from the church office.",
       metadata: {
@@ -482,11 +1394,69 @@ async function main() {
 
   await prisma.event.create({
     data: {
+      datetime: future(9, "07:30"),
+      title: "Youth Sunrise Hike — Barton Creek Greenbelt",
+      location: "Barton Creek Greenbelt, Austin, TX",
+      host: "Deacon Mina Nashed",
+      tag: "Youth Meeting",
+      description:
+        "An early morning hike through the Barton Creek Greenbelt for youth and young adults. We will begin with morning prayers at the trailhead, hike the Spyglass-Gus Fruh loop (4.5 miles), and close with a reflection on creation and the spiritual life. Breakfast tacos afterward.",
+      requiresRegistration: true,
+      metadata: {
+        registration: { capacity: 50, collectPhone: true, collectNotes: false },
+      },
+      churchId: stMark.id,
+    },
+  });
+
+  await prisma.event.create({
+    data: {
+      datetime: future(16, "21:30"),
+      title: "Friday Midnight Praise — Feast of St. Mark",
+      location: "Sanctuary",
+      host: "Fr. Cyril Mikhail",
+      tag: "Feast Day",
+      description:
+        "A special Midnight Praise (Tasbeha) celebrating the Feast of St. Mark the Evangelist, founder of the Coptic Church. The praises will be led by the church choir in Coptic and Arabic, with a short homily on the witness of St. Mark.",
+      metadata: {
+        registration: {
+          capacity: null,
+          collectPhone: false,
+          collectNotes: false,
+        },
+      },
+      churchId: stMark.id,
+    },
+  });
+
+  await prisma.event.create({
+    data: {
+      datetime: future(45, "11:00"),
+      title: "Annual Church Family Picnic",
+      location: "Zilker Park, Austin, TX",
+      host: "St. Mark Parish Committee",
+      tag: "Social",
+      description:
+        "Our beloved annual picnic at Zilker Park — a day for the whole St. Mark family to enjoy food, games, fellowship, and the outdoors. Bring your family, your appetite, and a side dish to share. Kids' games, volleyball, and prizes.",
+      metadata: {
+        registration: {
+          capacity: null,
+          collectPhone: false,
+          collectNotes: false,
+        },
+      },
+      churchId: stMark.id,
+    },
+  });
+
+  // Archangel Michael
+  await prisma.event.create({
+    data: {
       datetime: past(45, "19:00"),
       title: '"The Life of St. Moses the Black" — Evening Lecture',
       location: "Main Hall",
       host: "Dr. Hany Takla",
-      tag: "Bible Study",
+      tag: "Lecture",
       description:
         "Dr. Hany Takla of the St. Shenouda Coptic Society delivered a compelling lecture on the life and legacy of St. Moses the Black — from bandit to monk to martyr. His story is a testament to the transforming grace of God and the ascetic tradition of the Desert Fathers.",
       metadata: {
@@ -500,7 +1470,207 @@ async function main() {
     },
   });
 
-  // ── Camp Event ──────────────────────────────────────────────────────────────
+  await prisma.event.create({
+    data: {
+      datetime: future(4, "07:00"),
+      title: "Feast of St. Anthony the Great — Divine Liturgy",
+      location: "Sanctuary",
+      host: "Fr. Boulos Samir",
+      tag: "Feast Day",
+      description:
+        "A solemn Divine Liturgy commemorating St. Anthony the Great, father of monasticism, on his feast day. Fr. Boulos will preach on the radical witness of Anthony's life and its meaning for Christians in the modern world. All are welcome.",
+      metadata: {
+        registration: {
+          capacity: null,
+          collectPhone: false,
+          collectNotes: false,
+        },
+      },
+      churchId: archangel.id,
+    },
+  });
+
+  await prisma.event.create({
+    data: {
+      datetime: future(30, "18:00"),
+      title: "Parish Community Dinner — Spring Gathering",
+      location: "Fellowship Hall",
+      host: "Archangel Michael Parish Committee",
+      tag: "Social",
+      description:
+        "The quarterly community dinner for the parish family of Archangel Michael Church. Each family is invited to bring a dish representing their heritage. An evening of food, fellowship, and gratitude for our diverse community.",
+      metadata: {
+        registration: {
+          capacity: null,
+          collectPhone: false,
+          collectNotes: false,
+        },
+      },
+      churchId: archangel.id,
+    },
+  });
+
+  await prisma.event.create({
+    data: {
+      datetime: past(3, "18:00"),
+      title: "Summer Fundraiser Dinner — CANCELLED",
+      location: "Fellowship Hall",
+      host: "Fr. Boulos Samir",
+      tag: "Social",
+      description:
+        "Our annual summer fundraiser dinner to support the church's building fund. Unfortunately this event was cancelled due to a scheduling conflict with the diocese retreat. A new date will be announced soon.",
+      cancelledAt: past(10),
+      cancellationReason:
+        "Scheduling conflict with the Diocese of Southern USA annual retreat. A rescheduled date will be communicated by the church office.",
+      metadata: {
+        registration: {
+          capacity: null,
+          collectPhone: false,
+          collectNotes: false,
+        },
+      },
+      churchId: archangel.id,
+    },
+  });
+
+  // St. Pishoy (The Woodlands)
+  await prisma.event.create({
+    data: {
+      datetime: past(5, "07:00"),
+      title: "Divine Liturgy — Feast of St. Pishoy",
+      location: "Sanctuary",
+      host: "Fr. Demetrius Botros",
+      tag: "Feast Day",
+      description:
+        "Our patronal feast — the Feast of Abba Pishoy the Great. The Divine Liturgy was celebrated in Bohairic Coptic and English, followed by a parish luncheon. The day marked the 14th anniversary of our church's founding.",
+      metadata: {
+        registration: {
+          capacity: null,
+          collectPhone: false,
+          collectNotes: false,
+        },
+      },
+      churchId: stPishoy.id,
+    },
+  });
+
+  await prisma.event.create({
+    data: {
+      datetime: future(18, "10:00"),
+      title: 'Icon Writing Workshop — "The Theotokos Hodegetria"',
+      location: "Fellowship Hall",
+      host: "Iconographer Bishoy Ayad",
+      tag: "Workshop",
+      description:
+        "A full-day introduction to Coptic iconography. Iconographer Bishoy Ayad will guide participants through the theology of icons and the step-by-step process of creating a small icon of the Hodegetria — the Virgin Mary pointing to Christ. All materials provided.",
+      requiresRegistration: true,
+      price: "$45",
+      metadata: {
+        registration: { capacity: 20, collectPhone: true, collectNotes: true },
+      },
+      churchId: stPishoy.id,
+    },
+  });
+
+  await prisma.event.create({
+    data: {
+      datetime: future(26, "09:00"),
+      title: "Youth Soccer Tournament — St. Pishoy Cup",
+      location: "Northgate Sports Complex, The Woodlands, TX",
+      host: "St. Pishoy Youth Committee",
+      tag: "Youth Meeting",
+      description:
+        "The inaugural St. Pishoy Cup — a friendly soccer tournament for youth (ages 12–22) from Coptic churches across the Houston area. Teams of 7 compete in a round-robin format. Trophy for the winners, participation medals for all. Registration required to form teams.",
+      requiresRegistration: true,
+      metadata: {
+        registration: { capacity: 70, collectPhone: true, collectNotes: false },
+      },
+      churchId: stPishoy.id,
+    },
+  });
+
+  // St. Anthony Fort Worth
+  await prisma.event.create({
+    data: {
+      datetime: future(7, "07:00"),
+      title: "Feast of St. Anthony — Divine Liturgy & Breakfast",
+      location: "Sanctuary",
+      host: "Fr. Marcos Khalil",
+      tag: "Feast Day",
+      description:
+        "Celebrating the feast of our patron St. Anthony the Great with a solemn Divine Liturgy followed by a parish breakfast. Fr. Marcos will preach on Anthony's encounter with God in the desert and its meaning for our own spiritual journey.",
+      metadata: {
+        registration: {
+          capacity: null,
+          collectPhone: false,
+          collectNotes: false,
+        },
+      },
+      churchId: stAnthony.id,
+    },
+  });
+
+  await prisma.event.create({
+    data: {
+      datetime: future(22, "18:30"),
+      title: 'Marriage Enrichment Evening — "The Art of Forgiveness"',
+      location: "Fellowship Hall",
+      host: "Fr. Marcos Khalil & Dr. Nadia Habib",
+      tag: "Parish Meeting",
+      description:
+        "A one-evening marriage enrichment event for married couples of all ages. Fr. Marcos leads with a reflection on forgiveness in the sacramental life of a Christian marriage, followed by a workshop session facilitated by Dr. Nadia Habib. Light dinner at 6:30 PM.",
+      metadata: {
+        registration: {
+          capacity: null,
+          collectPhone: false,
+          collectNotes: false,
+        },
+      },
+      churchId: stAnthony.id,
+    },
+  });
+
+  await prisma.event.create({
+    data: {
+      datetime: future(40, "08:00"),
+      title: 'Women\'s Day of Reflection — "Mary at the Foot of the Cross"',
+      location: "St. Anthony Church",
+      host: "Tasoni Irene Khalil",
+      tag: "Women's Meeting",
+      description:
+        "A Saturday day of reflection for the women of St. Anthony Church and invited guests. Tasoni Irene leads the morning with Agpeya prayers, a meditation on the Virgin Mary's witness at Golgotha, and small group discussions. Lunch provided.",
+      requiresRegistration: true,
+      metadata: {
+        registration: { capacity: 60, collectPhone: true, collectNotes: false },
+      },
+      churchId: stAnthony.id,
+    },
+  });
+
+  // Cross-church event
+  await prisma.event.create({
+    data: {
+      datetime: future(60, "08:00"),
+      title: "Texas Coptic Youth Conference 2026",
+      location: "St. Mary Church, Houston, TX",
+      host: "Diocese of the Southern USA Youth Committee",
+      tag: "Youth Meeting",
+      description:
+        "The annual gathering of Coptic youth from across Texas and the Southern USA — hosted this year by St. Mary Church, Houston. Two days of talks, workshops, praise, and community for ages 15–30. Speakers from across the Diocese and beyond. Registration opens soon.",
+      requiresRegistration: true,
+      price: "$35",
+      metadata: {
+        registration: {
+          capacity: 400,
+          collectPhone: true,
+          collectNotes: false,
+        },
+      },
+      churchId: stMary.id,
+    },
+  });
+
+  // ── Main Camp Event ───────────────────────────────────────────────────────────
 
   const campDay = 32;
 
@@ -516,11 +1686,7 @@ async function main() {
       requiresRegistration: true,
       price: "$175",
       metadata: {
-        registration: {
-          capacity: 120,
-          collectPhone: true,
-          collectNotes: true,
-        },
+        registration: { capacity: 120, collectPhone: true, collectNotes: true },
         camp: {
           endDate: futureDate(campDay + 4),
           allowPartialRegistration: true,
@@ -569,7 +1735,7 @@ async function main() {
               id: "day2-talk1",
               date: futureDate(campDay + 1),
               time: "09:00",
-              title: 'Talk 1: "Who Am I?" — Identity in Christ',
+              title: '"Who Am I?" — Identity in Christ',
               description:
                 "Fr. Bishoy opens our theological journey by exploring what Scripture and the Church Fathers say about our identity as children of God.",
             },
@@ -609,7 +1775,7 @@ async function main() {
               id: "day3-talk2",
               date: futureDate(campDay + 2),
               time: "10:30",
-              title: 'Talk 2: "What Is My Vocation?" — Called to Serve',
+              title: '"What Is My Vocation?" — Called to Serve',
               description:
                 "Exploring the different vocations in the Church — monasticism, marriage, deaconate, and lay service — and how to discern your calling.",
             },
@@ -641,7 +1807,7 @@ async function main() {
               id: "day4-talk3",
               date: futureDate(campDay + 3),
               time: "09:00",
-              title: 'Talk 3: "Living Coptic in the West" — Faith & Culture',
+              title: '"Living Coptic in the West" — Faith & Culture',
               description:
                 "A panel discussion with young Coptic professionals on navigating faith, identity, and culture as Copts in the diaspora.",
             },
@@ -692,7 +1858,145 @@ async function main() {
     },
   });
 
-  // ── Users ────────────────────────────────────────────────────────────────────
+  // ── St. Pishoy Youth Retreat (3-day) ─────────────────────────────────────────
+
+  const retreatDay = 50;
+
+  const retreatEvent = await prisma.event.create({
+    data: {
+      datetime: future(retreatDay, "15:00"),
+      title: 'St. Pishoy Youth Retreat 2026 — "The Desert Within"',
+      location: "Camp Eagle, Marble Falls, TX",
+      host: "Fr. Demetrius Botros",
+      tag: "Camp",
+      description:
+        'A three-day youth retreat for ages 16–30 at Camp Eagle on Lake Travis. The theme "The Desert Within" draws from the monastic tradition of our patron saints, inviting participants to encounter God through silence, prayer, and community. Includes liturgies, desert spirituality talks, kayaking, and a night-time campfire vigil. Cost covers lodging and meals.',
+      requiresRegistration: true,
+      price: "$110",
+      metadata: {
+        registration: { capacity: 60, collectPhone: true, collectNotes: true },
+        camp: {
+          endDate: futureDate(retreatDay + 2),
+          allowPartialRegistration: false,
+          agenda: [
+            {
+              id: "r-day1-arrive",
+              date: futureDate(retreatDay),
+              time: "15:00",
+              title: "Arrival & Welcome",
+              description:
+                "Check-in at Camp Eagle, cabin assignments, and welcome orientation.",
+            },
+            {
+              id: "r-day1-vespers",
+              date: futureDate(retreatDay),
+              time: "18:00",
+              title: "Opening Vespers & Theme Introduction",
+              description:
+                'Evening prayer followed by Fr. Demetrius\'s introduction to the theme "The Desert Within."',
+            },
+            {
+              id: "r-day1-dinner",
+              date: futureDate(retreatDay),
+              time: "20:00",
+              title: "Community Dinner & Icebreakers",
+              description:
+                "Shared dinner and group icebreaker activities to build community.",
+            },
+            {
+              id: "r-day2-agpeya",
+              date: futureDate(retreatDay + 1),
+              time: "06:30",
+              title: "Morning Agpeya",
+              description:
+                "Third and Sixth Hour prayers at sunrise overlooking the lake.",
+            },
+            {
+              id: "r-day2-liturgy",
+              date: futureDate(retreatDay + 1),
+              time: "08:00",
+              title: "Divine Liturgy",
+              description:
+                "A celebrated Divine Liturgy in the outdoor chapel, all communing together.",
+            },
+            {
+              id: "r-day2-talk1",
+              date: futureDate(retreatDay + 1),
+              time: "10:30",
+              title: 'Talk 1: "What Is the Desert?" — Solitude & God',
+              description:
+                "Fr. Demetrius explores the theology of the desert — why the early monks fled to the desert, what they found there, and what inner desert each of us carries.",
+            },
+            {
+              id: "r-day2-silence",
+              date: futureDate(retreatDay + 1),
+              time: "13:00",
+              title: "The Great Silence — 2 Hours",
+              description:
+                "Two hours of guided silence. Participants may walk the grounds, journal, sit in the chapel, or pray alone. No phones.",
+            },
+            {
+              id: "r-day2-kayak",
+              date: futureDate(retreatDay + 1),
+              time: "15:30",
+              title: "Kayaking on Lake Travis",
+              description:
+                "Recreational kayaking on the lake — an opportunity for creation-centered prayer and fellowship.",
+            },
+            {
+              id: "r-day2-talk2",
+              date: futureDate(retreatDay + 1),
+              time: "19:00",
+              title: 'Talk 2: "The Warfare of Thoughts" — Logismoi & Nepsis',
+              description:
+                "Drawing from Evagrius Ponticus and the Apophthegmata, Fr. Demetrius teaches on the eight logismoi (thoughts) and the practice of watchfulness (nepsis).",
+            },
+            {
+              id: "r-day2-vigil",
+              date: futureDate(retreatDay + 1),
+              time: "22:00",
+              title: "Campfire Vigil & Confession",
+              description:
+                "A night-time gathering around the fire with psalms, testimonies, and the opportunity for individual confession with Fr. Demetrius.",
+            },
+            {
+              id: "r-day3-agpeya",
+              date: futureDate(retreatDay + 2),
+              time: "07:00",
+              title: "Morning Agpeya",
+              description: "Final morning prayers together.",
+            },
+            {
+              id: "r-day3-talk3",
+              date: futureDate(retreatDay + 2),
+              time: "09:00",
+              title: 'Talk 3: "Bringing the Desert Home" — A Rule of Life',
+              description:
+                "How do we carry what we've experienced here back into daily life? Fr. Demetrius guides participants in writing a personal rule of life — prayer, fasting, service, and silence.",
+            },
+            {
+              id: "r-day3-closing",
+              date: futureDate(retreatDay + 2),
+              time: "11:30",
+              title: "Closing Liturgy of the Word & Sending",
+              description:
+                "A brief liturgy of the Word, blessing of each participant, and the sending prayer.",
+            },
+            {
+              id: "r-day3-depart",
+              date: futureDate(retreatDay + 2),
+              time: "13:00",
+              title: "Departure",
+              description: "Safe travels. Go in peace.",
+            },
+          ],
+        },
+      },
+      churchId: stPishoy.id,
+    },
+  });
+
+  // ── Users ─────────────────────────────────────────────────────────────────────
 
   const organiser1 = await prisma.user.create({
     data: {
@@ -727,14 +2031,36 @@ async function main() {
     },
   });
 
-  await prisma.churchOrganiser.create({
-    data: { userId: organiser1.id, churchId: stMary.id },
+  const organiser4 = await prisma.user.create({
+    data: {
+      name: "Fr. Demetrius Botros",
+      email: "organiser4@example.com",
+      password: await bcrypt.hash("password123", 10),
+      emailVerified: new Date(),
+      onboardingCompleted: true,
+      role: "ORGANISER",
+    },
   });
-  await prisma.churchOrganiser.create({
-    data: { userId: organiser2.id, churchId: stMark.id },
+
+  const organiser5 = await prisma.user.create({
+    data: {
+      name: "Fr. Marcos Khalil",
+      email: "organiser5@example.com",
+      password: await bcrypt.hash("password123", 10),
+      emailVerified: new Date(),
+      onboardingCompleted: true,
+      role: "ORGANISER",
+    },
   });
-  await prisma.churchOrganiser.create({
-    data: { userId: organiser3.id, churchId: stGeorge.id },
+
+  await prisma.churchOrganiser.createMany({
+    data: [
+      { userId: organiser1.id, churchId: stMary.id },
+      { userId: organiser2.id, churchId: stMark.id },
+      { userId: organiser3.id, churchId: stGeorge.id },
+      { userId: organiser4.id, churchId: stPishoy.id },
+      { userId: organiser5.id, churchId: stAnthony.id },
+    ],
   });
 
   const admin1 = await prisma.user.create({
@@ -752,9 +2078,9 @@ async function main() {
     data: { userId: admin1.id, churchId: stMary.id },
   });
 
-  // ── Question Library Items ───────────────────────────────────────────────────
+  // ── Question Library ──────────────────────────────────────────────────────────
 
-  // organiser1 (Fr. Bishoy) — camp / retreat questions
+  // organiser1 (Fr. Bishoy) — camp / retreat / large event questions
   const lib1 = await prisma.$transaction([
     prisma.questionLibraryItem.create({
       data: {
@@ -769,7 +2095,7 @@ async function main() {
         createdById: organiser1.id,
         type: "MULTIPLE_CHOICE",
         label: "Age group",
-        options: ["13–15", "16–18", "19–22"],
+        options: ["13–15", "16–18", "19–22", "23–30"],
       },
     }),
     prisma.questionLibraryItem.create({
@@ -793,7 +2119,14 @@ async function main() {
         createdById: organiser1.id,
         type: "MULTIPLE_CHOICE",
         label: "Dietary restrictions",
-        options: ["None", "Vegetarian", "Vegan", "Gluten-free", "Other"],
+        options: [
+          "None",
+          "Vegetarian",
+          "Vegan",
+          "Gluten-free",
+          "Nut allergy",
+          "Other",
+        ],
       },
     }),
     prisma.questionLibraryItem.create({
@@ -804,10 +2137,26 @@ async function main() {
         options: [],
       },
     }),
+    prisma.questionLibraryItem.create({
+      data: {
+        createdById: organiser1.id,
+        type: "YES_NO",
+        label: "Is this your first time attending this camp?",
+        options: [],
+      },
+    }),
+    prisma.questionLibraryItem.create({
+      data: {
+        createdById: organiser1.id,
+        type: "SHORT_TEXT",
+        label: "Church you attend",
+        options: [],
+      },
+    }),
   ]);
 
-  // organiser2 (Deacon Mina) — general reusables
-  await prisma.$transaction([
+  // organiser2 (Deacon Mina) — general / bible study / hike questions
+  const lib2 = await prisma.$transaction([
     prisma.questionLibraryItem.create({
       data: {
         createdById: organiser2.id,
@@ -840,9 +2189,25 @@ async function main() {
         options: [],
       },
     }),
+    prisma.questionLibraryItem.create({
+      data: {
+        createdById: organiser2.id,
+        type: "MULTIPLE_CHOICE",
+        label: "Fitness level for hike",
+        options: ["Beginner", "Moderate", "Experienced"],
+      },
+    }),
+    prisma.questionLibraryItem.create({
+      data: {
+        createdById: organiser2.id,
+        type: "YES_NO",
+        label: "Do you have suitable footwear for a trail hike?",
+        options: [],
+      },
+    }),
   ]);
 
-  // organiser3 (Fr. Antonious) — servants / formation questions
+  // organiser3 (Fr. Antonious) — servants / formation / retreat questions
   const lib3 = await prisma.$transaction([
     prisma.questionLibraryItem.create({
       data: {
@@ -879,7 +2244,7 @@ async function main() {
       data: {
         createdById: organiser3.id,
         type: "LONG_TEXT",
-        label: "What do you hope to get out of this orientation?",
+        label: "What do you hope to get out of this event?",
         options: [],
       },
     }),
@@ -891,10 +2256,124 @@ async function main() {
         options: [],
       },
     }),
+    prisma.questionLibraryItem.create({
+      data: {
+        createdById: organiser3.id,
+        type: "MULTIPLE_CHOICE",
+        label: "Dietary restrictions",
+        options: ["None", "Vegetarian", "Vegan", "Gluten-free", "Other"],
+      },
+    }),
+    prisma.questionLibraryItem.create({
+      data: {
+        createdById: organiser3.id,
+        type: "YES_NO",
+        label: "Will you be driving or need a carpool?",
+        options: [],
+      },
+    }),
   ]);
 
-  // ── Event Questions ──────────────────────────────────────────────────────────
+  // organiser4 (Fr. Demetrius) — retreat / icon workshop questions
+  const lib4 = await prisma.$transaction([
+    prisma.questionLibraryItem.create({
+      data: {
+        createdById: organiser4.id,
+        type: "YES_NO",
+        label: "Have you attended a retreat before?",
+        options: [],
+      },
+    }),
+    prisma.questionLibraryItem.create({
+      data: {
+        createdById: organiser4.id,
+        type: "MULTIPLE_CHOICE",
+        label: "Age group",
+        options: ["16–18", "19–22", "23–30", "30+"],
+      },
+    }),
+    prisma.questionLibraryItem.create({
+      data: {
+        createdById: organiser4.id,
+        type: "MULTIPLE_CHOICE",
+        label: "Dietary restrictions",
+        options: ["None", "Vegetarian", "Vegan", "Gluten-free", "Other"],
+      },
+    }),
+    prisma.questionLibraryItem.create({
+      data: {
+        createdById: organiser4.id,
+        type: "SHORT_TEXT",
+        label: "Emergency contact name and phone number",
+        options: [],
+      },
+    }),
+    prisma.questionLibraryItem.create({
+      data: {
+        createdById: organiser4.id,
+        type: "LONG_TEXT",
+        label:
+          "Is there anything you are hoping God will speak to you about on this retreat?",
+        options: [],
+      },
+    }),
+    prisma.questionLibraryItem.create({
+      data: {
+        createdById: organiser4.id,
+        type: "YES_NO",
+        label: "Do you have any prior experience with iconography?",
+        options: [],
+      },
+    }),
+    prisma.questionLibraryItem.create({
+      data: {
+        createdById: organiser4.id,
+        type: "SHORT_TEXT",
+        label: "Church you attend",
+        options: [],
+      },
+    }),
+  ]);
 
+  // organiser5 (Fr. Marcos) — women's day / general questions
+  const lib5 = await prisma.$transaction([
+    prisma.questionLibraryItem.create({
+      data: {
+        createdById: organiser5.id,
+        type: "MULTIPLE_CHOICE",
+        label: "Dietary restrictions",
+        options: ["None", "Vegetarian", "Vegan", "Gluten-free", "Other"],
+      },
+    }),
+    prisma.questionLibraryItem.create({
+      data: {
+        createdById: organiser5.id,
+        type: "SHORT_TEXT",
+        label: "Emergency contact name and phone number",
+        options: [],
+      },
+    }),
+    prisma.questionLibraryItem.create({
+      data: {
+        createdById: organiser5.id,
+        type: "LONG_TEXT",
+        label: "Any prayer requests you would like to share?",
+        options: [],
+      },
+    }),
+    prisma.questionLibraryItem.create({
+      data: {
+        createdById: organiser5.id,
+        type: "YES_NO",
+        label: "Will you need childcare during the event?",
+        options: [],
+      },
+    }),
+  ]);
+
+  // ── Event Questions ───────────────────────────────────────────────────────────
+
+  // Camp — St. Mary Summer Camp
   await prisma.eventQuestion.createMany({
     data: [
       {
@@ -910,7 +2389,7 @@ async function main() {
         eventId: campEvent.id,
         type: "MULTIPLE_CHOICE",
         label: "Age group",
-        options: ["13–15", "16–18", "19–22"],
+        options: ["13–15", "16–18", "19–22", "23–30"],
         required: true,
         order: 1,
         libraryItemId: lib1[1].id,
@@ -937,7 +2416,14 @@ async function main() {
         eventId: campEvent.id,
         type: "MULTIPLE_CHOICE",
         label: "Dietary restrictions",
-        options: ["None", "Vegetarian", "Vegan", "Gluten-free", "Other"],
+        options: [
+          "None",
+          "Vegetarian",
+          "Vegan",
+          "Gluten-free",
+          "Nut allergy",
+          "Other",
+        ],
         required: false,
         order: 4,
         libraryItemId: lib1[4].id,
@@ -951,9 +2437,89 @@ async function main() {
         order: 5,
         libraryItemId: lib1[5].id,
       },
+      {
+        eventId: campEvent.id,
+        type: "YES_NO",
+        label: "Is this your first time attending this camp?",
+        options: [],
+        required: false,
+        order: 6,
+        libraryItemId: lib1[6].id,
+      },
+      {
+        eventId: campEvent.id,
+        type: "SHORT_TEXT",
+        label: "Church you attend",
+        options: [],
+        required: true,
+        order: 7,
+        libraryItemId: lib1[7].id,
+      },
     ],
   });
 
+  // Retreat — St. Pishoy Youth Retreat
+  await prisma.eventQuestion.createMany({
+    data: [
+      {
+        eventId: retreatEvent.id,
+        type: "YES_NO",
+        label: "Have you attended a retreat before?",
+        options: [],
+        required: false,
+        order: 0,
+        libraryItemId: lib4[0].id,
+      },
+      {
+        eventId: retreatEvent.id,
+        type: "MULTIPLE_CHOICE",
+        label: "Age group",
+        options: ["16–18", "19–22", "23–30", "30+"],
+        required: true,
+        order: 1,
+        libraryItemId: lib4[1].id,
+      },
+      {
+        eventId: retreatEvent.id,
+        type: "MULTIPLE_CHOICE",
+        label: "Dietary restrictions",
+        options: ["None", "Vegetarian", "Vegan", "Gluten-free", "Other"],
+        required: false,
+        order: 2,
+        libraryItemId: lib4[2].id,
+      },
+      {
+        eventId: retreatEvent.id,
+        type: "SHORT_TEXT",
+        label: "Emergency contact name and phone number",
+        options: [],
+        required: true,
+        order: 3,
+        libraryItemId: lib4[3].id,
+      },
+      {
+        eventId: retreatEvent.id,
+        type: "LONG_TEXT",
+        label:
+          "Is there anything you are hoping God will speak to you about on this retreat?",
+        options: [],
+        required: false,
+        order: 4,
+        libraryItemId: lib4[4].id,
+      },
+      {
+        eventId: retreatEvent.id,
+        type: "SHORT_TEXT",
+        label: "Church you attend",
+        options: [],
+        required: true,
+        order: 5,
+        libraryItemId: lib4[6].id,
+      },
+    ],
+  });
+
+  // New Servants Orientation
   await prisma.eventQuestion.createMany({
     data: [
       {
@@ -993,19 +2559,185 @@ async function main() {
       {
         eventId: orientationEvent.id,
         type: "LONG_TEXT",
-        label: "What do you hope to get out of this orientation?",
+        label: "What do you hope to get out of this event?",
         options: [],
         required: false,
         order: 3,
         libraryItemId: lib3[3].id,
       },
+      {
+        eventId: orientationEvent.id,
+        type: "MULTIPLE_CHOICE",
+        label: "Dietary restrictions",
+        options: ["None", "Vegetarian", "Vegan", "Gluten-free", "Other"],
+        required: false,
+        order: 4,
+        libraryItemId: lib3[5].id,
+      },
     ],
   });
+
+  // Youth Hike — St. Mark
+  const hikeEvent = await prisma.event.findFirstOrThrow({
+    where: { title: { contains: "Youth Sunrise Hike" } },
+  });
+  await prisma.eventQuestion.createMany({
+    data: [
+      {
+        eventId: hikeEvent.id,
+        type: "MULTIPLE_CHOICE",
+        label: "Fitness level for hike",
+        options: ["Beginner", "Moderate", "Experienced"],
+        required: true,
+        order: 0,
+        libraryItemId: lib2[4].id,
+      },
+      {
+        eventId: hikeEvent.id,
+        type: "YES_NO",
+        label: "Do you have suitable footwear for a trail hike?",
+        options: [],
+        required: true,
+        order: 1,
+        libraryItemId: lib2[5].id,
+      },
+      {
+        eventId: hikeEvent.id,
+        type: "MULTIPLE_CHOICE",
+        label: "Dietary restrictions",
+        options: ["None", "Vegetarian", "Vegan", "Gluten-free", "Other"],
+        required: false,
+        order: 2,
+        libraryItemId: lib2[2].id,
+      },
+    ],
+  });
+
+  // Icon Writing Workshop
+  const iconEvent = await prisma.event.findFirstOrThrow({
+    where: { title: { contains: "Icon Writing Workshop" } },
+  });
+  await prisma.eventQuestion.createMany({
+    data: [
+      {
+        eventId: iconEvent.id,
+        type: "YES_NO",
+        label: "Do you have any prior experience with iconography?",
+        options: [],
+        required: false,
+        order: 0,
+        libraryItemId: lib4[5].id,
+      },
+      {
+        eventId: iconEvent.id,
+        type: "MULTIPLE_CHOICE",
+        label: "Dietary restrictions",
+        options: ["None", "Vegetarian", "Vegan", "Gluten-free", "Other"],
+        required: false,
+        order: 1,
+        libraryItemId: lib4[2].id,
+      },
+      {
+        eventId: iconEvent.id,
+        type: "SHORT_TEXT",
+        label: "Church you attend",
+        options: [],
+        required: true,
+        order: 2,
+        libraryItemId: lib4[6].id,
+      },
+    ],
+  });
+
+  // Women's Day of Reflection — St. Anthony
+  const womensEvent = await prisma.event.findFirstOrThrow({
+    where: { title: { contains: "Women's Day of Reflection" } },
+  });
+  await prisma.eventQuestion.createMany({
+    data: [
+      {
+        eventId: womensEvent.id,
+        type: "MULTIPLE_CHOICE",
+        label: "Dietary restrictions",
+        options: ["None", "Vegetarian", "Vegan", "Gluten-free", "Other"],
+        required: false,
+        order: 0,
+        libraryItemId: lib5[0].id,
+      },
+      {
+        eventId: womensEvent.id,
+        type: "YES_NO",
+        label: "Will you need childcare during the event?",
+        options: [],
+        required: false,
+        order: 1,
+        libraryItemId: lib5[3].id,
+      },
+      {
+        eventId: womensEvent.id,
+        type: "LONG_TEXT",
+        label: "Any prayer requests you would like to share?",
+        options: [],
+        required: false,
+        order: 2,
+        libraryItemId: lib5[2].id,
+      },
+    ],
+  });
+
+  // Parish Day Retreat — St. George
+  const parishRetreatEvent = await prisma.event.findFirstOrThrow({
+    where: { title: { contains: "Parish Day Retreat" } },
+  });
+  await prisma.eventQuestion.createMany({
+    data: [
+      {
+        eventId: parishRetreatEvent.id,
+        type: "MULTIPLE_CHOICE",
+        label: "Dietary restrictions",
+        options: ["None", "Vegetarian", "Vegan", "Gluten-free", "Other"],
+        required: false,
+        order: 0,
+        libraryItemId: lib3[5].id,
+      },
+      {
+        eventId: parishRetreatEvent.id,
+        type: "YES_NO",
+        label: "Will you be driving or need a carpool?",
+        options: [],
+        required: false,
+        order: 1,
+        libraryItemId: lib3[6].id,
+      },
+      {
+        eventId: parishRetreatEvent.id,
+        type: "LONG_TEXT",
+        label: "What do you hope to get out of this event?",
+        options: [],
+        required: false,
+        order: 2,
+        libraryItemId: lib3[3].id,
+      },
+    ],
+  });
+
+  // ── Regular Users ─────────────────────────────────────────────────────────────
 
   await prisma.user.create({
     data: {
       name: "Mark Girgis",
       email: "user@example.com",
+      password: await bcrypt.hash("password123", 10),
+      emailVerified: new Date(),
+      onboardingCompleted: true,
+      role: "ATTENDEE",
+    },
+  });
+
+  await prisma.user.create({
+    data: {
+      name: "Sara Hanna",
+      email: "user2@example.com",
       password: await bcrypt.hash("password123", 10),
       emailVerified: new Date(),
       onboardingCompleted: true,

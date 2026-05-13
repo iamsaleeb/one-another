@@ -19,32 +19,9 @@ env:
   NODE_VERSION: '20'
 
 jobs:
-  migrate:
-    name: Run migrations (${{ inputs.environment }})
-    runs-on: ubuntu-latest
-    environment: ${{ inputs.environment }}
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ inputs.version }}
-      - uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-      - run: npm ci
-      - name: Generate Prisma client
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-        run: npx prisma generate
-      - name: Deploy migrations
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-        run: npx prisma migrate deploy
-
   deploy:
     name: Deploy to Vercel (${{ inputs.environment }})
     runs-on: ubuntu-latest
-    needs: migrate
     environment: ${{ inputs.environment }}
     steps:
       - uses: actions/checkout@v4

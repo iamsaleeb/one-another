@@ -5,6 +5,9 @@
   "scripts": {
     "dev": "next dev",
     "build": "prisma generate && next build",
+    "vercel-build": "prisma generate && if [ \"$VERCEL_ENV\" = 'production' ]; then npm run db:migrate; else npm run db:reset; fi && next build",
+    "db:migrate": "prisma migrate deploy",
+    "db:reset": "prisma migrate reset --force && ts-node --compiler-options '{\"module\":\"CommonJS\"}' prisma/seed.ts",
     "start": "next start",
     "lint": "eslint .",
     "test": "jest",

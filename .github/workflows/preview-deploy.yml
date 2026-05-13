@@ -101,13 +101,6 @@ jobs:
       - name: Install Vercel CLI
         run: npm install -g vercel@53.3.1
 
-      - name: Wipe and reseed preview database
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-        run: |
-          npx prisma migrate reset --force
-          npx ts-node --compiler-options '{"module":"CommonJS"}' prisma/seed.ts
-
       - name: Deploy to Vercel
         id: deploy
         env:

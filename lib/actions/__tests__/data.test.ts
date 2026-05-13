@@ -518,6 +518,7 @@ describe("getEventsByCreator", () => {
     expect(mockEventFindMany).toHaveBeenCalledWith({
       where: { createdById: "user-1" },
       orderBy: { datetime: "asc" },
+      take: 50,
       include: {
         church: { select: { name: true } },
         createdBy: { select: { name: true } },
@@ -695,6 +696,7 @@ describe("getUserAttendedEvents", () => {
         attendees: { some: { userId: "user-1" } },
       },
       orderBy: { datetime: "asc" },
+      take: 50,
       include: { church: { select: { name: true } } },
     });
   });
@@ -722,6 +724,7 @@ describe("getUserAttendedPastEvents", () => {
         attendees: { some: { userId: "user-1" } },
       },
       orderBy: { datetime: "desc" },
+      take: 50,
       include: { church: { select: { name: true } } },
     });
   });

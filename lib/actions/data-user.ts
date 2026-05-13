@@ -54,7 +54,7 @@ export async function getStoredNotificationPreferences(userId: string) {
 
 export async function getCachedUnreadCount(userId: string): Promise<number> {
   cacheTag(`user-notifications-${userId}`);
-  cacheLife("seconds");
+  cacheLife("minutes");
   return prisma.notification.count({
     where: { userId, sentAt: { not: null }, readAt: null },
   });

@@ -18,7 +18,6 @@ import {
   getEventById,
   getEventAttendees,
   getMyEventAttendance,
-  getEventMeta,
 } from "@/lib/actions/data-events";
 import {
   getEventQuestions,
@@ -45,7 +44,7 @@ interface Props {
 
 export async function generateMetadata({ params }: Props) {
   const { id } = await params;
-  const event = await getEventMeta(id);
+  const event = await getEventById(id);
   if (!event) return { title: "Event Not Found" };
   if (event.isDraft) {
     // Draft: need auth check — infrequent, cost is acceptable

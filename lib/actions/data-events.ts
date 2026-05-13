@@ -71,6 +71,7 @@ export async function getEventsByCreator(userId: string) {
   return prisma.event.findMany({
     where: { createdById: userId },
     orderBy: { datetime: "asc" },
+    take: 50,
     include: {
       church: { select: { name: true } },
       createdBy: { select: { name: true } },
@@ -106,6 +107,7 @@ export async function getUserAttendedEvents(userId: string) {
       attendees: { some: { userId } },
     },
     orderBy: { datetime: "asc" },
+    take: 50,
     include: { church: { select: { name: true } } },
   });
 }
@@ -120,6 +122,7 @@ export async function getUserAttendedPastEvents(userId: string) {
       attendees: { some: { userId } },
     },
     orderBy: { datetime: "desc" },
+    take: 50,
     include: { church: { select: { name: true } } },
   });
 }

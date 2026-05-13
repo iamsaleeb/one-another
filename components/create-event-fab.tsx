@@ -11,7 +11,10 @@ export function CreateEventFAB({ isOrganiser }: { isOrganiser: boolean }) {
   useEffect(() => {
     if (!open) return;
     function handleClick(e: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(e.target as Node)
+      ) {
         setOpen(false);
       }
     }
@@ -22,7 +25,10 @@ export function CreateEventFAB({ isOrganiser }: { isOrganiser: boolean }) {
   if (!isOrganiser) return null;
 
   return (
-    <div ref={containerRef} className="fixed bottom-nav-fab right-4 z-50 flex flex-col items-end gap-3">
+    <div
+      ref={containerRef}
+      className="bottom-nav-fab fixed right-4 z-50 flex flex-col items-end gap-3"
+    >
       {open && (
         <>
           <Link
@@ -30,7 +36,7 @@ export function CreateEventFAB({ isOrganiser }: { isOrganiser: boolean }) {
             onClick={() => setOpen(false)}
             className="flex items-center gap-2 rounded-full bg-white px-4 py-2.5 text-sm font-medium shadow-lg transition-transform hover:scale-105 active:scale-95"
           >
-            <Repeat className="size-4 text-primary" />
+            <Repeat className="text-primary size-4" />
             New Series
           </Link>
           <Link
@@ -38,7 +44,7 @@ export function CreateEventFAB({ isOrganiser }: { isOrganiser: boolean }) {
             onClick={() => setOpen(false)}
             className="flex items-center gap-2 rounded-full bg-white px-4 py-2.5 text-sm font-medium shadow-lg transition-transform hover:scale-105 active:scale-95"
           >
-            <CalendarPlus className="size-4 text-primary" />
+            <CalendarPlus className="text-primary size-4" />
             New Event
           </Link>
         </>
@@ -46,7 +52,7 @@ export function CreateEventFAB({ isOrganiser }: { isOrganiser: boolean }) {
       <button
         onClick={() => setOpen((prev) => !prev)}
         aria-label={open ? "Close menu" : "Create new"}
-        className="flex size-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-transform hover:scale-105 active:scale-95"
+        className="bg-primary text-primary-foreground flex size-14 items-center justify-center rounded-full shadow-lg transition-transform hover:scale-105 active:scale-95"
       >
         {open ? <X className="size-6" /> : <Plus className="size-6" />}
       </button>

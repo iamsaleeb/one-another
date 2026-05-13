@@ -15,7 +15,9 @@ interface Props {
 export async function generateMetadata({ params }: Props) {
   const { id } = await params;
   const church = await getChurchById(id);
-  return { title: church ? `${church.name} — One Another` : "Church Not Found" };
+  return {
+    title: church ? `${church.name} — One Another` : "Church Not Found",
+  };
 }
 
 export default async function ChurchDetailPage({ params }: Props) {
@@ -23,7 +25,9 @@ export default async function ChurchDetailPage({ params }: Props) {
 
   const [church, myFollow] = await Promise.all([
     getChurchById(id),
-    session?.user?.id ? getMyChurchFollow(id, session.user.id) : Promise.resolve(null),
+    session?.user?.id
+      ? getMyChurchFollow(id, session.user.id)
+      : Promise.resolve(null),
   ]);
 
   if (!church) notFound();
@@ -34,17 +38,17 @@ export default async function ChurchDetailPage({ params }: Props) {
     <div className="bg-muted/20 pb-8">
       {/* Church Info Card */}
       <div className="px-4 pt-5 pb-3">
-        <Card className="rounded-2xl border-0 shadow-none overflow-hidden bg-primary/5">
-          <CardContent className="flex flex-col items-center gap-4 pt-6 pb-5 px-5">
+        <Card className="bg-primary/5 overflow-hidden rounded-2xl border-0">
+          <CardContent className="flex flex-col items-center gap-4 px-5 pt-6 pb-5">
             {/* Circular Avatar */}
-            <Avatar className="size-24 ring-4 ring-primary/10">
+            <Avatar className="ring-primary/10 size-24 ring-4">
               <AvatarFallback className="bg-primary/10 text-primary text-3xl font-bold">
                 {church.name.charAt(0)}
               </AvatarFallback>
             </Avatar>
 
             {/* Church Name */}
-            <h1 className="text-xl font-bold text-primary text-center leading-snug px-2">
+            <h1 className="text-primary px-2 text-center text-xl leading-snug font-bold">
               {church.name}
             </h1>
 
@@ -57,8 +61,8 @@ export default async function ChurchDetailPage({ params }: Props) {
                   rel="noopener noreferrer"
                   aria-label="Website"
                 >
-                  <div className="flex items-center justify-center w-11 h-11 rounded-full border-2 border-border hover:border-primary transition-colors">
-                    <Globe className="w-5 h-5 text-foreground" />
+                  <div className="border-border hover:border-primary flex h-11 w-11 items-center justify-center rounded-full border-2 transition-colors">
+                    <Globe className="text-foreground h-5 w-5" />
                   </div>
                 </a>
               )}
@@ -69,13 +73,13 @@ export default async function ChurchDetailPage({ params }: Props) {
                   rel="noopener noreferrer"
                   aria-label="Location"
                 >
-                  <div className="flex items-center justify-center w-11 h-11 rounded-full border-2 border-border hover:border-primary transition-colors">
-                    <MapPin className="w-5 h-5 text-foreground" />
+                  <div className="border-border hover:border-primary flex h-11 w-11 items-center justify-center rounded-full border-2 transition-colors">
+                    <MapPin className="text-foreground h-5 w-5" />
                   </div>
                 </a>
               )}
-              <div className="flex items-center justify-center w-11 h-11 rounded-full border-2 border-border">
-                <Share2 className="w-5 h-5 text-foreground" />
+              <div className="border-border flex h-11 w-11 items-center justify-center rounded-full border-2">
+                <Share2 className="text-foreground h-5 w-5" />
               </div>
             </div>
 
@@ -83,15 +87,13 @@ export default async function ChurchDetailPage({ params }: Props) {
             <Alert className="border-primary/20 bg-primary/5 text-primary">
               <Bell />
               <AlertDescription className="text-primary/80">
-                Following this church will notify you about upcoming events and services.
+                Following this church will notify you about upcoming events and
+                services.
               </AlertDescription>
             </Alert>
 
             {/* Follow Button */}
-            <FollowButton
-              churchId={church.id}
-              isFollowing={isFollowing}
-            />
+            <FollowButton churchId={church.id} isFollowing={isFollowing} />
           </CardContent>
         </Card>
       </div>

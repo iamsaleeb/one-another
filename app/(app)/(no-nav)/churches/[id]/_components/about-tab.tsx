@@ -17,17 +17,19 @@ export function AboutTab({ church }: AboutTabProps) {
     <div className="space-y-5">
       {/* Description */}
       <section>
-        <h2 className="text-lg font-bold mb-2">About</h2>
-        <p className="text-sm text-muted-foreground leading-relaxed">{church.description}</p>
+        <h2 className="mb-2 text-lg font-bold">About</h2>
+        <p className="text-muted-foreground text-sm leading-relaxed">
+          {church.description}
+        </p>
       </section>
 
       <Separator />
 
       {/* Details */}
       <section>
-        <h2 className="text-lg font-bold mb-3">Details</h2>
-        <Card className="rounded-2xl border-0 bg-white shadow-card">
-          <CardContent className="px-4 py-3 space-y-4">
+        <h2 className="mb-3 text-lg font-bold">Details</h2>
+        <Card className="shadow-card rounded-2xl border-0 bg-white">
+          <CardContent className="space-y-4 px-4 py-3">
             <InfoField icon={Users} label="Followers" iconClassName={muted}>
               {church._count.followers.toLocaleString()}
             </InfoField>

@@ -13,14 +13,21 @@ interface EventsTabProps {
 export function EventsTab({ events, churchName }: EventsTabProps) {
   return (
     <div>
-      <h2 className="text-lg font-bold mb-3">Upcoming Events</h2>
+      <h2 className="mb-3 text-lg font-bold">Upcoming Events</h2>
 
       {events.length === 0 ? (
-        <EmptyState icon={CalendarDays} label="No upcoming events" className="py-10" />
+        <EmptyState
+          icon={CalendarDays}
+          label="No upcoming events"
+          className="py-10"
+        />
       ) : (
         <div className="space-y-3">
           {events.map((event) => (
-            <EventCard key={event.id} event={{ ...event, badge: event.tag, churchName }} />
+            <EventCard
+              key={event.id}
+              event={{ ...event, badge: event.tag, churchName }}
+            />
           ))}
         </div>
       )}

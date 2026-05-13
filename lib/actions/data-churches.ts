@@ -29,7 +29,13 @@ export async function getChurchById(id: string) {
       series: {
         orderBy: { createdAt: "desc" },
         include: {
-          _count: { select: { events: { where: { datetime: { gte: new Date() }, isDraft: false } } } },
+          _count: {
+            select: {
+              events: {
+                where: { datetime: { gte: new Date() }, isDraft: false },
+              },
+            },
+          },
         },
       },
       _count: { select: { followers: true } },

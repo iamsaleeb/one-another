@@ -66,8 +66,12 @@ export function LoginForm({
                   <Alert variant="destructive">
                     <AlertDescription>
                       {form.formState.errors.root.message}{" "}
-                      {form.formState.errors.root.type === "pendingVerification" && (
-                        <Link href="/register" className="underline underline-offset-4">
+                      {form.formState.errors.root.type ===
+                        "pendingVerification" && (
+                        <Link
+                          href="/register"
+                          className="underline underline-offset-4"
+                        >
                           Go to sign up to verify.
                         </Link>
                       )}
@@ -118,7 +122,11 @@ export function LoginForm({
                       </FormItem>
                     )}
                   />
-                  <Button type="submit" className="w-full" disabled={isSubmitting}>
+                  <Button
+                    type="submit"
+                    className="w-full"
+                    disabled={isSubmitting}
+                  >
                     {isSubmitting ? "Signing in..." : "Login"}
                   </Button>
                 </div>
@@ -126,7 +134,7 @@ export function LoginForm({
                   Don&apos;t have an account?{" "}
                   <Link
                     href="/register"
-                    className="underline underline-offset-4 hover:text-primary"
+                    className="hover:text-primary underline underline-offset-4"
                   >
                     Sign up
                   </Link>
@@ -136,13 +144,21 @@ export function LoginForm({
           </Form>
         </CardContent>
       </Card>
-      <div className="text-balance text-center text-xs text-muted-foreground">
+      <div className="text-muted-foreground text-center text-xs text-balance">
         By continuing, you agree to our{" "}
-        <Link href="/terms" target="_blank" className="underline underline-offset-4 hover:text-primary">
+        <Link
+          href="/terms"
+          target="_blank"
+          className="hover:text-primary underline underline-offset-4"
+        >
           Terms of Service
         </Link>{" "}
         and{" "}
-        <Link href="/privacy" target="_blank" className="underline underline-offset-4 hover:text-primary">
+        <Link
+          href="/privacy"
+          target="_blank"
+          className="hover:text-primary underline underline-offset-4"
+        >
           Privacy Policy
         </Link>
         .

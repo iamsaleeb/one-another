@@ -8,10 +8,16 @@ export function getFirebaseAdmin(): { messaging: Messaging } {
     const privateKey = process.env.FIREBASE_PRIVATE_KEY;
 
     if (!projectId || !clientEmail || !privateKey) {
-      const missing = ["FIREBASE_PROJECT_ID", "FIREBASE_CLIENT_EMAIL", "FIREBASE_PRIVATE_KEY"]
+      const missing = [
+        "FIREBASE_PROJECT_ID",
+        "FIREBASE_CLIENT_EMAIL",
+        "FIREBASE_PRIVATE_KEY",
+      ]
         .filter((key) => !process.env[key])
         .join(", ");
-      throw new Error(`Firebase Admin SDK is missing required environment variables: ${missing}`);
+      throw new Error(
+        `Firebase Admin SDK is missing required environment variables: ${missing}`
+      );
     }
 
     initializeApp({

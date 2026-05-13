@@ -21,7 +21,10 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { createSeriesSchema, type CreateSeriesInput } from "@/lib/validations/series";
+import {
+  createSeriesSchema,
+  type CreateSeriesInput,
+} from "@/lib/validations/series";
 import { createSeriesAction } from "@/lib/actions/series";
 import { PhotoUploadField } from "@/components/photo-upload-field";
 import { CATEGORY_OPTIONS } from "@/types/search";
@@ -33,7 +36,10 @@ const CADENCE_OPTIONS = [
   { value: "CUSTOM", label: "Custom" },
 ];
 
-interface Church { id: string; name: string }
+interface Church {
+  id: string;
+  name: string;
+}
 
 export function CreateSeriesForm({ churches }: { churches: Church[] }) {
   const form = useForm<CreateSeriesInput>({
@@ -69,7 +75,9 @@ export function CreateSeriesForm({ churches }: { churches: Church[] }) {
       <form onSubmit={onSubmit} className="flex flex-col gap-5">
         {form.formState.errors.root && (
           <Alert variant="destructive">
-            <AlertDescription>{form.formState.errors.root.message}</AlertDescription>
+            <AlertDescription>
+              {form.formState.errors.root.message}
+            </AlertDescription>
           </Alert>
         )}
 
@@ -81,7 +89,11 @@ export function CreateSeriesForm({ churches }: { churches: Church[] }) {
             <FormItem>
               <FormLabel>Cover Photo (optional)</FormLabel>
               <FormControl>
-                <PhotoUploadField variant="cover" value={field.value} onChange={field.onChange} />
+                <PhotoUploadField
+                  variant="cover"
+                  value={field.value}
+                  onChange={field.onChange}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -96,7 +108,11 @@ export function CreateSeriesForm({ churches }: { churches: Church[] }) {
             <FormItem>
               <FormLabel>Name</FormLabel>
               <FormControl>
-                <Input placeholder="e.g. Alpha Course" disabled={isSubmitting} {...field} />
+                <Input
+                  placeholder="e.g. Alpha Course"
+                  disabled={isSubmitting}
+                  {...field}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -128,7 +144,11 @@ export function CreateSeriesForm({ churches }: { churches: Church[] }) {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Category</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isSubmitting}>
+              <Select
+                onValueChange={field.onChange}
+                defaultValue={field.value}
+                disabled={isSubmitting}
+              >
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Select a category" />
@@ -154,7 +174,11 @@ export function CreateSeriesForm({ churches }: { churches: Church[] }) {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Church</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isSubmitting}>
+              <Select
+                onValueChange={field.onChange}
+                defaultValue={field.value}
+                disabled={isSubmitting}
+              >
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Select a church" />
@@ -180,7 +204,11 @@ export function CreateSeriesForm({ churches }: { churches: Church[] }) {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Cadence</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isSubmitting}>
+              <Select
+                onValueChange={field.onChange}
+                defaultValue={field.value}
+                disabled={isSubmitting}
+              >
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="How often does this series run?" />
@@ -207,7 +235,11 @@ export function CreateSeriesForm({ churches }: { churches: Church[] }) {
             <FormItem>
               <FormLabel>Host</FormLabel>
               <FormControl>
-                <Input placeholder="e.g. Pastor Jane Doe" disabled={isSubmitting} {...field} />
+                <Input
+                  placeholder="e.g. Pastor Jane Doe"
+                  disabled={isSubmitting}
+                  {...field}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -221,7 +253,11 @@ export function CreateSeriesForm({ churches }: { churches: Church[] }) {
             <FormItem>
               <FormLabel>Location</FormLabel>
               <FormControl>
-                <Input placeholder="e.g. Main Hall, 123 Church Street" disabled={isSubmitting} {...field} />
+                <Input
+                  placeholder="e.g. Main Hall, 123 Church Street"
+                  disabled={isSubmitting}
+                  {...field}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>

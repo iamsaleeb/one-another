@@ -44,16 +44,18 @@ export function DeleteAccountForm() {
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(onSubmit)}
-        className="rounded-2xl bg-white shadow-card p-4 flex flex-col gap-4"
+        className="shadow-card flex flex-col gap-4 rounded-2xl bg-white p-4"
       >
         <FormField
           control={form.control}
           name="confirm"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-sm text-muted-foreground">
+              <FormLabel className="text-muted-foreground text-sm">
                 Type{" "}
-                <span className="font-semibold text-foreground">{CONFIRM_PHRASE}</span>{" "}
+                <span className="text-foreground font-semibold">
+                  {CONFIRM_PHRASE}
+                </span>{" "}
                 to confirm
               </FormLabel>
               <FormControl>

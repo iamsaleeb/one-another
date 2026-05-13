@@ -39,7 +39,9 @@ export async function syncEventQuestions(
     seen.add(key);
 
     await prisma.questionLibraryItem.upsert({
-      where: { createdById_label_type: { createdById, label: q.label, type: q.type } },
+      where: {
+        createdById_label_type: { createdById, label: q.label, type: q.type },
+      },
       create: { createdById, type: q.type, label: q.label, options: q.options },
       update: { options: q.options },
     });

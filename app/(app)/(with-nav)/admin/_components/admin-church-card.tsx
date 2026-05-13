@@ -39,34 +39,47 @@ export function AdminChurchCard({ church }: AdminChurchCardProps) {
   );
 
   return (
-    <div className="rounded-2xl bg-white shadow-card p-5 flex flex-col gap-5">
+    <div className="shadow-card flex flex-col gap-5 rounded-2xl bg-white p-5">
       <h2 className="text-base font-semibold">{church.name}</h2>
 
       {/* Organisers list */}
       <div className="flex flex-col gap-2">
-        <p className="text-xs font-bold text-muted-foreground tracking-widest uppercase">
+        <p className="text-muted-foreground text-xs font-bold tracking-widest uppercase">
           Organisers
         </p>
         {church.organisers.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No organisers assigned yet.</p>
+          <p className="text-muted-foreground text-sm">
+            No organisers assigned yet.
+          </p>
         ) : (
           <ul className="flex flex-col gap-2">
             {church.organisers.map((organiser) => (
-              <li key={organiser.id} className="flex items-center justify-between gap-2">
-                <div className="flex flex-col min-w-0">
-                  <span className="text-sm font-medium truncate">{organiser.name ?? organiser.email}</span>
+              <li
+                key={organiser.id}
+                className="flex items-center justify-between gap-2"
+              >
+                <div className="flex min-w-0 flex-col">
+                  <span className="truncate text-sm font-medium">
+                    {organiser.name ?? organiser.email}
+                  </span>
                   {organiser.name && (
-                    <span className="text-xs text-muted-foreground truncate">{organiser.email}</span>
+                    <span className="text-muted-foreground truncate text-xs">
+                      {organiser.email}
+                    </span>
                   )}
                 </div>
                 <form action={removeAction}>
                   <input type="hidden" name="churchId" value={church.id} />
-                  <input type="hidden" name="targetUserId" value={organiser.id} />
+                  <input
+                    type="hidden"
+                    name="targetUserId"
+                    value={organiser.id}
+                  />
                   <Button
                     type="submit"
                     variant="ghost"
                     size="icon"
-                    className="size-8 text-destructive hover:text-destructive shrink-0"
+                    className="text-destructive hover:text-destructive size-8 shrink-0"
                     disabled={removePending}
                     aria-label={`Remove ${organiser.name ?? organiser.email}`}
                   >
@@ -78,7 +91,7 @@ export function AdminChurchCard({ church }: AdminChurchCardProps) {
           </ul>
         )}
         {removeState.error && (
-          <p className="text-xs text-destructive">{removeState.error}</p>
+          <p className="text-destructive text-xs">{removeState.error}</p>
         )}
         {removeState.success && (
           <p className="text-xs text-green-600">{removeState.success}</p>
@@ -105,7 +118,7 @@ export function AdminChurchCard({ church }: AdminChurchCardProps) {
           </div>
         </div>
         {addState.error && (
-          <p className="text-xs text-destructive">{addState.error}</p>
+          <p className="text-destructive text-xs">{addState.error}</p>
         )}
         {addState.success && (
           <p className="text-xs text-green-600">{addState.success}</p>

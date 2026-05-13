@@ -48,10 +48,15 @@ export function broadcastSeriesChange(id: string, churchId?: string | null) {
  */
 export function invalidateEventUpdate(
   id: string,
-  result: { oldChurchId: string | null; newChurchId: string | null; affectedSeriesIds: string[] }
+  result: {
+    oldChurchId: string | null;
+    newChurchId: string | null;
+    affectedSeriesIds: string[];
+  }
 ) {
   invalidateEventCaches(id, result.oldChurchId);
-  if (result.newChurchId && result.newChurchId !== result.oldChurchId) updateTag(`church-${result.newChurchId}`);
+  if (result.newChurchId && result.newChurchId !== result.oldChurchId)
+    updateTag(`church-${result.newChurchId}`);
   if (result.affectedSeriesIds.length > 0) {
     updateTag("series");
     result.affectedSeriesIds.forEach((sid) => updateTag(`series-${sid}`));

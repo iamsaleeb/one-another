@@ -4,7 +4,8 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import bcrypt from "bcryptjs";
 
 const connectionString = process.env.DATABASE_URL;
-if (!connectionString) throw new Error("DATABASE_URL environment variable is not set");
+if (!connectionString)
+  throw new Error("DATABASE_URL environment variable is not set");
 const adapter = new PrismaPg({ connectionString });
 const prisma = new PrismaClient({ adapter });
 
@@ -35,7 +36,12 @@ async function main() {
   await prisma.churchAdmin.deleteMany();
   await prisma.serviceTime.deleteMany();
   await prisma.user.deleteMany({
-    where: { OR: [{ role: { in: ["ORGANISER", "ADMIN"] } }, { email: "user@example.com" }] },
+    where: {
+      OR: [
+        { role: { in: ["ORGANISER", "ADMIN"] } },
+        { email: "user@example.com" },
+      ],
+    },
   });
   await prisma.church.deleteMany();
 
@@ -169,7 +175,13 @@ async function main() {
       tag: "Youth Meeting",
       description:
         "The first Tasbeha of Great Lent, focused on the theme of repentance. We chanted the midnight praises in Coptic and Arabic, and Fr. Bishoy reflected on the parable of the Prodigal Son.",
-      metadata: { registration: { capacity: null, collectPhone: false, collectNotes: false } },
+      metadata: {
+        registration: {
+          capacity: null,
+          collectPhone: false,
+          collectNotes: false,
+        },
+      },
       churchId: stMary.id,
       seriesId: lentSeries.id,
     },
@@ -184,7 +196,13 @@ async function main() {
       tag: "Youth Meeting",
       description:
         "Week two of our Lenten Tasbeha journey. Fr. Bishoy meditated on the mystery of the Cross and what it means to bear our own cross daily as followers of Christ.",
-      metadata: { registration: { capacity: null, collectPhone: false, collectNotes: false } },
+      metadata: {
+        registration: {
+          capacity: null,
+          collectPhone: false,
+          collectNotes: false,
+        },
+      },
       churchId: stMary.id,
       seriesId: lentSeries.id,
     },
@@ -199,7 +217,13 @@ async function main() {
       tag: "Youth Meeting",
       description:
         "This week Fr. Bishoy Lamie will guide us through the praises of the Resurrection — Christos Anesti. Come experience the triumphant hope of the risen Christ through the ancient melodies of the Coptic Church.",
-      metadata: { registration: { capacity: null, collectPhone: false, collectNotes: false } },
+      metadata: {
+        registration: {
+          capacity: null,
+          collectPhone: false,
+          collectNotes: false,
+        },
+      },
       churchId: stMary.id,
       seriesId: lentSeries.id,
     },
@@ -214,7 +238,13 @@ async function main() {
       tag: "Youth Meeting",
       description:
         "The fourth and final Tasbeha of our Lenten series. Fr. Bishoy will lead us in the praises of the Ascension and close with a reflection on waiting for the coming of the Holy Spirit.",
-      metadata: { registration: { capacity: null, collectPhone: false, collectNotes: false } },
+      metadata: {
+        registration: {
+          capacity: null,
+          collectPhone: false,
+          collectNotes: false,
+        },
+      },
       churchId: stMary.id,
       seriesId: lentSeries.id,
     },
@@ -231,7 +261,13 @@ async function main() {
       tag: "Bible Study",
       description:
         "We opened our series with the outpouring of the Holy Spirit at Pentecost. Deacon Mina walked through Acts 1–2, discussing the apostles' transformation and the Church's first days in Jerusalem.",
-      metadata: { registration: { capacity: null, collectPhone: false, collectNotes: false } },
+      metadata: {
+        registration: {
+          capacity: null,
+          collectPhone: false,
+          collectNotes: false,
+        },
+      },
       churchId: stMark.id,
       seriesId: youthBibleSeries.id,
     },
@@ -246,7 +282,13 @@ async function main() {
       tag: "Bible Study",
       description:
         "Session 2 covers Acts 6–7 and the witness of St. Stephen, the protomartyr. We will explore how his boldness and forgiveness echo the spirit of the Coptic martyrs throughout history.",
-      metadata: { registration: { capacity: null, collectPhone: false, collectNotes: false } },
+      metadata: {
+        registration: {
+          capacity: null,
+          collectPhone: false,
+          collectNotes: false,
+        },
+      },
       churchId: stMark.id,
       seriesId: youthBibleSeries.id,
     },
@@ -261,7 +303,13 @@ async function main() {
       tag: "Bible Study",
       description:
         "Acts 8 brings us to one of the most celebrated passages in Coptic history — the baptism of the Ethiopian eunuch, marking the early spread of Christianity to Africa. We will discuss what this means for our own evangelism today.",
-      metadata: { registration: { capacity: null, collectPhone: false, collectNotes: false } },
+      metadata: {
+        registration: {
+          capacity: null,
+          collectPhone: false,
+          collectNotes: false,
+        },
+      },
       churchId: stMark.id,
       seriesId: youthBibleSeries.id,
     },
@@ -276,7 +324,13 @@ async function main() {
       tag: "Bible Study",
       description:
         "We trace St. Paul's first missionary journey through Acts 13–14, examining how the early Church spread the Gospel across the Roman Empire and what we can learn about cross-cultural ministry today.",
-      metadata: { registration: { capacity: null, collectPhone: false, collectNotes: false } },
+      metadata: {
+        registration: {
+          capacity: null,
+          collectPhone: false,
+          collectNotes: false,
+        },
+      },
       churchId: stMark.id,
       seriesId: youthBibleSeries.id,
     },
@@ -293,7 +347,13 @@ async function main() {
       tag: "Servants Meeting",
       description:
         "The inaugural session of the Servants Formation Program. Fr. Antonious opened with a theological framework for diakonia — what it means to serve in the Church, rooted in the example of Christ the Servant-King.",
-      metadata: { registration: { capacity: null, collectPhone: false, collectNotes: false } },
+      metadata: {
+        registration: {
+          capacity: null,
+          collectPhone: false,
+          collectNotes: false,
+        },
+      },
       churchId: stGeorge.id,
       seriesId: servantsFormation.id,
     },
@@ -308,7 +368,13 @@ async function main() {
       tag: "Servants Meeting",
       description:
         "This month Fr. Antonious addresses the sacrament of confession from the servant's perspective — how to guide those in your ministry to their confession father, and how a servant's own spiritual life is the foundation of their service.",
-      metadata: { registration: { capacity: null, collectPhone: false, collectNotes: false } },
+      metadata: {
+        registration: {
+          capacity: null,
+          collectPhone: false,
+          collectNotes: false,
+        },
+      },
       churchId: stGeorge.id,
       seriesId: servantsFormation.id,
     },
@@ -323,7 +389,13 @@ async function main() {
       tag: "Servants Meeting",
       description:
         "Session three focuses on practical skills: how to prepare and lead an engaging Bible study, adapt content for different age groups, and handle difficult questions with grace. Includes a hands-on workshop component.",
-      metadata: { registration: { capacity: null, collectPhone: false, collectNotes: false } },
+      metadata: {
+        registration: {
+          capacity: null,
+          collectPhone: false,
+          collectNotes: false,
+        },
+      },
       churchId: stGeorge.id,
       seriesId: servantsFormation.id,
     },
@@ -340,7 +412,13 @@ async function main() {
       tag: "Youth Meeting",
       description:
         "Come celebrate the Feast of the Annunciation with a solemn Divine Liturgy in honor of the Virgin St. Mary. The service will be conducted in Coptic, Arabic, and English. All are welcome.",
-      metadata: { registration: { capacity: null, collectPhone: false, collectNotes: false } },
+      metadata: {
+        registration: {
+          capacity: null,
+          collectPhone: false,
+          collectNotes: false,
+        },
+      },
       churchId: stMary.id,
     },
   });
@@ -355,7 +433,9 @@ async function main() {
       description:
         "An evening dedicated to welcoming new servants to St. George Church. We will walk through the church's ministry structure, servant responsibilities, and how to get connected. Light dinner provided. All new and prospective servants welcome.",
       requiresRegistration: true,
-      metadata: { registration: { capacity: 60, collectPhone: true, collectNotes: false } },
+      metadata: {
+        registration: { capacity: 60, collectPhone: true, collectNotes: false },
+      },
       churchId: stGeorge.id,
     },
   });
@@ -363,13 +443,19 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: past(12, "19:00"),
-      title: "Youth Halaqa: \"Who Is the Holy Spirit?\"",
+      title: 'Youth Halaqa: "Who Is the Holy Spirit?"',
       location: "Youth Hall",
       host: "Deacon Mina Nashed",
       tag: "Youth Meeting",
       description:
         "A standalone youth halaqa on the Person and work of the Holy Spirit in the life of a Coptic Christian. The session included group discussion, clips from Pope Shenouda III's lectures, and an open Q&A.",
-      metadata: { registration: { capacity: null, collectPhone: false, collectNotes: false } },
+      metadata: {
+        registration: {
+          capacity: null,
+          collectPhone: false,
+          collectNotes: false,
+        },
+      },
       churchId: stMark.id,
     },
   });
@@ -383,7 +469,13 @@ async function main() {
       tag: "Servants Meeting",
       description:
         "The annual vestry meeting reviewed the church's financial report, elected new board members, and discussed the renovation project for the baptistry. Minutes are available from the church office.",
-      metadata: { registration: { capacity: null, collectPhone: false, collectNotes: false } },
+      metadata: {
+        registration: {
+          capacity: null,
+          collectPhone: false,
+          collectNotes: false,
+        },
+      },
       churchId: stMark.id,
     },
   });
@@ -391,13 +483,19 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: past(45, "19:00"),
-      title: "\"The Life of St. Moses the Black\" — Evening Lecture",
+      title: '"The Life of St. Moses the Black" — Evening Lecture',
       location: "Main Hall",
       host: "Dr. Hany Takla",
       tag: "Bible Study",
       description:
         "Dr. Hany Takla of the St. Shenouda Coptic Society delivered a compelling lecture on the life and legacy of St. Moses the Black — from bandit to monk to martyr. His story is a testament to the transforming grace of God and the ascetic tradition of the Desert Fathers.",
-      metadata: { registration: { capacity: null, collectPhone: false, collectNotes: false } },
+      metadata: {
+        registration: {
+          capacity: null,
+          collectPhone: false,
+          collectNotes: false,
+        },
+      },
       churchId: archangel.id,
     },
   });
@@ -409,7 +507,7 @@ async function main() {
   const campEvent = await prisma.event.create({
     data: {
       datetime: future(campDay, "08:00"),
-      title: "St. Mary Summer Camp 2026 — \"Called by Name\"",
+      title: 'St. Mary Summer Camp 2026 — "Called by Name"',
       location: "Lakeview Christian Retreat Center, Waco, TX",
       host: "Fr. Bishoy Lamie",
       tag: "Camp",
@@ -432,41 +530,46 @@ async function main() {
               date: futureDate(campDay),
               time: "08:00",
               title: "Arrival & Registration",
-              description: "Check in, settle into cabins, and meet your camp family.",
+              description:
+                "Check in, settle into cabins, and meet your camp family.",
             },
             {
               id: "day1-liturgy",
               date: futureDate(campDay),
               time: "10:00",
               title: "Opening Divine Liturgy",
-              description: "We begin our camp week with a solemn Divine Liturgy celebrated by Fr. Bishoy Lamie.",
+              description:
+                "We begin our camp week with a solemn Divine Liturgy celebrated by Fr. Bishoy Lamie.",
             },
             {
               id: "day1-games",
               date: futureDate(campDay),
               time: "15:00",
               title: "Team Building & Welcome Games",
-              description: "Get to know your fellow campers with outdoor team-building activities.",
+              description:
+                "Get to know your fellow campers with outdoor team-building activities.",
             },
             {
               id: "day1-vespers",
               date: futureDate(campDay),
               time: "20:00",
               title: "Evening Vespers & Theme Introduction",
-              description: "Evening prayer followed by an introduction to the camp theme \"Called by Name.\"",
+              description:
+                'Evening prayer followed by an introduction to the camp theme "Called by Name."',
             },
             {
               id: "day2-agpeya",
               date: futureDate(campDay + 1),
               time: "06:30",
               title: "Morning Agpeya",
-              description: "Start the day with the Third and Sixth Hour prayers of the Agpeya.",
+              description:
+                "Start the day with the Third and Sixth Hour prayers of the Agpeya.",
             },
             {
               id: "day2-talk1",
               date: futureDate(campDay + 1),
               time: "09:00",
-              title: "Talk 1: \"Who Am I?\" — Identity in Christ",
+              title: 'Talk 1: "Who Am I?" — Identity in Christ',
               description:
                 "Fr. Bishoy opens our theological journey by exploring what Scripture and the Church Fathers say about our identity as children of God.",
             },
@@ -483,27 +586,30 @@ async function main() {
               date: futureDate(campDay + 1),
               time: "15:00",
               title: "Swimming & Recreation",
-              description: "Free time at the lake — swimming, kayaking, and outdoor games.",
+              description:
+                "Free time at the lake — swimming, kayaking, and outdoor games.",
             },
             {
               id: "day2-praise",
               date: futureDate(campDay + 1),
               time: "20:00",
               title: "Evening Praise (Tasbeha)",
-              description: "Youth-led Tasbeha night — a joyful evening of Coptic hymns and praise.",
+              description:
+                "Youth-led Tasbeha night — a joyful evening of Coptic hymns and praise.",
             },
             {
               id: "day3-liturgy",
               date: futureDate(campDay + 2),
               time: "06:30",
               title: "Sunday Divine Liturgy",
-              description: "The centerpiece of our week — a full Sunday Liturgy in the Bright Season tunes.",
+              description:
+                "The centerpiece of our week — a full Sunday Liturgy in the Bright Season tunes.",
             },
             {
               id: "day3-talk2",
               date: futureDate(campDay + 2),
               time: "10:30",
-              title: "Talk 2: \"What Is My Vocation?\" — Called to Serve",
+              title: 'Talk 2: "What Is My Vocation?" — Called to Serve',
               description:
                 "Exploring the different vocations in the Church — monasticism, marriage, deaconate, and lay service — and how to discern your calling.",
             },
@@ -520,20 +626,22 @@ async function main() {
               date: futureDate(campDay + 2),
               time: "19:00",
               title: "Talent Show Night",
-              description: "An evening of music, skits, and creativity showcasing the talents of our camp community.",
+              description:
+                "An evening of music, skits, and creativity showcasing the talents of our camp community.",
             },
             {
               id: "day4-agpeya",
               date: futureDate(campDay + 3),
               time: "06:30",
               title: "Morning Agpeya",
-              description: "Morning prayers to begin the penultimate day of camp.",
+              description:
+                "Morning prayers to begin the penultimate day of camp.",
             },
             {
               id: "day4-talk3",
               date: futureDate(campDay + 3),
               time: "09:00",
-              title: "Talk 3: \"Living Coptic in the West\" — Faith & Culture",
+              title: 'Talk 3: "Living Coptic in the West" — Faith & Culture',
               description:
                 "A panel discussion with young Coptic professionals on navigating faith, identity, and culture as Copts in the diaspora.",
             },
@@ -550,14 +658,16 @@ async function main() {
               date: futureDate(campDay + 3),
               time: "20:00",
               title: "Campfire & Testimonies",
-              description: "An intimate campfire gathering where campers share their stories of encountering God during the week.",
+              description:
+                "An intimate campfire gathering where campers share their stories of encountering God during the week.",
             },
             {
               id: "day5-liturgy",
               date: futureDate(campDay + 4),
               time: "06:30",
               title: "Closing Divine Liturgy",
-              description: "We close our camp week with a Divine Liturgy and renewal of baptismal commitments.",
+              description:
+                "We close our camp week with a Divine Liturgy and renewal of baptismal commitments.",
             },
             {
               id: "day5-reflection",
@@ -572,7 +682,8 @@ async function main() {
               date: futureDate(campDay + 4),
               time: "13:00",
               title: "Departure",
-              description: "Safe travels home. May God keep you until we meet again.",
+              description:
+                "Safe travels home. May God keep you until we meet again.",
             },
           ],
         },
@@ -616,9 +727,15 @@ async function main() {
     },
   });
 
-  await prisma.churchOrganiser.create({ data: { userId: organiser1.id, churchId: stMary.id } });
-  await prisma.churchOrganiser.create({ data: { userId: organiser2.id, churchId: stMark.id } });
-  await prisma.churchOrganiser.create({ data: { userId: organiser3.id, churchId: stGeorge.id } });
+  await prisma.churchOrganiser.create({
+    data: { userId: organiser1.id, churchId: stMary.id },
+  });
+  await prisma.churchOrganiser.create({
+    data: { userId: organiser2.id, churchId: stMark.id },
+  });
+  await prisma.churchOrganiser.create({
+    data: { userId: organiser3.id, churchId: stGeorge.id },
+  });
 
   const admin1 = await prisma.user.create({
     data: {
@@ -631,7 +748,9 @@ async function main() {
     },
   });
 
-  await prisma.churchAdmin.create({ data: { userId: admin1.id, churchId: stMary.id } });
+  await prisma.churchAdmin.create({
+    data: { userId: admin1.id, churchId: stMary.id },
+  });
 
   // ── Question Library Items ───────────────────────────────────────────────────
 
@@ -730,7 +849,14 @@ async function main() {
         createdById: organiser3.id,
         type: "MULTIPLE_CHOICE",
         label: "Which ministry are you interested in serving?",
-        options: ["Youth", "Sunday School", "Choir", "Deaconate", "Outreach", "Other"],
+        options: [
+          "Youth",
+          "Sunday School",
+          "Choir",
+          "Deaconate",
+          "Outreach",
+          "Other",
+        ],
       },
     }),
     prisma.questionLibraryItem.create({
@@ -834,7 +960,14 @@ async function main() {
         eventId: orientationEvent.id,
         type: "MULTIPLE_CHOICE",
         label: "Which ministry are you interested in serving?",
-        options: ["Youth", "Sunday School", "Choir", "Deaconate", "Outreach", "Other"],
+        options: [
+          "Youth",
+          "Sunday School",
+          "Choir",
+          "Deaconate",
+          "Outreach",
+          "Other",
+        ],
         required: true,
         order: 0,
         libraryItemId: lib3[0].id,

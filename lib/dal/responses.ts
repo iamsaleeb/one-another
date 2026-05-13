@@ -34,7 +34,9 @@ export async function saveResponses(
     (q) => q.required && !answeredIds.has(q.id)
   );
   if (missingRequired) {
-    throw new Error("All required questions must be answered before registering.");
+    throw new Error(
+      "All required questions must be answered before registering."
+    );
   }
 
   if (safeResponses.length === 0) return;
@@ -42,7 +44,12 @@ export async function saveResponses(
   await prisma.$transaction(
     safeResponses.map((r) =>
       prisma.eventAttendeeResponse.upsert({
-        where: { eventAttendeeId_questionId: { eventAttendeeId, questionId: r.questionId } },
+        where: {
+          eventAttendeeId_questionId: {
+            eventAttendeeId,
+            questionId: r.questionId,
+          },
+        },
         create: {
           eventAttendeeId,
           questionId: r.questionId,

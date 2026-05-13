@@ -4,11 +4,11 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Release tag to deploy (e.g. v0.9.0)'
+        description: "Release tag to deploy (e.g. v0.9.0)"
         required: true
         type: string
       environment:
-        description: 'Target environment'
+        description: "Target environment"
         required: true
         type: choice
         options:
@@ -16,7 +16,7 @@ on:
           - production
 
 env:
-  NODE_VERSION: '20'
+  NODE_VERSION: "20"
 
 jobs:
   migrate:
@@ -30,7 +30,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
+          cache: "npm"
       - run: npm ci
       - name: Generate Prisma client
         env:
@@ -53,7 +53,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
+          cache: "npm"
       - run: npm ci
       - name: Deploy to Vercel
         id: vercel-deploy

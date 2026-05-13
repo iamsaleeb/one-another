@@ -7,20 +7,20 @@ export default function LegalLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-svh bg-background">
-      <header className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur pt-safe">
-        <div className="flex h-14 items-center px-4 max-w-2xl mx-auto">
+    <div className="bg-background min-h-svh">
+      <header className="bg-background/95 pt-safe sticky top-0 z-10 border-b backdrop-blur">
+        <div className="mx-auto flex h-14 max-w-2xl items-center px-4">
           <Link
             href="/login"
-            className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+            className="text-muted-foreground hover:text-foreground flex items-center gap-1 text-sm"
           >
-            <ChevronLeft className="w-4 h-4" />
+            <ChevronLeft className="h-4 w-4" />
             Back
           </Link>
-          <span className="ml-4 font-semibold text-primary">1Another</span>
+          <span className="text-primary ml-4 font-semibold">1Another</span>
         </div>
       </header>
-      <main className="max-w-2xl mx-auto px-4 py-8 pb-safe">{children}</main>
+      <main className="pb-safe mx-auto max-w-2xl px-4 py-8">{children}</main>
     </div>
   );
 }

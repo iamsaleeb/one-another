@@ -38,7 +38,8 @@ export async function loginAction(data: LoginInput): Promise<ActionResult> {
   });
   if (user && !user.emailVerified) {
     return {
-      error: "Please verify your email before signing in. Check your inbox for a verification code.",
+      error:
+        "Please verify your email before signing in. Check your inbox for a verification code.",
       pendingVerification: true,
     };
   }
@@ -64,7 +65,9 @@ export async function loginAction(data: LoginInput): Promise<ActionResult> {
   return {};
 }
 
-export async function registerAction(data: RegisterInput): Promise<ActionResult> {
+export async function registerAction(
+  data: RegisterInput
+): Promise<ActionResult> {
   const parsed = registerSchema.safeParse(data);
   if (!parsed.success) {
     return { fieldErrors: z.flattenError(parsed.error).fieldErrors };
@@ -79,7 +82,9 @@ export async function registerAction(data: RegisterInput): Promise<ActionResult>
 
   if (existing) {
     if (existing.emailVerified) {
-      return { fieldErrors: { email: ["An account with this email already exists."] } };
+      return {
+        fieldErrors: { email: ["An account with this email already exists."] },
+      };
     }
     // User exists but is unverified — resend OTP and let them continue verifying
     const otp = generateOtp();
@@ -100,8 +105,13 @@ export async function registerAction(data: RegisterInput): Promise<ActionResult>
     });
   } catch (error) {
     // Handle race condition where another request created the same email
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
-      return { fieldErrors: { email: ["An account with this email already exists."] } };
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2002"
+    ) {
+      return {
+        fieldErrors: { email: ["An account with this email already exists."] },
+      };
     }
     throw error;
   }
@@ -140,7 +150,9 @@ export async function verifyRegistrationOtpAction(
     });
   } catch (error) {
     if (error instanceof AuthError) {
-      return { error: "Verification succeeded but sign-in failed. Please log in." };
+      return {
+        error: "Verification succeeded but sign-in failed. Please log in.",
+      };
     }
     throw error;
   }
@@ -148,7 +160,9 @@ export async function verifyRegistrationOtpAction(
   return {};
 }
 
-export async function sendPasswordResetOtpAction(email: string): Promise<ActionResult> {
+export async function sendPasswordResetOtpAction(
+  email: string
+): Promise<ActionResult> {
   const user = await prisma.user.findUnique({
     where: { email },
     select: { emailVerified: true },

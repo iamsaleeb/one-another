@@ -1,13 +1,17 @@
-import { prisma } from '@/lib/db';
-import { getFirebaseAdmin } from '@/lib/firebase-admin';
+import { prisma } from "@/lib/db";
+import { getFirebaseAdmin } from "@/lib/firebase-admin";
 
 const FCM_BATCH_SIZE = 500;
 const CONCURRENCY = 20;
 
 export async function processNotifications(): Promise<{ processed: number }> {
   const due = await prisma.notification.findMany({
-    where: { scheduledFor: { lte: new Date() }, sentAt: null, cancelledAt: null },
-    orderBy: { scheduledFor: 'asc' },
+    where: {
+      scheduledFor: { lte: new Date() },
+      sentAt: null,
+      cancelledAt: null,
+    },
+    orderBy: { scheduledFor: "asc" },
     take: 500,
   });
 
@@ -57,7 +61,9 @@ export async function processNotifications(): Promise<{ processed: number }> {
         }
 
         const data =
-          notif.data != null && typeof notif.data === 'object' && !Array.isArray(notif.data)
+          notif.data != null &&
+          typeof notif.data === "object" &&
+          !Array.isArray(notif.data)
             ? (notif.data as Record<string, string>)
             : undefined;
 
@@ -74,20 +80,25 @@ export async function processNotifications(): Promise<{ processed: number }> {
               if (!res.success) {
                 const code = res.error?.code;
                 if (
-                  code === 'messaging/invalid-registration-token' ||
-                  code === 'messaging/registration-token-not-registered' ||
-                  code === 'messaging/unregistered'
+                  code === "messaging/invalid-registration-token" ||
+                  code === "messaging/registration-token-not-registered" ||
+                  code === "messaging/unregistered"
                 ) {
                   localStaleTokens.push(tokenBatch[idx]);
-                } else if (code === 'messaging/mismatched-credential') {
-                  console.error('FCM credential mismatch — check FIREBASE_PROJECT_ID and FIREBASE_CLIENT_EMAIL env vars');
+                } else if (code === "messaging/mismatched-credential") {
+                  console.error(
+                    "FCM credential mismatch — check FIREBASE_PROJECT_ID and FIREBASE_CLIENT_EMAIL env vars"
+                  );
                 }
               }
             });
           }
           localSentIds.push(notif.id);
         } catch (err) {
-          console.error(`[process-notifications] failed to send notification ${notif.id}:`, err);
+          console.error(
+            `[process-notifications] failed to send notification ${notif.id}:`,
+            err
+          );
         }
 
         return { localSentIds, localStaleTokens };
@@ -102,7 +113,10 @@ export async function processNotifications(): Promise<{ processed: number }> {
 
   await Promise.all([
     sentIds.length > 0
-      ? prisma.notification.updateMany({ where: { id: { in: sentIds } }, data: { sentAt: new Date() } })
+      ? prisma.notification.updateMany({
+          where: { id: { in: sentIds } },
+          data: { sentAt: new Date() },
+        })
       : Promise.resolve(),
     staleTokens.length > 0
       ? prisma.pushToken.deleteMany({ where: { token: { in: staleTokens } } })

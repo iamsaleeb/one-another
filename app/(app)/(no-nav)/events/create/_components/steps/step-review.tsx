@@ -26,9 +26,23 @@ export function StepReview({
 }: StepReviewProps) {
   const { control } = useFormContext<CreateEventInput>();
   const {
-    title, description, tag, date, time, location, host,
-    churchId, photoUrl, price, requiresRegistration, capacity,
-    collectPhone, collectNotes, campEndDate, campAllowPartialRegistration, campAgenda,
+    title,
+    description,
+    tag,
+    date,
+    time,
+    location,
+    host,
+    churchId,
+    photoUrl,
+    price,
+    requiresRegistration,
+    capacity,
+    collectPhone,
+    collectNotes,
+    campEndDate,
+    campAllowPartialRegistration,
+    campAgenda,
   } = useWatch({ control });
 
   const isCamp = tag === "Camp";
@@ -43,35 +57,47 @@ export function StepReview({
   return (
     <div className="flex flex-col gap-5">
       <div className="flex flex-col gap-2">
-        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
           Event
         </p>
         <div className="flex flex-col gap-1">
-          <p className="text-sm font-medium">{title || <span className="text-muted-foreground">No title</span>}</p>
+          <p className="text-sm font-medium">
+            {title || <span className="text-muted-foreground">No title</span>}
+          </p>
           {description ? (
-            <p className="text-sm text-muted-foreground line-clamp-3">{description}</p>
+            <p className="text-muted-foreground line-clamp-3 text-sm">
+              {description}
+            </p>
           ) : null}
-          {tag ? <Badge variant="secondary" className="w-fit">{tag}</Badge> : null}
+          {tag ? (
+            <Badge variant="secondary" className="w-fit">
+              {tag}
+            </Badge>
+          ) : null}
         </div>
       </div>
 
       <Separator />
 
       <div className="flex flex-col gap-2">
-        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
           When &amp; Where
         </p>
         <div className="flex flex-col gap-1">
           <p className="text-sm">{formatDatetime()}</p>
-          <p className="text-sm text-muted-foreground">{location || "No location"}</p>
-          <p className="text-sm text-muted-foreground">Host: {host || "Not set"}</p>
+          <p className="text-muted-foreground text-sm">
+            {location || "No location"}
+          </p>
+          <p className="text-muted-foreground text-sm">
+            Host: {host || "Not set"}
+          </p>
         </div>
       </div>
 
       <Separator />
 
       <div className="flex flex-col gap-2">
-        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
           Church &amp; Photo
         </p>
         <div className="flex items-center gap-3">
@@ -81,11 +107,12 @@ export function StepReview({
               alt="Event cover"
               width={64}
               height={64}
-              className="object-cover rounded-lg w-16 h-16 shrink-0"
+              className="h-16 w-16 shrink-0 rounded-lg object-cover"
             />
           ) : null}
-          <p className="text-sm text-muted-foreground">
-            {churches.find(c => c.id === churchId)?.name ?? (churchId ? "Unknown church" : "Not set")}
+          <p className="text-muted-foreground text-sm">
+            {churches.find((c) => c.id === churchId)?.name ??
+              (churchId ? "Unknown church" : "Not set")}
           </p>
         </div>
       </div>
@@ -93,16 +120,19 @@ export function StepReview({
       <Separator />
 
       <div className="flex flex-col gap-2">
-        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
           Registration
         </p>
         <div className="flex flex-col gap-1">
           <p className="text-sm">
-            Price: <span className="text-muted-foreground">{price || "Free"}</span>
+            Price:{" "}
+            <span className="text-muted-foreground">{price || "Free"}</span>
           </p>
           <p className="text-sm">
             Registration required:{" "}
-            <span className="text-muted-foreground">{requiresRegistration ? "Yes" : "No"}</span>
+            <span className="text-muted-foreground">
+              {requiresRegistration ? "Yes" : "No"}
+            </span>
           </p>
           {requiresRegistration && (
             <>
@@ -114,11 +144,15 @@ export function StepReview({
               </p>
               <p className="text-sm">
                 Collect phone:{" "}
-                <span className="text-muted-foreground">{collectPhone ? "Yes" : "No"}</span>
+                <span className="text-muted-foreground">
+                  {collectPhone ? "Yes" : "No"}
+                </span>
               </p>
               <p className="text-sm">
                 Collect notes:{" "}
-                <span className="text-muted-foreground">{collectNotes ? "Yes" : "No"}</span>
+                <span className="text-muted-foreground">
+                  {collectNotes ? "Yes" : "No"}
+                </span>
               </p>
             </>
           )}
@@ -129,13 +163,15 @@ export function StepReview({
         <>
           <Separator />
           <div className="flex flex-col gap-2">
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
               Camp
             </p>
             <div className="flex flex-col gap-1">
               <p className="text-sm">
                 End date:{" "}
-                <span className="text-muted-foreground">{campEndDate || "Not set"}</span>
+                <span className="text-muted-foreground">
+                  {campEndDate || "Not set"}
+                </span>
               </p>
               <p className="text-sm">
                 Allow partial attendance:{" "}
@@ -145,7 +181,9 @@ export function StepReview({
               </p>
               <p className="text-sm">
                 Agenda items:{" "}
-                <span className="text-muted-foreground">{campAgenda?.length ?? 0}</span>
+                <span className="text-muted-foreground">
+                  {campAgenda?.length ?? 0}
+                </span>
               </p>
             </div>
           </div>
@@ -168,7 +206,11 @@ export function StepReview({
           onClick={onSaveDraft}
           disabled={isDisabled}
         >
-          {isSaving ? "Saving..." : isDraftEvent ? "Save Draft" : "Save as Draft"}
+          {isSaving
+            ? "Saving..."
+            : isDraftEvent
+              ? "Save Draft"
+              : "Save as Draft"}
         </Button>
       </div>
     </div>

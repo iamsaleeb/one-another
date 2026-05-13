@@ -9,7 +9,9 @@ export async function getSeries() {
     orderBy: { createdAt: "desc" },
     include: {
       _count: {
-        select: { events: { where: { datetime: { gte: new Date() }, isDraft: false } } },
+        select: {
+          events: { where: { datetime: { gte: new Date() }, isDraft: false } },
+        },
       },
     },
   });
@@ -48,7 +50,11 @@ export async function getSeriesByCreator(userId: string) {
     where: { createdById: userId },
     orderBy: { createdAt: "desc" },
     include: {
-      _count: { select: { events: { where: { datetime: { gte: new Date() }, isDraft: false } } } },
+      _count: {
+        select: {
+          events: { where: { datetime: { gte: new Date() }, isDraft: false } },
+        },
+      },
       createdBy: { select: { name: true } },
     },
   });
@@ -63,7 +69,11 @@ export async function getSeriesNotByCreator(userId: string) {
     orderBy: { createdAt: "desc" },
     take: 50,
     include: {
-      _count: { select: { events: { where: { datetime: { gte: new Date() }, isDraft: false } } } },
+      _count: {
+        select: {
+          events: { where: { datetime: { gte: new Date() }, isDraft: false } },
+        },
+      },
       createdBy: { select: { name: true } },
     },
   });
@@ -75,7 +85,11 @@ export async function getUserFollowedSeries(userId: string) {
     where: { followers: { some: { userId } } },
     orderBy: { createdAt: "desc" },
     include: {
-      _count: { select: { events: { where: { datetime: { gte: new Date() }, isDraft: false } } } },
+      _count: {
+        select: {
+          events: { where: { datetime: { gte: new Date() }, isDraft: false } },
+        },
+      },
     },
   });
 }
@@ -84,6 +98,10 @@ export async function getSeriesForEvent(seriesId: string) {
   cacheTag("series", `series-${seriesId}`);
   return prisma.series.findUnique({
     where: { id: seriesId },
-    select: { id: true, name: true, church: { select: { id: true, name: true } } },
+    select: {
+      id: true,
+      name: true,
+      church: { select: { id: true, name: true } },
+    },
   });
 }

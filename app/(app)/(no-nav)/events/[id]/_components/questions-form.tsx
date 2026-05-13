@@ -20,10 +20,21 @@ interface QuestionsFormProps {
   disabled?: boolean;
 }
 
-interface UploadState { uploading: boolean; name?: string; error?: string }
+interface UploadState {
+  uploading: boolean;
+  name?: string;
+  error?: string;
+}
 
-export function QuestionsForm({ questions, control, activeIndex, disabled }: QuestionsFormProps) {
-  const [uploadState, setUploadState] = useState<Record<string, UploadState>>({});
+export function QuestionsForm({
+  questions,
+  control,
+  activeIndex,
+  disabled,
+}: QuestionsFormProps) {
+  const [uploadState, setUploadState] = useState<Record<string, UploadState>>(
+    {}
+  );
   const inputRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
   async function handleFileSelect(
@@ -32,7 +43,10 @@ export function QuestionsForm({ questions, control, activeIndex, disabled }: Que
     onChange: (url: string | null) => void
   ) {
     if (file.size > 10 * 1024 * 1024) {
-      setUploadState((prev) => ({ ...prev, [questionId]: { uploading: false, error: "File must be 10MB or less." } }));
+      setUploadState((prev) => ({
+        ...prev,
+        [questionId]: { uploading: false, error: "File must be 10MB or less." },
+      }));
       return;
     }
     setUploadState((prev) => ({ ...prev, [questionId]: { uploading: true } }));
@@ -43,13 +57,23 @@ export function QuestionsForm({ questions, control, activeIndex, disabled }: Que
         clientPayload: "response",
       });
       onChange(blob.url);
-      setUploadState((prev) => ({ ...prev, [questionId]: { uploading: false, name: file.name } }));
+      setUploadState((prev) => ({
+        ...prev,
+        [questionId]: { uploading: false, name: file.name },
+      }));
     } catch {
-      setUploadState((prev) => ({ ...prev, [questionId]: { uploading: false, error: "Upload failed. Please try again." } }));
+      setUploadState((prev) => ({
+        ...prev,
+        [questionId]: {
+          uploading: false,
+          error: "Upload failed. Please try again.",
+        },
+      }));
     }
   }
 
-  const labelClass = activeIndex !== undefined ? "text-xl font-semibold" : "text-sm font-medium";
+  const labelClass =
+    activeIndex !== undefined ? "text-xl font-semibold" : "text-sm font-medium";
 
   return (
     <div className="flex flex-col gap-6">
@@ -76,7 +100,9 @@ export function QuestionsForm({ questions, control, activeIndex, disabled }: Que
                       placeholder="Your answer..."
                     />
                     {fieldState.error && (
-                      <p className="text-xs text-destructive">{fieldState.error.message}</p>
+                      <p className="text-destructive text-xs">
+                        {fieldState.error.message}
+                      </p>
                     )}
                   </>
                 )}
@@ -97,7 +123,9 @@ export function QuestionsForm({ questions, control, activeIndex, disabled }: Que
                       placeholder="Your answer..."
                     />
                     {fieldState.error && (
-                      <p className="text-xs text-destructive">{fieldState.error.message}</p>
+                      <p className="text-destructive text-xs">
+                        {fieldState.error.message}
+                      </p>
                     )}
                   </>
                 )}
@@ -110,18 +138,26 @@ export function QuestionsForm({ questions, control, activeIndex, disabled }: Que
                 name={`responses.${q.id}.answer`}
                 render={({ field, fieldState }) => (
                   <>
-                    <div className="flex items-center justify-between gap-3 rounded-xl border bg-background px-4 py-3 min-h-[56px]">
-                      <span className="text-sm text-muted-foreground">
-                        {field.value === "true" ? "Yes" : field.value === "false" ? "No" : "—"}
+                    <div className="bg-background flex min-h-[56px] items-center justify-between gap-3 rounded-xl border px-4 py-3">
+                      <span className="text-muted-foreground text-sm">
+                        {field.value === "true"
+                          ? "Yes"
+                          : field.value === "false"
+                            ? "No"
+                            : "—"}
                       </span>
                       <Switch
                         checked={field.value === "true"}
                         disabled={disabled}
-                        onCheckedChange={(checked) => field.onChange(checked ? "true" : "false")}
+                        onCheckedChange={(checked) =>
+                          field.onChange(checked ? "true" : "false")
+                        }
                       />
                     </div>
                     {fieldState.error && (
-                      <p className="text-xs text-destructive">{fieldState.error.message}</p>
+                      <p className="text-destructive text-xs">
+                        {fieldState.error.message}
+                      </p>
                     )}
                   </>
                 )}
@@ -141,16 +177,24 @@ export function QuestionsForm({ questions, control, activeIndex, disabled }: Que
                       className="flex flex-col gap-2"
                     >
                       {q.options.map((opt) => (
-                        <div key={opt} className="flex items-center gap-2.5 min-h-[44px]">
+                        <div
+                          key={opt}
+                          className="flex min-h-[44px] items-center gap-2.5"
+                        >
                           <RadioGroupItem value={opt} id={`${q.id}-${opt}`} />
-                          <Label htmlFor={`${q.id}-${opt}`} className="text-sm font-normal cursor-pointer">
+                          <Label
+                            htmlFor={`${q.id}-${opt}`}
+                            className="cursor-pointer text-sm font-normal"
+                          >
                             {opt}
                           </Label>
                         </div>
                       ))}
                     </RadioGroup>
                     {fieldState.error && (
-                      <p className="text-xs text-destructive">{fieldState.error.message}</p>
+                      <p className="text-destructive text-xs">
+                        {fieldState.error.message}
+                      </p>
                     )}
                   </>
                 )}
@@ -166,19 +210,22 @@ export function QuestionsForm({ questions, control, activeIndex, disabled }: Que
                   return (
                     <div className="flex flex-col gap-1.5">
                       <input
-                        ref={(el) => { inputRefs.current[q.id] = el; }}
+                        ref={(el) => {
+                          inputRefs.current[q.id] = el;
+                        }}
                         type="file"
                         className="hidden"
                         onChange={(e) => {
                           const file = e.target.files?.[0];
-                          if (file) handleFileSelect(q.id, file, field.onChange);
+                          if (file)
+                            handleFileSelect(q.id, file, field.onChange);
                           e.target.value = "";
                         }}
                       />
                       {field.value ? (
-                        <div className="flex items-center gap-2 rounded-xl border bg-background px-4 py-3">
-                          <Paperclip className="size-4 text-muted-foreground shrink-0" />
-                          <span className="text-sm flex-1 truncate">
+                        <div className="bg-background flex items-center gap-2 rounded-xl border px-4 py-3">
+                          <Paperclip className="text-muted-foreground size-4 shrink-0" />
+                          <span className="flex-1 truncate text-sm">
                             {state?.name ?? "Uploaded file"}
                           </span>
                           {!disabled && (
@@ -208,15 +255,19 @@ export function QuestionsForm({ questions, control, activeIndex, disabled }: Que
                           disabled={state?.uploading || disabled}
                           onClick={() => inputRefs.current[q.id]?.click()}
                         >
-                          <Paperclip className="size-4 mr-2" />
+                          <Paperclip className="mr-2 size-4" />
                           {state?.uploading ? "Uploading..." : "Attach file"}
                         </Button>
                       )}
                       {state?.error && (
-                        <p className="text-xs text-destructive">{state.error}</p>
+                        <p className="text-destructive text-xs">
+                          {state.error}
+                        </p>
                       )}
                       {fieldState.error && (
-                        <p className="text-xs text-destructive">{fieldState.error.message}</p>
+                        <p className="text-destructive text-xs">
+                          {fieldState.error.message}
+                        </p>
                       )}
                     </div>
                   );

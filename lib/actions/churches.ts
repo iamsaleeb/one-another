@@ -8,7 +8,9 @@ export interface FollowChurchState {
   error?: string;
 }
 
-export async function followChurchAction(churchId: string): Promise<FollowChurchState> {
+export async function followChurchAction(
+  churchId: string
+): Promise<FollowChurchState> {
   const session = await auth();
   if (!session?.user?.id) return { error: "You must be signed in." };
 
@@ -21,7 +23,9 @@ export async function followChurchAction(churchId: string): Promise<FollowChurch
   return {};
 }
 
-export async function unfollowChurchAction(churchId: string): Promise<FollowChurchState> {
+export async function unfollowChurchAction(
+  churchId: string
+): Promise<FollowChurchState> {
   const session = await auth();
   if (!session?.user?.id) return { error: "You must be signed in." };
 

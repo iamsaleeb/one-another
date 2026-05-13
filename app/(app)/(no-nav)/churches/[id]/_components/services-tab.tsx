@@ -25,13 +25,20 @@ export function ServicesTab({ church }: ServicesTabProps) {
 
       {Object.entries(servicesByDay).map(([day, services]) => (
         <div key={day}>
-          <p className="text-sm font-semibold text-foreground mb-2">{day}</p>
+          <p className="text-foreground mb-2 text-sm font-semibold">{day}</p>
           <div className="space-y-2">
             {services.slice(0, SHOW_PER_DAY).map((service) => (
-              <Card key={service.id} className="rounded-2xl border-0 bg-white shadow-card">
-                <CardContent className="px-4 py-2 flex items-center justify-between">
-                  <p className="text-sm font-bold text-foreground">{service.type}</p>
-                  <p className="text-sm font-semibold text-primary">{service.time}</p>
+              <Card
+                key={service.id}
+                className="shadow-card rounded-2xl border-0 bg-white"
+              >
+                <CardContent className="flex items-center justify-between px-4 py-2">
+                  <p className="text-foreground text-sm font-bold">
+                    {service.type}
+                  </p>
+                  <p className="text-primary text-sm font-semibold">
+                    {service.time}
+                  </p>
                 </CardContent>
               </Card>
             ))}
@@ -39,8 +46,8 @@ export function ServicesTab({ church }: ServicesTabProps) {
         </div>
       ))}
 
-      <button className="flex items-center gap-1 text-sm font-semibold text-primary">
-        See More <ChevronDown className="w-4 h-4" />
+      <button className="text-primary flex items-center gap-1 text-sm font-semibold">
+        See More <ChevronDown className="h-4 w-4" />
       </button>
     </div>
   );

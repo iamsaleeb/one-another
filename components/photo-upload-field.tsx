@@ -17,11 +17,17 @@ interface PhotoUploadFieldProps {
   onChange: (url: string | undefined) => void;
 }
 
-export function PhotoUploadField({ variant, value, onChange }: PhotoUploadFieldProps) {
+export function PhotoUploadField({
+  variant,
+  value,
+  onChange,
+}: PhotoUploadFieldProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [localUrl, setLocalUrl] = useState(value);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
-  const [uploadingFilename, setUploadingFilename] = useState<string | null>(null);
+  const [uploadingFilename, setUploadingFilename] = useState<string | null>(
+    null
+  );
   const [error, setError] = useState<string | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -98,9 +104,9 @@ export function PhotoUploadField({ variant, value, onChange }: PhotoUploadFieldP
       <div className="flex flex-col gap-2">
         <div
           className={cn(
-            "relative w-full overflow-hidden bg-muted",
+            "bg-muted relative w-full overflow-hidden",
             isProfile
-              ? "aspect-square rounded-full max-w-24 mx-auto"
+              ? "mx-auto aspect-square max-w-24 rounded-full"
               : "aspect-video rounded-xl"
           )}
         >
@@ -119,10 +125,10 @@ export function PhotoUploadField({ variant, value, onChange }: PhotoUploadFieldP
           onClick={handleRemove}
           disabled={isDeleting}
         >
-          <X className="size-4 mr-2" />
+          <X className="mr-2 size-4" />
           {isDeleting ? "Removing..." : "Remove photo"}
         </Button>
-        {error && <p className="text-sm text-destructive">{error}</p>}
+        {error && <p className="text-destructive text-sm">{error}</p>}
       </div>
     );
   }
@@ -141,7 +147,7 @@ export function PhotoUploadField({ variant, value, onChange }: PhotoUploadFieldP
         tabIndex={0}
         aria-label={label}
         className={cn(
-          "flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-input bg-background p-8 transition-colors cursor-pointer",
+          "border-input bg-background flex cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed p-8 transition-colors",
           isDragOver && "border-primary bg-primary/5",
           isUploading && "pointer-events-none opacity-80"
         )}
@@ -160,16 +166,16 @@ export function PhotoUploadField({ variant, value, onChange }: PhotoUploadFieldP
         onDrop={handleDrop}
       >
         {isUploading ? (
-          <div className="flex flex-col items-center gap-3 w-full">
-            <p className="text-sm text-muted-foreground truncate max-w-full px-4">
+          <div className="flex w-full flex-col items-center gap-3">
+            <p className="text-muted-foreground max-w-full truncate px-4 text-sm">
               {uploadingFilename}
             </p>
             <Progress value={uploadProgress} className="w-full" />
-            <p className="text-xs text-muted-foreground">{uploadProgress}%</p>
+            <p className="text-muted-foreground text-xs">{uploadProgress}%</p>
           </div>
         ) : (
           <>
-            <ImageIcon className="size-8 text-muted-foreground" />
+            <ImageIcon className="text-muted-foreground size-8" />
             <div className="flex flex-col items-center gap-1">
               <Button
                 type="button"
@@ -183,12 +189,12 @@ export function PhotoUploadField({ variant, value, onChange }: PhotoUploadFieldP
               >
                 {label}
               </Button>
-              <p className="text-xs text-muted-foreground">Images up to 4MB</p>
+              <p className="text-muted-foreground text-xs">Images up to 4MB</p>
             </div>
           </>
         )}
       </div>
-      {error && <p className="text-sm text-destructive">{error}</p>}
+      {error && <p className="text-destructive text-sm">{error}</p>}
     </div>
   );
 }

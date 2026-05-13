@@ -15,9 +15,9 @@ export default function AppError({
   }, [error]);
 
   return (
-    <div className="flex flex-col items-center justify-center gap-4 py-20 px-4 text-center">
+    <div className="flex flex-col items-center justify-center gap-4 px-4 py-20 text-center">
       <p className="text-base font-semibold">Something went wrong</p>
-      <p className="text-sm text-muted-foreground">
+      <p className="text-muted-foreground text-sm">
         An error occurred while loading this page.
       </p>
       <Button onClick={unstable_retry} variant="outline" size="sm">

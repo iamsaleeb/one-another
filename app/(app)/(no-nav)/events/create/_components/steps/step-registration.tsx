@@ -17,7 +17,10 @@ import type { CreateEventInput } from "@/lib/validations/event";
 export function StepRegistration() {
   const form = useFormContext<CreateEventInput>();
 
-  const requiresRegistration = useWatch({ control: form.control, name: "requiresRegistration" });
+  const requiresRegistration = useWatch({
+    control: form.control,
+    name: "requiresRegistration",
+  });
   const tag = useWatch({ control: form.control, name: "tag" });
   const isCamp = tag === "Camp";
 
@@ -48,8 +51,10 @@ export function StepRegistration() {
           <FormItem className="flex items-center justify-between gap-3 rounded-xl border px-4 py-3">
             <div>
               <p className="text-sm font-medium">Requires Registration</p>
-              <p className="text-xs text-muted-foreground">
-                {isCamp ? "Required for camps" : "Attendees must fill in a registration form"}
+              <p className="text-muted-foreground text-xs">
+                {isCamp
+                  ? "Required for camps"
+                  : "Attendees must fill in a registration form"}
               </p>
             </div>
             <FormControl>
@@ -81,7 +86,11 @@ export function StepRegistration() {
                     {...field}
                     value={field.value ?? ""}
                     onChange={(e) =>
-                      field.onChange(e.target.value === "" ? undefined : Number(e.target.value))
+                      field.onChange(
+                        e.target.value === ""
+                          ? undefined
+                          : Number(e.target.value)
+                      )
                     }
                   />
                 </FormControl>
@@ -95,7 +104,9 @@ export function StepRegistration() {
             name="collectPhone"
             render={({ field }) => (
               <FormItem className="flex items-center justify-between gap-3">
-                <p className="text-sm text-muted-foreground">Ask for phone number</p>
+                <p className="text-muted-foreground text-sm">
+                  Ask for phone number
+                </p>
                 <FormControl>
                   <Switch
                     checked={field.value ?? false}
@@ -111,7 +122,9 @@ export function StepRegistration() {
             name="collectNotes"
             render={({ field }) => (
               <FormItem className="flex items-center justify-between gap-3">
-                <p className="text-sm text-muted-foreground">Ask for dietary / accessibility needs</p>
+                <p className="text-muted-foreground text-sm">
+                  Ask for dietary / accessibility needs
+                </p>
                 <FormControl>
                   <Switch
                     checked={field.value ?? false}

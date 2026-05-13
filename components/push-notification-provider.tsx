@@ -25,30 +25,35 @@ export function PushNotificationProvider() {
       if (permStatus.receive !== "granted") return;
 
       handles.push(
-        await PushNotifications.addListener("registration", async (nativeToken) => {
-          const platform = Capacitor.getPlatform();
-          try {
-            // On Android the registration event carries the FCM token directly.
-            // On iOS it carries an APNs device token — FCM.getToken() exchanges
-            // it for the actual FCM registration token the server needs.
-            const fcmToken =
-              platform === "ios"
-                ? (await FCM.getToken()).token
-                : nativeToken.value;
+        await PushNotifications.addListener(
+          "registration",
+          async (nativeToken) => {
+            const platform = Capacitor.getPlatform();
+            try {
+              // On Android the registration event carries the FCM token directly.
+              // On iOS it carries an APNs device token — FCM.getToken() exchanges
+              // it for the actual FCM registration token the server needs.
+              const fcmToken =
+                platform === "ios"
+                  ? (await FCM.getToken()).token
+                  : nativeToken.value;
 
-            const res = await fetch("/api/push/register-token", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ token: fcmToken, platform }),
-            });
-            if (!res.ok) {
-              const body = await res.text().catch(() => "(unreadable)");
-              console.error(`Failed to register push token: ${res.status} ${res.statusText} — ${body}`);
+              const res = await fetch("/api/push/register-token", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ token: fcmToken, platform }),
+              });
+              if (!res.ok) {
+                const body = await res.text().catch(() => "(unreadable)");
+                console.error(
+                  `Failed to register push token: ${res.status} ${res.statusText} — ${body}`
+                );
+              }
+            } catch (err) {
+              console.error("Failed to register push token:", err);
             }
-          } catch (err) {
-            console.error("Failed to register push token:", err);
           }
-        })
+        )
       );
 
       handles.push(

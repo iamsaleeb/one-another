@@ -12,8 +12,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
   session: {
     strategy: "jwt",
-    maxAge: 14 * 24 * 60 * 60,  // 14 days
-    updateAge: 60 * 60,          // re-issue JWT hourly to shorten stale-role window
+    maxAge: 14 * 24 * 60 * 60, // 14 days
+    updateAge: 60 * 60, // re-issue JWT hourly to shorten stale-role window
   },
   providers: [
     Credentials({
@@ -42,8 +42,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (user) {
         token.id = user.id;
         token.role = (user as { role?: UserRole }).role;
-        token.onboardingCompleted = (user as { onboardingCompleted?: boolean }).onboardingCompleted ?? false;
-        token.isEmailVerified = !!(user as { emailVerified?: Date | null }).emailVerified;
+        token.onboardingCompleted =
+          (user as { onboardingCompleted?: boolean }).onboardingCompleted ??
+          false;
+        token.isEmailVerified = !!(user as { emailVerified?: Date | null })
+          .emailVerified;
       }
       if (trigger === "update" && session?.onboardingCompleted !== undefined) {
         token.onboardingCompleted = session.onboardingCompleted;

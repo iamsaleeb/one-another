@@ -13,11 +13,19 @@ import { Button } from "@/components/ui/button";
 import { CsvExportButton } from "./csv-export-button";
 import { QuestionType } from "@/lib/validations/questions";
 
-interface Question { id: string; label: string; type: string }
+interface Question {
+  id: string;
+  label: string;
+  type: string;
+}
 interface Attendee {
   id: string;
   user: { id: string; name: string | null; email: string };
-  responses: Array<{ questionId: string; answer: string | null; fileUrl: string | null }>;
+  responses: Array<{
+    questionId: string;
+    answer: string | null;
+    fileUrl: string | null;
+  }>;
 }
 
 interface ResponsesTableProps {
@@ -26,12 +34,19 @@ interface ResponsesTableProps {
   eventTitle: string;
 }
 
-export function ResponsesTable({ questions, attendees, eventTitle }: ResponsesTableProps) {
+export function ResponsesTable({
+  questions,
+  attendees,
+  eventTitle,
+}: ResponsesTableProps) {
   const responseMap = attendees.map((a) => ({
     name: a.user.name ?? a.user.email,
     email: a.user.email,
     responses: Object.fromEntries(
-      a.responses.map((r) => [r.questionId, { answer: r.answer, fileUrl: r.fileUrl }])
+      a.responses.map((r) => [
+        r.questionId,
+        { answer: r.answer, fileUrl: r.fileUrl },
+      ])
     ),
   }));
 
@@ -39,7 +54,11 @@ export function ResponsesTable({ questions, attendees, eventTitle }: ResponsesTa
     <div className="flex flex-col gap-4">
       <div className="flex justify-end">
         <CsvExportButton
-          columns={questions.map((q) => ({ id: q.id, label: q.label, type: q.type }))}
+          columns={questions.map((q) => ({
+            id: q.id,
+            label: q.label,
+            type: q.type,
+          }))}
           rows={responseMap}
           filename={`${eventTitle.toLowerCase().replace(/\s+/g, "-")}-responses.csv`}
         />
@@ -49,7 +68,9 @@ export function ResponsesTable({ questions, attendees, eventTitle }: ResponsesTa
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="min-w-[150px] sticky left-0 bg-background">Attendee</TableHead>
+              <TableHead className="bg-background sticky left-0 min-w-[150px]">
+                Attendee
+              </TableHead>
               {questions.map((q) => (
                 <TableHead key={q.id} className="min-w-[180px]">
                   {q.label}
@@ -60,7 +81,10 @@ export function ResponsesTable({ questions, attendees, eventTitle }: ResponsesTa
           <TableBody>
             {attendees.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={questions.length + 1} className="text-center text-muted-foreground py-8">
+                <TableCell
+                  colSpan={questions.length + 1}
+                  className="text-muted-foreground py-8 text-center"
+                >
                   No responses yet.
                 </TableCell>
               </TableRow>
@@ -72,26 +96,46 @@ export function ResponsesTable({ questions, attendees, eventTitle }: ResponsesTa
 
                 return (
                   <TableRow key={attendee.id}>
-                    <TableCell className="sticky left-0 bg-background">
+                    <TableCell className="bg-background sticky left-0">
                       <div className="flex flex-col gap-0.5">
-                        <span className="text-sm font-medium">{attendee.user.name ?? "—"}</span>
-                        <span className="text-xs text-muted-foreground">{attendee.user.email}</span>
+                        <span className="text-sm font-medium">
+                          {attendee.user.name ?? "—"}
+                        </span>
+                        <span className="text-muted-foreground text-xs">
+                          {attendee.user.email}
+                        </span>
                       </div>
                     </TableCell>
                     {questions.map((q) => {
                       const r = byQuestionId[q.id];
-                      if (!r) return <TableCell key={q.id} className="text-muted-foreground">—</TableCell>;
+                      if (!r)
+                        return (
+                          <TableCell
+                            key={q.id}
+                            className="text-muted-foreground"
+                          >
+                            —
+                          </TableCell>
+                        );
 
                       return (
                         <TableCell key={q.id}>
                           {q.type === QuestionType.YES_NO && (
-                            <Badge variant={r.answer === "true" ? "default" : "secondary"}>
+                            <Badge
+                              variant={
+                                r.answer === "true" ? "default" : "secondary"
+                              }
+                            >
                               {r.answer === "true" ? "Yes" : "No"}
                             </Badge>
                           )}
                           {q.type === QuestionType.FILE_UPLOAD && r.fileUrl && (
                             <Button asChild variant="outline" size="sm">
-                              <a href={r.fileUrl} target="_blank" rel="noopener noreferrer">
+                              <a
+                                href={r.fileUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
                                 View file
                               </a>
                             </Button>
@@ -100,7 +144,7 @@ export function ResponsesTable({ questions, attendees, eventTitle }: ResponsesTa
                             q.type === QuestionType.LONG_TEXT ||
                             q.type === QuestionType.MULTIPLE_CHOICE) && (
                             <span
-                              className="text-sm line-clamp-2"
+                              className="line-clamp-2 text-sm"
                               title={r.answer ?? ""}
                             >
                               {r.answer ?? "—"}

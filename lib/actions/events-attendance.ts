@@ -2,8 +2,15 @@
 
 import { updateTag } from "next/cache";
 import { auth } from "@/auth";
-import { registrationFormSchema, type RegistrationFormValues } from "@/lib/validations/event";
-import { attendEvent, unattendEvent, registerEvent } from "@/lib/dal/attendance";
+import {
+  registrationFormSchema,
+  type RegistrationFormValues,
+} from "@/lib/validations/event";
+import {
+  attendEvent,
+  unattendEvent,
+  registerEvent,
+} from "@/lib/dal/attendance";
 import type { ResponseInput } from "@/lib/validations/questions";
 
 export interface AttendEventState {
@@ -23,7 +30,9 @@ function invalidateAttendanceCaches(id: string, userId?: string) {
   }
 }
 
-export async function attendEventAction(eventId: string): Promise<AttendEventState> {
+export async function attendEventAction(
+  eventId: string
+): Promise<AttendEventState> {
   const session = await auth();
   if (!session?.user?.id) return { error: "You must be signed in." };
 
@@ -34,7 +43,9 @@ export async function attendEventAction(eventId: string): Promise<AttendEventSta
   return {};
 }
 
-export async function unattendEventAction(eventId: string): Promise<AttendEventState> {
+export async function unattendEventAction(
+  eventId: string
+): Promise<AttendEventState> {
   const session = await auth();
   if (!session?.user?.id) return { error: "You must be signed in." };
 
@@ -55,13 +66,13 @@ export async function registerEventAction(
   const parsed = registrationFormSchema.safeParse(data);
   if (!parsed.success) return { error: "Invalid registration data." };
 
-  const responses: ResponseInput[] = Object.entries(parsed.data.responses ?? {}).map(
-    ([questionId, { answer, fileUrl }]) => ({
-      questionId,
-      answer: answer?.trim() || null,
-      fileUrl: fileUrl ?? null,
-    })
-  );
+  const responses: ResponseInput[] = Object.entries(
+    parsed.data.responses ?? {}
+  ).map(([questionId, { answer, fileUrl }]) => ({
+    questionId,
+    answer: answer?.trim() || null,
+    fileUrl: fileUrl ?? null,
+  }));
 
   const result = await registerEvent(eventId, session.user.id, {
     phone: parsed.data.phone,

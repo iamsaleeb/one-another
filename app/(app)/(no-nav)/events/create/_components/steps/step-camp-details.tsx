@@ -25,8 +25,8 @@ export function StepCampDetails() {
   });
 
   return (
-    <div className="flex flex-col gap-4 rounded-2xl border-2 border-primary/20 bg-primary/5 px-4 py-4">
-      <p className="text-sm font-semibold text-primary">Camp Details</p>
+    <div className="border-primary/20 bg-primary/5 flex flex-col gap-4 rounded-2xl border-2 px-4 py-4">
+      <p className="text-primary text-sm font-semibold">Camp Details</p>
 
       <FormField
         control={form.control}
@@ -37,7 +37,6 @@ export function StepCampDetails() {
             <FormControl>
               <Input
                 type="date"
-
                 min={startDate ?? undefined}
                 {...field}
                 value={field.value ?? ""}
@@ -55,7 +54,7 @@ export function StepCampDetails() {
           <FormItem className="flex items-center justify-between gap-3 rounded-xl border bg-white px-4 py-3">
             <div>
               <p className="text-sm font-medium">Allow Partial Attendance</p>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-muted-foreground text-xs">
                 Let attendees choose which days to attend
               </p>
             </div>
@@ -63,7 +62,6 @@ export function StepCampDetails() {
               <Switch
                 checked={field.value ?? false}
                 onCheckedChange={field.onChange}
-
               />
             </FormControl>
           </FormItem>
@@ -75,8 +73,9 @@ export function StepCampDetails() {
         <p className="text-sm font-medium">Schedule / Agenda</p>
 
         {fields.length === 0 && (
-          <p className="text-xs text-muted-foreground text-center py-2">
-            No agenda items yet. Add items to show attendees what&apos;s planned.
+          <p className="text-muted-foreground py-2 text-center text-xs">
+            No agenda items yet. Add items to show attendees what&apos;s
+            planned.
           </p>
         )}
 
@@ -86,14 +85,15 @@ export function StepCampDetails() {
             className="flex flex-col gap-2 rounded-xl border bg-white px-3 py-3"
           >
             <div className="flex items-center justify-between">
-              <p className="text-xs font-medium text-muted-foreground">Item {index + 1}</p>
+              <p className="text-muted-foreground text-xs font-medium">
+                Item {index + 1}
+              </p>
               <Button
                 type="button"
                 variant="ghost"
                 size="icon"
-                className="size-7 text-destructive hover:text-destructive"
+                className="text-destructive hover:text-destructive size-7"
                 onClick={() => remove(index)}
-
               >
                 <Trash2 className="size-3.5" />
               </Button>
@@ -109,7 +109,6 @@ export function StepCampDetails() {
                     <FormControl>
                       <Input
                         type="date"
-        
                         min={startDate ?? undefined}
                         {...f}
                         value={f.value ?? ""}
@@ -126,12 +125,7 @@ export function StepCampDetails() {
                   <FormItem>
                     <FormLabel className="text-xs">Time (optional)</FormLabel>
                     <FormControl>
-                      <Input
-                        type="time"
-        
-                        {...f}
-                        value={f.value ?? ""}
-                      />
+                      <Input type="time" {...f} value={f.value ?? ""} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -146,11 +140,7 @@ export function StepCampDetails() {
                 <FormItem>
                   <FormLabel className="text-xs">Title</FormLabel>
                   <FormControl>
-                    <Input
-                      placeholder="e.g. Morning worship"
-      
-                      {...f}
-                    />
+                    <Input placeholder="e.g. Morning worship" {...f} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -162,14 +152,11 @@ export function StepCampDetails() {
               name={`campAgenda.${index}.description`}
               render={({ field: f }) => (
                 <FormItem>
-                  <FormLabel className="text-xs">Description (optional)</FormLabel>
+                  <FormLabel className="text-xs">
+                    Description (optional)
+                  </FormLabel>
                   <FormControl>
-                    <Textarea
-                      rows={2}
-      
-                      {...f}
-                      value={f.value ?? ""}
-                    />
+                    <Textarea rows={2} {...f} value={f.value ?? ""} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -195,7 +182,7 @@ export function StepCampDetails() {
             })
           }
         >
-          <Plus className="size-4 mr-1" />
+          <Plus className="mr-1 size-4" />
           Add Agenda Item
         </Button>
       </div>

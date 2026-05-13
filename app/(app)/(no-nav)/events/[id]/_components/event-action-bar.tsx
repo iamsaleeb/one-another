@@ -27,7 +27,10 @@ interface EventActionBarProps {
   camp?: EventMetadata["camp"];
   campStartDate?: string;
   questions?: Question[];
-  existingResponses?: Record<string, { answer: string | null; fileUrl: string | null }>;
+  existingResponses?: Record<
+    string,
+    { answer: string | null; fileUrl: string | null }
+  >;
   existingSelectedDays?: string[];
 }
 
@@ -58,7 +61,10 @@ export function EventActionBar({
   const isFull = spotsLeft != null && spotsLeft <= 0 && !isAttending;
 
   const formattedPrice = price
-    ? new Intl.NumberFormat("en-AU", { style: "currency", currency: "AUD" }).format(parseFloat(price))
+    ? new Intl.NumberFormat("en-AU", {
+        style: "currency",
+        currency: "AUD",
+      }).format(parseFloat(price))
     : "Free";
 
   // Decide what to show in the info section
@@ -69,17 +75,20 @@ export function EventActionBar({
       ? "Fully booked"
       : `${spotsLeft} / ${capacity} spots`
     : formattedPrice;
-  const infoValueColor = showCapacity && isFull ? "text-destructive" : "text-foreground";
+  const infoValueColor =
+    showCapacity && isFull ? "text-destructive" : "text-foreground";
 
   return (
     <>
-      <div className="fixed bottom-0 left-0 right-0 z-10 bg-white shadow-[0px_-2px_31px_0px_#0000001A] pb-safe">
+      <div className="pb-safe fixed right-0 bottom-0 left-0 z-10 bg-white shadow-[0px_-2px_31px_0px_#0000001A]">
         <div className="flex items-center justify-between gap-4 px-4 py-4">
           <div className="flex flex-col gap-0.5">
-            <p className="text-xs text-muted-foreground">{infoLabel}</p>
-            <p className={`text-base font-bold ${infoValueColor}`}>{infoValue}</p>
+            <p className="text-muted-foreground text-xs">{infoLabel}</p>
+            <p className={`text-base font-bold ${infoValueColor}`}>
+              {infoValue}
+            </p>
             {showCapacity && price && (
-              <p className="text-xs text-muted-foreground">{formattedPrice}</p>
+              <p className="text-muted-foreground text-xs">{formattedPrice}</p>
             )}
           </div>
 
@@ -96,19 +105,25 @@ export function EventActionBar({
               </Button>
             )}
 
-            {!isCancelled && !isDraft && (requiresRegistration ? (
-              <Button
-                onClick={() => setDrawerOpen(true)}
-                variant={isAttending ? "outline" : "default"}
-                className={isAttending ? "gap-1.5" : ""}
-                disabled={isFull}
-              >
-                {isAttending && <Check className="size-4" />}
-                {isAttending ? "Registered" : isFull ? "Fully booked" : "Register"}
-              </Button>
-            ) : (
-              <AttendButton eventId={eventId} isAttending={isAttending} />
-            ))}
+            {!isCancelled &&
+              !isDraft &&
+              (requiresRegistration ? (
+                <Button
+                  onClick={() => setDrawerOpen(true)}
+                  variant={isAttending ? "outline" : "default"}
+                  className={isAttending ? "gap-1.5" : ""}
+                  disabled={isFull}
+                >
+                  {isAttending && <Check className="size-4" />}
+                  {isAttending
+                    ? "Registered"
+                    : isFull
+                      ? "Fully booked"
+                      : "Register"}
+                </Button>
+              ) : (
+                <AttendButton eventId={eventId} isAttending={isAttending} />
+              ))}
           </div>
         </div>
       </div>

@@ -11,7 +11,16 @@ export async function createSeries(
   userId: string,
   userRole: string
 ): Promise<DalError | { id: string; churchId: string }> {
-  const { name, description, cadence, location, host, tag, churchId, photoUrl } = data;
+  const {
+    name,
+    description,
+    cadence,
+    location,
+    host,
+    tag,
+    churchId,
+    photoUrl,
+  } = data;
 
   const allowed = await canManageChurch(userId, userRole, churchId);
   if (!allowed) return { error: "You are not assigned to this church." };
@@ -39,12 +48,28 @@ export async function updateSeries(
   userId: string,
   userRole: string
 ): Promise<DalError | { oldChurchId: string; newChurchId: string }> {
-  const { name, description, cadence, location, host, tag, churchId, photoUrl } = data;
+  const {
+    name,
+    description,
+    cadence,
+    location,
+    host,
+    tag,
+    churchId,
+    photoUrl,
+  } = data;
 
-  const existing = await prisma.series.findUnique({ where: { id }, select: { churchId: true } });
+  const existing = await prisma.series.findUnique({
+    where: { id },
+    select: { churchId: true },
+  });
   if (!existing) return { error: "Series not found." };
 
-  const allowedOriginal = await canManageChurch(userId, userRole, existing.churchId);
+  const allowedOriginal = await canManageChurch(
+    userId,
+    userRole,
+    existing.churchId
+  );
   if (!allowedOriginal) return { error: "Unauthorised." };
 
   if (churchId !== existing.churchId) {
@@ -54,7 +79,16 @@ export async function updateSeries(
 
   await prisma.series.update({
     where: { id },
-    data: { name, description, cadence, location, host, tag, churchId, photoUrl: photoUrl ?? null },
+    data: {
+      name,
+      description,
+      cadence,
+      location,
+      host,
+      tag,
+      churchId,
+      photoUrl: photoUrl ?? null,
+    },
   });
 
   return { oldChurchId: existing.churchId, newChurchId: churchId };
@@ -65,7 +99,10 @@ export async function deleteSeries(
   userId: string,
   userRole: string
 ): Promise<{ error: string } | { churchId: string }> {
-  const series = await prisma.series.findUnique({ where: { id }, select: { churchId: true } });
+  const series = await prisma.series.findUnique({
+    where: { id },
+    select: { churchId: true },
+  });
   if (!series) return { error: "Series not found." };
 
   const allowed = await canManageChurch(userId, userRole, series.churchId);

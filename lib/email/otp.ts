@@ -19,11 +19,16 @@ export async function storeOtp(
   // Atomic delete+create — VerificationToken has a composite PK so upsert isn't available
   await prisma.$transaction([
     prisma.verificationToken.deleteMany({ where: { identifier } }),
-    prisma.verificationToken.create({ data: { identifier, token: hashed, expires } }),
+    prisma.verificationToken.create({
+      data: { identifier, token: hashed, expires },
+    }),
   ]);
 }
 
-export async function verifyOtp(identifier: string, otp: string): Promise<boolean> {
+export async function verifyOtp(
+  identifier: string,
+  otp: string
+): Promise<boolean> {
   const record = await prisma.verificationToken.findFirst({
     where: { identifier },
     orderBy: { expires: "desc" },

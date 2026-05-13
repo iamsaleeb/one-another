@@ -67,7 +67,7 @@ const eslintConfig = defineConfig([
 
       // Require strict equality (===) everywhere; allow `== null` shorthand for
       // null/undefined checks
-      "eqeqeq": ["error", "always", { null: "ignore" }],
+      eqeqeq: ["error", "always", { null: "ignore" }],
 
       // No console.log in source code — use a proper logger or remove debug
       // output before committing; .warn and .error are allowed

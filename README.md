@@ -15,19 +15,19 @@ A church event discovery and management platform. Browse events from local churc
 
 ## Tech Stack
 
-| Layer | Technology |
-|---|---|
-| Framework | [Next.js 16](https://nextjs.org) (App Router) |
-| Language | TypeScript |
-| Styling | Tailwind CSS v4 |
-| Components | Radix UI / shadcn |
-| Auth | Auth.js (NextAuth v5) |
-| Database | PostgreSQL via [Prisma](https://www.prisma.io) |
-| Forms | React Hook Form + Zod |
-| File storage | [Vercel Blob](https://vercel.com/docs/storage/vercel-blob) |
-| Mobile | Capacitor (Android & iOS) |
-| Push notifications | Firebase Cloud Messaging (FCM) |
-| Testing | Jest + Testing Library |
+| Layer              | Technology                                                 |
+| ------------------ | ---------------------------------------------------------- |
+| Framework          | [Next.js 16](https://nextjs.org) (App Router)              |
+| Language           | TypeScript                                                 |
+| Styling            | Tailwind CSS v4                                            |
+| Components         | Radix UI / shadcn                                          |
+| Auth               | Auth.js (NextAuth v5)                                      |
+| Database           | PostgreSQL via [Prisma](https://www.prisma.io)             |
+| Forms              | React Hook Form + Zod                                      |
+| File storage       | [Vercel Blob](https://vercel.com/docs/storage/vercel-blob) |
+| Mobile             | Capacitor (Android & iOS)                                  |
+| Push notifications | Firebase Cloud Messaging (FCM)                             |
+| Testing            | Jest + Testing Library                                     |
 
 ## Prerequisites
 
@@ -78,15 +78,15 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ## Scripts
 
-| Command | Description |
-|---|---|
-| `npm run dev` | Start the Next.js development server |
-| `npm run build` | Create a production build |
-| `npm run start` | Start the production server |
-| `npm run lint` | Run ESLint |
-| `npm test` | Run the test suite |
-| `npm run test:watch` | Run tests in watch mode |
-| `npm run test:coverage` | Run tests with coverage report |
+| Command                 | Description                          |
+| ----------------------- | ------------------------------------ |
+| `npm run dev`           | Start the Next.js development server |
+| `npm run build`         | Create a production build            |
+| `npm run start`         | Start the production server          |
+| `npm run lint`          | Run ESLint                           |
+| `npm test`              | Run the test suite                   |
+| `npm run test:watch`    | Run tests in watch mode              |
+| `npm run test:coverage` | Run tests with coverage report       |
 
 ## Project Structure
 
@@ -139,11 +139,11 @@ Push notifications are delivered via [Firebase Cloud Messaging (FCM)](https://fi
 
 ### Notification types
 
-| Type | When sent |
-|---|---|
-| `EVENT_REMINDER` | Before an event the user is attending (configurable: 1h, 2h, 4h, or 24h — default 2h) |
-| `NEW_SERIES_SESSION` | When a new session is added to a series the user follows |
-| `EVENT_CANCELLED` | When an event the user is attending is cancelled |
+| Type                 | When sent                                                                             |
+| -------------------- | ------------------------------------------------------------------------------------- |
+| `EVENT_REMINDER`     | Before an event the user is attending (configurable: 1h, 2h, 4h, or 24h — default 2h) |
+| `NEW_SERIES_SESSION` | When a new session is added to a series the user follows                              |
+| `EVENT_CANCELLED`    | When an event the user is attending is cancelled                                      |
 
 ### Firebase setup
 
@@ -159,12 +159,12 @@ Push notifications are delivered via [Firebase Cloud Messaging (FCM)](https://fi
 
 Notification delivery is triggered by an external cron service calling the API endpoint once per minute. Set up a job on [cron-job.org](https://cron-job.org) (or any equivalent service) with:
 
-| Setting | Value |
-|---|---|
-| URL | `https://your-domain.com/api/cron/event-reminders` |
-| Method | `GET` |
-| Header | `Authorization: Bearer <CRON_SECRET>` |
-| Schedule | Every 1 minute (`*/1 * * * *`) |
+| Setting  | Value                                              |
+| -------- | -------------------------------------------------- |
+| URL      | `https://your-domain.com/api/cron/event-reminders` |
+| Method   | `GET`                                              |
+| Header   | `Authorization: Bearer <CRON_SECRET>`              |
+| Schedule | Every 1 minute (`*/1 * * * *`)                     |
 
 Add `CRON_SECRET` (a long random string) to your environment variables, then use the same value in the cron-job.org request header.
 
@@ -183,12 +183,14 @@ Users can opt out of individual notification types at **Profile → Notification
 The app is configured as a Capacitor project under the app ID `com.oneanother.app`.
 
 **Android:**
+
 ```bash
 npx cap sync android
 npx cap open android
 ```
 
 **iOS:**
+
 ```bash
 npx cap sync ios
 npx cap open ios

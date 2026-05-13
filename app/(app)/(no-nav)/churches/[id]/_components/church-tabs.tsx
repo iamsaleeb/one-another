@@ -16,7 +16,7 @@ interface ChurchTabsProps {
 export function ChurchTabs({ church }: ChurchTabsProps) {
   return (
     <Tabs defaultValue="about">
-      <div className="px-4 sticky top-0 z-10 bg-muted/20 backdrop-blur-sm pt-2">
+      <div className="bg-muted/20 sticky top-0 z-10 px-4 pt-2 backdrop-blur-sm">
         <TabsList variant="line" className="w-full">
           <TabsTrigger value="about">About</TabsTrigger>
           <TabsTrigger value="services">Services</TabsTrigger>

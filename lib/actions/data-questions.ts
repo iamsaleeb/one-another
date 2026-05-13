@@ -73,6 +73,9 @@ export async function getMyResponses(
   if (!attendee) return {};
 
   return Object.fromEntries(
-    attendee.responses.map((r) => [r.questionId, { answer: r.answer, fileUrl: r.fileUrl }])
+    attendee.responses.map((r) => [
+      r.questionId,
+      { answer: r.answer, fileUrl: r.fileUrl },
+    ])
   );
 }

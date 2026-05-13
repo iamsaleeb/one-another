@@ -49,7 +49,7 @@ function FilterChip({
       className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
         active
           ? activeClassName
-          : "bg-muted text-foreground border border-border hover:bg-muted/80"
+          : "bg-muted text-foreground border-border hover:bg-muted/80 border"
       }`}
     >
       {label}
@@ -57,9 +57,19 @@ function FilterChip({
   );
 }
 
-function ActivePill({ label, onRemove, colorClassName = "bg-primary/10 text-primary" }: { label: string; onRemove: () => void; colorClassName?: string }) {
+function ActivePill({
+  label,
+  onRemove,
+  colorClassName = "bg-primary/10 text-primary",
+}: {
+  label: string;
+  onRemove: () => void;
+  colorClassName?: string;
+}) {
   return (
-    <span className={`inline-flex items-center gap-1 rounded-full ${colorClassName} px-2.5 py-1 text-xs font-medium`}>
+    <span
+      className={`inline-flex items-center gap-1 rounded-full ${colorClassName} px-2.5 py-1 text-xs font-medium`}
+    >
       {label}
       <button
         type="button"
@@ -88,10 +98,18 @@ export function SearchBar({
   const [type, setType] = useState<TypeFilter>(initialType);
 
   // Sync with URL changes (e.g. back/forward navigation)
-  useEffect(() => { setQuery(initialQuery); }, [initialQuery]);
-  useEffect(() => { setWhen(initialWhen); }, [initialWhen]);
-  useEffect(() => { setCategory(initialCategory); }, [initialCategory]);
-  useEffect(() => { setType(initialType); }, [initialType]);
+  useEffect(() => {
+    setQuery(initialQuery);
+  }, [initialQuery]);
+  useEffect(() => {
+    setWhen(initialWhen);
+  }, [initialWhen]);
+  useEffect(() => {
+    setCategory(initialCategory);
+  }, [initialCategory]);
+  useEffect(() => {
+    setType(initialType);
+  }, [initialType]);
 
   // Close dropdown on Escape
   useEffect(() => {
@@ -163,20 +181,20 @@ export function SearchBar({
       {/* Search input row — z-40 keeps it above the backdrop */}
       <form onSubmit={handleSubmit} className="relative z-40">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
+          <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2" />
           <Input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onFocus={() => setOpen(true)}
             placeholder="Search events & churches…"
-            className="pl-9 pr-20 rounded-full bg-muted/60 border-0 h-10 text-sm focus-visible:ring-0"
+            className="bg-muted/60 h-10 rounded-full border-0 pr-20 pl-9 text-sm focus-visible:ring-0"
           />
-          <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center gap-1">
+          <div className="absolute top-1/2 right-1 flex -translate-y-1/2 items-center gap-1">
             {(query || hasActiveFilters) && (
               <button
                 type="button"
                 onClick={handleClear}
-                className="flex items-center justify-center size-7 rounded-full text-muted-foreground hover:text-foreground hover:bg-black/5"
+                className="text-muted-foreground hover:text-foreground flex size-7 items-center justify-center rounded-full hover:bg-black/5"
                 aria-label="Clear search"
               >
                 <X className="size-3.5" />
@@ -184,7 +202,7 @@ export function SearchBar({
             )}
             <button
               type="submit"
-              className="flex items-center justify-center size-8 rounded-full bg-primary text-primary-foreground"
+              className="bg-primary text-primary-foreground flex size-8 items-center justify-center rounded-full"
               aria-label="Search"
             >
               <Search className="size-4" />
@@ -195,27 +213,41 @@ export function SearchBar({
 
       {/* Active filter pills */}
       {hasActiveFilters && (
-        <div className="relative z-40 flex flex-wrap gap-1.5 mt-2 px-1">
+        <div className="relative z-40 mt-2 flex flex-wrap gap-1.5 px-1">
           {when && (
             <ActivePill
               label={WHEN_LABELS[when]}
-              onRemove={() => { setWhen(undefined); handleNavigate({ when: undefined }); }}
+              onRemove={() => {
+                setWhen(undefined);
+                handleNavigate({ when: undefined });
+              }}
             />
           )}
-          {category && (() => {
-            const colors = TAG_COLORS[category as Category];
-            return (
-              <ActivePill
-                label={category}
-                onRemove={() => { setCategory(""); handleNavigate({ category: "" }); }}
-                colorClassName={colors ? `${colors.bg} ${colors.text}` : "bg-primary/10 text-primary"}
-              />
-            );
-          })()}
+          {category &&
+            (() => {
+              const colors = TAG_COLORS[category as Category];
+              return (
+                <ActivePill
+                  label={category}
+                  onRemove={() => {
+                    setCategory("");
+                    handleNavigate({ category: "" });
+                  }}
+                  colorClassName={
+                    colors
+                      ? `${colors.bg} ${colors.text}`
+                      : "bg-primary/10 text-primary"
+                  }
+                />
+              );
+            })()}
           {type && type !== "all" && (
             <ActivePill
               label={TYPE_LABELS[type]}
-              onRemove={() => { setType("all"); handleNavigate({ type: "all" }); }}
+              onRemove={() => {
+                setType("all");
+                handleNavigate({ type: "all" });
+              }}
             />
           )}
         </div>
@@ -233,10 +265,12 @@ export function SearchBar({
 
       {/* Dropdown panel */}
       {open && (
-        <div className="absolute left-0 right-0 top-full mt-1 z-40 bg-white rounded-2xl shadow-lg border border-border p-4 flex flex-col gap-4">
+        <div className="border-border absolute top-full right-0 left-0 z-40 mt-1 flex flex-col gap-4 rounded-2xl border bg-white p-4 shadow-lg">
           {/* When */}
           <div>
-            <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">When</p>
+            <p className="text-muted-foreground mb-2 text-xs font-semibold tracking-wide uppercase">
+              When
+            </p>
             <div className="flex gap-2 overflow-x-auto pb-0.5">
               {WHEN_OPTIONS.map((opt) => (
                 <FilterChip
@@ -251,7 +285,9 @@ export function SearchBar({
 
           {/* Category */}
           <div>
-            <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Category</p>
+            <p className="text-muted-foreground mb-2 text-xs font-semibold tracking-wide uppercase">
+              Category
+            </p>
             <div className="flex flex-wrap gap-2">
               {CATEGORY_OPTIONS.map((cat) => {
                 const colors = TAG_COLORS[cat];
@@ -270,7 +306,9 @@ export function SearchBar({
 
           {/* Type */}
           <div>
-            <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Type</p>
+            <p className="text-muted-foreground mb-2 text-xs font-semibold tracking-wide uppercase">
+              Type
+            </p>
             <ToggleGroup
               type="single"
               value={type}
@@ -280,7 +318,11 @@ export function SearchBar({
               className="w-full"
             >
               {TYPE_OPTIONS.map((opt) => (
-                <ToggleGroupItem key={opt.value} value={opt.value} className="flex-1 text-xs">
+                <ToggleGroupItem
+                  key={opt.value}
+                  value={opt.value}
+                  className="flex-1 text-xs"
+                >
                   {opt.label}
                 </ToggleGroupItem>
               ))}

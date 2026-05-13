@@ -11,7 +11,10 @@ import {
   DrawerClose,
 } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
-import { parseEventAttendeeMetadata, type EventMetadata } from "@/lib/validations/event";
+import {
+  parseEventAttendeeMetadata,
+  type EventMetadata,
+} from "@/lib/validations/event";
 import type { getEventAttendees } from "@/lib/actions/data-events";
 import { formatDayShort } from "@/lib/datetime";
 
@@ -40,25 +43,36 @@ export function AttendeesDrawer({
 }: AttendeesDrawerProps) {
   const count = attendees.length;
   const noun = requiresRegistration
-    ? count === 1 ? "registrant" : "registrants"
-    : count === 1 ? "attendee" : "attendees";
+    ? count === 1
+      ? "registrant"
+      : "registrants"
+    : count === 1
+      ? "attendee"
+      : "attendees";
 
-  const showDays = camp?.allowPartialRegistration === true && !!campStartDate && !!camp.endDate;
+  const showDays =
+    camp?.allowPartialRegistration === true &&
+    !!campStartDate &&
+    !!camp.endDate;
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange} direction="bottom">
       <DrawerContent aria-describedby={undefined}>
         <DrawerHeader>
-          <DrawerTitle>{count} {noun}</DrawerTitle>
+          <DrawerTitle>
+            {count} {noun}
+          </DrawerTitle>
         </DrawerHeader>
 
-        <div className="px-4 pb-2 flex flex-col gap-3 max-h-[60vh] overflow-y-auto">
+        <div className="flex max-h-[60vh] flex-col gap-3 overflow-y-auto px-4 pb-2">
           {count === 0 ? (
             <div className="flex flex-col items-center gap-3 py-8">
-              <div className="flex size-12 items-center justify-center rounded-full bg-muted">
-                <Users className="size-6 text-muted-foreground" />
+              <div className="bg-muted flex size-12 items-center justify-center rounded-full">
+                <Users className="text-muted-foreground size-6" />
               </div>
-              <p className="text-sm text-muted-foreground text-center">No one has signed up yet</p>
+              <p className="text-muted-foreground text-center text-sm">
+                No one has signed up yet
+              </p>
             </div>
           ) : (
             attendees.map((a) => {
@@ -66,39 +80,56 @@ export function AttendeesDrawer({
               const selectedDays = attendeeMeta.selectedDays ?? [];
 
               return (
-                <div key={a.id} className="rounded-xl bg-muted/50 px-4 py-3 flex flex-col gap-0.5">
+                <div
+                  key={a.id}
+                  className="bg-muted/50 flex flex-col gap-0.5 rounded-xl px-4 py-3"
+                >
                   <p className="text-sm font-semibold">{a.user.name}</p>
-                  <p className="text-xs text-muted-foreground">{a.user.email}</p>
+                  <p className="text-muted-foreground text-xs">
+                    {a.user.email}
+                  </p>
                   {questionCount != null && questionCount > 0 && (
                     <Badge
-                      variant={a._count.responses >= questionCount ? "default" : "outline"}
-                      className="text-xs w-fit"
+                      variant={
+                        a._count.responses >= questionCount
+                          ? "default"
+                          : "outline"
+                      }
+                      className="w-fit text-xs"
                     >
-                      {a._count.responses >= questionCount ? "Answered" : "Partial"}
+                      {a._count.responses >= questionCount
+                        ? "Answered"
+                        : "Partial"}
                     </Badge>
                   )}
                   {collectPhone && a.phone && (
-                    <p className="text-xs text-muted-foreground">{a.phone}</p>
+                    <p className="text-muted-foreground text-xs">{a.phone}</p>
                   )}
                   {collectNotes && a.notes && (
-                    <p className="text-xs text-foreground/70 mt-1 italic">{a.notes}</p>
+                    <p className="text-foreground/70 mt-1 text-xs italic">
+                      {a.notes}
+                    </p>
                   )}
                   {showDays && (
                     <div className="mt-1.5 flex flex-col gap-1">
-                      <p className="text-xs font-medium text-muted-foreground">Attending days:</p>
+                      <p className="text-muted-foreground text-xs font-medium">
+                        Attending days:
+                      </p>
                       {selectedDays.length > 0 ? (
                         <div className="flex flex-wrap gap-1">
                           {selectedDays.sort().map((day) => (
                             <span
                               key={day}
-                              className="rounded-md bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary"
+                              className="bg-primary/10 text-primary rounded-md px-2 py-0.5 text-xs font-medium"
                             >
                               {formatDayShort(day)}
                             </span>
                           ))}
                         </div>
                       ) : (
-                        <p className="text-xs text-muted-foreground italic">Full camp</p>
+                        <p className="text-muted-foreground text-xs italic">
+                          Full camp
+                        </p>
                       )}
                     </div>
                   )}
@@ -110,7 +141,9 @@ export function AttendeesDrawer({
 
         <DrawerFooter>
           <DrawerClose asChild>
-            <Button variant="outline" className="w-full">Close</Button>
+            <Button variant="outline" className="w-full">
+              Close
+            </Button>
           </DrawerClose>
         </DrawerFooter>
       </DrawerContent>

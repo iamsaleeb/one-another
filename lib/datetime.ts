@@ -50,7 +50,10 @@ export function localInputsToUtcDate(dateStr: string, timeStr: string): Date {
  * Uses JS local-timezone getters so the values reflect the user's timezone.
  * Must only be called in "use client" components.
  */
-export function utcIsoToLocalInputs(iso: string): { date: string; time: string } {
+export function utcIsoToLocalInputs(iso: string): {
+  date: string;
+  time: string;
+} {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return { date: "", time: "" };
   const year = d.getFullYear();
@@ -94,11 +97,19 @@ export function getCampDays(startDate: string, endDate: string): string[] {
 /** Format YYYY-MM-DD as "Monday, 1 January" (long form, for registration checkboxes). */
 export function formatDayLabel(isoDate: string): string {
   const d = new Date(`${isoDate}T12:00:00.000Z`);
-  return d.toLocaleDateString("en", { weekday: "long", day: "numeric", month: "long" });
+  return d.toLocaleDateString("en", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  });
 }
 
 /** Format YYYY-MM-DD as "Mon, 1 Jan" (short form, for attendee lists). */
 export function formatDayShort(isoDate: string): string {
   const d = new Date(`${isoDate}T12:00:00.000Z`);
-  return d.toLocaleDateString("en", { weekday: "short", day: "numeric", month: "short" });
+  return d.toLocaleDateString("en", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+  });
 }

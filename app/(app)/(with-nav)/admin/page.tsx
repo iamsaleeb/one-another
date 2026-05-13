@@ -17,9 +17,9 @@ export default async function AdminPage() {
   return (
     <div className="flex flex-col">
       <PageHeader title="Church Admin" />
-      <div className="px-4 pb-6 flex flex-col gap-4">
+      <div className="flex flex-col gap-4 px-4 pb-6">
         {churchesWithOrganisers.length === 0 ? (
-          <p className="text-sm text-muted-foreground text-center py-8">
+          <p className="text-muted-foreground py-8 text-center text-sm">
             You have not been assigned as admin for any church.
           </p>
         ) : (

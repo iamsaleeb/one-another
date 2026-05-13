@@ -7,13 +7,18 @@ interface HeroBannerProps {
   className?: string;
 }
 
-export function HeroBanner({ size = "md", photoUrl, className }: HeroBannerProps) {
+export function HeroBanner({
+  size = "md",
+  photoUrl,
+  className,
+}: HeroBannerProps) {
   const isSm = size === "sm";
   return (
     <div
       className={cn(
-        "relative mx-4 mt-4 overflow-hidden rounded-2xl shadow-card",
-        !photoUrl && "bg-gradient-to-br from-primary/80 via-primary to-primary/60",
+        "shadow-card relative mx-4 mt-4 overflow-hidden rounded-2xl",
+        !photoUrl &&
+          "from-primary/80 via-primary to-primary/60 bg-gradient-to-br",
         isSm ? "h-40" : "h-52",
         className
       )}
@@ -34,14 +39,14 @@ export function HeroBanner({ size = "md", photoUrl, className }: HeroBannerProps
         <>
           <div
             className={cn(
-              "absolute bottom-0 right-0 rounded-full bg-white/10",
-              isSm ? "w-32 h-32" : "w-40 h-40"
+              "absolute right-0 bottom-0 rounded-full bg-white/10",
+              isSm ? "h-32 w-32" : "h-40 w-40"
             )}
           />
           <div
             className={cn(
               "absolute rounded-full bg-white/10",
-              isSm ? "top-4 right-10 w-16 h-16" : "top-6 right-12 w-20 h-20"
+              isSm ? "top-4 right-10 h-16 w-16" : "top-6 right-12 h-20 w-20"
             )}
           />
         </>

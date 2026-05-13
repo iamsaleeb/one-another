@@ -667,7 +667,7 @@ describe("updateEventAction", () => {
         }),
       })
     );
-    expect(mockUpdateTag).toHaveBeenCalledWith("events");
+    expect(mockUpdateTag).toHaveBeenCalledWith("events-list");
     expect(mockUpdateTag).toHaveBeenCalledWith("event-evt-1");
     expect(mockUpdateTag).toHaveBeenCalledWith("church-ch-1");
     expect(mockRedirect).toHaveBeenCalledWith("/events/evt-1");
@@ -885,7 +885,7 @@ describe("deleteEventAction", () => {
       dedupeKey: "evt-1",
     });
     expect(mockEventDelete).toHaveBeenCalledWith({ where: { id: "evt-1" } });
-    expect(mockUpdateTag).toHaveBeenCalledWith("events");
+    expect(mockUpdateTag).toHaveBeenCalledWith("events-list");
     expect(mockUpdateTag).toHaveBeenCalledWith("event-evt-1");
     expect(mockRedirect).toHaveBeenCalledWith("/organiser");
   });
@@ -973,7 +973,7 @@ describe("publishEventAction", () => {
       ["user-2", "user-3"],
       { id: "evt-1", title: "Test", datetime }
     );
-    expect(mockUpdateTag).toHaveBeenCalledWith("events");
+    expect(mockUpdateTag).toHaveBeenCalledWith("events-list");
     expect(mockUpdateTag).toHaveBeenCalledWith("event-evt-1");
     expect(mockRedirect).toHaveBeenCalledWith("/events/evt-1");
   });
@@ -1203,7 +1203,7 @@ describe("unpublishEventAction", () => {
       type: NotificationType.EVENT_REMINDER,
       dedupeKey: "evt-1",
     });
-    expect(mockUpdateTag).toHaveBeenCalledWith("events");
+    expect(mockUpdateTag).toHaveBeenCalledWith("events-list");
     expect(mockUpdateTag).toHaveBeenCalledWith("event-evt-1");
     expect(mockRedirect).toHaveBeenCalledWith("/events/evt-1");
   });

@@ -6,7 +6,7 @@ import { prisma } from "@/lib/db";
 // TTL policy: event lists → minutes (change on new events/RSVPs)
 //             event detail → hours (changes infrequently once published)
 export async function getEvents() {
-  cacheTag("events");
+  cacheTag("events-list");
   cacheLife("minutes");
   return prisma.event.findMany({
     where: { datetime: { gte: new Date() }, isDraft: false },
@@ -17,7 +17,7 @@ export async function getEvents() {
 }
 
 export async function getEventById(id: string) {
-  cacheTag("events", `event-${id}`);
+  cacheTag(`event-${id}`);
   cacheLife("hours");
   return prisma.event.findUnique({
     where: { id },
@@ -30,7 +30,7 @@ export async function getEventById(id: string) {
 }
 
 export async function getEventMeta(id: string) {
-  cacheTag("events", `event-${id}`);
+  cacheTag(`event-${id}`);
   cacheLife("hours");
   return prisma.event.findUnique({
     where: { id },
@@ -49,7 +49,7 @@ export async function getMyEventAttendance(eventId: string, userId: string) {
 }
 
 export async function getEventAttendees(eventId: string) {
-  cacheTag("events", `event-${eventId}`);
+  cacheTag(`event-${eventId}`);
   cacheLife("minutes");
   return prisma.eventAttendee.findMany({
     where: { eventId },
@@ -66,7 +66,7 @@ export async function getEventAttendees(eventId: string) {
 }
 
 export async function getEventsByCreator(userId: string) {
-  cacheTag("events", `user-events-${userId}`);
+  cacheTag(`user-events-${userId}`);
   cacheLife("minutes");
   return prisma.event.findMany({
     where: { createdById: userId },
@@ -80,7 +80,7 @@ export async function getEventsByCreator(userId: string) {
 }
 
 export async function getEventsNotByCreator(userId: string) {
-  cacheTag("events");
+  cacheTag("events-list");
   cacheLife("minutes");
   return prisma.event.findMany({
     where: {
@@ -98,7 +98,7 @@ export async function getEventsNotByCreator(userId: string) {
 }
 
 export async function getUserAttendedEvents(userId: string) {
-  cacheTag("events", `user-events-${userId}`);
+  cacheTag(`user-events-${userId}`);
   cacheLife("minutes");
   return prisma.event.findMany({
     where: {
@@ -113,7 +113,7 @@ export async function getUserAttendedEvents(userId: string) {
 }
 
 export async function getUserAttendedPastEvents(userId: string) {
-  cacheTag("events", `user-events-${userId}`);
+  cacheTag(`user-events-${userId}`);
   cacheLife("minutes");
   return prisma.event.findMany({
     where: {

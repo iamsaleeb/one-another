@@ -63,7 +63,7 @@ export async function getCachedUnreadCount(userId: string): Promise<number> {
 // Search results are time-sensitive (today/tomorrow/weekend filters), so use a short TTL.
 export async function searchEventsAndChurches(filters: SearchFilters) {
   cacheLife("minutes");
-  cacheTag("events", "churches");
+  cacheTag("events-list", "churches");
   const { query, type = "all", category, when } = filters;
   if (!(query || category || when)) return { events: [], churches: [] };
 

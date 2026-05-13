@@ -24,7 +24,12 @@ import type { CreateEventInput } from "@/lib/validations/event";
 
 interface StepBasicsProps {
   churches: Array<{ id: string; name: string }>;
-  series?: { id: string; name: string; churchId: string; churchName: string } | null;
+  series?: {
+    id: string;
+    name: string;
+    churchId: string;
+    churchName: string;
+  } | null;
 }
 
 export function StepBasics({ churches, series }: StepBasicsProps) {
@@ -33,9 +38,9 @@ export function StepBasics({ churches, series }: StepBasicsProps) {
   return (
     <div className="flex flex-col gap-5">
       {series && (
-        <div className="flex items-center gap-2 rounded-xl bg-primary/10 px-3 py-2.5">
-          <Repeat className="size-4 text-primary shrink-0" />
-          <p className="text-sm text-primary font-medium">
+        <div className="bg-primary/10 flex items-center gap-2 rounded-xl px-3 py-2.5">
+          <Repeat className="text-primary size-4 shrink-0" />
+          <p className="text-primary text-sm font-medium">
             Session for: {series.name}
           </p>
         </div>
@@ -48,7 +53,11 @@ export function StepBasics({ churches, series }: StepBasicsProps) {
           <FormItem>
             <FormLabel>Cover Photo (optional)</FormLabel>
             <FormControl>
-              <PhotoUploadField variant="cover" value={field.value} onChange={field.onChange} />
+              <PhotoUploadField
+                variant="cover"
+                value={field.value}
+                onChange={field.onChange}
+              />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -62,10 +71,7 @@ export function StepBasics({ churches, series }: StepBasicsProps) {
           <FormItem>
             <FormLabel>Title</FormLabel>
             <FormControl>
-              <Input
-                placeholder="e.g. Sunday Evening Worship"
-                                {...field}
-              />
+              <Input placeholder="e.g. Sunday Evening Worship" {...field} />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -82,7 +88,7 @@ export function StepBasics({ churches, series }: StepBasicsProps) {
               <Textarea
                 rows={4}
                 placeholder="e.g. Join us for an evening of worship, prayer and community. All are welcome."
-                                {...field}
+                {...field}
               />
             </FormControl>
             <FormMessage />
@@ -96,10 +102,7 @@ export function StepBasics({ churches, series }: StepBasicsProps) {
         render={({ field }) => (
           <FormItem>
             <FormLabel>Category</FormLabel>
-            <Select
-              onValueChange={field.onChange}
-              defaultValue={field.value}
-                          >
+            <Select onValueChange={field.onChange} defaultValue={field.value}>
               <FormControl>
                 <SelectTrigger>
                   <SelectValue placeholder="Select a category" />
@@ -126,7 +129,9 @@ export function StepBasics({ churches, series }: StepBasicsProps) {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value={series.churchId}>{series.churchName}</SelectItem>
+              <SelectItem value={series.churchId}>
+                {series.churchName}
+              </SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -137,10 +142,7 @@ export function StepBasics({ churches, series }: StepBasicsProps) {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Church</FormLabel>
-              <Select
-                onValueChange={field.onChange}
-                defaultValue={field.value}
-                              >
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Select a church" />

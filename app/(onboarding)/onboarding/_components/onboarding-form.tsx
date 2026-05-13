@@ -9,8 +9,14 @@ import { format, parse } from "date-fns";
 import { CalendarIcon } from "lucide-react";
 
 import { cn } from "@/lib/utils";
-import { onboardingSchema, type OnboardingInput } from "@/lib/validations/onboarding";
-import { completeOnboardingAction, skipOnboardingAction } from "@/lib/actions/onboarding";
+import {
+  onboardingSchema,
+  type OnboardingInput,
+} from "@/lib/validations/onboarding";
+import {
+  completeOnboardingAction,
+  skipOnboardingAction,
+} from "@/lib/actions/onboarding";
 
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -65,12 +71,12 @@ export function OnboardingForm() {
   }
 
   return (
-    <div className="flex flex-col gap-6 px-4 pt-10 pb-10 max-w-md mx-auto w-full">
+    <div className="mx-auto flex w-full max-w-md flex-col gap-6 px-4 pt-10 pb-10">
       {/* Header */}
       <div className="flex flex-col gap-1 text-center">
-        <span className="text-2xl font-bold text-primary">1Another</span>
-        <h1 className="text-xl font-bold mt-2">Complete your profile</h1>
-        <p className="text-sm text-muted-foreground">
+        <span className="text-primary text-2xl font-bold">1Another</span>
+        <h1 className="mt-2 text-xl font-bold">Complete your profile</h1>
+        <p className="text-muted-foreground text-sm">
           Help us personalise your experience. All fields are optional.
         </p>
       </div>
@@ -81,7 +87,7 @@ export function OnboardingForm() {
           className="flex flex-col gap-5"
         >
           {/* Profile Photo */}
-          <div className="rounded-2xl bg-white shadow-card p-5 flex flex-col gap-4">
+          <div className="shadow-card flex flex-col gap-4 rounded-2xl bg-white p-5">
             <p className="text-sm font-medium">Profile photo</p>
             <FormField
               control={form.control}
@@ -102,7 +108,7 @@ export function OnboardingForm() {
           </div>
 
           {/* Personal Details */}
-          <div className="rounded-2xl bg-white shadow-card p-5 flex flex-col gap-4">
+          <div className="shadow-card flex flex-col gap-4 rounded-2xl bg-white p-5">
             <p className="text-sm font-medium">Personal details</p>
 
             {/* Phone */}
@@ -144,7 +150,10 @@ export function OnboardingForm() {
                         >
                           <CalendarIcon className="mr-2 size-4 opacity-70" />
                           {field.value
-                            ? format(parse(field.value, "yyyy-MM-dd", new Date()), "d MMMM yyyy")
+                            ? format(
+                                parse(field.value, "yyyy-MM-dd", new Date()),
+                                "d MMMM yyyy"
+                              )
                             : "Select date"}
                         </Button>
                       </FormControl>
@@ -153,9 +162,15 @@ export function OnboardingForm() {
                       <Calendar
                         mode="single"
                         captionLayout="dropdown-years"
-                        selected={field.value ? parse(field.value, "yyyy-MM-dd", new Date()) : undefined}
+                        selected={
+                          field.value
+                            ? parse(field.value, "yyyy-MM-dd", new Date())
+                            : undefined
+                        }
                         onSelect={(date) => {
-                          field.onChange(date ? format(date, "yyyy-MM-dd") : undefined);
+                          field.onChange(
+                            date ? format(date, "yyyy-MM-dd") : undefined
+                          );
                           setCalendarOpen(false);
                         }}
                         disabled={(date) => date > new Date()}
@@ -177,7 +192,7 @@ export function OnboardingForm() {
 
           {/* Root error */}
           {form.formState.errors.root && (
-            <p className="text-sm text-destructive text-center">
+            <p className="text-destructive text-center text-sm">
               {form.formState.errors.root.message}
             </p>
           )}
@@ -194,7 +209,7 @@ export function OnboardingForm() {
             <Button
               type="button"
               variant="ghost"
-              className="w-full text-muted-foreground"
+              className="text-muted-foreground w-full"
               disabled={isSubmitting || isSkipping}
               onClick={handleSkip}
             >

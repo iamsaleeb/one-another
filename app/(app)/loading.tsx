@@ -13,10 +13,10 @@ export default function HomeLoading() {
         <section className="flex flex-col gap-3">
           <Skeleton className="h-5 w-20" />
           <div className="flex gap-2">
-            <Skeleton className="h-9 w-24 rounded-full shrink-0" />
-            <Skeleton className="h-9 w-24 rounded-full shrink-0" />
-            <Skeleton className="h-9 w-24 rounded-full shrink-0" />
-            <Skeleton className="h-9 w-24 rounded-full shrink-0" />
+            <Skeleton className="h-9 w-24 shrink-0 rounded-full" />
+            <Skeleton className="h-9 w-24 shrink-0 rounded-full" />
+            <Skeleton className="h-9 w-24 shrink-0 rounded-full" />
+            <Skeleton className="h-9 w-24 shrink-0 rounded-full" />
           </div>
         </section>
       </div>

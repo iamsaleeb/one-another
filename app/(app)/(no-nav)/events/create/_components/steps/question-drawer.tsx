@@ -23,7 +23,13 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { LibraryDrawer } from "./library-drawer";
-import { QuestionType, questionSchema, TYPE_LABELS, type QuestionInput, type LibraryItem } from "@/lib/validations/questions";
+import {
+  QuestionType,
+  questionSchema,
+  TYPE_LABELS,
+  type QuestionInput,
+  type LibraryItem,
+} from "@/lib/validations/questions";
 
 interface QuestionDrawerProps {
   open: boolean;
@@ -41,12 +47,16 @@ export function QuestionDrawer({
   onSave,
 }: QuestionDrawerProps) {
   const [label, setLabel] = useState(initial?.label ?? "");
-  const [type, setType] = useState<QuestionType>(initial?.type ?? QuestionType.SHORT_TEXT);
+  const [type, setType] = useState<QuestionType>(
+    initial?.type ?? QuestionType.SHORT_TEXT
+  );
   const [required, setRequired] = useState(initial?.required ?? false);
   const [options, setOptions] = useState<string[]>(
     initial?.options?.length ? initial.options : [""]
   );
-  const [libraryItemId, setLibraryItemId] = useState<string | undefined>(initial?.libraryItemId);
+  const [libraryItemId, setLibraryItemId] = useState<string | undefined>(
+    initial?.libraryItemId
+  );
   const [libraryOpen, setLibraryOpen] = useState(false);
 
   function handleLibrarySelect(item: LibraryItem) {
@@ -64,7 +74,8 @@ export function QuestionDrawer({
       options: type === QuestionType.MULTIPLE_CHOICE ? validOptions : [],
       required,
       order: 0,
-    }).success && (type !== QuestionType.MULTIPLE_CHOICE || validOptions.length >= 1);
+    }).success &&
+    (type !== QuestionType.MULTIPLE_CHOICE || validOptions.length >= 1);
 
   function handleSave() {
     if (!canSave) return;
@@ -85,10 +96,12 @@ export function QuestionDrawer({
       <Drawer open={open} onOpenChange={onOpenChange} direction="bottom">
         <DrawerContent aria-describedby={undefined}>
           <DrawerHeader>
-            <DrawerTitle>{initial ? "Edit question" : "Add question"}</DrawerTitle>
+            <DrawerTitle>
+              {initial ? "Edit question" : "Add question"}
+            </DrawerTitle>
           </DrawerHeader>
 
-          <div className="px-4 flex flex-col gap-4 max-h-[70vh] overflow-y-auto pb-2">
+          <div className="flex max-h-[70vh] flex-col gap-4 overflow-y-auto px-4 pb-2">
             <Button
               type="button"
               variant="outline"
@@ -110,7 +123,10 @@ export function QuestionDrawer({
 
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="q-type">Answer type</Label>
-              <Select value={type} onValueChange={(v) => setType(v as QuestionType)}>
+              <Select
+                value={type}
+                onValueChange={(v) => setType(v as QuestionType)}
+              >
                 <SelectTrigger id="q-type">
                   <SelectValue />
                 </SelectTrigger>
@@ -144,8 +160,10 @@ export function QuestionDrawer({
                         type="button"
                         variant="ghost"
                         size="icon"
-                        className="size-10 shrink-0 text-destructive hover:text-destructive"
-                        onClick={() => setOptions(options.filter((_, j) => j !== i))}
+                        className="text-destructive hover:text-destructive size-10 shrink-0"
+                        onClick={() =>
+                          setOptions(options.filter((_, j) => j !== i))
+                        }
                       >
                         <Trash2 className="size-4" />
                       </Button>
@@ -159,21 +177,20 @@ export function QuestionDrawer({
                   className="w-full"
                   onClick={() => setOptions([...options, ""])}
                 >
-                  <Plus className="size-4 mr-1" />
+                  <Plus className="mr-1 size-4" />
                   Add option
                 </Button>
               </div>
             )}
 
-            <div className="flex items-center justify-between gap-3 rounded-xl border bg-background px-4 py-3 min-h-[56px]">
+            <div className="bg-background flex min-h-[56px] items-center justify-between gap-3 rounded-xl border px-4 py-3">
               <div>
                 <p className="text-sm font-medium">Required</p>
-                <p className="text-xs text-muted-foreground">Attendee must answer this question</p>
+                <p className="text-muted-foreground text-xs">
+                  Attendee must answer this question
+                </p>
               </div>
-              <Switch
-                checked={required}
-                onCheckedChange={setRequired}
-              />
+              <Switch checked={required} onCheckedChange={setRequired} />
             </div>
           </div>
 
@@ -187,7 +204,9 @@ export function QuestionDrawer({
               {initial ? "Save changes" : "Add question"}
             </Button>
             <DrawerClose asChild>
-              <Button variant="outline" className="w-full">Cancel</Button>
+              <Button variant="outline" className="w-full">
+                Cancel
+              </Button>
             </DrawerClose>
           </DrawerFooter>
         </DrawerContent>

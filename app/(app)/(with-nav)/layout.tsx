@@ -26,7 +26,11 @@ async function NavShell() {
 
   return (
     <>
-      <BottomNav isOrganiser={isOrganiser} isAdmin={isAdmin} unreadCount={unreadCount} />
+      <BottomNav
+        isOrganiser={isOrganiser}
+        isAdmin={isAdmin}
+        unreadCount={unreadCount}
+      />
       <CreateEventFAB isOrganiser={isOrganiser || isAdmin} />
     </>
   );

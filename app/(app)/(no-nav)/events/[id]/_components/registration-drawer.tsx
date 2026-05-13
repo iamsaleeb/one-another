@@ -44,7 +44,10 @@ interface RegistrationDrawerProps {
   camp?: EventMetadata["camp"];
   campStartDate?: string;
   questions?: Question[];
-  existingResponses?: Record<string, { answer: string | null; fileUrl: string | null }>;
+  existingResponses?: Record<
+    string,
+    { answer: string | null; fileUrl: string | null }
+  >;
   existingSelectedDays?: string[];
 }
 
@@ -56,7 +59,9 @@ function abbreviateName(name: string): string {
 
 function buildDefaultResponses(
   questions: Question[],
-  existing: Record<string, { answer: string | null; fileUrl: string | null }> | undefined
+  existing:
+    | Record<string, { answer: string | null; fileUrl: string | null }>
+    | undefined
 ): RegistrationFormValues["responses"] {
   if (!questions.length) return {};
   const out: RegistrationFormValues["responses"] = {};
@@ -72,7 +77,9 @@ function buildDefaultResponses(
 
 function getDefaultValues(
   questions: Question[],
-  existingResponses: Record<string, { answer: string | null; fileUrl: string | null }> | undefined,
+  existingResponses:
+    | Record<string, { answer: string | null; fileUrl: string | null }>
+    | undefined,
   allDays: string[],
   existingSelectedDays: string[] | undefined
 ): RegistrationFormValues {
@@ -89,7 +96,8 @@ function getDisplayAnswer(
   resp: { answer: string | null; fileUrl: string | null } | undefined
 ): string | null {
   if (!resp) return null;
-  if (q.type === QuestionType.FILE_UPLOAD) return resp.fileUrl ? "File uploaded" : null;
+  if (q.type === QuestionType.FILE_UPLOAD)
+    return resp.fileUrl ? "File uploaded" : null;
   if (q.type === QuestionType.YES_NO) {
     if (resp.answer === null || resp.answer === undefined) return null;
     return resp.answer === "true" ? "Yes" : "No";
@@ -115,7 +123,9 @@ export function RegistrationDrawer({
   const safeQuestions = questions ?? [];
 
   const showPartialDays =
-    camp?.allowPartialRegistration === true && !!campStartDate && !!camp.endDate;
+    camp?.allowPartialRegistration === true &&
+    !!campStartDate &&
+    !!camp.endDate;
   const allDays = useMemo(
     () =>
       showPartialDays && campStartDate && camp?.endDate
@@ -130,10 +140,17 @@ export function RegistrationDrawer({
 
   const form = useForm<RegistrationFormValues>({
     resolver: zodResolver(registrationFormSchema),
-    defaultValues: getDefaultValues(safeQuestions, existingResponses, allDays, existingSelectedDays),
+    defaultValues: getDefaultValues(
+      safeQuestions,
+      existingResponses,
+      allDays,
+      existingSelectedDays
+    ),
   });
 
-  const [step, setStep] = useState<"details" | number>(skipDetailsStep ? 0 : "details");
+  const [step, setStep] = useState<"details" | number>(
+    skipDetailsStep ? 0 : "details"
+  );
   const [isEditing, setIsEditing] = useState(false);
   const showSummary = isRegistered && !isEditing;
   const [serverError, setServerError] = useState<string | null>(null);
@@ -142,7 +159,10 @@ export function RegistrationDrawer({
 
   const onQuestionStep = typeof step === "number";
   const isLastQuestion = onQuestionStep && step === safeQuestions.length - 1;
-  const selectedDays = useWatch({ control: form.control, name: "selectedDays" });
+  const selectedDays = useWatch({
+    control: form.control,
+    name: "selectedDays",
+  });
 
   const answeredQuestions = safeQuestions.filter(
     (q) => getDisplayAnswer(q, existingResponses?.[q.id]) !== null
@@ -150,7 +170,14 @@ export function RegistrationDrawer({
 
   function handleOpenChange(isOpen: boolean) {
     if (!isOpen) {
-      form.reset(getDefaultValues(safeQuestions, existingResponses, allDays, existingSelectedDays));
+      form.reset(
+        getDefaultValues(
+          safeQuestions,
+          existingResponses,
+          allDays,
+          existingSelectedDays
+        )
+      );
       setStep(skipDetailsStep ? 0 : "details");
       setIsEditing(false);
       setServerError(null);
@@ -178,7 +205,7 @@ export function RegistrationDrawer({
       const hasValue =
         currentQ.type === QuestionType.FILE_UPLOAD
           ? !!response?.fileUrl
-          : !!(response?.answer?.trim());
+          : !!response?.answer?.trim();
 
       if (!hasValue) {
         const fieldName = (
@@ -186,7 +213,10 @@ export function RegistrationDrawer({
             ? `responses.${currentQ.id}.fileUrl`
             : `responses.${currentQ.id}.answer`
         ) as Path<RegistrationFormValues>;
-        form.setError(fieldName, { type: "required", message: "This field is required." });
+        form.setError(fieldName, {
+          type: "required",
+          message: "This field is required.",
+        });
         return;
       }
     }
@@ -223,19 +253,21 @@ export function RegistrationDrawer({
   return (
     <Drawer open={open} onOpenChange={handleOpenChange} direction="bottom">
       <DrawerContent>
-        <DrawerHeader className="px-4 pt-4 pb-2 shrink-0">
+        <DrawerHeader className="shrink-0 px-4 pt-4 pb-2">
           <DrawerTitle className="text-base">
             {isRegistered ? "Your Registration" : `Register for ${eventTitle}`}
           </DrawerTitle>
 
-          <DrawerDescription className={cn("text-xs", showSummary && "sr-only")}>
+          <DrawerDescription
+            className={cn("text-xs", showSummary && "sr-only")}
+          >
             {showSummary
               ? `You're registered for ${eventTitle}`
               : `Registering as ${abbreviateName(userName)}`}
           </DrawerDescription>
 
           {!showSummary && onQuestionStep && hasQuestions && (
-            <div className="flex items-center gap-1.5 mt-2">
+            <div className="mt-2 flex items-center gap-1.5">
               {safeQuestions.map((q, i) => (
                 <span
                   key={q.id}
@@ -244,7 +276,7 @@ export function RegistrationDrawer({
                   }`}
                 />
               ))}
-              <span className="text-xs text-muted-foreground ml-1">
+              <span className="text-muted-foreground ml-1 text-xs">
                 Question {(step as number) + 1} of {safeQuestions.length}
               </span>
             </div>
@@ -253,20 +285,24 @@ export function RegistrationDrawer({
 
         {showSummary ? (
           <>
-            <div className="flex-1 min-h-0 overflow-y-auto px-4 pb-2 flex flex-col gap-4">
+            <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 pb-2">
               <div className="flex items-center gap-2">
-                <div className="flex size-8 items-center justify-center rounded-full bg-primary/10 shrink-0">
-                  <Check className="size-4 text-primary" />
+                <div className="bg-primary/10 flex size-8 shrink-0 items-center justify-center rounded-full">
+                  <Check className="text-primary size-4" />
                 </div>
-                <p className="text-sm font-medium">You&apos;re registered for {eventTitle}</p>
+                <p className="text-sm font-medium">
+                  You&apos;re registered for {eventTitle}
+                </p>
               </div>
 
               {answeredQuestions.length > 0 && (
                 <div className="flex flex-col gap-3 rounded-xl border px-4 py-3">
                   {answeredQuestions.map((q) => (
                     <div key={q.id} className="flex flex-col gap-0.5">
-                      <p className="text-xs text-muted-foreground">{q.label}</p>
-                      <p className="text-sm">{getDisplayAnswer(q, existingResponses?.[q.id])}</p>
+                      <p className="text-muted-foreground text-xs">{q.label}</p>
+                      <p className="text-sm">
+                        {getDisplayAnswer(q, existingResponses?.[q.id])}
+                      </p>
                     </div>
                   ))}
                 </div>
@@ -290,16 +326,18 @@ export function RegistrationDrawer({
                 size="sm"
                 onClick={handleUnregister}
                 disabled={unattendPending}
-                className="w-full text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
+                className="text-destructive hover:text-destructive hover:bg-destructive/10 w-full text-xs"
               >
-                {unattendPending && <Loader2 className="size-3.5 animate-spin" />}
+                {unattendPending && (
+                  <Loader2 className="size-3.5 animate-spin" />
+                )}
                 {unattendPending ? "Cancelling..." : "Cancel registration"}
               </Button>
             </DrawerFooter>
           </>
         ) : (
           <>
-            <div className="flex-1 min-h-0 overflow-y-auto px-4 pb-2 flex flex-col gap-4">
+            <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 pb-2">
               {serverError && (
                 <Alert variant="destructive">
                   <AlertDescription>{serverError}</AlertDescription>
@@ -317,7 +355,10 @@ export function RegistrationDrawer({
                           <Label>Which days will you attend?</Label>
                           <div className="flex flex-col gap-2 rounded-xl border px-3 py-3">
                             {allDays.map((day) => (
-                              <div key={day} className="flex items-center gap-2.5">
+                              <div
+                                key={day}
+                                className="flex items-center gap-2.5"
+                              >
                                 <Checkbox
                                   id={`day-${day}`}
                                   checked={(field.value ?? []).includes(day)}
@@ -333,7 +374,7 @@ export function RegistrationDrawer({
                                 />
                                 <Label
                                   htmlFor={`day-${day}`}
-                                  className="text-sm font-normal cursor-pointer"
+                                  className="cursor-pointer text-sm font-normal"
                                 >
                                   {formatDayLabel(day)}
                                 </Label>
@@ -370,7 +411,9 @@ export function RegistrationDrawer({
                       name="notes"
                       render={({ field }) => (
                         <div className="grid gap-1.5">
-                          <Label htmlFor="notes">Dietary / accessibility needs</Label>
+                          <Label htmlFor="notes">
+                            Dietary / accessibility needs
+                          </Label>
                           <Textarea
                             id="notes"
                             {...field}
@@ -402,7 +445,10 @@ export function RegistrationDrawer({
                     <Button
                       type="button"
                       onClick={handleNext}
-                      disabled={isPending || (showPartialDays && (selectedDays ?? []).length === 0)}
+                      disabled={
+                        isPending ||
+                        (showPartialDays && (selectedDays ?? []).length === 0)
+                      }
                       className="w-full"
                     >
                       {isPending && <Loader2 className="size-4 animate-spin" />}
@@ -420,7 +466,7 @@ export function RegistrationDrawer({
                     </Button>
                   )}
                   {showPartialDays && (selectedDays ?? []).length === 0 && (
-                    <p className="text-xs text-muted-foreground text-center">
+                    <p className="text-muted-foreground text-center text-xs">
                       Select at least one day to continue.
                     </p>
                   )}

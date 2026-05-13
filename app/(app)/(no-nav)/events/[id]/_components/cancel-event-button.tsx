@@ -28,7 +28,11 @@ export function CancelEventButton({ eventId }: { eventId: string }) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="icon" className="size-9 text-destructive border-destructive/30 hover:bg-destructive/10">
+        <Button
+          variant="outline"
+          size="icon"
+          className="text-destructive border-destructive/30 hover:bg-destructive/10 size-9"
+        >
           <Ban className="size-4" />
         </Button>
       </DialogTrigger>
@@ -36,7 +40,8 @@ export function CancelEventButton({ eventId }: { eventId: string }) {
         <DialogHeader>
           <DialogTitle>Cancel Event</DialogTitle>
           <DialogDescription>
-            The event will remain visible but marked as cancelled. Please provide a reason for attendees.
+            The event will remain visible but marked as cancelled. Please
+            provide a reason for attendees.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
@@ -48,7 +53,12 @@ export function CancelEventButton({ eventId }: { eventId: string }) {
             required
           />
           <DialogFooter>
-            <Button type="submit" variant="destructive" className="w-full" disabled={!reason.trim()}>
+            <Button
+              type="submit"
+              variant="destructive"
+              className="w-full"
+              disabled={!reason.trim()}
+            >
               Cancel Event
             </Button>
           </DialogFooter>

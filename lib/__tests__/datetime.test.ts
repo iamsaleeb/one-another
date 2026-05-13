@@ -15,7 +15,9 @@ describe("formatEventDatetime", () => {
     const date = new Date("2025-03-16T09:00:00.000Z");
     const result = formatEventDatetime(date);
     // Output is uppercase and matches "DAY, D MON | H:MM AM/PM"
-    expect(result).toMatch(/^[A-Z]{3}, \d{1,2} [A-Z]{3} \| \d{1,2}:\d{2} (AM|PM)$/);
+    expect(result).toMatch(
+      /^[A-Z]{3}, \d{1,2} [A-Z]{3} \| \d{1,2}:\d{2} (AM|PM)$/
+    );
   });
 
   it("outputs uppercase text", () => {

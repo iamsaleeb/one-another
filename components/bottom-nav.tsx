@@ -2,7 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Church, CalendarDays, Wrench, ShieldCheck, Bell } from "lucide-react";
+import {
+  Home,
+  Church,
+  CalendarDays,
+  Wrench,
+  ShieldCheck,
+  Bell,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const baseTabs = [
@@ -21,17 +28,21 @@ interface BottomNavProps {
   unreadCount?: number;
 }
 
-export function BottomNav({ isOrganiser, isAdmin, unreadCount = 0 }: BottomNavProps) {
+export function BottomNav({
+  isOrganiser,
+  isAdmin,
+  unreadCount = 0,
+}: BottomNavProps) {
   const pathname = usePathname();
 
   const tabs = isAdmin
     ? [...baseTabs, organiserTab, adminTab]
     : isOrganiser
-    ? [...baseTabs, organiserTab]
-    : baseTabs;
+      ? [...baseTabs, organiserTab]
+      : baseTabs;
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white shadow-[0px_-2px_31px_0px_#0000001A] pb-safe">
+    <nav className="pb-safe fixed right-0 bottom-0 left-0 z-50 bg-white shadow-[0px_-2px_31px_0px_#0000001A]">
       <div className="flex h-16 items-center justify-around px-2">
         {tabs.map(({ label, href, icon: Icon }) => {
           const isActive = pathname === href;
@@ -55,7 +66,7 @@ export function BottomNav({ isOrganiser, isAdmin, unreadCount = 0 }: BottomNavPr
                   )}
                 />
                 {showDot && (
-                  <span className="absolute -top-0.5 -right-0.5 size-2 rounded-full bg-destructive" />
+                  <span className="bg-destructive absolute -top-0.5 -right-0.5 size-2 rounded-full" />
                 )}
               </div>
               <span>{label}</span>

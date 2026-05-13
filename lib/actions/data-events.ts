@@ -100,7 +100,11 @@ export async function getUserAttendedEvents(userId: string) {
   cacheTag("events", `user-events-${userId}`);
   cacheLife("minutes");
   return prisma.event.findMany({
-    where: { datetime: { gte: new Date() }, isDraft: false, attendees: { some: { userId } } },
+    where: {
+      datetime: { gte: new Date() },
+      isDraft: false,
+      attendees: { some: { userId } },
+    },
     orderBy: { datetime: "asc" },
     include: { church: { select: { name: true } } },
   });
@@ -110,7 +114,11 @@ export async function getUserAttendedPastEvents(userId: string) {
   cacheTag("events", `user-events-${userId}`);
   cacheLife("minutes");
   return prisma.event.findMany({
-    where: { datetime: { lt: new Date() }, isDraft: false, attendees: { some: { userId } } },
+    where: {
+      datetime: { lt: new Date() },
+      isDraft: false,
+      attendees: { some: { userId } },
+    },
     orderBy: { datetime: "desc" },
     include: { church: { select: { name: true } } },
   });

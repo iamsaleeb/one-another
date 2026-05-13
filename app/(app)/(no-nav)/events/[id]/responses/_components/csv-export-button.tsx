@@ -3,7 +3,11 @@
 import { Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-interface Column { id: string; label: string; type: string }
+interface Column {
+  id: string;
+  label: string;
+  type: string;
+}
 interface AttendeeRow {
   name: string;
   email: string;
@@ -23,7 +27,11 @@ function escapeCell(value: string): string {
   return value;
 }
 
-export function CsvExportButton({ columns, rows, filename = "responses.csv" }: CsvExportButtonProps) {
+export function CsvExportButton({
+  columns,
+  rows,
+  filename = "responses.csv",
+}: CsvExportButtonProps) {
   function handleExport() {
     const headers = ["Name", "Email", ...columns.map((c) => c.label)];
     const csvRows = rows.map((row) => {
@@ -52,7 +60,7 @@ export function CsvExportButton({ columns, rows, filename = "responses.csv" }: C
 
   return (
     <Button variant="outline" size="sm" onClick={handleExport}>
-      <Download className="size-4 mr-1.5" />
+      <Download className="mr-1.5 size-4" />
       Export CSV
     </Button>
   );

@@ -1,6 +1,6 @@
-import { prisma } from '@/lib/db';
-import { NotificationType, Prisma } from '@prisma/client';
-import { subHours } from 'date-fns';
+import { prisma } from "@/lib/db";
+import { NotificationType, Prisma } from "@prisma/client";
+import { subHours } from "date-fns";
 
 const DEFAULT_HOURS_BEFORE_EVENT = 2;
 
@@ -16,14 +16,26 @@ interface QueueInput {
 
 export async function queueNotification(input: QueueInput): Promise<void> {
   const {
-    userId, type, title, body,
+    userId,
+    type,
+    title,
+    body,
     data,
     scheduledFor = new Date(),
     dedupeKey = undefined,
   } = input;
 
-  const jsonData = (data !== undefined ? data : Prisma.DbNull) as Prisma.InputJsonValue;
-  const basePayload = { userId, type, title, body, data: jsonData, scheduledFor };
+  const jsonData = (
+    data !== undefined ? data : Prisma.DbNull
+  ) as Prisma.InputJsonValue;
+  const basePayload = {
+    userId,
+    type,
+    title,
+    body,
+    data: jsonData,
+    scheduledFor,
+  };
 
   if (dedupeKey != null) {
     await prisma.notification.upsert({
@@ -32,7 +44,9 @@ export async function queueNotification(input: QueueInput): Promise<void> {
       update: { scheduledFor, cancelledAt: null, title, body, data: jsonData },
     });
   } else {
-    await prisma.notification.create({ data: { ...basePayload, dedupeKey: undefined } });
+    await prisma.notification.create({
+      data: { ...basePayload, dedupeKey: undefined },
+    });
   }
 }
 
@@ -44,7 +58,13 @@ interface CancelInput {
 
 export async function cancelNotification(input: CancelInput): Promise<void> {
   await prisma.notification.updateMany({
-    where: { userId: input.userId, type: input.type, dedupeKey: input.dedupeKey, sentAt: null, cancelledAt: null },
+    where: {
+      userId: input.userId,
+      type: input.type,
+      dedupeKey: input.dedupeKey,
+      sentAt: null,
+      cancelledAt: null,
+    },
     data: { cancelledAt: new Date() },
   });
 }
@@ -54,9 +74,16 @@ interface CancelManyInput {
   dedupeKey: string;
 }
 
-export async function cancelManyNotifications(input: CancelManyInput): Promise<void> {
+export async function cancelManyNotifications(
+  input: CancelManyInput
+): Promise<void> {
   await prisma.notification.updateMany({
-    where: { type: input.type, dedupeKey: input.dedupeKey, sentAt: null, cancelledAt: null },
+    where: {
+      type: input.type,
+      dedupeKey: input.dedupeKey,
+      sentAt: null,
+      cancelledAt: null,
+    },
     data: { cancelledAt: new Date() },
   });
 }
@@ -68,7 +95,9 @@ interface RescheduleInput {
   scheduledFor: Date;
 }
 
-export async function rescheduleNotification(input: RescheduleInput): Promise<void> {
+export async function rescheduleNotification(
+  input: RescheduleInput
+): Promise<void> {
   await prisma.notification.updateMany({
     where: {
       ...(input.userId ? { userId: input.userId } : {}),
@@ -91,16 +120,23 @@ interface EventRef {
  * Reads the user's hoursBeforeEvent preference. Skips if the reminder window has passed.
  * Upserts via dedupeKey=eventId so attending twice is safe.
  */
-export async function scheduleEventReminderNotification(userId: string, event: EventRef): Promise<void> {
+export async function scheduleEventReminderNotification(
+  userId: string,
+  event: EventRef
+): Promise<void> {
   const pref = await prisma.notificationPreference.findUnique({
     where: { userId_type: { userId, type: NotificationType.EVENT_REMINDER } },
     select: { config: true },
   });
 
   let hours = DEFAULT_HOURS_BEFORE_EVENT;
-  if (pref?.config && typeof pref.config === 'object' && !Array.isArray(pref.config)) {
+  if (
+    pref?.config &&
+    typeof pref.config === "object" &&
+    !Array.isArray(pref.config)
+  ) {
     const h = (pref.config as Record<string, unknown>).hoursBeforeEvent;
-    if (typeof h === 'number') hours = h;
+    if (typeof h === "number") hours = h;
   }
 
   if (!event.datetime) return;
@@ -111,10 +147,10 @@ export async function scheduleEventReminderNotification(userId: string, event: E
   await queueNotification({
     userId,
     type: NotificationType.EVENT_REMINDER,
-    title: 'Event Reminder',
-    body: `${event.title} starts in ${hours === 1 ? '1 hour' : `${hours} hours`}`,
+    title: "Event Reminder",
+    body: `${event.title} starts in ${hours === 1 ? "1 hour" : `${hours} hours`}`,
     data: {
-      type: 'event_reminder',
+      type: "event_reminder",
       eventId: event.id,
       eventTitle: event.title,
       eventDatetime: event.datetime.toISOString(),
@@ -144,9 +180,13 @@ export async function scheduleEventReminderNotifications(
 
   const hoursMap = new Map<string, number>();
   for (const pref of prefs) {
-    if (pref.config && typeof pref.config === 'object' && !Array.isArray(pref.config)) {
+    if (
+      pref.config &&
+      typeof pref.config === "object" &&
+      !Array.isArray(pref.config)
+    ) {
       const h = (pref.config as Record<string, unknown>).hoursBeforeEvent;
-      if (typeof h === 'number') hoursMap.set(pref.userId, h);
+      if (typeof h === "number") hoursMap.set(pref.userId, h);
     }
   }
 
@@ -161,10 +201,10 @@ export async function scheduleEventReminderNotifications(
         return queueNotification({
           userId,
           type: NotificationType.EVENT_REMINDER,
-          title: 'Event Reminder',
-          body: `${event.title} starts in ${hours === 1 ? '1 hour' : `${hours} hours`}`,
+          title: "Event Reminder",
+          body: `${event.title} starts in ${hours === 1 ? "1 hour" : `${hours} hours`}`,
           data: {
-            type: 'event_reminder',
+            type: "event_reminder",
             eventId: event.id,
             eventTitle: event.title,
             eventDatetime: datetime.toISOString(),
@@ -181,9 +221,17 @@ export async function scheduleEventReminderNotifications(
  * Reschedule all pending EVENT_REMINDER notifications for an event when its datetime changes.
  * Preserves each attendee's hoursBeforeEvent preference and updates body + data.eventDatetime.
  */
-export async function rescheduleEventReminderNotifications(eventId: string, newDatetime: Date): Promise<void> {
+export async function rescheduleEventReminderNotifications(
+  eventId: string,
+  newDatetime: Date
+): Promise<void> {
   const pending = await prisma.notification.findMany({
-    where: { type: NotificationType.EVENT_REMINDER, dedupeKey: eventId, sentAt: null, cancelledAt: null },
+    where: {
+      type: NotificationType.EVENT_REMINDER,
+      dedupeKey: eventId,
+      sentAt: null,
+      cancelledAt: null,
+    },
     select: { id: true, userId: true, data: true },
   });
 
@@ -196,9 +244,13 @@ export async function rescheduleEventReminderNotifications(eventId: string, newD
   });
   const hoursMap = new Map<string, number>();
   for (const pref of prefs) {
-    if (pref.config && typeof pref.config === 'object' && !Array.isArray(pref.config)) {
+    if (
+      pref.config &&
+      typeof pref.config === "object" &&
+      !Array.isArray(pref.config)
+    ) {
       const hours = (pref.config as Record<string, unknown>).hoursBeforeEvent;
-      if (typeof hours === 'number') hoursMap.set(pref.userId, hours);
+      if (typeof hours === "number") hoursMap.set(pref.userId, hours);
     }
   }
 
@@ -211,7 +263,7 @@ export async function rescheduleEventReminderNotifications(eventId: string, newD
         where: { id: notif.id },
         data: {
           scheduledFor: newScheduledFor,
-          body: `${existingData.eventTitle} starts in ${hours === 1 ? '1 hour' : `${hours} hours`}`,
+          body: `${existingData.eventTitle} starts in ${hours === 1 ? "1 hour" : `${hours} hours`}`,
           data: { ...existingData, eventDatetime: newDatetime.toISOString() },
         },
       });
@@ -223,9 +275,18 @@ export async function rescheduleEventReminderNotifications(eventId: string, newD
  * Update scheduledFor + body on all a user's pending EVENT_REMINDER notifications
  * when they change their hoursBeforeEvent preference.
  */
-export async function updateUserReminderSchedule(userId: string, newHoursBeforeEvent: number): Promise<void> {
+export async function updateUserReminderSchedule(
+  userId: string,
+  newHoursBeforeEvent: number
+): Promise<void> {
   const pending = await prisma.notification.findMany({
-    where: { userId, type: NotificationType.EVENT_REMINDER, sentAt: null, cancelledAt: null, scheduledFor: { gt: new Date() } },
+    where: {
+      userId,
+      type: NotificationType.EVENT_REMINDER,
+      sentAt: null,
+      cancelledAt: null,
+      scheduledFor: { gt: new Date() },
+    },
     select: { id: true, data: true },
   });
 
@@ -239,7 +300,7 @@ export async function updateUserReminderSchedule(userId: string, newHoursBeforeE
         where: { id: notif.id },
         data: {
           scheduledFor: newScheduledFor,
-          body: `${data.eventTitle} starts in ${newHoursBeforeEvent === 1 ? '1 hour' : `${newHoursBeforeEvent} hours`}`,
+          body: `${data.eventTitle} starts in ${newHoursBeforeEvent === 1 ? "1 hour" : `${newHoursBeforeEvent} hours`}`,
         },
       }),
     ];

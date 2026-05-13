@@ -14,7 +14,11 @@ import type { CreateEventInput } from "@/lib/validations/event";
 
 const NOTIFY_CONCURRENCY = 20;
 
-async function notifySeriesFollowers(seriesId: string, title: string, eventId: string) {
+async function notifySeriesFollowers(
+  seriesId: string,
+  title: string,
+  eventId: string
+) {
   const followers = await prisma.seriesFollower.findMany({
     where: { seriesId },
     select: { userId: true },
@@ -66,7 +70,15 @@ export async function createEvent(
   data: CreateEventInput,
   userId: string,
   userRole: string
-): Promise<DalError | { id: string; churchId: string | null; seriesId: string | null; isDraft: boolean }> {
+): Promise<
+  | DalError
+  | {
+      id: string;
+      churchId: string | null;
+      seriesId: string | null;
+      isDraft: boolean;
+    }
+> {
   const {
     title,
     date,
@@ -94,14 +106,19 @@ export async function createEvent(
   let datetime: Date | null = null;
   if (datetimeISO) {
     datetime = new Date(datetimeISO);
-    if (Number.isNaN(datetime.getTime())) return { fieldErrors: { date: ["Invalid date or time"] } };
+    if (Number.isNaN(datetime.getTime()))
+      return { fieldErrors: { date: ["Invalid date or time"] } };
   } else if (date && time) {
     datetime = new Date(`${date}T${time}`);
-    if (Number.isNaN(datetime.getTime())) return { fieldErrors: { date: ["Invalid date or time"] } };
+    if (Number.isNaN(datetime.getTime()))
+      return { fieldErrors: { date: ["Invalid date or time"] } };
   }
 
   if (seriesId) {
-    const series = await prisma.series.findUnique({ where: { id: seriesId }, select: { churchId: true } });
+    const series = await prisma.series.findUnique({
+      where: { id: seriesId },
+      select: { churchId: true },
+    });
     churchId = series?.churchId;
   }
 
@@ -111,7 +128,10 @@ export async function createEvent(
   if (!allowed) return { error: "You are not assigned to this church." };
 
   const isCamp = tag === "Camp";
-  if (isCamp && !campEndDate && !isDraft) return { fieldErrors: { campEndDate: ["End date is required for camp events"] } };
+  if (isCamp && !campEndDate && !isDraft)
+    return {
+      fieldErrors: { campEndDate: ["End date is required for camp events"] },
+    };
 
   const created = await prisma.event.create({
     data: {
@@ -160,7 +180,12 @@ export async function createEvent(
     }
   }
 
-  return { id: created.id, churchId, seriesId: seriesId ?? null, isDraft: isDraft ?? false };
+  return {
+    id: created.id,
+    churchId,
+    seriesId: seriesId ?? null,
+    isDraft: isDraft ?? false,
+  };
 }
 
 export async function updateEvent(
@@ -170,7 +195,11 @@ export async function updateEvent(
   userRole: string
 ): Promise<
   | DalError
-  | { oldChurchId: string | null; newChurchId: string | null; affectedSeriesIds: string[] }
+  | {
+      oldChurchId: string | null;
+      newChurchId: string | null;
+      affectedSeriesIds: string[];
+    }
 > {
   const {
     title,
@@ -199,14 +228,19 @@ export async function updateEvent(
   let newDatetime: Date | null = null;
   if (datetimeISO) {
     newDatetime = new Date(datetimeISO);
-    if (Number.isNaN(newDatetime.getTime())) return { fieldErrors: { date: ["Invalid date or time"] } };
+    if (Number.isNaN(newDatetime.getTime()))
+      return { fieldErrors: { date: ["Invalid date or time"] } };
   } else if (date && time) {
     newDatetime = new Date(`${date}T${time}`);
-    if (Number.isNaN(newDatetime.getTime())) return { fieldErrors: { date: ["Invalid date or time"] } };
+    if (Number.isNaN(newDatetime.getTime()))
+      return { fieldErrors: { date: ["Invalid date or time"] } };
   }
 
   if (seriesId) {
-    const series = await prisma.series.findUnique({ where: { id: seriesId }, select: { churchId: true } });
+    const series = await prisma.series.findUnique({
+      where: { id: seriesId },
+      select: { churchId: true },
+    });
     churchId = series?.churchId;
   }
 
@@ -218,7 +252,11 @@ export async function updateEvent(
   });
   if (!existing) return { error: "Event not found." };
 
-  const allowedOriginal = await canManageChurch(userId, userRole, existing.churchId);
+  const allowedOriginal = await canManageChurch(
+    userId,
+    userRole,
+    existing.churchId
+  );
   if (!allowedOriginal) return { error: "Unauthorised." };
 
   if (churchId !== existing.churchId) {
@@ -227,7 +265,10 @@ export async function updateEvent(
   }
 
   const isCamp = tag === "Camp";
-  if (isCamp && !campEndDate && !isDraft) return { fieldErrors: { campEndDate: ["End date is required for camp events"] } };
+  if (isCamp && !campEndDate && !isDraft)
+    return {
+      fieldErrors: { campEndDate: ["End date is required for camp events"] },
+    };
 
   await prisma.event.update({
     where: { id },
@@ -267,7 +308,12 @@ export async function updateEvent(
     await syncEventQuestions(id, questions, userId);
   }
 
-  if (!existing.isDraft && newDatetime && existing.datetime && newDatetime.getTime() !== existing.datetime.getTime()) {
+  if (
+    !existing.isDraft &&
+    newDatetime &&
+    existing.datetime &&
+    newDatetime.getTime() !== existing.datetime.getTime()
+  ) {
     try {
       await rescheduleEventReminderNotifications(id, newDatetime);
     } catch (err) {
@@ -276,10 +322,16 @@ export async function updateEvent(
   }
 
   const affectedSeriesIds = [
-    ...new Set([existing.seriesId, seriesId ?? null].filter(Boolean) as string[]),
+    ...new Set(
+      [existing.seriesId, seriesId ?? null].filter(Boolean) as string[]
+    ),
   ];
 
-  return { oldChurchId: existing.churchId, newChurchId: churchId, affectedSeriesIds };
+  return {
+    oldChurchId: existing.churchId,
+    newChurchId: churchId,
+    affectedSeriesIds,
+  };
 }
 
 export async function cancelEvent(
@@ -287,7 +339,9 @@ export async function cancelEvent(
   reason: string,
   userId: string,
   userRole: string
-): Promise<{ error: string } | { churchId: string | null; seriesId: string | null }> {
+): Promise<
+  { error: string } | { churchId: string | null; seriesId: string | null }
+> {
   const event = await prisma.event.findUnique({
     where: { id },
     select: { churchId: true, title: true, seriesId: true },
@@ -303,7 +357,10 @@ export async function cancelEvent(
   });
 
   try {
-    await cancelManyNotifications({ type: NotificationType.EVENT_REMINDER, dedupeKey: id });
+    await cancelManyNotifications({
+      type: NotificationType.EVENT_REMINDER,
+      dedupeKey: id,
+    });
     await notifyEventAttendees(id, event.title);
   } catch (err) {
     console.error("EVENT_CANCELLED push failed:", err);
@@ -316,7 +373,9 @@ export async function uncancelEvent(
   id: string,
   userId: string,
   userRole: string
-): Promise<{ error: string } | { churchId: string | null; seriesId: string | null }> {
+): Promise<
+  { error: string } | { churchId: string | null; seriesId: string | null }
+> {
   const event = await prisma.event.findUnique({
     where: { id },
     select: { churchId: true, seriesId: true },
@@ -338,10 +397,23 @@ export async function publishEvent(
   id: string,
   userId: string,
   userRole: string
-): Promise<{ error: string } | { churchId: string | null; seriesId: string | null; alreadyPublished: boolean }> {
+): Promise<
+  | { error: string }
+  | {
+      churchId: string | null;
+      seriesId: string | null;
+      alreadyPublished: boolean;
+    }
+> {
   const event = await prisma.event.findUnique({
     where: { id },
-    select: { churchId: true, seriesId: true, title: true, isDraft: true, datetime: true },
+    select: {
+      churchId: true,
+      seriesId: true,
+      title: true,
+      isDraft: true,
+      datetime: true,
+    },
   });
   if (!event) return { error: "Event not found." };
 
@@ -349,7 +421,11 @@ export async function publishEvent(
   if (!allowed) return { error: "You are not assigned to this church." };
 
   if (!event.isDraft) {
-    return { churchId: event.churchId, seriesId: event.seriesId, alreadyPublished: true };
+    return {
+      churchId: event.churchId,
+      seriesId: event.seriesId,
+      alreadyPublished: true,
+    };
   }
 
   await prisma.event.update({ where: { id }, data: { isDraft: false } });
@@ -361,7 +437,11 @@ export async function publishEvent(
     });
     if (attendees.length > 0) {
       const userIds = attendees.map((a) => a.userId);
-      await scheduleEventReminderNotifications(userIds, { id, title: event.title, datetime: event.datetime });
+      await scheduleEventReminderNotifications(userIds, {
+        id,
+        title: event.title,
+        datetime: event.datetime,
+      });
     }
   } catch (err) {
     console.error("Failed to schedule reminders on publish:", err);
@@ -375,14 +455,20 @@ export async function publishEvent(
     }
   }
 
-  return { churchId: event.churchId, seriesId: event.seriesId, alreadyPublished: false };
+  return {
+    churchId: event.churchId,
+    seriesId: event.seriesId,
+    alreadyPublished: false,
+  };
 }
 
 export async function unpublishEvent(
   id: string,
   userId: string,
   userRole: string
-): Promise<{ error: string } | { churchId: string | null; seriesId: string | null }> {
+): Promise<
+  { error: string } | { churchId: string | null; seriesId: string | null }
+> {
   const event = await prisma.event.findUnique({
     where: { id },
     select: { churchId: true, seriesId: true },
@@ -395,9 +481,15 @@ export async function unpublishEvent(
   await prisma.event.update({ where: { id }, data: { isDraft: true } });
 
   try {
-    await cancelManyNotifications({ type: NotificationType.EVENT_REMINDER, dedupeKey: id });
+    await cancelManyNotifications({
+      type: NotificationType.EVENT_REMINDER,
+      dedupeKey: id,
+    });
     if (event.seriesId) {
-      await cancelManyNotifications({ type: NotificationType.NEW_SERIES_SESSION, dedupeKey: `${event.seriesId}:${id}` });
+      await cancelManyNotifications({
+        type: NotificationType.NEW_SERIES_SESSION,
+        dedupeKey: `${event.seriesId}:${id}`,
+      });
     }
   } catch (err) {
     console.error("Failed to cancel reminders on unpublish:", err);
@@ -410,7 +502,9 @@ export async function deleteEvent(
   id: string,
   userId: string,
   userRole: string
-): Promise<{ error: string } | { churchId: string | null; seriesId: string | null }> {
+): Promise<
+  { error: string } | { churchId: string | null; seriesId: string | null }
+> {
   const event = await prisma.event.findUnique({
     where: { id },
     select: { churchId: true, seriesId: true },
@@ -421,9 +515,15 @@ export async function deleteEvent(
   if (!allowed) return { error: "Unauthorised." };
 
   try {
-    await cancelManyNotifications({ type: NotificationType.EVENT_REMINDER, dedupeKey: id });
+    await cancelManyNotifications({
+      type: NotificationType.EVENT_REMINDER,
+      dedupeKey: id,
+    });
     if (event.seriesId) {
-      await cancelManyNotifications({ type: NotificationType.NEW_SERIES_SESSION, dedupeKey: `${event.seriesId}:${id}` });
+      await cancelManyNotifications({
+        type: NotificationType.NEW_SERIES_SESSION,
+        dedupeKey: `${event.seriesId}:${id}`,
+      });
     }
   } catch (err) {
     console.error("Failed to cancel reminders before delete:", err);

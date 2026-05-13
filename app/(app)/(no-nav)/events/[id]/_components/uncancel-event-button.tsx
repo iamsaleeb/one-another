@@ -27,7 +27,8 @@ export function UncancelEventButton({ eventId }: { eventId: string }) {
         <DialogHeader>
           <DialogTitle>Restore Event</DialogTitle>
           <DialogDescription>
-            This will remove the cancellation and restore the event to active status.
+            This will remove the cancellation and restore the event to active
+            status.
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>

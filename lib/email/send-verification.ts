@@ -7,7 +7,8 @@ export async function sendVerificationEmail(
   otp: string
 ): Promise<void> {
   const from = process.env.RESEND_FROM_EMAIL;
-  if (!from) throw new Error("RESEND_FROM_EMAIL environment variable is not set");
+  if (!from)
+    throw new Error("RESEND_FROM_EMAIL environment variable is not set");
   const { error } = await getResend().emails.send({
     from,
     to: [email],

@@ -1,29 +1,29 @@
-const nextJest = require('next/jest')
+const nextJest = require("next/jest");
 
-const createJestConfig = nextJest({ dir: './' })
+const createJestConfig = nextJest({ dir: "./" });
 
 /** @type {import('jest').Config} */
 const config = {
-  coverageProvider: 'v8',
-  testEnvironment: 'jsdom',
-  setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
+  coverageProvider: "v8",
+  testEnvironment: "jsdom",
+  setupFilesAfterEnv: ["<rootDir>/jest.setup.ts"],
   moduleNameMapper: {
-    '^@/(.*)$': '<rootDir>/$1',
+    "^@/(.*)$": "<rootDir>/$1",
   },
-  testPathIgnorePatterns: ['<rootDir>/node_modules/', '<rootDir>/.next/'],
+  testPathIgnorePatterns: ["<rootDir>/node_modules/", "<rootDir>/.next/"],
   collectCoverageFrom: [
-    'components/**/*.{ts,tsx}',
-    'lib/**/*.{ts,tsx}',
+    "components/**/*.{ts,tsx}",
+    "lib/**/*.{ts,tsx}",
     // Exclude generated shadcn/ui primitives — third-party, not our logic
-    '!components/ui/**',
+    "!components/ui/**",
     // Exclude infrastructure / config files
-    '!lib/db.ts',
-    '!lib/actions/upload.ts',
+    "!lib/db.ts",
+    "!lib/actions/upload.ts",
     // Exclude static seed/fixture data
-    '!lib/data/**',
+    "!lib/data/**",
     // Exclude Next.js App Router pages and layouts — covered by e2e tests
-    '!app/**',
-    '!**/*.d.ts',
+    "!app/**",
+    "!**/*.d.ts",
   ],
   coverageThreshold: {
     global: {
@@ -33,6 +33,6 @@ const config = {
       statements: 80,
     },
   },
-}
+};
 
-module.exports = createJestConfig(config)
+module.exports = createJestConfig(config);

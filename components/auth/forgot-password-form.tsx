@@ -92,7 +92,9 @@ export function ForgotPasswordForm({
     }
     if (result?.fieldErrors) {
       Object.entries(result.fieldErrors).forEach(([field, msgs]) =>
-        resetForm.setError(field as keyof ResetPasswordInput, { message: msgs[0] })
+        resetForm.setError(field as keyof ResetPasswordInput, {
+          message: msgs[0],
+        })
       );
     }
   });
@@ -105,7 +107,8 @@ export function ForgotPasswordForm({
             <CardHeader className="text-center">
               <CardTitle className="text-xl">Forgot your password?</CardTitle>
               <CardDescription>
-                Enter your email and we&apos;ll send you a verification code to reset your password.
+                Enter your email and we&apos;ll send you a verification code to
+                reset your password.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -135,12 +138,14 @@ export function ForgotPasswordForm({
                       className="w-full"
                       disabled={emailForm.formState.isSubmitting}
                     >
-                      {emailForm.formState.isSubmitting ? "Sending code..." : "Send code"}
+                      {emailForm.formState.isSubmitting
+                        ? "Sending code..."
+                        : "Send code"}
                     </Button>
                     <div className="text-center text-sm">
                       <Link
                         href="/login"
-                        className="underline underline-offset-4 hover:text-primary"
+                        className="hover:text-primary underline underline-offset-4"
                       >
                         Back to sign in
                       </Link>
@@ -156,7 +161,9 @@ export function ForgotPasswordForm({
               <CardTitle className="text-xl">Reset your password</CardTitle>
               <CardDescription>
                 Enter the code sent to{" "}
-                <span className="font-medium text-foreground">{pendingEmail}</span>{" "}
+                <span className="text-foreground font-medium">
+                  {pendingEmail}
+                </span>{" "}
                 and choose a new password.
               </CardDescription>
             </CardHeader>
@@ -239,17 +246,21 @@ export function ForgotPasswordForm({
                       className="w-full"
                       disabled={resetForm.formState.isSubmitting}
                     >
-                      {resetForm.formState.isSubmitting ? "Resetting..." : "Reset password"}
+                      {resetForm.formState.isSubmitting
+                        ? "Resetting..."
+                        : "Reset password"}
                     </Button>
-                    <div className="text-center text-sm text-muted-foreground">
+                    <div className="text-muted-foreground text-center text-sm">
                       Didn&apos;t receive a code?{" "}
                       <button
                         type="button"
                         onClick={handleResend}
                         disabled={cooldown > 0}
-                        className="underline underline-offset-4 hover:text-primary disabled:cursor-not-allowed disabled:opacity-50"
+                        className="hover:text-primary underline underline-offset-4 disabled:cursor-not-allowed disabled:opacity-50"
                       >
-                        {cooldown > 0 ? `Resend in ${cooldown}s` : "Resend code"}
+                        {cooldown > 0
+                          ? `Resend in ${cooldown}s`
+                          : "Resend code"}
                       </button>
                     </div>
                   </div>

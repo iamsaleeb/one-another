@@ -3,10 +3,15 @@ import "server-only";
 import { prisma } from "@/lib/db";
 import { Prisma, NotificationType } from "@prisma/client";
 import { parseEventMetadata } from "@/lib/validations/event";
-import { scheduleEventReminderNotification, cancelNotification } from "@/lib/notifications/queue";
+import {
+  scheduleEventReminderNotification,
+  cancelNotification,
+} from "@/lib/notifications/queue";
 import { saveResponses } from "@/lib/dal/responses";
 import type { ResponseInput } from "@/lib/validations/questions";
-interface DalError { error: string }
+interface DalError {
+  error: string;
+}
 
 export async function attendEvent(
   eventId: string,
@@ -21,7 +26,10 @@ export async function attendEvent(
   try {
     await prisma.eventAttendee.create({ data: { eventId, userId } });
   } catch (err) {
-    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
+    if (
+      err instanceof Prisma.PrismaClientKnownRequestError &&
+      err.code === "P2002"
+    ) {
       return {};
     }
     throw err;
@@ -45,14 +53,21 @@ export async function unattendEvent(
       where: { eventId_userId: { eventId, userId } },
     });
   } catch (err) {
-    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2025") {
+    if (
+      err instanceof Prisma.PrismaClientKnownRequestError &&
+      err.code === "P2025"
+    ) {
       return {};
     }
     throw err;
   }
 
   try {
-    await cancelNotification({ userId, type: NotificationType.EVENT_REMINDER, dedupeKey: eventId });
+    await cancelNotification({
+      userId,
+      type: NotificationType.EVENT_REMINDER,
+      dedupeKey: eventId,
+    });
   } catch (err) {
     console.error("Failed to cancel event reminder:", err);
   }
@@ -94,7 +109,10 @@ export async function registerEvent(
   let validatedSelectedDays: string[] | undefined;
   if (eventMeta.camp?.allowPartialRegistration && eventMeta.camp.endDate) {
     if (!event.datetime) {
-      return { error: "This camp event is missing a start date, so partial registration is unavailable." };
+      return {
+        error:
+          "This camp event is missing a start date, so partial registration is unavailable.",
+      };
     }
     const startDate = event.datetime.toISOString().slice(0, 10);
     const endDate = eventMeta.camp.endDate;
@@ -118,7 +136,9 @@ export async function registerEvent(
       data: {
         phone: data.phone,
         notes: data.notes,
-        ...(validatedSelectedDays ? { metadata: { selectedDays: validatedSelectedDays } } : {}),
+        ...(validatedSelectedDays
+          ? { metadata: { selectedDays: validatedSelectedDays } }
+          : {}),
       },
     });
     if (data.responses && data.responses.length > 0) {
@@ -139,13 +159,18 @@ export async function registerEvent(
         userId,
         phone: data.phone,
         notes: data.notes,
-        ...(validatedSelectedDays ? { metadata: { selectedDays: validatedSelectedDays } } : {}),
+        ...(validatedSelectedDays
+          ? { metadata: { selectedDays: validatedSelectedDays } }
+          : {}),
       },
       select: { id: true },
     });
     attendeeId = created.id;
   } catch (err) {
-    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
+    if (
+      err instanceof Prisma.PrismaClientKnownRequestError &&
+      err.code === "P2002"
+    ) {
       // Race: another concurrent request registered this user — find their record and save responses
       const raced = await prisma.eventAttendee.findUnique({
         where: { eventId_userId: { eventId, userId } },
@@ -176,4 +201,3 @@ export async function registerEvent(
 
   return { success: true };
 }
-

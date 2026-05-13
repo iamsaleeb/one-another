@@ -19,7 +19,9 @@ interface Props {
 export async function generateMetadata({ params }: Props) {
   const { id } = await params;
   const series = await getSeriesById(id);
-  return { title: series ? `${series.name} — One Another` : "Series Not Found" };
+  return {
+    title: series ? `${series.name} — One Another` : "Series Not Found",
+  };
 }
 
 export default async function SeriesDetailPage({ params }: Props) {
@@ -27,12 +29,18 @@ export default async function SeriesDetailPage({ params }: Props) {
 
   const [series, myFollow] = await Promise.all([
     getSeriesById(id),
-    session?.user?.id ? getMySeriesFollow(id, session.user.id) : Promise.resolve(null),
+    session?.user?.id
+      ? getMySeriesFollow(id, session.user.id)
+      : Promise.resolve(null),
   ]);
 
   if (!series) notFound();
 
-  const canManage = await canManageChurch(session?.user?.id, session?.user?.role, series.churchId);
+  const canManage = await canManageChurch(
+    session?.user?.id,
+    session?.user?.role,
+    series.churchId
+  );
   const isFollowing = myFollow !== null;
 
   return (
@@ -41,16 +49,21 @@ export default async function SeriesDetailPage({ params }: Props) {
 
       <div className="flex flex-col gap-4 px-4 pt-5 pb-28">
         {/* Info card */}
-        <div className="rounded-2xl bg-white shadow-card p-5 flex flex-col gap-4">
+        <div className="shadow-card flex flex-col gap-4 rounded-2xl bg-white p-5">
           <div className="flex items-start justify-between gap-2">
-            <h1 className="text-xl font-bold leading-snug">{series.name}</h1>
-            <div className="flex items-center gap-2 shrink-0">
-              <span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary whitespace-nowrap">
+            <h1 className="text-xl leading-snug font-bold">{series.name}</h1>
+            <div className="flex shrink-0 items-center gap-2">
+              <span className="bg-primary/10 text-primary rounded-full px-2.5 py-1 text-xs font-medium whitespace-nowrap">
                 {CADENCE_LABELS[series.cadence] ?? series.cadence}
               </span>
               {canManage && (
                 <>
-                  <Button asChild variant="outline" size="icon" className="size-9">
+                  <Button
+                    asChild
+                    variant="outline"
+                    size="icon"
+                    className="size-9"
+                  >
                     <Link href={`/series/${series.id}/edit`}>
                       <Pencil className="size-4" />
                     </Link>
@@ -64,20 +77,31 @@ export default async function SeriesDetailPage({ params }: Props) {
           <div className="flex flex-col gap-4">
             {series.church && (
               <InfoField icon={Church} label="Church">
-                <Link href={`/churches/${series.church.id}`} className="text-primary hover:underline">
+                <Link
+                  href={`/churches/${series.church.id}`}
+                  className="text-primary hover:underline"
+                >
                   {series.church.name}
                 </Link>
               </InfoField>
             )}
-            <InfoField icon={MapPin} label="Location">{series.location}</InfoField>
-            <InfoField icon={User} label="Host">{series.host}</InfoField>
-            <InfoField icon={Tag} label="Category">{series.tag}</InfoField>
+            <InfoField icon={MapPin} label="Location">
+              {series.location}
+            </InfoField>
+            <InfoField icon={User} label="Host">
+              {series.host}
+            </InfoField>
+            <InfoField icon={Tag} label="Category">
+              {series.tag}
+            </InfoField>
           </div>
         </div>
 
         {/* Description card */}
-        <div className="rounded-2xl bg-white shadow-card p-5">
-          <p className="text-sm text-foreground leading-relaxed">{series.description}</p>
+        <div className="shadow-card rounded-2xl bg-white p-5">
+          <p className="text-foreground text-sm leading-relaxed">
+            {series.description}
+          </p>
         </div>
 
         {/* Upcoming sessions */}
@@ -94,10 +118,19 @@ export default async function SeriesDetailPage({ params }: Props) {
             )}
           </div>
           {series.events.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-4 text-center">No upcoming sessions</p>
+            <p className="text-muted-foreground py-4 text-center text-sm">
+              No upcoming sessions
+            </p>
           ) : (
             series.events.map((event) => (
-              <EventCard key={event.id} event={{ ...event, badge: event.tag, churchName: series.church?.name ?? "" }} />
+              <EventCard
+                key={event.id}
+                event={{
+                  ...event,
+                  badge: event.tag,
+                  churchName: series.church?.name ?? "",
+                }}
+              />
             ))
           )}
         </section>

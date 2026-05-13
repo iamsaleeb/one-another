@@ -13,15 +13,23 @@ const saveDraftAction = eventsCrud.saveDraftAction as jest.Mock;
 
 // Renders both the form and the hook together — mirrors real usage.
 // debounceMs defaults to 0 so tests don't need fake timers.
-function renderWithForm(opts: {
-  initialDraftId?: string;
-  isBusy?: boolean;
-  formDefaults?: Record<string, unknown>;
-  debounceMs?: number;
-} = {}) {
+function renderWithForm(
+  opts: {
+    initialDraftId?: string;
+    isBusy?: boolean;
+    formDefaults?: Record<string, unknown>;
+    debounceMs?: number;
+  } = {}
+) {
   return renderHook(() => {
     const form = useForm({
-      defaultValues: { title: "", description: "", tag: "", isDraft: false, ...opts.formDefaults },
+      defaultValues: {
+        title: "",
+        description: "",
+        tag: "",
+        isDraft: false,
+        ...opts.formDefaults,
+      },
     });
     const autoSave = useEventAutoSave({
       form: form as unknown as Parameters<typeof useEventAutoSave>[0]["form"],
@@ -89,7 +97,11 @@ describe("useEventAutoSave", () => {
 
   it("shows saving status while request is in flight", async () => {
     let resolveAction!: (v: { eventId: string }) => void;
-    saveDraftAction.mockReturnValue(new Promise((r) => { resolveAction = r; }));
+    saveDraftAction.mockReturnValue(
+      new Promise((r) => {
+        resolveAction = r;
+      })
+    );
 
     const { result } = renderWithForm();
     await act(async () => {
@@ -103,10 +115,17 @@ describe("useEventAutoSave", () => {
 
   it("does not overlap concurrent auto-saves", async () => {
     let resolveFirst!: (v: { eventId: string }) => void;
-    saveDraftAction.mockReturnValueOnce(new Promise((r) => { resolveFirst = r; }));
+    saveDraftAction.mockReturnValueOnce(
+      new Promise((r) => {
+        resolveFirst = r;
+      })
+    );
     saveDraftAction.mockResolvedValue({ eventId: "draft-1" });
 
-    const { result } = renderWithForm({ initialDraftId: "draft-1", formDefaults: { isDraft: true } });
+    const { result } = renderWithForm({
+      initialDraftId: "draft-1",
+      formDefaults: { isDraft: true },
+    });
     await act(async () => {
       result.current.form.setValue("title", "First", { shouldDirty: true });
     });
@@ -124,10 +143,17 @@ describe("useEventAutoSave", () => {
 
   it("performs a trailing save for changes that arrived while in-flight", async () => {
     let resolveFirst!: (v: { eventId: string }) => void;
-    saveDraftAction.mockReturnValueOnce(new Promise((r) => { resolveFirst = r; }));
+    saveDraftAction.mockReturnValueOnce(
+      new Promise((r) => {
+        resolveFirst = r;
+      })
+    );
     saveDraftAction.mockResolvedValue({ eventId: "draft-1" });
 
-    const { result } = renderWithForm({ initialDraftId: "draft-1", formDefaults: { isDraft: true } });
+    const { result } = renderWithForm({
+      initialDraftId: "draft-1",
+      formDefaults: { isDraft: true },
+    });
     await act(async () => {
       result.current.form.setValue("title", "First", { shouldDirty: true });
     });
@@ -174,12 +200,16 @@ describe("useEventAutoSave", () => {
 
       const { result, unmount } = renderWithForm();
       await act(async () => {
-        result.current.form.setValue("title", "My Event", { shouldDirty: true });
+        result.current.form.setValue("title", "My Event", {
+          shouldDirty: true,
+        });
       });
       await waitFor(() => expect(result.current.autoSaveStatus).toBe("saved"));
 
       unmount();
-      expect(toast.info).toHaveBeenCalledWith("Draft saved – you can continue where you left off");
+      expect(toast.info).toHaveBeenCalledWith(
+        "Draft saved – you can continue where you left off"
+      );
     });
 
     it("does NOT show toast when unmounting after markPublished", async () => {
@@ -187,7 +217,9 @@ describe("useEventAutoSave", () => {
 
       const { result, unmount } = renderWithForm();
       await act(async () => {
-        result.current.form.setValue("title", "My Event", { shouldDirty: true });
+        result.current.form.setValue("title", "My Event", {
+          shouldDirty: true,
+        });
       });
       await waitFor(() => expect(result.current.autoSaveStatus).toBe("saved"));
 
@@ -200,7 +232,9 @@ describe("useEventAutoSave", () => {
       const { result, unmount } = renderWithForm();
       act(() => result.current.setDraftId("manual-draft-456"));
       unmount();
-      expect(toast.info).toHaveBeenCalledWith("Draft saved – you can continue where you left off");
+      expect(toast.info).toHaveBeenCalledWith(
+        "Draft saved – you can continue where you left off"
+      );
     });
   });
 });

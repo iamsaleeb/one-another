@@ -12,20 +12,25 @@ export default function DeleteAccountPage() {
       <div className="flex flex-col gap-4 px-4 pt-6 pb-28">
         {/* Header */}
         <div className="flex flex-col items-center gap-3 py-4">
-          <div className="flex items-center justify-center w-12 h-12 rounded-full bg-destructive/10">
-            <TriangleAlert className="w-6 h-6 text-destructive" aria-hidden="true" />
+          <div className="bg-destructive/10 flex h-12 w-12 items-center justify-center rounded-full">
+            <TriangleAlert
+              className="text-destructive h-6 w-6"
+              aria-hidden="true"
+            />
           </div>
           <div className="text-center">
             <h1 className="text-xl font-bold">Delete Account</h1>
-            <p className="text-sm text-muted-foreground mt-1">
+            <p className="text-muted-foreground mt-1 text-sm">
               This action is permanent and cannot be undone.
             </p>
           </div>
         </div>
 
         {/* Consequence list */}
-        <div className="rounded-2xl border border-destructive/20 bg-destructive/5 p-4 flex flex-col gap-2">
-          <p className="text-sm font-semibold text-destructive">What will be deleted:</p>
+        <div className="border-destructive/20 bg-destructive/5 flex flex-col gap-2 rounded-2xl border p-4">
+          <p className="text-destructive text-sm font-semibold">
+            What will be deleted:
+          </p>
           <ul className="flex flex-col gap-1.5">
             {[
               "Event registrations",
@@ -33,14 +38,18 @@ export default function DeleteAccountPage() {
               "Notification preferences",
               "Your profile and account",
             ].map((item) => (
-              <li key={item} className="flex items-start gap-2 text-sm text-muted-foreground">
+              <li
+                key={item}
+                className="text-muted-foreground flex items-start gap-2 text-sm"
+              >
                 <span className="text-destructive mt-0.5">•</span>
                 {item}
               </li>
             ))}
           </ul>
-          <p className="text-xs text-muted-foreground mt-1">
-            Events and series you created will remain but will no longer be linked to you.
+          <p className="text-muted-foreground mt-1 text-xs">
+            Events and series you created will remain but will no longer be
+            linked to you.
           </p>
         </div>
 

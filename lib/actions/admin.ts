@@ -5,7 +5,10 @@ import { auth } from "@/auth";
 import { UserRole } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { isAdminForChurch } from "@/lib/permissions";
-import { addOrganiserSchema, removeOrganiserSchema } from "@/lib/validations/admin";
+import {
+  addOrganiserSchema,
+  removeOrganiserSchema,
+} from "@/lib/validations/admin";
 
 export interface AdminActionState {
   error?: string;
@@ -23,7 +26,8 @@ export async function addOrganiserToChurchAction(
     churchId: formData.get("churchId"),
     email: (formData.get("email") as string | null)?.trim().toLowerCase(),
   });
-  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input." };
+  if (!parsed.success)
+    return { error: parsed.error.issues[0]?.message ?? "Invalid input." };
 
   const { churchId, email } = parsed.data;
 
@@ -36,13 +40,17 @@ export async function addOrganiserToChurchAction(
   });
 
   if (!targetUser) return { error: "No account found with that email." };
-  if (targetUser.role === UserRole.ADMIN) return { error: "This user is an admin and cannot be added as an organiser." };
+  if (targetUser.role === UserRole.ADMIN)
+    return {
+      error: "This user is an admin and cannot be added as an organiser.",
+    };
 
   const existing = await prisma.churchOrganiser.findUnique({
     where: { userId_churchId: { userId: targetUser.id, churchId } },
     select: { userId: true },
   });
-  if (existing) return { success: "User is already an organiser for this church." };
+  if (existing)
+    return { success: "User is already an organiser for this church." };
 
   await prisma.$transaction(async (tx) => {
     if (targetUser.role === UserRole.ATTENDEE) {

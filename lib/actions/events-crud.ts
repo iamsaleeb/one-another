@@ -3,35 +3,82 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { UserRole } from "@prisma/client";
-import { createEventSchema, saveDraftSchema, type CreateEventInput, type SaveDraftInput } from "@/lib/validations/event";
-import { createEvent, updateEvent, cancelEvent, uncancelEvent, publishEvent, unpublishEvent, deleteEvent } from "@/lib/dal/events";
+import {
+  createEventSchema,
+  saveDraftSchema,
+  type CreateEventInput,
+  type SaveDraftInput,
+} from "@/lib/validations/event";
+import {
+  createEvent,
+  updateEvent,
+  cancelEvent,
+  uncancelEvent,
+  publishEvent,
+  unpublishEvent,
+  deleteEvent,
+} from "@/lib/dal/events";
 import type { ActionResult } from "@/lib/actions/auth";
-import { invalidateEventCaches, invalidateEventUpdate } from "@/lib/actions/_cache";
+import {
+  invalidateEventCaches,
+  invalidateEventUpdate,
+} from "@/lib/actions/_cache";
 
-export async function createEventAction(data: CreateEventInput): Promise<ActionResult> {
+export async function createEventAction(
+  data: CreateEventInput
+): Promise<ActionResult> {
   const session = await auth();
-  if (session?.user?.role !== UserRole.ORGANISER && session?.user?.role !== UserRole.ADMIN) {
+  if (
+    session?.user?.role !== UserRole.ORGANISER &&
+    session?.user?.role !== UserRole.ADMIN
+  ) {
     return { error: "Unauthorised." };
   }
 
   const parsed = createEventSchema.safeParse(data);
-  if (!parsed.success) return { fieldErrors: parsed.error.flatten().fieldErrors };
+  if (!parsed.success)
+    return { fieldErrors: parsed.error.flatten().fieldErrors };
 
-  const result = await createEvent(parsed.data, session.user.id, session.user.role);
+  const result = await createEvent(
+    parsed.data,
+    session.user.id,
+    session.user.role
+  );
   if ("error" in result || "fieldErrors" in result) return result;
 
-  invalidateEventCaches(result.id, result.churchId, result.seriesId, { broadcastToChurchList: true });
-  redirect(result.isDraft ? "/organiser" : result.seriesId ? `/series/${result.seriesId}` : "/my-events");
+  invalidateEventCaches(result.id, result.churchId, result.seriesId, {
+    broadcastToChurchList: true,
+  });
+  redirect(
+    result.isDraft
+      ? "/organiser"
+      : result.seriesId
+        ? `/series/${result.seriesId}`
+        : "/my-events"
+  );
 }
 
-export async function updateEventAction(id: string, data: CreateEventInput): Promise<ActionResult> {
+export async function updateEventAction(
+  id: string,
+  data: CreateEventInput
+): Promise<ActionResult> {
   const session = await auth();
-  if (session?.user?.role !== UserRole.ORGANISER && session?.user?.role !== UserRole.ADMIN) redirect("/");
+  if (
+    session?.user?.role !== UserRole.ORGANISER &&
+    session?.user?.role !== UserRole.ADMIN
+  )
+    redirect("/");
 
   const parsed = createEventSchema.safeParse(data);
-  if (!parsed.success) return { fieldErrors: parsed.error.flatten().fieldErrors };
+  if (!parsed.success)
+    return { fieldErrors: parsed.error.flatten().fieldErrors };
 
-  const result = await updateEvent(id, parsed.data, session.user.id, session.user.role);
+  const result = await updateEvent(
+    id,
+    parsed.data,
+    session.user.id,
+    session.user.role
+  );
   if ("error" in result) redirect("/organiser");
   if ("fieldErrors" in result) return result;
 
@@ -39,11 +86,23 @@ export async function updateEventAction(id: string, data: CreateEventInput): Pro
   redirect(`/events/${id}`);
 }
 
-export async function cancelEventAction(id: string, reason: string): Promise<void> {
+export async function cancelEventAction(
+  id: string,
+  reason: string
+): Promise<void> {
   const session = await auth();
-  if (session?.user?.role !== UserRole.ORGANISER && session?.user?.role !== UserRole.ADMIN) redirect("/");
+  if (
+    session?.user?.role !== UserRole.ORGANISER &&
+    session?.user?.role !== UserRole.ADMIN
+  )
+    redirect("/");
 
-  const result = await cancelEvent(id, reason, session.user.id, session.user.role);
+  const result = await cancelEvent(
+    id,
+    reason,
+    session.user.id,
+    session.user.role
+  );
   if ("error" in result) redirect("/organiser");
 
   invalidateEventCaches(id, result.churchId, result.seriesId);
@@ -52,7 +111,11 @@ export async function cancelEventAction(id: string, reason: string): Promise<voi
 
 export async function uncancelEventAction(id: string): Promise<void> {
   const session = await auth();
-  if (session?.user?.role !== UserRole.ORGANISER && session?.user?.role !== UserRole.ADMIN) redirect("/");
+  if (
+    session?.user?.role !== UserRole.ORGANISER &&
+    session?.user?.role !== UserRole.ADMIN
+  )
+    redirect("/");
 
   const result = await uncancelEvent(id, session.user.id, session.user.role);
   if ("error" in result) redirect("/organiser");
@@ -63,27 +126,37 @@ export async function uncancelEventAction(id: string): Promise<void> {
 
 export async function publishEventAction(id: string): Promise<ActionResult> {
   const session = await auth();
-  if (session?.user?.role !== UserRole.ORGANISER && session?.user?.role !== UserRole.ADMIN) {
+  if (
+    session?.user?.role !== UserRole.ORGANISER &&
+    session?.user?.role !== UserRole.ADMIN
+  ) {
     return { error: "Unauthorised." };
   }
 
   const result = await publishEvent(id, session.user.id, session.user.role);
   if ("error" in result) return result;
 
-  invalidateEventCaches(id, result.churchId, result.seriesId, { broadcastToChurchList: true });
+  invalidateEventCaches(id, result.churchId, result.seriesId, {
+    broadcastToChurchList: true,
+  });
   redirect(`/events/${id}`);
 }
 
 export async function unpublishEventAction(id: string): Promise<ActionResult> {
   const session = await auth();
-  if (session?.user?.role !== UserRole.ORGANISER && session?.user?.role !== UserRole.ADMIN) {
+  if (
+    session?.user?.role !== UserRole.ORGANISER &&
+    session?.user?.role !== UserRole.ADMIN
+  ) {
     return { error: "Unauthorised." };
   }
 
   const result = await unpublishEvent(id, session.user.id, session.user.role);
   if ("error" in result) return result;
 
-  invalidateEventCaches(id, result.churchId, result.seriesId, { broadcastToChurchList: true });
+  invalidateEventCaches(id, result.churchId, result.seriesId, {
+    broadcastToChurchList: true,
+  });
   redirect(`/events/${id}`);
 }
 
@@ -92,12 +165,16 @@ export async function saveDraftAction(
   data: SaveDraftInput
 ): Promise<{ eventId: string } | ActionResult> {
   const session = await auth();
-  if (session?.user?.role !== UserRole.ORGANISER && session?.user?.role !== UserRole.ADMIN) {
+  if (
+    session?.user?.role !== UserRole.ORGANISER &&
+    session?.user?.role !== UserRole.ADMIN
+  ) {
     return { error: "Unauthorised." };
   }
 
   const parsed = saveDraftSchema.safeParse(data);
-  if (!parsed.success) return { fieldErrors: parsed.error.flatten().fieldErrors };
+  if (!parsed.success)
+    return { fieldErrors: parsed.error.flatten().fieldErrors };
 
   const dataWithDefaults = {
     ...parsed.data,
@@ -105,12 +182,21 @@ export async function saveDraftAction(
   };
 
   if (!id) {
-    const result = await createEvent({ ...dataWithDefaults, isDraft: true }, session.user.id, session.user.role);
+    const result = await createEvent(
+      { ...dataWithDefaults, isDraft: true },
+      session.user.id,
+      session.user.role
+    );
     if ("error" in result || "fieldErrors" in result) return result;
     invalidateEventCaches(result.id, result.churchId, result.seriesId ?? null);
     return { eventId: result.id };
   } else {
-    const result = await updateEvent(id, { ...dataWithDefaults, isDraft: dataWithDefaults.isDraft ?? true }, session.user.id, session.user.role);
+    const result = await updateEvent(
+      id,
+      { ...dataWithDefaults, isDraft: dataWithDefaults.isDraft ?? true },
+      session.user.id,
+      session.user.role
+    );
     if ("error" in result || "fieldErrors" in result) return result;
     invalidateEventUpdate(id, result);
     return { eventId: id };
@@ -122,14 +208,23 @@ export async function saveEventAction(
   data: CreateEventInput
 ): Promise<{ success: true } | ActionResult> {
   const session = await auth();
-  if (session?.user?.role !== UserRole.ORGANISER && session?.user?.role !== UserRole.ADMIN) {
+  if (
+    session?.user?.role !== UserRole.ORGANISER &&
+    session?.user?.role !== UserRole.ADMIN
+  ) {
     return { error: "Unauthorised." };
   }
 
   const parsed = createEventSchema.safeParse(data);
-  if (!parsed.success) return { fieldErrors: parsed.error.flatten().fieldErrors };
+  if (!parsed.success)
+    return { fieldErrors: parsed.error.flatten().fieldErrors };
 
-  const result = await updateEvent(id, parsed.data, session.user.id, session.user.role);
+  const result = await updateEvent(
+    id,
+    parsed.data,
+    session.user.id,
+    session.user.role
+  );
   if ("error" in result || "fieldErrors" in result) return result;
 
   invalidateEventUpdate(id, result);
@@ -139,11 +234,17 @@ export async function saveEventAction(
 
 export async function deleteEventAction(id: string): Promise<void> {
   const session = await auth();
-  if (session?.user?.role !== UserRole.ORGANISER && session?.user?.role !== UserRole.ADMIN) redirect("/");
+  if (
+    session?.user?.role !== UserRole.ORGANISER &&
+    session?.user?.role !== UserRole.ADMIN
+  )
+    redirect("/");
 
   const result = await deleteEvent(id, session.user.id, session.user.role);
   if ("error" in result) redirect("/organiser");
 
-  invalidateEventCaches(id, result.churchId, result.seriesId, { broadcastToChurchList: true });
+  invalidateEventCaches(id, result.churchId, result.seriesId, {
+    broadcastToChurchList: true,
+  });
   redirect("/organiser");
 }

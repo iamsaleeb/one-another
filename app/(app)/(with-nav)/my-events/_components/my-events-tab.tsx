@@ -1,7 +1,10 @@
 import { CalendarDays } from "lucide-react";
 import { EventCard } from "@/components/event-card";
 import { EmptyState } from "@/components/empty-state";
-import type { getUserAttendedEvents, getUserAttendedPastEvents } from "@/lib/actions/data-events";
+import type {
+  getUserAttendedEvents,
+  getUserAttendedPastEvents,
+} from "@/lib/actions/data-events";
 
 interface MyEventsTabProps {
   upcomingEvents: Awaited<ReturnType<typeof getUserAttendedEvents>>;
@@ -17,7 +20,14 @@ export function MyEventsTab({ upcomingEvents, pastEvents }: MyEventsTabProps) {
           <EmptyState icon={CalendarDays} label="No upcoming events" />
         ) : (
           upcomingEvents.map((event) => (
-            <EventCard key={event.id} event={{ ...event, badge: event.tag, churchName: event.church?.name ?? "" }} />
+            <EventCard
+              key={event.id}
+              event={{
+                ...event,
+                badge: event.tag,
+                churchName: event.church?.name ?? "",
+              }}
+            />
           ))
         )}
       </section>
@@ -27,7 +37,14 @@ export function MyEventsTab({ upcomingEvents, pastEvents }: MyEventsTabProps) {
           <EmptyState icon={CalendarDays} label="No past events" />
         ) : (
           pastEvents.map((event) => (
-            <EventCard key={event.id} event={{ ...event, badge: event.tag, churchName: event.church?.name ?? "" }} />
+            <EventCard
+              key={event.id}
+              event={{
+                ...event,
+                badge: event.tag,
+                churchName: event.church?.name ?? "",
+              }}
+            />
           ))
         )}
       </section>

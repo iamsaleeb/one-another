@@ -9,9 +9,5 @@ import { formatEventDatetime } from "@/lib/datetime";
  */
 export function EventDatetime({ datetime }: { datetime: Date | null }) {
   if (!datetime) return <span>Date TBD</span>;
-  return (
-    <span suppressHydrationWarning>
-      {formatEventDatetime(datetime)}
-    </span>
-  );
+  return <span suppressHydrationWarning>{formatEventDatetime(datetime)}</span>;
 }

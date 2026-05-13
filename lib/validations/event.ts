@@ -112,7 +112,11 @@ export interface EventAttendeeMetadata {
   selectedDays?: string[];
 }
 
-const makeRegistrationDefault = () => ({ capacity: null as null, collectPhone: false, collectNotes: false });
+const makeRegistrationDefault = () => ({
+  capacity: null as null,
+  collectPhone: false,
+  collectNotes: false,
+});
 
 const eventMetadataSchema = z
   .object({
@@ -152,12 +156,17 @@ export function parseEventMetadata(raw: unknown): EventMetadata {
 const eventAttendeeMetadataSchema = z
   .object({
     selectedDays: z.preprocess(
-      (val) => Array.isArray(val) ? val.filter((d): d is string => typeof d === "string") : undefined,
+      (val) =>
+        Array.isArray(val)
+          ? val.filter((d): d is string => typeof d === "string")
+          : undefined,
       z.array(z.string()).optional()
     ),
   })
   .catch({});
 
-export function parseEventAttendeeMetadata(raw: unknown): EventAttendeeMetadata {
+export function parseEventAttendeeMetadata(
+  raw: unknown
+): EventAttendeeMetadata {
   return eventAttendeeMetadataSchema.parse(raw);
 }

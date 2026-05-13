@@ -82,7 +82,9 @@ export function SignupForm({
                   <div className="grid gap-6">
                     {form.formState.errors.root && (
                       <Alert variant="destructive">
-                        <AlertDescription>{form.formState.errors.root.message}</AlertDescription>
+                        <AlertDescription>
+                          {form.formState.errors.root.message}
+                        </AlertDescription>
                       </Alert>
                     )}
                     <div className="grid gap-6">
@@ -155,15 +157,21 @@ export function SignupForm({
                           </FormItem>
                         )}
                       />
-                      <Button type="submit" className="w-full" disabled={isSubmitting}>
-                        {isSubmitting ? "Creating account..." : "Create account"}
+                      <Button
+                        type="submit"
+                        className="w-full"
+                        disabled={isSubmitting}
+                      >
+                        {isSubmitting
+                          ? "Creating account..."
+                          : "Create account"}
                       </Button>
                     </div>
                     <div className="text-center text-sm">
                       Already have an account?{" "}
                       <Link
                         href="/login"
-                        className="underline underline-offset-4 hover:text-primary"
+                        className="hover:text-primary underline underline-offset-4"
                       >
                         Sign in
                       </Link>
@@ -175,13 +183,21 @@ export function SignupForm({
           </>
         )}
       </Card>
-      <div className="text-balance text-center text-xs text-muted-foreground">
+      <div className="text-muted-foreground text-center text-xs text-balance">
         By continuing, you agree to our{" "}
-        <Link href="/terms" target="_blank" className="underline underline-offset-4 hover:text-primary">
+        <Link
+          href="/terms"
+          target="_blank"
+          className="hover:text-primary underline underline-offset-4"
+        >
           Terms of Service
         </Link>{" "}
         and{" "}
-        <Link href="/privacy" target="_blank" className="underline underline-offset-4 hover:text-primary">
+        <Link
+          href="/privacy"
+          target="_blank"
+          className="hover:text-primary underline underline-offset-4"
+        >
           Privacy Policy
         </Link>
         .

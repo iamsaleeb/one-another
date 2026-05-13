@@ -22,7 +22,11 @@ export default async function EventResponsesPage({ params }: Props) {
   const event = await getEventById(id);
   if (!event) notFound();
 
-  const canManage = await canManageChurch(session?.user?.id, session?.user?.role, event.churchId);
+  const canManage = await canManageChurch(
+    session?.user?.id,
+    session?.user?.role,
+    event.churchId
+  );
   if (!canManage) redirect(`/events/${id}`);
 
   const { questions, attendees } = await getEventResponses(id);
@@ -33,13 +37,13 @@ export default async function EventResponsesPage({ params }: Props) {
 
       <div className="flex flex-col gap-6 px-4">
         {questions.length === 0 ? (
-          <div className="rounded-2xl border bg-white shadow-card p-8 flex flex-col items-center gap-3">
-            <p className="text-sm text-muted-foreground text-center">
+          <div className="shadow-card flex flex-col items-center gap-3 rounded-2xl border bg-white p-8">
+            <p className="text-muted-foreground text-center text-sm">
               This event has no custom questions.
             </p>
           </div>
         ) : (
-          <div className="rounded-2xl border bg-white shadow-card p-4">
+          <div className="shadow-card rounded-2xl border bg-white p-4">
             <ResponsesTable
               questions={questions}
               attendees={attendees}

@@ -31,7 +31,9 @@ export function useEventAutoSave({
   isBusy,
   debounceMs = 1500,
 }: UseEventAutoSaveOptions): UseEventAutoSaveResult {
-  const [draftId, setDraftIdState] = useState<string | undefined>(initialDraftId);
+  const [draftId, setDraftIdState] = useState<string | undefined>(
+    initialDraftId
+  );
   const [autoSaveStatus, setAutoSaveStatus] = useState<AutoSaveStatus>("idle");
 
   // Refs so the async closure always reads latest values
@@ -39,7 +41,9 @@ export function useEventAutoSave({
   const isBusyRef = useRef(isBusy);
   const isDirtyRef = useRef(false);
   const autoSaveInFlightRef = useRef(false);
-  const savedResetTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const savedResetTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(
+    undefined
+  );
   // Set when a field change arrives while a save is in flight — triggers a trailing save.
   const hasPendingRef = useRef(false);
   // Only true after this session writes a draft — not inherited from initialDraftId.
@@ -80,11 +84,18 @@ export function useEventAutoSave({
       if (!isDirtyRef.current) return;
 
       const data = form.getValues();
-      if (!draftIdRef.current && !data.title && !data.description && !data.tag) return;
+      if (!draftIdRef.current && !data.title && !data.description && !data.tag)
+        return;
 
       const payload =
         data.date && data.time
-          ? { ...data, datetimeISO: localInputsToUtcDate(data.date, data.time).toISOString() }
+          ? {
+              ...data,
+              datetimeISO: localInputsToUtcDate(
+                data.date,
+                data.time
+              ).toISOString(),
+            }
           : data;
 
       hasPendingRef.current = false;
@@ -104,7 +115,10 @@ export function useEventAutoSave({
             }
             hasSavedRef.current = true;
             setAutoSaveStatus("saved");
-            savedResetTimerRef.current = setTimeout(() => setAutoSaveStatus("idle"), 3000);
+            savedResetTimerRef.current = setTimeout(
+              () => setAutoSaveStatus("idle"),
+              3000
+            );
           } else {
             setAutoSaveStatus("idle");
           }

@@ -8,7 +8,10 @@ import { getChurchesByManager } from "@/lib/actions/data-churches";
 export default async function CreateSeriesPage() {
   const session = await auth();
 
-  if (session?.user?.role !== UserRole.ORGANISER && session?.user?.role !== UserRole.ADMIN) {
+  if (
+    session?.user?.role !== UserRole.ORGANISER &&
+    session?.user?.role !== UserRole.ADMIN
+  ) {
     redirect("/");
   }
 
@@ -18,7 +21,7 @@ export default async function CreateSeriesPage() {
     <div className="mx-auto max-w-lg">
       <PageHeader title="Create Series" />
       <div className="px-4 pb-6">
-        <div className="rounded-2xl bg-white shadow-card p-5">
+        <div className="shadow-card rounded-2xl bg-white p-5">
           <CreateSeriesForm churches={churches} />
         </div>
       </div>

@@ -11,13 +11,21 @@ interface FollowSeriesButtonProps {
   followerCount: number;
 }
 
-export function FollowSeriesButton({ seriesId, isFollowing, followerCount }: FollowSeriesButtonProps) {
+export function FollowSeriesButton({
+  seriesId,
+  isFollowing,
+  followerCount,
+}: FollowSeriesButtonProps) {
   const [isPending, startTransition] = useTransition();
-  const [optimisticFollowing, setOptimisticFollowing] = useOptimistic(isFollowing);
+  const [optimisticFollowing, setOptimisticFollowing] =
+    useOptimistic(isFollowing);
 
-  const displayCount = optimisticFollowing !== isFollowing
-    ? optimisticFollowing ? followerCount + 1 : followerCount - 1
-    : followerCount;
+  const displayCount =
+    optimisticFollowing !== isFollowing
+      ? optimisticFollowing
+        ? followerCount + 1
+        : followerCount - 1
+      : followerCount;
 
   function handleClick() {
     startTransition(async () => {
@@ -32,10 +40,10 @@ export function FollowSeriesButton({ seriesId, isFollowing, followerCount }: Fol
   }
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-10 bg-white shadow-[0px_-2px_31px_0px_#0000001A] pb-safe">
+    <div className="pb-safe fixed right-0 bottom-0 left-0 z-10 bg-white shadow-[0px_-2px_31px_0px_#0000001A]">
       <div className="flex items-center justify-between gap-4 px-4 py-4">
         <div className="flex flex-col gap-0.5">
-          <p className="text-xs text-muted-foreground">Followers</p>
+          <p className="text-muted-foreground text-xs">Followers</p>
           <p className="text-base font-bold">{displayCount}</p>
         </div>
 

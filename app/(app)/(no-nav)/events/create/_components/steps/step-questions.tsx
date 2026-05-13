@@ -3,12 +3,24 @@
 
 import { useState } from "react";
 import { useFormContext, useFieldArray } from "react-hook-form";
-import { ChevronUp, ChevronDown, Lock, Pencil, Trash2, Plus } from "lucide-react";
+import {
+  ChevronUp,
+  ChevronDown,
+  Lock,
+  Pencil,
+  Trash2,
+  Plus,
+} from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { QuestionDrawer } from "./question-drawer";
-import { TYPE_LABELS, type QuestionType, type QuestionInput, type LibraryItem } from "@/lib/validations/questions";
+import {
+  TYPE_LABELS,
+  type QuestionType,
+  type QuestionInput,
+  type LibraryItem,
+} from "@/lib/validations/questions";
 import type { CreateEventInput } from "@/lib/validations/event";
 
 interface StepQuestionsProps {
@@ -54,7 +66,8 @@ export function StepQuestions({ libraryItems, locked }: StepQuestionsProps) {
         <Alert>
           <Lock className="size-4" />
           <AlertDescription>
-            Questions are locked because attendees have already submitted responses. To change questions, you must first remove all responses.
+            Questions are locked because attendees have already submitted
+            responses. To change questions, you must first remove all responses.
           </AlertDescription>
         </Alert>
       )}
@@ -63,7 +76,9 @@ export function StepQuestions({ libraryItems, locked }: StepQuestionsProps) {
         <p className="text-sm font-medium">Custom Questions</p>
 
         {fields.length === 0 && (
-          <p className="text-xs text-muted-foreground">No questions added yet.</p>
+          <p className="text-muted-foreground text-xs">
+            No questions added yet.
+          </p>
         )}
 
         {fields.map((field, index) => (
@@ -71,19 +86,21 @@ export function StepQuestions({ libraryItems, locked }: StepQuestionsProps) {
             key={field.id}
             className="flex items-start justify-between gap-2 rounded-xl border bg-white px-3 py-3"
           >
-            <div className="flex flex-col gap-1 flex-1 min-w-0">
-              <p className="text-sm font-medium line-clamp-2">{field.label}</p>
+            <div className="flex min-w-0 flex-1 flex-col gap-1">
+              <p className="line-clamp-2 text-sm font-medium">{field.label}</p>
               <div className="flex items-center gap-1.5">
                 <Badge variant="secondary" className="text-xs">
                   {TYPE_LABELS[field.type as QuestionType]}
                 </Badge>
                 {field.required && (
-                  <Badge variant="outline" className="text-xs">Required</Badge>
+                  <Badge variant="outline" className="text-xs">
+                    Required
+                  </Badge>
                 )}
               </div>
             </div>
 
-            <div className="flex items-center gap-1 shrink-0">
+            <div className="flex shrink-0 items-center gap-1">
               <Button
                 type="button"
                 variant="ghost"
@@ -121,7 +138,7 @@ export function StepQuestions({ libraryItems, locked }: StepQuestionsProps) {
                 type="button"
                 variant="ghost"
                 size="icon"
-                className="size-8 text-destructive hover:text-destructive"
+                className="text-destructive hover:text-destructive size-8"
                 disabled={locked}
                 onClick={() => remove(index)}
                 aria-label="Delete question"
@@ -140,7 +157,7 @@ export function StepQuestions({ libraryItems, locked }: StepQuestionsProps) {
             className="w-full"
             onClick={openAdd}
           >
-            <Plus className="size-4 mr-1" />
+            <Plus className="mr-1 size-4" />
             Add question
           </Button>
         )}
@@ -153,7 +170,9 @@ export function StepQuestions({ libraryItems, locked }: StepQuestionsProps) {
           setDrawerOpen(o);
           if (!o) setEditingIndex(null);
         }}
-        initial={editingIndex !== null ? (fields[editingIndex] as QuestionInput) : null}
+        initial={
+          editingIndex !== null ? (fields[editingIndex] as QuestionInput) : null
+        }
         libraryItems={libraryItems}
         onSave={handleSave}
       />

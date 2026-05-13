@@ -14,7 +14,7 @@ export default async function NotificationsPage() {
     <div className="bg-background">
       <PageHeader title="Notifications" />
       <div className="px-4 pb-8">
-        <p className="text-sm text-muted-foreground mb-4">
+        <p className="text-muted-foreground mb-4 text-sm">
           Choose which notifications you receive.
         </p>
         <NotificationSettings preferences={preferences} />

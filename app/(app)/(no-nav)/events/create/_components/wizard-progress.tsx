@@ -8,13 +8,17 @@ interface WizardProgressProps {
   stepLabel: string;
 }
 
-export function WizardProgress({ currentStep, totalSteps, stepLabel }: WizardProgressProps) {
+export function WizardProgress({
+  currentStep,
+  totalSteps,
+  stepLabel,
+}: WizardProgressProps) {
   const value = (currentStep / totalSteps) * 100;
 
   return (
     <div className="flex flex-col gap-1.5">
       <Progress value={value} className="h-2" />
-      <p className="text-xs text-muted-foreground">
+      <p className="text-muted-foreground text-xs">
         Step {currentStep} of {totalSteps} — {stepLabel}
       </p>
     </div>

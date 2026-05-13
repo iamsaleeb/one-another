@@ -19,7 +19,11 @@ export function DeleteSeriesButton({ seriesId }: { seriesId: string }) {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button variant="outline" size="icon" className="size-9 text-destructive border-destructive/30 hover:bg-destructive/10">
+        <Button
+          variant="outline"
+          size="icon"
+          className="text-destructive border-destructive/30 hover:bg-destructive/10 size-9"
+        >
           <Trash2 className="size-4" />
         </Button>
       </DialogTrigger>
@@ -27,7 +31,8 @@ export function DeleteSeriesButton({ seriesId }: { seriesId: string }) {
         <DialogHeader>
           <DialogTitle>Delete Series</DialogTitle>
           <DialogDescription>
-            Are you sure? This series and all its sessions will be permanently deleted and cannot be undone.
+            Are you sure? This series and all its sessions will be permanently
+            deleted and cannot be undone.
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>

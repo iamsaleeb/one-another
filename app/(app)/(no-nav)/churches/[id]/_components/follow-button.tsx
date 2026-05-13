@@ -3,7 +3,10 @@
 import { useTransition } from "react";
 import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { followChurchAction, unfollowChurchAction } from "@/lib/actions/churches";
+import {
+  followChurchAction,
+  unfollowChurchAction,
+} from "@/lib/actions/churches";
 
 interface FollowButtonProps {
   churchId: string;

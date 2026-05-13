@@ -12,7 +12,14 @@ interface PriceInputProps {
   className?: string;
 }
 
-export function PriceInput({ value, onChange, onBlur, name, disabled, className }: PriceInputProps) {
+export function PriceInput({
+  value,
+  onChange,
+  onBlur,
+  name,
+  disabled,
+  className,
+}: PriceInputProps) {
   const [displayValue, setDisplayValue] = useState(() => {
     if (!value) return "";
     const num = parseFloat(value);
@@ -42,8 +49,13 @@ export function PriceInput({ value, onChange, onBlur, name, disabled, className 
   }
 
   return (
-    <div className={cn("flex h-10 w-full rounded-md border border-input bg-background text-sm ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2", className)}>
-      <span className="flex items-center px-3 text-muted-foreground border-r border-input bg-muted rounded-l-md select-none">
+    <div
+      className={cn(
+        "border-input bg-background ring-offset-background focus-within:ring-ring flex h-10 w-full rounded-md border text-sm focus-within:ring-2 focus-within:ring-offset-2",
+        className
+      )}
+    >
+      <span className="text-muted-foreground border-input bg-muted flex items-center rounded-l-md border-r px-3 select-none">
         A$
       </span>
       <input
@@ -55,7 +67,7 @@ export function PriceInput({ value, onChange, onBlur, name, disabled, className 
         onBlur={handleBlur}
         placeholder="0.00"
         disabled={disabled}
-        className="flex-1 px-3 bg-transparent outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
+        className="placeholder:text-muted-foreground flex-1 bg-transparent px-3 outline-none disabled:cursor-not-allowed disabled:opacity-50"
       />
     </div>
   );

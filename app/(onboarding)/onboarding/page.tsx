@@ -13,7 +13,5 @@ export default async function OnboardingPage() {
     redirect("/");
   }
 
-  return (
-    <OnboardingForm />
-  );
+  return <OnboardingForm />;
 }

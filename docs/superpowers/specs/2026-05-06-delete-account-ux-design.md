@@ -1,4 +1,5 @@
 # Delete Account UX — Design Spec
+
 **Date:** 2026-05-06
 
 ## Problem
@@ -16,7 +17,7 @@ Remove `<DeleteAccountButton />` and the Danger Zone card entirely.
 Add a new **Account card** (same style as Settings/Legal: `rounded-2xl bg-white shadow-card divide-y divide-border overflow-hidden`) positioned between the About card and the Sign Out button. Contains one row:
 
 - Icon: `UserX` (lucide-react), destructive color
-- Label: "Delete Account", destructive color  
+- Label: "Delete Account", destructive color
 - Trailing: `ChevronRight`
 - Navigates to: `/profile/account`
 
@@ -50,12 +51,12 @@ No dialog on this page. The page itself is the confirmation screen.
 
 ## File Changes
 
-| Action | File |
-|--------|------|
-| Create | `app/(app)/profile/account/page.tsx` |
+| Action | File                                                            |
+| ------ | --------------------------------------------------------------- |
+| Create | `app/(app)/profile/account/page.tsx`                            |
 | Create | `app/(app)/profile/account/_components/delete-account-form.tsx` |
-| Delete | `app/(app)/profile/_components/delete-account-button.tsx` |
-| Update | `app/(app)/profile/page.tsx` |
+| Delete | `app/(app)/profile/_components/delete-account-button.tsx`       |
+| Update | `app/(app)/profile/page.tsx`                                    |
 
 ## Data / Actions
 

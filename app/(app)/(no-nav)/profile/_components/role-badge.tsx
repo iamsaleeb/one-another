@@ -11,8 +11,10 @@ import {
 } from "@/components/ui/tooltip";
 
 const ROLE_DESCRIPTIONS: Record<string, string> = {
-  ORGANISER: "Organisers can create and manage events and series for their church.",
-  ADMIN: "Admins can manage organisers and settings for their assigned churches.",
+  ORGANISER:
+    "Organisers can create and manage events and series for their church.",
+  ADMIN:
+    "Admins can manage organisers and settings for their assigned churches.",
 };
 
 export function RoleBadge({ role }: { role: "ORGANISER" | "ADMIN" }) {
@@ -24,10 +26,10 @@ export function RoleBadge({ role }: { role: "ORGANISER" | "ADMIN" }) {
         <TooltipTrigger asChild>
           <Badge
             variant="secondary"
-            className="mt-1 gap-1 cursor-pointer"
+            className="mt-1 cursor-pointer gap-1"
             onClick={() => setOpen((v) => !v)}
           >
-            <Shield className="w-3 h-3" />
+            <Shield className="h-3 w-3" />
             {role === "ADMIN" ? "Admin" : "Organiser"}
           </Badge>
         </TooltipTrigger>

@@ -1,12 +1,33 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { AlertTriangle, Calendar, Church, FileEdit, MapPin, Pencil, Repeat, TableProperties, User } from "lucide-react";
+import {
+  AlertTriangle,
+  Calendar,
+  Church,
+  FileEdit,
+  MapPin,
+  Pencil,
+  Repeat,
+  TableProperties,
+  User,
+} from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { auth } from "@/auth";
-import { getEventById, getEventAttendees, getMyEventAttendance, getEventMeta } from "@/lib/actions/data-events";
-import { getEventQuestions, getMyResponses } from "@/lib/actions/data-questions";
-import { parseEventMetadata, parseEventAttendeeMetadata } from "@/lib/validations/event";
+import {
+  getEventById,
+  getEventAttendees,
+  getMyEventAttendance,
+  getEventMeta,
+} from "@/lib/actions/data-events";
+import {
+  getEventQuestions,
+  getMyResponses,
+} from "@/lib/actions/data-questions";
+import {
+  parseEventMetadata,
+  parseEventAttendeeMetadata,
+} from "@/lib/validations/event";
 import { canManageChurch } from "@/lib/permissions";
 import { EventDatetime } from "@/components/event-datetime";
 import { formatDateOnly, parseDateOfBirth } from "@/lib/datetime";
@@ -29,7 +50,11 @@ export async function generateMetadata({ params }: Props) {
   if (event.isDraft) {
     // Draft: need auth check — infrequent, cost is acceptable
     const session = await auth();
-    const canManage = await canManageChurch(session?.user?.id, session?.user?.role, event.churchId);
+    const canManage = await canManageChurch(
+      session?.user?.id,
+      session?.user?.role,
+      event.churchId
+    );
     if (!canManage) return { title: "Event Not Found" };
   }
   return { title: `${event.title} — One Another` };
@@ -40,12 +65,18 @@ export default async function EventDetailPage({ params }: Props) {
 
   const [event, myAttendance] = await Promise.all([
     getEventById(id),
-    session?.user?.id ? getMyEventAttendance(id, session.user.id) : Promise.resolve(null),
+    session?.user?.id
+      ? getMyEventAttendance(id, session.user.id)
+      : Promise.resolve(null),
   ]);
 
   if (!event) notFound();
 
-  const canManage = await canManageChurch(session?.user?.id, session?.user?.role, event.churchId);
+  const canManage = await canManageChurch(
+    session?.user?.id,
+    session?.user?.role,
+    event.churchId
+  );
 
   if (event.isDraft && !canManage) notFound();
   const attendees = canManage ? await getEventAttendees(id) : undefined;
@@ -54,9 +85,10 @@ export default async function EventDetailPage({ params }: Props) {
 
   const questions = await getEventQuestions(id);
 
-  const myResponses = session?.user?.id && questions.length > 0 && isAttending
-    ? await getMyResponses(id, session.user.id)
-    : {};
+  const myResponses =
+    session?.user?.id && questions.length > 0 && isAttending
+      ? await getMyResponses(id, session.user.id)
+      : {};
 
   const { registration, camp } = parseEventMetadata(event.metadata);
   const myAttendeeMeta = myAttendance
@@ -74,7 +106,9 @@ export default async function EventDetailPage({ params }: Props) {
           <Alert className="border-amber-200 bg-amber-50 text-amber-700 [&>svg]:text-amber-600">
             <FileEdit className="size-4" />
             <AlertTitle>This event is a draft.</AlertTitle>
-            <AlertDescription className="text-amber-600/80">Only organisers can see this page.</AlertDescription>
+            <AlertDescription className="text-amber-600/80">
+              Only organisers can see this page.
+            </AlertDescription>
           </Alert>
         )}
 
@@ -90,27 +124,33 @@ export default async function EventDetailPage({ params }: Props) {
         )}
 
         {/* Info card */}
-        <div className="rounded-2xl bg-white shadow-card p-5 flex flex-col gap-4">
+        <div className="shadow-card flex flex-col gap-4 rounded-2xl bg-white p-5">
           <div className="flex items-start justify-between gap-2">
-            <h1 className="text-xl font-bold leading-snug">{event.title}</h1>
+            <h1 className="text-xl leading-snug font-bold">{event.title}</h1>
             {canManage && (
-              <div className="flex flex-col items-end gap-2 shrink-0">
+              <div className="flex shrink-0 flex-col items-end gap-2">
                 <div className="flex items-center gap-2">
-                  <Button asChild variant="outline" size="icon" className="size-9">
+                  <Button
+                    asChild
+                    variant="outline"
+                    size="icon"
+                    className="size-9"
+                  >
                     <Link href={`/events/${id}/edit`}>
                       <Pencil className="size-4" />
                     </Link>
                   </Button>
-                  {event.cancelledAt
-                    ? <UncancelEventButton eventId={id} />
-                    : <CancelEventButton eventId={id} />
-                  }
+                  {event.cancelledAt ? (
+                    <UncancelEventButton eventId={id} />
+                  ) : (
+                    <CancelEventButton eventId={id} />
+                  )}
                   <DeleteEventButton eventId={id} />
                 </div>
                 {event.requiresRegistration && questions.length > 0 && (
                   <Button asChild variant="outline" size="sm" className="mt-2">
                     <Link href={`/events/${id}/responses`}>
-                      <TableProperties className="size-4 mr-1.5" />
+                      <TableProperties className="mr-1.5 size-4" />
                       View responses
                     </Link>
                   </Button>
@@ -122,28 +162,41 @@ export default async function EventDetailPage({ params }: Props) {
           <div className="flex flex-col gap-4">
             {event.church && (
               <InfoField icon={Church} label="Church">
-                <Link href={`/churches/${event.church.id}`} className="text-primary hover:underline">
+                <Link
+                  href={`/churches/${event.church.id}`}
+                  className="text-primary hover:underline"
+                >
                   {event.church.name}
                 </Link>
               </InfoField>
             )}
-            <InfoField icon={User} label="Host">{event.host ?? "TBD"}</InfoField>
+            <InfoField icon={User} label="Host">
+              {event.host ?? "TBD"}
+            </InfoField>
             <InfoField icon={Calendar} label={camp ? "Dates" : "Date & Time"}>
               {camp ? (
                 <span>
                   <EventDatetime datetime={event.datetime} />
                   {camp.endDate && (
-                    <> &rarr; {formatDateOnly(parseDateOfBirth(camp.endDate))}</>
+                    <>
+                      {" "}
+                      &rarr; {formatDateOnly(parseDateOfBirth(camp.endDate))}
+                    </>
                   )}
                 </span>
               ) : (
                 <EventDatetime datetime={event.datetime} />
               )}
             </InfoField>
-            <InfoField icon={MapPin} label="Location">{event.location ?? "TBD"}</InfoField>
+            <InfoField icon={MapPin} label="Location">
+              {event.location ?? "TBD"}
+            </InfoField>
             {event.series && (
               <InfoField icon={Repeat} label="Part of Series">
-                <Link href={`/series/${event.series.id}`} className="text-primary hover:underline">
+                <Link
+                  href={`/series/${event.series.id}`}
+                  className="text-primary hover:underline"
+                >
                   {event.series.name}
                 </Link>
               </InfoField>
@@ -152,13 +205,13 @@ export default async function EventDetailPage({ params }: Props) {
         </div>
 
         {/* Tag label */}
-        <p className="text-xs font-bold text-muted-foreground tracking-widest text-center uppercase">
+        <p className="text-muted-foreground text-center text-xs font-bold tracking-widest uppercase">
           | {event.tag} |
         </p>
 
         {/* Description card */}
-        <div className="rounded-2xl bg-white shadow-card p-5">
-          <p className="text-sm text-foreground leading-relaxed">
+        <div className="shadow-card rounded-2xl bg-white p-5">
+          <p className="text-foreground text-sm leading-relaxed">
             {event.description}
           </p>
         </div>

@@ -10,7 +10,11 @@ export function EventList({ events }: { events: Event[] }) {
       {events.map((item) => (
         <EventCard
           key={item.id}
-          event={{ ...item, badge: item.tag, churchName: item.church?.name ?? "" }}
+          event={{
+            ...item,
+            badge: item.tag,
+            churchName: item.church?.name ?? "",
+          }}
         />
       ))}
     </section>

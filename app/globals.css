@@ -5,7 +5,7 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-  --shadow-card: 4px 4px 10px 0px #E8E8E866;
+  --shadow-card: 4px 4px 10px 0px #e8e8e866;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
@@ -50,7 +50,7 @@
 
 :root {
   --radius: 0.65rem;
-  --background: #FAFAFA;
+  --background: #fafafa;
   --foreground: oklch(0.141 0.005 285.823);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.141 0.005 285.823);

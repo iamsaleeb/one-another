@@ -14,7 +14,10 @@ interface Props {
 export default async function CreateEventPage({ searchParams }: Props) {
   const session = await auth();
 
-  if (session?.user?.role !== UserRole.ORGANISER && session?.user?.role !== UserRole.ADMIN) {
+  if (
+    session?.user?.role !== UserRole.ORGANISER &&
+    session?.user?.role !== UserRole.ADMIN
+  ) {
     redirect("/");
   }
 
@@ -32,7 +35,16 @@ export default async function CreateEventPage({ searchParams }: Props) {
       <div className="px-4 pb-6">
         <EventWizard
           churches={churches}
-          series={series ? { id: series.id, name: series.name, churchId: series.church.id, churchName: series.church.name } : undefined}
+          series={
+            series
+              ? {
+                  id: series.id,
+                  name: series.name,
+                  churchId: series.church.id,
+                  churchName: series.church.name,
+                }
+              : undefined
+          }
           libraryItems={libraryItems}
         />
       </div>

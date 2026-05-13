@@ -28,27 +28,38 @@ function TopNavInner({ user }: TopNavProps) {
   const showBackButton = useShowBackButton();
 
   return (
-    <header className="sticky top-0 z-50 bg-primary pt-safe">
+    <header className="bg-primary pt-safe sticky top-0 z-50">
       <div className="flex h-14 items-center justify-between px-4">
         {showBackButton ? (
           <button
             onClick={() => router.back()}
-            className="flex items-center text-primary-foreground"
+            className="text-primary-foreground flex items-center"
             aria-label="Go back"
           >
-            <ChevronLeft className="w-6 h-6" />
+            <ChevronLeft className="h-6 w-6" />
           </button>
         ) : (
-          <Link href="/" className="text-xl font-bold tracking-tight text-primary-foreground">
+          <Link
+            href="/"
+            className="text-primary-foreground text-xl font-bold tracking-tight"
+          >
             1Another
           </Link>
         )}
         <Link href="/profile">
-          <Button variant="ghost" size="icon" className="rounded-full hover:bg-primary/80" asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="hover:bg-primary/80 rounded-full"
+            asChild
+          >
             <span>
               <Avatar className="size-8">
-                <AvatarImage src={user?.image ?? ""} alt={user?.name ?? "Profile"} />
-                <AvatarFallback className="text-xs font-semibold bg-primary-foreground/20 text-primary-foreground">
+                <AvatarImage
+                  src={user?.image ?? ""}
+                  alt={user?.name ?? "Profile"}
+                />
+                <AvatarFallback className="bg-primary-foreground/20 text-primary-foreground text-xs font-semibold">
                   {getInitials(user?.name, user?.email)}
                 </AvatarFallback>
               </Avatar>
@@ -58,7 +69,7 @@ function TopNavInner({ user }: TopNavProps) {
       </div>
 
       {!showBackButton && (
-        <div className="bg-white px-4 py-2.5 border-b border-border">
+        <div className="border-border border-b bg-white px-4 py-2.5">
           <SearchBar
             initialQuery={searchParams.get("q") ?? ""}
             initialWhen={(searchParams.get("when") as WhenFilter) ?? undefined}
@@ -75,9 +86,9 @@ export function TopNav({ user }: TopNavProps) {
   return (
     <Suspense
       fallback={
-        <header className="sticky top-0 z-50 bg-primary pt-safe">
+        <header className="bg-primary pt-safe sticky top-0 z-50">
           <div className="flex h-14 items-center justify-between px-4">
-            <span className="text-xl font-bold tracking-tight text-primary-foreground">
+            <span className="text-primary-foreground text-xl font-bold tracking-tight">
               1Another
             </span>
           </div>

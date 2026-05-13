@@ -69,10 +69,7 @@ export function StepWhenWhere() {
           <FormItem>
             <FormLabel>Host</FormLabel>
             <FormControl>
-              <Input
-                placeholder="e.g. Pastor John Smith"
-                {...field}
-              />
+              <Input placeholder="e.g. Pastor John Smith" {...field} />
             </FormControl>
             <FormMessage />
           </FormItem>

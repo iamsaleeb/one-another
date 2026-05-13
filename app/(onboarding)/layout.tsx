@@ -9,7 +9,7 @@ export default function OnboardingLayout({
   return (
     <Suspense>
       <SessionProvider>
-        <div className="flex min-h-svh flex-col bg-background pt-safe pb-safe">
+        <div className="bg-background pt-safe pb-safe flex min-h-svh flex-col">
           {children}
         </div>
       </SessionProvider>

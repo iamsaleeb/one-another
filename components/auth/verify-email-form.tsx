@@ -25,8 +25,15 @@ import {
   InputOTPSeparator,
   InputOTPSlot,
 } from "@/components/ui/input-otp";
-import { otpSchema, type OtpInput, type RegisterInput } from "@/lib/validations/auth";
-import { verifyRegistrationOtpAction, registerAction } from "@/lib/actions/auth";
+import {
+  otpSchema,
+  type OtpInput,
+  type RegisterInput,
+} from "@/lib/validations/auth";
+import {
+  verifyRegistrationOtpAction,
+  registerAction,
+} from "@/lib/actions/auth";
 
 const RESEND_COOLDOWN_SECONDS = 60;
 
@@ -36,7 +43,11 @@ interface VerifyEmailFormProps {
   registrationData: RegisterInput;
 }
 
-export function VerifyEmailForm({ email, password, registrationData }: VerifyEmailFormProps) {
+export function VerifyEmailForm({
+  email,
+  password,
+  registrationData,
+}: VerifyEmailFormProps) {
   const [cooldown, setCooldown] = useState(RESEND_COOLDOWN_SECONDS);
   const [resendError, setResendError] = useState<string | null>(null);
 
@@ -78,8 +89,9 @@ export function VerifyEmailForm({ email, password, registrationData }: VerifyEma
       <CardHeader className="text-center">
         <CardTitle className="text-xl">Check your email</CardTitle>
         <CardDescription>
-          We sent a 6-digit code to <span className="font-medium text-foreground">{email}</span>.
-          Enter it below to verify your account.
+          We sent a 6-digit code to{" "}
+          <span className="text-foreground font-medium">{email}</span>. Enter it
+          below to verify your account.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -88,7 +100,9 @@ export function VerifyEmailForm({ email, password, registrationData }: VerifyEma
             <div className="grid gap-6">
               {form.formState.errors.root && (
                 <Alert variant="destructive">
-                  <AlertDescription>{form.formState.errors.root.message}</AlertDescription>
+                  <AlertDescription>
+                    {form.formState.errors.root.message}
+                  </AlertDescription>
                 </Alert>
               )}
               {resendError && (
@@ -129,13 +143,13 @@ export function VerifyEmailForm({ email, password, registrationData }: VerifyEma
               <Button type="submit" className="w-full" disabled={isSubmitting}>
                 {isSubmitting ? "Verifying..." : "Verify email"}
               </Button>
-              <div className="text-center text-sm text-muted-foreground">
+              <div className="text-muted-foreground text-center text-sm">
                 Didn&apos;t receive a code?{" "}
                 <button
                   type="button"
                   onClick={handleResend}
                   disabled={cooldown > 0}
-                  className="underline underline-offset-4 hover:text-primary disabled:cursor-not-allowed disabled:opacity-50"
+                  className="hover:text-primary underline underline-offset-4 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {cooldown > 0 ? `Resend in ${cooldown}s` : "Resend code"}
                 </button>

@@ -9,7 +9,10 @@ import { toast } from "sonner";
 import { CloudUpload, Check, Loader2 } from "lucide-react";
 import { Form } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
-import { createEventSchema, type CreateEventInput } from "@/lib/validations/event";
+import {
+  createEventSchema,
+  type CreateEventInput,
+} from "@/lib/validations/event";
 import { saveDraftAction, saveEventAction } from "@/lib/actions/events-crud";
 import { localInputsToUtcDate, utcIsoToLocalInputs } from "@/lib/datetime";
 import { WizardProgress } from "./wizard-progress";
@@ -42,10 +45,27 @@ interface EventWizardProps {
   questionsLocked?: boolean;
 }
 
-type StepKey = "basics" | "whenWhere" | "registration" | "questions" | "campDetails" | "review";
-interface WizardStep { label: string; key: StepKey; fields: Array<keyof CreateEventInput> }
+type StepKey =
+  | "basics"
+  | "whenWhere"
+  | "registration"
+  | "questions"
+  | "campDetails"
+  | "review";
+interface WizardStep {
+  label: string;
+  key: StepKey;
+  fields: Array<keyof CreateEventInput>;
+}
 
-export function EventWizard({ churches, series, eventId, defaultValues, libraryItems, questionsLocked }: EventWizardProps) {
+export function EventWizard({
+  churches,
+  series,
+  eventId,
+  defaultValues,
+  libraryItems,
+  questionsLocked,
+}: EventWizardProps) {
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
@@ -57,7 +77,12 @@ export function EventWizard({ churches, series, eventId, defaultValues, libraryI
   const form = useForm<CreateEventInput>({
     resolver: zodResolver(createEventSchema) as Resolver<CreateEventInput>,
     defaultValues: defaultValues
-      ? { date: seedDatetime?.date ?? "", time: seedDatetime?.time ?? "", questions: [], ...restDefaultValues }
+      ? {
+          date: seedDatetime?.date ?? "",
+          time: seedDatetime?.time ?? "",
+          questions: [],
+          ...restDefaultValues,
+        }
       : {
           title: "",
           date: "",
@@ -82,23 +107,65 @@ export function EventWizard({ churches, series, eventId, defaultValues, libraryI
         },
   });
 
-  const { draftId, setDraftId, autoSaveStatus, markPublished } = useEventAutoSave({
-    form,
-    initialDraftId: eventId,
-    initialIsDraft: defaultValues?.isDraft ?? true,
-    isBusy: isSaving || isPublishing,
-  });
+  const { draftId, setDraftId, autoSaveStatus, markPublished } =
+    useEventAutoSave({
+      form,
+      initialDraftId: eventId,
+      initialIsDraft: defaultValues?.isDraft ?? true,
+      isBusy: isSaving || isPublishing,
+    });
 
   const tag = useWatch({ control: form.control, name: "tag" });
   const isDraft = useWatch({ control: form.control, name: "isDraft" });
-  const requiresRegistration = useWatch({ control: form.control, name: "requiresRegistration" });
+  const requiresRegistration = useWatch({
+    control: form.control,
+    name: "requiresRegistration",
+  });
 
   const activeSteps: WizardStep[] = [
-    { label: "Basics", key: "basics", fields: ["title", "description", "tag", "churchId", "photoUrl"] },
-    { label: "When & Where", key: "whenWhere", fields: ["date", "time", "location", "host"] },
-    { label: "Registration", key: "registration", fields: ["price", "requiresRegistration", "capacity", "collectPhone", "collectNotes"] },
-    ...(requiresRegistration ? [{ label: "Questions", key: "questions" as StepKey, fields: ["questions"] as Array<keyof CreateEventInput> }] : []),
-    ...(tag === "Camp" ? [{ label: "Camp Details", key: "campDetails" as StepKey, fields: ["campEndDate", "campAllowPartialRegistration", "campAgenda"] as Array<keyof CreateEventInput> }] : []),
+    {
+      label: "Basics",
+      key: "basics",
+      fields: ["title", "description", "tag", "churchId", "photoUrl"],
+    },
+    {
+      label: "When & Where",
+      key: "whenWhere",
+      fields: ["date", "time", "location", "host"],
+    },
+    {
+      label: "Registration",
+      key: "registration",
+      fields: [
+        "price",
+        "requiresRegistration",
+        "capacity",
+        "collectPhone",
+        "collectNotes",
+      ],
+    },
+    ...(requiresRegistration
+      ? [
+          {
+            label: "Questions",
+            key: "questions" as StepKey,
+            fields: ["questions"] as Array<keyof CreateEventInput>,
+          },
+        ]
+      : []),
+    ...(tag === "Camp"
+      ? [
+          {
+            label: "Camp Details",
+            key: "campDetails" as StepKey,
+            fields: [
+              "campEndDate",
+              "campAllowPartialRegistration",
+              "campAgenda",
+            ] as Array<keyof CreateEventInput>,
+          },
+        ]
+      : []),
     { label: "Review", key: "review", fields: [] },
   ];
 
@@ -117,7 +184,10 @@ export function EventWizard({ churches, series, eventId, defaultValues, libraryI
   const buildData = (): CreateEventInput & { datetimeISO?: string } => {
     const data = form.getValues();
     if (data.date && data.time) {
-      return { ...data, datetimeISO: localInputsToUtcDate(data.date, data.time).toISOString() };
+      return {
+        ...data,
+        datetimeISO: localInputsToUtcDate(data.date, data.time).toISOString(),
+      };
     }
     return data;
   };
@@ -130,7 +200,9 @@ export function EventWizard({ churches, series, eventId, defaultValues, libraryI
     if (!valid) return;
     // campEndDate is optional in schema (allows partial drafts) but required to publish
     if (step.key === "campDetails" && !form.getValues("campEndDate")) {
-      form.setError("campEndDate", { message: "End date is required for camp events" });
+      form.setError("campEndDate", {
+        message: "End date is required for camp events",
+      });
       return;
     }
     setCurrentStep((s) => s + 1);
@@ -141,9 +213,16 @@ export function EventWizard({ churches, series, eventId, defaultValues, libraryI
   const handleSaveDraft = async () => {
     setIsSaving(true);
     try {
-      const result = await saveDraftAction(draftId, { ...buildData(), isDraft: true });
+      const result = await saveDraftAction(draftId, {
+        ...buildData(),
+        isDraft: true,
+      });
       if (!("eventId" in result)) {
-        toast.error("error" in result ? result.error : "Please check your entries and try again.");
+        toast.error(
+          "error" in result
+            ? result.error
+            : "Please check your entries and try again."
+        );
         return;
       }
       setDraftId(result.eventId);
@@ -160,16 +239,24 @@ export function EventWizard({ churches, series, eventId, defaultValues, libraryI
       let id = draftId;
       if (!id) {
         // Edge case: user reaches publish before auto-save has fired
-        const draft = await saveDraftAction(undefined, { ...buildData(), isDraft: true });
+        const draft = await saveDraftAction(undefined, {
+          ...buildData(),
+          isDraft: true,
+        });
         if (!("eventId" in draft)) {
-          toast.error("error" in draft ? draft.error : "Failed to save. Please try again.");
+          toast.error(
+            "error" in draft ? draft.error : "Failed to save. Please try again."
+          );
           return;
         }
         id = draft.eventId;
         setDraftId(id);
         form.setValue("isDraft", true, { shouldDirty: false });
       }
-      const result = await saveEventAction(id, { ...buildData(), isDraft: false });
+      const result = await saveEventAction(id, {
+        ...buildData(),
+        isDraft: false,
+      });
       if (result && "error" in result) {
         toast.error(result.error);
         return;
@@ -191,11 +278,21 @@ export function EventWizard({ churches, series, eventId, defaultValues, libraryI
 
   const renderStep = () => {
     switch (currentStepKey) {
-      case "basics": return <StepBasics churches={churches} series={series} />;
-      case "whenWhere": return <StepWhenWhere />;
-      case "registration": return <StepRegistration />;
-      case "questions": return <StepQuestions libraryItems={libraryItems ?? []} locked={questionsLocked} />;
-      case "campDetails": return <StepCampDetails />;
+      case "basics":
+        return <StepBasics churches={churches} series={series} />;
+      case "whenWhere":
+        return <StepWhenWhere />;
+      case "registration":
+        return <StepRegistration />;
+      case "questions":
+        return (
+          <StepQuestions
+            libraryItems={libraryItems ?? []}
+            locked={questionsLocked}
+          />
+        );
+      case "campDetails":
+        return <StepCampDetails />;
       case "review":
         return (
           <StepReview
@@ -207,7 +304,8 @@ export function EventWizard({ churches, series, eventId, defaultValues, libraryI
             churches={churches}
           />
         );
-      default: return null;
+      default:
+        return null;
     }
   };
 
@@ -225,8 +323,8 @@ export function EventWizard({ churches, series, eventId, defaultValues, libraryI
             autoSaveStatus === "saved"
               ? "border-green-200 bg-green-50 text-green-700"
               : autoSaveStatus === "saving"
-              ? "border-border bg-muted/50 text-muted-foreground"
-              : "border-border bg-muted/50 text-muted-foreground"
+                ? "border-border bg-muted/50 text-muted-foreground"
+                : "border-border bg-muted/50 text-muted-foreground"
           }`}
         >
           {autoSaveStatus === "saved" ? (
@@ -239,12 +337,12 @@ export function EventWizard({ churches, series, eventId, defaultValues, libraryI
           {autoSaveStatus === "saving"
             ? "Saving..."
             : autoSaveStatus === "saved"
-            ? "Progress saved"
-            : "Auto-saving progress"}
+              ? "Progress saved"
+              : "Auto-saving progress"}
         </div>
       </div>
 
-      <div className="rounded-2xl bg-white shadow-card p-5">
+      <div className="shadow-card rounded-2xl bg-white p-5">
         <Form {...form}>
           <form className="flex flex-col gap-5">
             {renderStep()}
@@ -261,11 +359,7 @@ export function EventWizard({ churches, series, eventId, defaultValues, libraryI
                     Back
                   </Button>
                 )}
-                <Button
-                  type="button"
-                  onClick={handleNext}
-                  className="flex-1"
-                >
+                <Button type="button" onClick={handleNext} className="flex-1">
                   Next
                 </Button>
               </div>

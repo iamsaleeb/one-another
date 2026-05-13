@@ -70,7 +70,10 @@ export async function searchEventsAndChurches(filters: SearchFilters) {
   const shouldFetchEvents = type === "all" || type === "events";
   const shouldFetchChurches = type === "all" || type === "churches";
 
-  const eventWhere: Prisma.EventWhereInput = { datetime: { gte: new Date() }, isDraft: false };
+  const eventWhere: Prisma.EventWhereInput = {
+    datetime: { gte: new Date() },
+    isDraft: false,
+  };
   if (query) {
     eventWhere.OR = [
       { title: { contains: query, mode: "insensitive" } },

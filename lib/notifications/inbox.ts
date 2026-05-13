@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/db';
+import { prisma } from "@/lib/db";
 
 export interface InboxNotification {
   id: string;
@@ -18,10 +18,18 @@ export async function getInboxNotifications(input: {
   const { userId, page, pageSize } = input;
   const rows = await prisma.notification.findMany({
     where: { userId, sentAt: { not: null } },
-    orderBy: { sentAt: 'desc' },
+    orderBy: { sentAt: "desc" },
     skip: (page - 1) * pageSize,
     take: pageSize,
-    select: { id: true, type: true, title: true, body: true, data: true, sentAt: true, readAt: true },
+    select: {
+      id: true,
+      type: true,
+      title: true,
+      body: true,
+      data: true,
+      sentAt: true,
+      readAt: true,
+    },
   });
   return rows.map((n) => ({
     ...n,

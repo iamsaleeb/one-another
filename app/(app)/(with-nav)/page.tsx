@@ -4,12 +4,10 @@ import { MapPin, SearchX } from "lucide-react";
 import { EventCard } from "@/components/event-card";
 import { searchEventsAndChurches } from "@/lib/actions/data-user";
 import { getEvents } from "@/lib/actions/data-events";
-import { getSeries } from "@/lib/actions/data-series";
 import { PageHeader } from "@/components/ui/page-header";
 import { WHEN_LABELS, TYPE_LABELS, type WhenFilter } from "@/types/search";
 import { searchParamsSchema } from "@/lib/validations/search";
 import { EventList } from "@/app/(app)/_components/event-list";
-import { SeriesRail } from "@/app/(app)/_components/series-rail";
 
 export default async function Home({
   searchParams,
@@ -27,7 +25,7 @@ export default async function Home({
   const query = q?.trim() ?? "";
   const hasFilters = !!(query || type !== "all" || when || category);
 
-  const [searchResults, events, allSeries] = await Promise.all([
+  const [searchResults, events] = await Promise.all([
     hasFilters
       ? searchEventsAndChurches({
           query,
@@ -37,7 +35,6 @@ export default async function Home({
         })
       : Promise.resolve(null),
     hasFilters ? Promise.resolve(null) : getEvents(),
-    hasFilters ? Promise.resolve(null) : getSeries(),
   ]);
 
   const filteredEvents = searchResults?.events ?? null;
@@ -125,10 +122,7 @@ export default async function Home({
           )
         ) : (
           /* ── Default home content ── */
-          <>
-            {events && <EventList events={events} />}
-            {allSeries && <SeriesRail series={allSeries} />}
-          </>
+          <>{events && <EventList events={events} />}</>
         )}
       </div>
     </div>

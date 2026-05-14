@@ -12,15 +12,6 @@ export default function HomeLoading() {
           <Skeleton className="h-24 w-full rounded-2xl" />
           <Skeleton className="h-24 w-full rounded-2xl" />
         </section>
-        <section className="flex flex-col gap-3">
-          <Skeleton className="h-5 w-20" />
-          <div className="flex gap-2">
-            <Skeleton className="h-9 w-24 shrink-0 rounded-full" />
-            <Skeleton className="h-9 w-24 shrink-0 rounded-full" />
-            <Skeleton className="h-9 w-24 shrink-0 rounded-full" />
-            <Skeleton className="h-9 w-24 shrink-0 rounded-full" />
-          </div>
-        </section>
       </div>
     </div>
   );

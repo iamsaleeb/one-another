@@ -22,12 +22,21 @@ export function InfiniteEventList({
   title,
   emptyMessage = "No events",
 }: InfiniteEventListProps) {
-  const [items, setItems] = useState(initialItems);
+  const [extraItems, setExtraItems] = useState<EventCardItem[]>([]);
   const [cursor, setCursor] = useState(initialCursor);
+  const [prevInitialCursor, setPrevInitialCursor] = useState(initialCursor);
   const [isPending, startTransition] = useTransition();
   const sentinelRef = useRef<HTMLDivElement>(null);
   const loadingRef = useRef(false);
   const cursorRef = useRef(initialCursor);
+
+  // React-idiomatic way to reset accumulated state when the server provides a
+  // fresh first page (preferred over useEffect per react.dev/learn/you-might-not-need-an-effect).
+  if (prevInitialCursor !== initialCursor) {
+    setPrevInitialCursor(initialCursor);
+    setExtraItems([]);
+    setCursor(initialCursor);
+  }
 
   useEffect(() => {
     cursorRef.current = cursor;
@@ -46,7 +55,7 @@ export function InfiniteEventList({
         const currentCursor = cursorRef.current;
         startTransition(async () => {
           const result = await loadMore(currentCursor);
-          setItems((prev) => [...prev, ...result.items]);
+          setExtraItems((prev) => [...prev, ...result.items]);
           setCursor(result.nextCursor);
           cursorRef.current = result.nextCursor;
           loadingRef.current = false;
@@ -58,6 +67,8 @@ export function InfiniteEventList({
     observer.observe(sentinel);
     return () => observer.unobserve(sentinel);
   }, [cursor, loadMore]);
+
+  const items = [...initialItems, ...extraItems];
 
   if (items.length === 0 && !cursor) {
     return <EmptyState icon={CalendarDays} label={emptyMessage} />;

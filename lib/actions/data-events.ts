@@ -197,7 +197,7 @@ export async function getEventsByCreatorPaged(
   cacheLife("minutes");
   const rows = await prisma.event.findMany({
     where: { createdById: userId },
-    orderBy: { datetime: "asc" },
+    orderBy: [{ datetime: { sort: "asc", nulls: "last" } }],
     take: PAGE_SIZE + 1,
     ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
     include: {

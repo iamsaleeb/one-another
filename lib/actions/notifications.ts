@@ -10,7 +10,11 @@ import {
   type NotificationTypeKey,
 } from "@/lib/notification-types";
 import { updateUserReminderSchedule } from "@/lib/notifications/queue";
-import { markNotificationsRead } from "@/lib/notifications/inbox";
+import {
+  markNotificationsRead,
+  getInboxNotifications,
+  type InboxNotification,
+} from "@/lib/notifications/inbox";
 import { getStoredNotificationPreferences } from "@/lib/actions/data-user";
 
 export type NotificationPreferenceMap = {
@@ -123,4 +127,19 @@ export async function markReadAction(): Promise<void> {
   await markNotificationsRead(session.user.id);
   updateTag(`user-notifications-${session.user.id}`);
   revalidatePath("/", "layout");
+}
+
+const NOTIFICATIONS_PAGE_SIZE = 20;
+
+export async function loadMoreNotificationsAction(
+  page: number
+): Promise<{ items: InboxNotification[]; hasMore: boolean }> {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("Unauthorized");
+  const items = await getInboxNotifications({
+    userId: session.user.id,
+    page,
+    pageSize: NOTIFICATIONS_PAGE_SIZE,
+  });
+  return { items, hasMore: items.length === NOTIFICATIONS_PAGE_SIZE };
 }

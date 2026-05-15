@@ -46,6 +46,18 @@ export const authConfig = {
         return Response.redirect(new URL("/onboarding", nextUrl));
       }
 
+      const role = auth?.user?.role;
+      if (
+        nextUrl.pathname.startsWith("/organiser") &&
+        role !== "ORGANISER" &&
+        role !== "ADMIN"
+      ) {
+        return Response.redirect(new URL("/", nextUrl));
+      }
+      if (nextUrl.pathname.startsWith("/admin") && role !== "ADMIN") {
+        return Response.redirect(new URL("/", nextUrl));
+      }
+
       return true;
     },
   },

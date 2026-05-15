@@ -37,6 +37,7 @@ jest.mock("@/lib/email/otp", () => ({
   generateOtp: jest.fn(),
   storeOtp: jest.fn(),
   verifyOtp: jest.fn(),
+  isOtpRateLimited: jest.fn().mockResolvedValue(false),
 }));
 
 jest.mock("@/lib/email/send-verification", () => ({

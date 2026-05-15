@@ -56,7 +56,18 @@ export async function generateMetadata({ params }: Props) {
     );
     if (!canManage) return { title: "Event Not Found" };
   }
-  return { title: `${event.title} — One Another` };
+  const description = event.description.slice(0, 160);
+  return {
+    title: `${event.title} — One Another`,
+    description,
+    openGraph: {
+      title: event.title,
+      description,
+      ...(event.photoUrl
+        ? { images: [{ url: event.photoUrl, width: 1200, height: 630 }] }
+        : {}),
+    },
+  };
 }
 
 export default async function EventDetailPage({ params }: Props) {

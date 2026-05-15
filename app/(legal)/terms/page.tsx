@@ -9,7 +9,7 @@ export default function TermsPage() {
     <article className="prose prose-sm max-w-none">
       <h1 className="mb-1 text-2xl font-bold">Terms of Service</h1>
       <p className="text-muted-foreground mb-8 text-sm">
-        Effective date: 1 April 2025
+        Effective date: 15 May 2026
       </p>
 
       <p>

@@ -13,16 +13,20 @@ export default async function NotificationsPage() {
   const session = await auth();
   if (!session?.user?.id) redirect("/");
 
+  const PAGE_SIZE = 20;
   const notifications = await getInboxNotifications({
     userId: session.user.id,
     page: 1,
-    pageSize: 20,
+    pageSize: PAGE_SIZE,
   });
 
   return (
     <div className="flex flex-col">
       <PageHeader title="Notifications" />
-      <NotificationList notifications={notifications} />
+      <NotificationList
+        initialNotifications={notifications}
+        hasMore={notifications.length === PAGE_SIZE}
+      />
     </div>
   );
 }

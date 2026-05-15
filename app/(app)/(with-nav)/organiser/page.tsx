@@ -3,8 +3,8 @@ import { auth } from "@/auth";
 import { UserRole } from "@prisma/client";
 import { PageHeader } from "@/components/ui/page-header";
 import {
-  getEventsByCreator,
-  getEventsNotByCreator,
+  getEventsByCreatorPaged,
+  getEventsNotByCreatorPaged,
 } from "@/lib/actions/data-events";
 import {
   getSeriesByCreator,
@@ -24,11 +24,11 @@ export default async function OrganiserPage() {
 
   const userId = session.user.id;
 
-  const [myEvents, mySeries, communityEvents, communitySeries] =
+  const [myEventsPage, mySeries, communityEventsPage, communitySeries] =
     await Promise.all([
-      getEventsByCreator(userId),
+      getEventsByCreatorPaged(userId, null),
       getSeriesByCreator(userId),
-      getEventsNotByCreator(userId),
+      getEventsNotByCreatorPaged(userId, null),
       getSeriesNotByCreator(userId),
     ]);
 
@@ -36,9 +36,11 @@ export default async function OrganiserPage() {
     <div className="flex flex-col">
       <PageHeader title="Organiser Tools" />
       <OrganiserTabs
-        myEvents={myEvents}
+        myItems={myEventsPage.items}
+        myCursor={myEventsPage.nextCursor}
         mySeries={mySeries}
-        communityEvents={communityEvents}
+        communityItems={communityEventsPage.items}
+        communityCursor={communityEventsPage.nextCursor}
         communitySeries={communitySeries}
       />
     </div>

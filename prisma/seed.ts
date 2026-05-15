@@ -1334,7 +1334,7 @@ async function main() {
     },
   });
 
-  await prisma.event.create({
+  const parishRetreatEvent = await prisma.event.create({
     data: {
       datetime: future(25, "08:00"),
       title: 'Parish Day Retreat — "Stillness & the City"',
@@ -1392,7 +1392,7 @@ async function main() {
     },
   });
 
-  await prisma.event.create({
+  const hikeEvent = await prisma.event.create({
     data: {
       datetime: future(9, "07:30"),
       title: "Youth Sunrise Hike — Barton Creek Greenbelt",
@@ -1554,7 +1554,7 @@ async function main() {
     },
   });
 
-  await prisma.event.create({
+  const iconEvent = await prisma.event.create({
     data: {
       datetime: future(18, "10:00"),
       title: 'Icon Writing Workshop — "The Theotokos Hodegetria"',
@@ -1630,7 +1630,7 @@ async function main() {
     },
   });
 
-  await prisma.event.create({
+  const womensEvent = await prisma.event.create({
     data: {
       datetime: future(40, "08:00"),
       title: 'Women\'s Day of Reflection — "Mary at the Foot of the Cross"',
@@ -2578,9 +2578,6 @@ async function main() {
   });
 
   // Youth Hike — St. Mark
-  const hikeEvent = await prisma.event.findFirstOrThrow({
-    where: { title: { contains: "Youth Sunrise Hike" } },
-  });
   await prisma.eventQuestion.createMany({
     data: [
       {
@@ -2614,9 +2611,6 @@ async function main() {
   });
 
   // Icon Writing Workshop
-  const iconEvent = await prisma.event.findFirstOrThrow({
-    where: { title: { contains: "Icon Writing Workshop" } },
-  });
   await prisma.eventQuestion.createMany({
     data: [
       {
@@ -2650,9 +2644,6 @@ async function main() {
   });
 
   // Women's Day of Reflection — St. Anthony
-  const womensEvent = await prisma.event.findFirstOrThrow({
-    where: { title: { contains: "Women's Day of Reflection" } },
-  });
   await prisma.eventQuestion.createMany({
     data: [
       {
@@ -2686,9 +2677,6 @@ async function main() {
   });
 
   // Parish Day Retreat — St. George
-  const parishRetreatEvent = await prisma.event.findFirstOrThrow({
-    where: { title: { contains: "Parish Day Retreat" } },
-  });
   await prisma.eventQuestion.createMany({
     data: [
       {

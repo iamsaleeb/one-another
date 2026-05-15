@@ -1,10 +1,11 @@
 import Link from "next/link";
-import { CalendarDays, Repeat } from "lucide-react";
-import { EventCard } from "@/components/event-card";
+import { Repeat } from "lucide-react";
+import { InfiniteEventList } from "@/components/infinite-event-list";
 import { EmptyState } from "@/components/empty-state";
 import { Card, CardContent } from "@/components/ui/card";
-import type { getEventsNotByCreator } from "@/lib/actions/data-events";
+import { loadMoreCommunityEventsAction } from "@/lib/actions/events-pagination";
 import type { getSeriesNotByCreator } from "@/lib/actions/data-series";
+import type { EventCardItem } from "@/types/pagination";
 
 const CADENCE_LABELS: Record<string, string> = {
   WEEKLY: "Weekly",
@@ -14,30 +15,21 @@ const CADENCE_LABELS: Record<string, string> = {
 };
 
 interface CommunityTabProps {
-  events: Awaited<ReturnType<typeof getEventsNotByCreator>>;
+  items: EventCardItem[];
+  cursor: string | null;
   series: Awaited<ReturnType<typeof getSeriesNotByCreator>>;
 }
 
-export function CommunityTab({ events, series }: CommunityTabProps) {
+export function CommunityTab({ items, cursor, series }: CommunityTabProps) {
   return (
     <div className="flex flex-col gap-6">
-      <section className="flex flex-col gap-3">
-        <h2 className="text-base font-semibold">Events</h2>
-        {events.length === 0 ? (
-          <EmptyState icon={CalendarDays} label="No events from others" />
-        ) : (
-          events.map((event) => (
-            <EventCard
-              key={event.id}
-              event={{
-                ...event,
-                badge: event.tag,
-                churchName: event.church?.name ?? "",
-              }}
-            />
-          ))
-        )}
-      </section>
+      <InfiniteEventList
+        initialItems={items}
+        initialCursor={cursor}
+        loadMore={loadMoreCommunityEventsAction}
+        title="Events"
+        emptyMessage="No events from others"
+      />
 
       <section className="flex flex-col gap-3">
         <h2 className="text-base font-semibold">Series</h2>

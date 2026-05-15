@@ -1,10 +1,11 @@
 import Link from "next/link";
-import { CalendarDays, Repeat } from "lucide-react";
-import { EventCard } from "@/components/event-card";
+import { Repeat } from "lucide-react";
+import { InfiniteEventList } from "@/components/infinite-event-list";
 import { EmptyState } from "@/components/empty-state";
 import { Card, CardContent } from "@/components/ui/card";
-import type { getEventsByCreator } from "@/lib/actions/data-events";
+import { loadMoreMyCreatedEventsAction } from "@/lib/actions/events-pagination";
 import type { getSeriesByCreator } from "@/lib/actions/data-series";
+import type { EventCardItem } from "@/types/pagination";
 
 const CADENCE_LABELS: Record<string, string> = {
   WEEKLY: "Weekly",
@@ -14,31 +15,21 @@ const CADENCE_LABELS: Record<string, string> = {
 };
 
 interface MyContentTabProps {
-  events: Awaited<ReturnType<typeof getEventsByCreator>>;
+  items: EventCardItem[];
+  cursor: string | null;
   series: Awaited<ReturnType<typeof getSeriesByCreator>>;
 }
 
-export function MyContentTab({ events, series }: MyContentTabProps) {
+export function MyContentTab({ items, cursor, series }: MyContentTabProps) {
   return (
     <div className="flex flex-col gap-6">
-      <section className="flex flex-col gap-3">
-        <h2 className="text-base font-semibold">My Events</h2>
-        {events.length === 0 ? (
-          <EmptyState icon={CalendarDays} label="No upcoming events" />
-        ) : (
-          events.map((event) => (
-            <EventCard
-              key={event.id}
-              event={{
-                ...event,
-                badge: event.tag,
-                churchName: event.church?.name ?? "",
-                isDraft: event.isDraft,
-              }}
-            />
-          ))
-        )}
-      </section>
+      <InfiniteEventList
+        initialItems={items}
+        initialCursor={cursor}
+        loadMore={loadMoreMyCreatedEventsAction}
+        title="My Events"
+        emptyMessage="No upcoming events"
+      />
 
       <section className="flex flex-col gap-3">
         <h2 className="text-base font-semibold">My Series</h2>

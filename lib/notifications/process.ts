@@ -1,3 +1,4 @@
+import { updateTag } from "next/cache";
 import { prisma } from "@/lib/db";
 import { getFirebaseAdmin } from "@/lib/firebase-admin";
 
@@ -122,6 +123,10 @@ export async function processNotifications(): Promise<{ processed: number }> {
       ? prisma.pushToken.deleteMany({ where: { token: { in: staleTokens } } })
       : Promise.resolve(),
   ]);
+
+  for (const userId of userIds) {
+    updateTag(`user-notifications-${userId}`);
+  }
 
   return { processed: sentIds.length };
 }

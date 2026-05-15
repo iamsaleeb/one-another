@@ -2,6 +2,10 @@
 
 import { cacheTag, cacheLife } from "next/cache";
 import { prisma } from "@/lib/db";
+import type { EventCardItem } from "@/types/pagination";
+
+const PAGE_SIZE = 10;
+const FLAT_LIST_LIMIT = 50;
 
 // TTL policy: event lists → minutes (change on new events/RSVPs)
 //             event detail → hours (changes infrequently once published)
@@ -11,7 +15,7 @@ export async function getEvents() {
   return prisma.event.findMany({
     where: { datetime: { gte: new Date() }, isDraft: false },
     orderBy: { datetime: "asc" },
-    take: 50,
+    take: FLAT_LIST_LIMIT,
     include: { church: { select: { name: true } } },
   });
 }
@@ -26,15 +30,6 @@ export async function getEventById(id: string) {
       series: { select: { id: true, name: true } },
       _count: { select: { attendees: true } },
     },
-  });
-}
-
-export async function getEventMeta(id: string) {
-  cacheTag(`event-${id}`);
-  cacheLife("hours");
-  return prisma.event.findUnique({
-    where: { id },
-    select: { title: true, isDraft: true, churchId: true },
   });
 }
 
@@ -71,7 +66,7 @@ export async function getEventsByCreator(userId: string) {
   return prisma.event.findMany({
     where: { createdById: userId },
     orderBy: { datetime: "asc" },
-    take: 50,
+    take: FLAT_LIST_LIMIT,
     include: {
       church: { select: { name: true } },
       createdBy: { select: { name: true } },
@@ -89,7 +84,7 @@ export async function getEventsNotByCreator(userId: string) {
       OR: [{ createdById: { not: userId } }, { createdById: null }],
     },
     orderBy: { datetime: "asc" },
-    take: 50,
+    take: FLAT_LIST_LIMIT,
     include: {
       church: { select: { name: true } },
       createdBy: { select: { name: true } },
@@ -107,7 +102,7 @@ export async function getUserAttendedEvents(userId: string) {
       attendees: { some: { userId } },
     },
     orderBy: { datetime: "asc" },
-    take: 50,
+    take: FLAT_LIST_LIMIT,
     include: { church: { select: { name: true } } },
   });
 }
@@ -122,7 +117,124 @@ export async function getUserAttendedPastEvents(userId: string) {
       attendees: { some: { userId } },
     },
     orderBy: { datetime: "desc" },
-    take: 50,
+    take: FLAT_LIST_LIMIT,
     include: { church: { select: { name: true } } },
   });
+}
+
+export async function getEventsPaged(
+  cursor: string | null
+): Promise<{ items: EventCardItem[]; nextCursor: string | null }> {
+  cacheTag("events-list");
+  cacheLife("minutes");
+  const rows = await prisma.event.findMany({
+    where: { datetime: { gte: new Date() }, isDraft: false },
+    orderBy: { datetime: "asc" },
+    take: PAGE_SIZE + 1,
+    ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+    include: { church: { select: { name: true } } },
+  });
+  const hasMore = rows.length > PAGE_SIZE;
+  return {
+    items: hasMore ? rows.slice(0, PAGE_SIZE) : rows,
+    nextCursor: hasMore ? rows[PAGE_SIZE - 1].id : null,
+  };
+}
+
+export async function getUserAttendedEventsPaged(
+  userId: string,
+  cursor: string | null
+): Promise<{ items: EventCardItem[]; nextCursor: string | null }> {
+  cacheTag(`user-events-${userId}`);
+  cacheLife("minutes");
+  const rows = await prisma.event.findMany({
+    where: {
+      datetime: { gte: new Date() },
+      isDraft: false,
+      attendees: { some: { userId } },
+    },
+    orderBy: { datetime: "asc" },
+    take: PAGE_SIZE + 1,
+    ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+    include: { church: { select: { name: true } } },
+  });
+  const hasMore = rows.length > PAGE_SIZE;
+  return {
+    items: hasMore ? rows.slice(0, PAGE_SIZE) : rows,
+    nextCursor: hasMore ? rows[PAGE_SIZE - 1].id : null,
+  };
+}
+
+export async function getUserAttendedPastEventsPaged(
+  userId: string,
+  cursor: string | null
+): Promise<{ items: EventCardItem[]; nextCursor: string | null }> {
+  cacheTag(`user-events-${userId}`);
+  cacheLife("minutes");
+  const rows = await prisma.event.findMany({
+    where: {
+      datetime: { lt: new Date() },
+      isDraft: false,
+      attendees: { some: { userId } },
+    },
+    orderBy: { datetime: "desc" },
+    take: PAGE_SIZE + 1,
+    ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+    include: { church: { select: { name: true } } },
+  });
+  const hasMore = rows.length > PAGE_SIZE;
+  return {
+    items: hasMore ? rows.slice(0, PAGE_SIZE) : rows,
+    nextCursor: hasMore ? rows[PAGE_SIZE - 1].id : null,
+  };
+}
+
+export async function getEventsByCreatorPaged(
+  userId: string,
+  cursor: string | null
+): Promise<{ items: EventCardItem[]; nextCursor: string | null }> {
+  cacheTag(`user-events-${userId}`);
+  cacheLife("minutes");
+  const rows = await prisma.event.findMany({
+    where: { createdById: userId },
+    orderBy: { datetime: "asc" },
+    take: PAGE_SIZE + 1,
+    ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+    include: {
+      church: { select: { name: true } },
+      createdBy: { select: { name: true } },
+    },
+  });
+  const hasMore = rows.length > PAGE_SIZE;
+  return {
+    items: hasMore ? rows.slice(0, PAGE_SIZE) : rows,
+    nextCursor: hasMore ? rows[PAGE_SIZE - 1].id : null,
+  };
+}
+
+export async function getEventsNotByCreatorPaged(
+  userId: string,
+  cursor: string | null
+): Promise<{ items: EventCardItem[]; nextCursor: string | null }> {
+  cacheTag("events-list");
+  cacheLife("minutes");
+  const rows = await prisma.event.findMany({
+    where: {
+      datetime: { gte: new Date() },
+      isDraft: false,
+      OR: [{ createdById: { not: userId } }, { createdById: null }],
+    },
+    orderBy: { datetime: "asc" },
+    take: PAGE_SIZE + 1,
+    ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+    include: {
+      church: { select: { name: true } },
+      createdBy: { select: { name: true } },
+    },
+  });
+  const hasMore = rows.length > PAGE_SIZE;
+  return {
+    items: hasMore ? rows.slice(0, PAGE_SIZE) : rows,
+    nextCursor: hasMore ? rows[PAGE_SIZE - 1].id : null,
+  };
 }

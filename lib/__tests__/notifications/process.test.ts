@@ -1,3 +1,5 @@
+jest.mock("next/cache", () => ({ updateTag: jest.fn() }));
+
 jest.mock("@/lib/db", () => ({
   prisma: {
     notification: {

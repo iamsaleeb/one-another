@@ -14,10 +14,10 @@ Replace full-list event fetching with cursor-based infinite scroll across all ma
 
 ## Pages in Scope
 
-| Page | Lists affected |
-|---|---|
-| Home (`/`) | Upcoming events (default view) |
-| My Events (`/my-events`) | Upcoming tab, Past tab |
+| Page                     | Lists affected                                            |
+| ------------------------ | --------------------------------------------------------- |
+| Home (`/`)               | Upcoming events (default view)                            |
+| My Events (`/my-events`) | Upcoming tab, Past tab                                    |
 | Organiser (`/organiser`) | My Content tab (events only), Community tab (events only) |
 
 Search results on the home page are **not** paginated — all results render inline as before. Series sections in Organiser are **not** paginated — small lists, no need.
@@ -37,6 +37,7 @@ Search results on the home page are **not** paginated — all results render inl
 File already has `"use cache: remote"` at file level. Five new `*Paged` functions added alongside existing flat functions (existing functions kept — tests reference them).
 
 Each function:
+
 - Takes `cursor: string | null` — the `id` of the last seen event
 - Fetches `PAGE_SIZE + 1` rows; if 11 come back, slice to 10 and return the 10th's `id` as `nextCursor`; if ≤ 10 come back, return `nextCursor: null`
 - Uses Prisma cursor pagination: `cursor: { id: cursor }, skip: 1`
@@ -56,6 +57,7 @@ getEventsNotByCreatorPaged(userId, cursor)
 ### Layer 2 — Server Action wrappers (`lib/actions/events-pagination.ts`)
 
 New `"use server"` file. One thin action per list. Each:
+
 - Calls `auth()` where the list is user-scoped
 - Returns `{ items: [], nextCursor: null }` on auth failure (no throw — client component handles gracefully)
 - Delegates to the Layer 1 cached function
@@ -75,6 +77,7 @@ All five actions share the same return shape: `Promise<{ items: EventCardItem[],
 Single `"use client"` component used by all pages.
 
 **Props:**
+
 ```ts
 {
   initialItems: EventCardItem[]
@@ -86,6 +89,7 @@ Single `"use client"` component used by all pages.
 ```
 
 **`EventCardItem` type** (inline, no separate file):
+
 ```ts
 {
   id: string
@@ -101,6 +105,7 @@ Single `"use client"` component used by all pages.
 ```
 
 **Behaviour:**
+
 - `useState` holds `items` and `cursor`
 - `useTransition` provides `isPending` + `startTransition`
 - `loadingRef = useRef(false)` guards against concurrent loads (IntersectionObserver callbacks close over stale `isPending` — ref is the correct primitive here)
@@ -115,21 +120,25 @@ Single `"use client"` component used by all pages.
 ### Layer 4 — Page changes
 
 Each Server Component page:
+
 1. Calls the `*Paged(null)` data function for the first page
 2. Passes `initialItems`, `initialCursor`, and the relevant Server Action as `loadMore` prop to `InfiniteEventList`
 
 Server Actions are passed as props — confirmed idiomatic in Next.js 16 docs.
 
 **Home page:**
+
 - `getEvents()` call replaced by `getEventsPaged(null)`
 - `<EventList>` replaced by `<InfiniteEventList title="Upcoming Events" loadMore={loadMoreEventsAction} ...>`
 
 **My Events page:**
+
 - `getUserAttendedEvents()` / `getUserAttendedPastEvents()` replaced by paged variants
 - Props flow: `page.tsx` → `MyEventsTabs` → `MyEventsTab` (upcoming) + `MyEventsTab` (past)
 - `MyEventsTab` receives `initialItems`, `initialCursor`, `loadMore` and renders `InfiniteEventList`
 
 **Organiser page:**
+
 - `getEventsByCreator()` / `getEventsNotByCreator()` replaced by paged variants
 - `MyContentTab` events section uses `InfiniteEventList`; series section unchanged
 - `CommunityTab` events section uses `InfiniteEventList`; series section unchanged

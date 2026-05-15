@@ -2,6 +2,7 @@
 
 # Local planning docs
 docs/superpowers/plans/
+docs/superpowers/specs/
 
 # dependencies
 /node_modules

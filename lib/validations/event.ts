@@ -18,7 +18,13 @@ export const createEventSchema = z.object({
   capacity: z.number().int().positive().optional(),
   collectPhone: z.boolean().optional(),
   collectNotes: z.boolean().optional(),
-  price: z.string().optional(),
+  price: z
+    .string()
+    .refine((v) => v === "" || /^\d+(\.\d{1,2})?$/.test(v), {
+      message: "Price must be a valid amount (e.g. 10 or 10.50)",
+    })
+    .transform((v) => (v === "" ? undefined : v))
+    .optional(),
   isDraft: z.boolean().optional(),
   photoUrl: z.string().url().optional(),
   // Camp-specific fields (only used when tag === "Camp")

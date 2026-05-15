@@ -15,7 +15,12 @@ import {
   type RegisterInput,
   type ResetPasswordInput,
 } from "@/lib/validations/auth";
-import { generateOtp, storeOtp, verifyOtp } from "@/lib/email/otp";
+import {
+  generateOtp,
+  storeOtp,
+  verifyOtp,
+  isOtpRateLimited,
+} from "@/lib/email/otp";
 import { sendVerificationEmail } from "@/lib/email/send-verification";
 import { sendPasswordResetEmail } from "@/lib/email/send-password-reset";
 
@@ -87,12 +92,15 @@ export async function registerAction(
       };
     }
     // User exists but is unverified — resend OTP and let them continue verifying
-    const otp = generateOtp();
-    await storeOtp(`register:${email}`, otp);
-    try {
-      await sendVerificationEmail(email, existing.name ?? name, otp);
-    } catch {
-      // Email failure is non-fatal — user can resend from the verification step
+    const rateLimited = await isOtpRateLimited(`register:${email}`);
+    if (!rateLimited) {
+      const otp = generateOtp();
+      await storeOtp(`register:${email}`, otp);
+      try {
+        await sendVerificationEmail(email, existing.name ?? name, otp);
+      } catch {
+        // Email failure is non-fatal — user can resend from the verification step
+      }
     }
     return { pendingVerification: true };
   }
@@ -116,12 +124,15 @@ export async function registerAction(
     throw error;
   }
 
-  const otp = generateOtp();
-  await storeOtp(`register:${email}`, otp);
-  try {
-    await sendVerificationEmail(email, name, otp);
-  } catch {
-    // Email failure is non-fatal — user can resend from the verification step
+  const rateLimited = await isOtpRateLimited(`register:${email}`);
+  if (!rateLimited) {
+    const otp = generateOtp();
+    await storeOtp(`register:${email}`, otp);
+    try {
+      await sendVerificationEmail(email, name, otp);
+    } catch {
+      // Email failure is non-fatal — user can resend from the verification step
+    }
   }
 
   return { pendingVerification: true };
@@ -174,9 +185,12 @@ export async function sendPasswordResetOtpAction(
   }
 
   try {
-    const otp = generateOtp();
-    await storeOtp(`reset:${email}`, otp);
-    await sendPasswordResetEmail(email, otp);
+    const rateLimited = await isOtpRateLimited(`reset:${email}`);
+    if (!rateLimited) {
+      const otp = generateOtp();
+      await storeOtp(`reset:${email}`, otp);
+      await sendPasswordResetEmail(email, otp);
+    }
   } catch {
     // Silently swallow — we never reveal whether the email was sent
   }

@@ -2,12 +2,11 @@
 
 ## [0.16.2](https://github.com/iamsaleeb/one-another/compare/one-another-v0.16.1...one-another-v0.16.2) (2026-05-15)
 
-
 ### Bug Fixes
 
-* added proper formatting ([#109](https://github.com/iamsaleeb/one-another/issues/109)) ([325f2aa](https://github.com/iamsaleeb/one-another/commit/325f2aa2be23f1a3727fa1a07c866405422c079b))
-* update shadcn components and fix form/RHF compliance ([#107](https://github.com/iamsaleeb/one-another/issues/107)) ([22cc750](https://github.com/iamsaleeb/one-another/commit/22cc750dbd0da852ca38ddd7702f80cf8190760e))
-* vercel speed fixes ([#110](https://github.com/iamsaleeb/one-another/issues/110)) ([2086933](https://github.com/iamsaleeb/one-another/commit/208693345df8a5caa4bbc41fbba04294922fba29))
+- added proper formatting ([#109](https://github.com/iamsaleeb/one-another/issues/109)) ([325f2aa](https://github.com/iamsaleeb/one-another/commit/325f2aa2be23f1a3727fa1a07c866405422c079b))
+- update shadcn components and fix form/RHF compliance ([#107](https://github.com/iamsaleeb/one-another/issues/107)) ([22cc750](https://github.com/iamsaleeb/one-another/commit/22cc750dbd0da852ca38ddd7702f80cf8190760e))
+- vercel speed fixes ([#110](https://github.com/iamsaleeb/one-another/issues/110)) ([2086933](https://github.com/iamsaleeb/one-another/commit/208693345df8a5caa4bbc41fbba04294922fba29))
 
 ## [0.16.1](https://github.com/iamsaleeb/one-another/compare/one-another-v0.16.0...one-another-v0.16.1) (2026-05-11)
 

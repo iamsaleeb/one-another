@@ -1,6 +1,29 @@
 import crypto from "crypto";
 import { prisma } from "@/lib/db";
 
+const RATE_LIMIT_TTL_SECONDS = 60;
+
+/**
+ * Returns true if the action is rate-limited (called too recently).
+ * Stores a sentinel in VerificationToken with a 60-second TTL.
+ */
+export async function isOtpRateLimited(identifier: string): Promise<boolean> {
+  const key = `ratelimit:${identifier}`;
+  const existing = await prisma.verificationToken.findFirst({
+    where: { identifier: key, expires: { gt: new Date() } },
+    select: { expires: true },
+  });
+  if (existing) return true;
+  const expires = new Date(Date.now() + RATE_LIMIT_TTL_SECONDS * 1000);
+  await prisma.$transaction([
+    prisma.verificationToken.deleteMany({ where: { identifier: key } }),
+    prisma.verificationToken.create({
+      data: { identifier: key, token: "rate-limit", expires },
+    }),
+  ]);
+  return false;
+}
+
 export function generateOtp(): string {
   return crypto.randomInt(100000, 999999).toString();
 }

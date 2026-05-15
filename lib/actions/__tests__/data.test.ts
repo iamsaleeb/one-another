@@ -20,13 +20,17 @@ jest.mock("@/lib/db", () => ({
 import {
   getEvents,
   getEventById,
-  getEventMeta,
   getMyEventAttendance,
   getEventsByCreator,
   getEventsNotByCreator,
   getEventAttendees,
   getUserAttendedEvents,
   getUserAttendedPastEvents,
+  getEventsPaged,
+  getUserAttendedEventsPaged,
+  getUserAttendedPastEventsPaged,
+  getEventsByCreatorPaged,
+  getEventsNotByCreatorPaged,
 } from "@/lib/actions/data-events";
 import {
   getChurches,
@@ -148,21 +152,6 @@ describe("getEventById", () => {
   it("returns null when the event does not exist", async () => {
     mockEventFindUnique.mockResolvedValue(null);
     expect(await getEventById("not-found")).toBeNull();
-  });
-});
-
-describe("getEventMeta", () => {
-  it("fetches only title, isDraft, and churchId", async () => {
-    mockEventFindUnique.mockResolvedValue({
-      title: "Test",
-      isDraft: false,
-      churchId: "ch-1",
-    });
-    await getEventMeta("evt-1");
-    expect(mockEventFindUnique).toHaveBeenCalledWith({
-      where: { id: "evt-1" },
-      select: { title: true, isDraft: true, churchId: true },
-    });
   });
 });
 
@@ -518,6 +507,7 @@ describe("getEventsByCreator", () => {
     expect(mockEventFindMany).toHaveBeenCalledWith({
       where: { createdById: "user-1" },
       orderBy: { datetime: "asc" },
+      take: 50,
       include: {
         church: { select: { name: true } },
         createdBy: { select: { name: true } },
@@ -695,6 +685,7 @@ describe("getUserAttendedEvents", () => {
         attendees: { some: { userId: "user-1" } },
       },
       orderBy: { datetime: "asc" },
+      take: 50,
       include: { church: { select: { name: true } } },
     });
   });
@@ -722,6 +713,7 @@ describe("getUserAttendedPastEvents", () => {
         attendees: { some: { userId: "user-1" } },
       },
       orderBy: { datetime: "desc" },
+      take: 50,
       include: { church: { select: { name: true } } },
     });
   });
@@ -807,5 +799,114 @@ describe("getSeriesForEvent", () => {
   it("returns null when the series does not exist", async () => {
     mockSeriesFindUnique.mockResolvedValue(null);
     expect(await getSeriesForEvent("ser-missing")).toBeNull();
+  });
+});
+
+const pagedEvent = {
+  id: "evt-1",
+  title: "Sunday Service",
+  datetime: new Date("2026-06-01T09:00:00Z"),
+  location: "Main Hall",
+  host: "Pastor John",
+  tag: "Youth Meeting",
+  cancelledAt: null,
+  isDraft: false,
+  photoUrl: null,
+  church: { name: "Grace Church" },
+};
+
+describe("getEventsPaged", () => {
+  it("returns items and null nextCursor when fewer than PAGE_SIZE+1 results", async () => {
+    mockEventFindMany.mockResolvedValue([pagedEvent]);
+    const result = await getEventsPaged(null);
+    expect(result.items).toEqual([pagedEvent]);
+    expect(result.nextCursor).toBeNull();
+  });
+
+  it("returns PAGE_SIZE items and nextCursor when more than PAGE_SIZE results exist", async () => {
+    const eleven = Array.from({ length: 11 }, (_, i) => ({
+      ...pagedEvent,
+      id: `evt-${i}`,
+    }));
+    mockEventFindMany.mockResolvedValue(eleven);
+    const result = await getEventsPaged(null);
+    expect(result.items).toHaveLength(10);
+    expect(result.nextCursor).toBe("evt-9");
+  });
+
+  it("passes cursor and skip to prisma when cursor is provided", async () => {
+    mockEventFindMany.mockResolvedValue([pagedEvent]);
+    await getEventsPaged("evt-5");
+    expect(mockEventFindMany).toHaveBeenCalledWith(
+      expect.objectContaining({ cursor: { id: "evt-5" }, skip: 1 })
+    );
+  });
+
+  it("does not pass cursor when cursor is null", async () => {
+    mockEventFindMany.mockResolvedValue([pagedEvent]);
+    await getEventsPaged(null);
+    expect(mockEventFindMany).toHaveBeenCalledWith(
+      expect.not.objectContaining({ cursor: expect.anything() })
+    );
+  });
+});
+
+describe("getUserAttendedEventsPaged", () => {
+  it("returns items filtered by userId", async () => {
+    mockEventFindMany.mockResolvedValue([pagedEvent]);
+    const result = await getUserAttendedEventsPaged("user-1", null);
+    expect(result.items).toEqual([pagedEvent]);
+    expect(mockEventFindMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          attendees: { some: { userId: "user-1" } },
+        }),
+      })
+    );
+  });
+
+  it("returns null nextCursor when at last page", async () => {
+    mockEventFindMany.mockResolvedValue([pagedEvent]);
+    const result = await getUserAttendedEventsPaged("user-1", null);
+    expect(result.nextCursor).toBeNull();
+  });
+});
+
+describe("getUserAttendedPastEventsPaged", () => {
+  it("filters by datetime lt and orders desc", async () => {
+    mockEventFindMany.mockResolvedValue([pagedEvent]);
+    await getUserAttendedPastEventsPaged("user-1", null);
+    expect(mockEventFindMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ datetime: { lt: expect.any(Date) } }),
+        orderBy: { datetime: "desc" },
+      })
+    );
+  });
+});
+
+describe("getEventsByCreatorPaged", () => {
+  it("filters by createdById", async () => {
+    mockEventFindMany.mockResolvedValue([pagedEvent]);
+    await getEventsByCreatorPaged("user-1", null);
+    expect(mockEventFindMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { createdById: "user-1" },
+      })
+    );
+  });
+});
+
+describe("getEventsNotByCreatorPaged", () => {
+  it("excludes events by the given userId", async () => {
+    mockEventFindMany.mockResolvedValue([pagedEvent]);
+    await getEventsNotByCreatorPaged("user-1", null);
+    expect(mockEventFindMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          OR: [{ createdById: { not: "user-1" } }, { createdById: null }],
+        }),
+      })
+    );
   });
 });

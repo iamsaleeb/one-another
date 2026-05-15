@@ -16,7 +16,7 @@ export function invalidateEventCaches(
   seriesId?: string | null,
   options?: EventCacheOptions
 ) {
-  updateTag("events");
+  updateTag("events-list");
   updateTag(`event-${id}`);
   updateTag(`event-questions-${id}`);
   if (churchId) {
@@ -33,7 +33,7 @@ export function invalidateEventCaches(
  * Broadcasts to list caches when a series is created or deleted.
  */
 export function broadcastSeriesChange(id: string, churchId?: string | null) {
-  updateTag("events");
+  updateTag("events-list");
   updateTag("series");
   updateTag(`series-${id}`);
   if (churchId) {

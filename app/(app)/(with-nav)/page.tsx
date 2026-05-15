@@ -3,13 +3,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { MapPin, SearchX } from "lucide-react";
 import { EventCard } from "@/components/event-card";
 import { searchEventsAndChurches } from "@/lib/actions/data-user";
-import { getEvents } from "@/lib/actions/data-events";
-import { getSeries } from "@/lib/actions/data-series";
+import { getEventsPaged } from "@/lib/actions/data-events";
+import { loadMoreEventsAction } from "@/lib/actions/events-pagination";
 import { PageHeader } from "@/components/ui/page-header";
 import { WHEN_LABELS, TYPE_LABELS, type WhenFilter } from "@/types/search";
 import { searchParamsSchema } from "@/lib/validations/search";
-import { EventList } from "@/app/(app)/_components/event-list";
-import { SeriesRail } from "@/app/(app)/_components/series-rail";
+import { InfiniteEventList } from "@/components/infinite-event-list";
 
 export default async function Home({
   searchParams,
@@ -27,7 +26,7 @@ export default async function Home({
   const query = q?.trim() ?? "";
   const hasFilters = !!(query || type !== "all" || when || category);
 
-  const [searchResults, events, allSeries] = await Promise.all([
+  const [searchResults, eventPage] = await Promise.all([
     hasFilters
       ? searchEventsAndChurches({
           query,
@@ -36,8 +35,7 @@ export default async function Home({
           category: category ?? "",
         })
       : Promise.resolve(null),
-    hasFilters ? Promise.resolve(null) : getEvents(),
-    hasFilters ? Promise.resolve(null) : getSeries(),
+    hasFilters ? Promise.resolve(null) : getEventsPaged(null),
   ]);
 
   const filteredEvents = searchResults?.events ?? null;
@@ -64,7 +62,6 @@ export default async function Home({
 
       <div className="flex flex-col gap-6 px-4 py-2">
         {hasFilters ? (
-          /* ── Search results ── */
           !hasResults ? (
             <div className="flex flex-col items-center gap-3 py-16 text-center">
               <SearchX className="text-muted-foreground/40 size-10" />
@@ -124,11 +121,15 @@ export default async function Home({
             </>
           )
         ) : (
-          /* ── Default home content ── */
-          <>
-            {events && <EventList events={events} />}
-            {allSeries && <SeriesRail series={allSeries} />}
-          </>
+          eventPage && (
+            <InfiniteEventList
+              initialItems={eventPage.items}
+              initialCursor={eventPage.nextCursor}
+              loadMore={loadMoreEventsAction}
+              title="Upcoming Events"
+              emptyMessage="No upcoming events"
+            />
+          )
         )}
       </div>
     </div>

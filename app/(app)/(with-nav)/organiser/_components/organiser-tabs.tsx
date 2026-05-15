@@ -2,27 +2,28 @@
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type {
-  getEventsByCreator,
-  getEventsNotByCreator,
-} from "@/lib/actions/data-events";
-import type {
   getSeriesByCreator,
   getSeriesNotByCreator,
 } from "@/lib/actions/data-series";
+import type { EventCardItem } from "@/types/pagination";
 import { MyContentTab } from "./my-content-tab";
 import { CommunityTab } from "./community-tab";
 
 interface OrganiserTabsProps {
-  myEvents: Awaited<ReturnType<typeof getEventsByCreator>>;
+  myItems: EventCardItem[];
+  myCursor: string | null;
   mySeries: Awaited<ReturnType<typeof getSeriesByCreator>>;
-  communityEvents: Awaited<ReturnType<typeof getEventsNotByCreator>>;
+  communityItems: EventCardItem[];
+  communityCursor: string | null;
   communitySeries: Awaited<ReturnType<typeof getSeriesNotByCreator>>;
 }
 
 export function OrganiserTabs({
-  myEvents,
+  myItems,
+  myCursor,
   mySeries,
-  communityEvents,
+  communityItems,
+  communityCursor,
   communitySeries,
 }: OrganiserTabsProps) {
   return (
@@ -36,11 +37,15 @@ export function OrganiserTabs({
 
       <div className="px-4 pt-5">
         <TabsContent value="my-content">
-          <MyContentTab events={myEvents} series={mySeries} />
+          <MyContentTab items={myItems} cursor={myCursor} series={mySeries} />
         </TabsContent>
 
         <TabsContent value="community">
-          <CommunityTab events={communityEvents} series={communitySeries} />
+          <CommunityTab
+            items={communityItems}
+            cursor={communityCursor}
+            series={communitySeries}
+          />
         </TabsContent>
       </div>
     </Tabs>

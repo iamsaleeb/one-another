@@ -23,10 +23,10 @@ export interface RegisterEventState {
 }
 
 function invalidateAttendanceCaches(id: string, userId?: string) {
-  updateTag("events");
   updateTag(`event-${id}`);
   if (userId) {
     updateTag(`user-attendance-${userId}-${id}`);
+    updateTag(`user-events-${userId}`);
   }
 }
 

@@ -1,5 +1,7 @@
 import { NotificationType } from "@prisma/client";
 
+jest.mock("next/cache", () => ({ updateTag: jest.fn() }));
+
 // Mock prisma
 jest.mock("@/lib/db", () => ({
   prisma: {

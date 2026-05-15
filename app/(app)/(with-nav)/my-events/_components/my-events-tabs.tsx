@@ -1,23 +1,24 @@
 "use client";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import type {
-  getUserAttendedEvents,
-  getUserAttendedPastEvents,
-} from "@/lib/actions/data-events";
 import type { getUserFollowedSeries } from "@/lib/actions/data-series";
+import type { EventCardItem } from "@/types/pagination";
 import { MyEventsTab } from "./my-events-tab";
 import { MySeriesTab } from "./my-series-tab";
 
 interface MyEventsTabsProps {
-  upcomingEvents: Awaited<ReturnType<typeof getUserAttendedEvents>>;
-  pastEvents: Awaited<ReturnType<typeof getUserAttendedPastEvents>>;
+  upcomingItems: EventCardItem[];
+  upcomingCursor: string | null;
+  pastItems: EventCardItem[];
+  pastCursor: string | null;
   followedSeries: Awaited<ReturnType<typeof getUserFollowedSeries>>;
 }
 
 export function MyEventsTabs({
-  upcomingEvents,
-  pastEvents,
+  upcomingItems,
+  upcomingCursor,
+  pastItems,
+  pastCursor,
   followedSeries,
 }: MyEventsTabsProps) {
   return (
@@ -31,8 +32,10 @@ export function MyEventsTabs({
       <div className="px-4 pt-5">
         <TabsContent value="events">
           <MyEventsTab
-            upcomingEvents={upcomingEvents}
-            pastEvents={pastEvents}
+            upcomingItems={upcomingItems}
+            upcomingCursor={upcomingCursor}
+            pastItems={pastItems}
+            pastCursor={pastCursor}
           />
         </TabsContent>
         <TabsContent value="series">

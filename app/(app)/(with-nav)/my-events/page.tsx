@@ -2,8 +2,8 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { PageHeader } from "@/components/ui/page-header";
 import {
-  getUserAttendedEvents,
-  getUserAttendedPastEvents,
+  getUserAttendedEventsPaged,
+  getUserAttendedPastEventsPaged,
 } from "@/lib/actions/data-events";
 import { getUserFollowedSeries } from "@/lib/actions/data-series";
 import { MyEventsTabs } from "./_components/my-events-tabs";
@@ -13,9 +13,9 @@ export default async function MyEventsPage() {
   if (!session?.user?.id) redirect("/");
   const userId = session.user.id;
 
-  const [upcomingEvents, pastEvents, followedSeries] = await Promise.all([
-    getUserAttendedEvents(userId),
-    getUserAttendedPastEvents(userId),
+  const [upcomingPage, pastPage, followedSeries] = await Promise.all([
+    getUserAttendedEventsPaged(userId, null),
+    getUserAttendedPastEventsPaged(userId, null),
     getUserFollowedSeries(userId),
   ]);
 
@@ -23,11 +23,13 @@ export default async function MyEventsPage() {
     <div className="flex flex-col">
       <PageHeader
         title="My Events"
-        description={`${upcomingEvents.length} upcoming`}
+        description={`${upcomingPage.items.length}${upcomingPage.nextCursor ? "+" : ""} upcoming`}
       />
       <MyEventsTabs
-        upcomingEvents={upcomingEvents}
-        pastEvents={pastEvents}
+        upcomingItems={upcomingPage.items}
+        upcomingCursor={upcomingPage.nextCursor}
+        pastItems={pastPage.items}
+        pastCursor={pastPage.nextCursor}
         followedSeries={followedSeries}
       />
     </div>

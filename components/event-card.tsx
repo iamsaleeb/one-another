@@ -17,9 +17,10 @@ interface EventCardProps {
     isDraft?: boolean;
     photoUrl?: string | null;
   };
+  priority?: boolean;
 }
 
-export function EventCard({ event }: EventCardProps) {
+export function EventCard({ event, priority = false }: EventCardProps) {
   return (
     <Link href={`/events/${event.id}`}>
       <Card className="shadow-card overflow-hidden rounded-2xl border-0 bg-white py-0">
@@ -32,6 +33,7 @@ export function EventCard({ event }: EventCardProps) {
                 fill
                 className="object-cover"
                 sizes="(max-width: 768px) 100vw, 50vw"
+                priority={priority}
               />
             </div>
           )}

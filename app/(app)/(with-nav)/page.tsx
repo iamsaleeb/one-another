@@ -80,9 +80,10 @@ export default async function Home({
                       ({filteredEvents.length})
                     </span>
                   </h2>
-                  {filteredEvents.map((event) => (
+                  {filteredEvents.map((event, index) => (
                     <EventCard
                       key={event.id}
+                      priority={index === 0}
                       event={{
                         ...event,
                         badge: event.tag,

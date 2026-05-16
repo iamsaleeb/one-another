@@ -21,10 +21,20 @@ interface TopNavProps {
   user?: TopNavUser;
 }
 
-function TopNavInner({ user }: TopNavProps) {
-  const router = useRouter();
+function SearchBarWithParams() {
   const searchParams = useSearchParams();
+  return (
+    <SearchBar
+      initialQuery={searchParams.get("q") ?? ""}
+      initialWhen={(searchParams.get("when") as WhenFilter) ?? undefined}
+      initialCategory={searchParams.get("category") ?? ""}
+      initialType={(searchParams.get("type") as TypeFilter) ?? "all"}
+    />
+  );
+}
 
+export function TopNav({ user }: TopNavProps) {
+  const router = useRouter();
   const showBackButton = useShowBackButton();
 
   return (
@@ -70,32 +80,11 @@ function TopNavInner({ user }: TopNavProps) {
 
       {!showBackButton && (
         <div className="border-border border-b bg-white px-4 py-2.5">
-          <SearchBar
-            initialQuery={searchParams.get("q") ?? ""}
-            initialWhen={(searchParams.get("when") as WhenFilter) ?? undefined}
-            initialCategory={searchParams.get("category") ?? ""}
-            initialType={(searchParams.get("type") as TypeFilter) ?? "all"}
-          />
+          <Suspense fallback={<SearchBar />}>
+            <SearchBarWithParams />
+          </Suspense>
         </div>
       )}
     </header>
-  );
-}
-
-export function TopNav({ user }: TopNavProps) {
-  return (
-    <Suspense
-      fallback={
-        <header className="bg-primary pt-safe sticky top-0 z-50">
-          <div className="flex h-14 items-center justify-between px-4">
-            <span className="text-primary-foreground text-xl font-bold tracking-tight">
-              1Another
-            </span>
-          </div>
-        </header>
-      }
-    >
-      <TopNavInner user={user} />
-    </Suspense>
   );
 }

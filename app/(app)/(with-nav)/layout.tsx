@@ -8,11 +8,19 @@ import { UserRole } from "@prisma/client";
 export default function NavLayout({ children }: { children: React.ReactNode }) {
   return (
     <div>
-      <Suspense>
+      <Suspense fallback={<NavShellFallback />}>
         <NavShell />
       </Suspense>
       <main className="pb-nav">{children}</main>
     </div>
+  );
+}
+
+function NavShellFallback() {
+  return (
+    <nav className="pb-safe fixed right-0 bottom-0 left-0 z-50 bg-white shadow-[0px_-2px_31px_0px_#0000001A]">
+      <div className="h-16" />
+    </nav>
   );
 }
 

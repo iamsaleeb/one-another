@@ -31,6 +31,7 @@ export function CancelEventButton({ eventId }: { eventId: string }) {
         <Button
           variant="outline"
           size="icon"
+          aria-label="Cancel event"
           className="text-destructive border-destructive/30 hover:bg-destructive/10 size-9"
         >
           <Ban className="size-4" />

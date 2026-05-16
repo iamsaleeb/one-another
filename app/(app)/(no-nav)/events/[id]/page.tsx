@@ -146,7 +146,7 @@ export default async function EventDetailPage({ params }: Props) {
                     size="icon"
                     className="size-9"
                   >
-                    <Link href={`/events/${id}/edit`}>
+                    <Link href={`/events/${id}/edit`} aria-label="Edit event">
                       <Pencil className="size-4" />
                     </Link>
                   </Button>

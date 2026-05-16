@@ -22,6 +22,7 @@ export function DeleteEventButton({ eventId }: { eventId: string }) {
         <Button
           variant="outline"
           size="icon"
+          aria-label="Delete event"
           className="text-destructive border-destructive/30 hover:bg-destructive/10 size-9"
         >
           <Trash2 className="size-4" />

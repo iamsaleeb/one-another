@@ -59,7 +59,7 @@ function TopNavInner({ user }: TopNavProps) {
                   src={user?.image ?? ""}
                   alt={user?.name ?? "Profile"}
                 />
-                <AvatarFallback className="bg-primary-foreground/20 text-primary-foreground text-xs font-semibold">
+                <AvatarFallback className="bg-primary-foreground text-primary text-xs font-semibold">
                   {getInitials(user?.name, user?.email)}
                 </AvatarFallback>
               </Avatar>

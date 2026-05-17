@@ -82,23 +82,26 @@ export default async function EventDetailPage({ params }: Props) {
 
   if (!event) notFound();
 
-  const canManage = await canManageChurch(
-    session?.user?.id,
-    session?.user?.role,
-    event.churchId
-  );
-
-  if (event.isDraft && !canManage) notFound();
-  const attendees = canManage ? await getEventAttendees(id) : undefined;
-
   const isAttending = myAttendance !== null;
 
-  const questions = await getEventQuestions(id);
+  const [canManage, questions] = await Promise.all([
+    canManageChurch(session?.user?.id, session?.user?.role, event.churchId),
+    getEventQuestions(id),
+  ]);
 
-  const myResponses =
+  if (event.isDraft && !canManage) notFound();
+
+  const [attendees, myResponses] = await Promise.all([
+    canManage ? getEventAttendees(id) : Promise.resolve(undefined),
     session?.user?.id && questions.length > 0 && isAttending
-      ? await getMyResponses(id, session.user.id)
-      : {};
+      ? getMyResponses(id, session.user.id)
+      : Promise.resolve(
+          {} as Record<
+            string,
+            { answer: string | null; fileUrl: string | null }
+          >
+        ),
+  ]);
 
   const { registration, camp } = parseEventMetadata(event.metadata);
   const myAttendeeMeta = myAttendance

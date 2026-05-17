@@ -19,7 +19,12 @@ export function UncancelEventButton({ eventId }: { eventId: string }) {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button variant="outline" size="icon" aria-label="Restore event" className="size-9">
+        <Button
+          variant="outline"
+          size="icon"
+          aria-label="Restore event"
+          className="size-9"
+        >
           <RotateCcw className="size-4" />
         </Button>
       </DialogTrigger>

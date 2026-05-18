@@ -1,5 +1,37 @@
 import "server-only";
 import { prisma } from "@/lib/db";
+import type { Session } from "next-auth";
+
+/**
+ * Token-based permission check using raw claims arrays — no DB hit.
+ * Use in DAL functions that receive organiserChurchIds/adminChurchIds from server actions.
+ */
+export function canManageFromClaims(
+  role: string | null | undefined,
+  organiserChurchIds: string[],
+  adminChurchIds: string[],
+  churchId: string | null | undefined
+): boolean {
+  if (!churchId) return false;
+  if (role === "ORGANISER") return organiserChurchIds.includes(churchId);
+  if (role === "ADMIN") return adminChurchIds.includes(churchId);
+  return false;
+}
+
+/**
+ * Token-based permission check — no DB hit.
+ * Use for page renders and read paths; keep DB checks for destructive admin actions.
+ */
+export function canManageChurchFromSession(
+  session: Session | null,
+  churchId: string
+): boolean {
+  if (!session?.user) return false;
+  const { role, organiserChurchIds = [], adminChurchIds = [] } = session.user;
+  if (role === "ORGANISER") return organiserChurchIds.includes(churchId);
+  if (role === "ADMIN") return adminChurchIds.includes(churchId);
+  return false;
+}
 
 /**
  * Returns true if the user has an explicit ChurchAdmin assignment

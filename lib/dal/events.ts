@@ -2,7 +2,7 @@ import "server-only";
 
 import { prisma } from "@/lib/db";
 import { NotificationType } from "@prisma/client";
-import { canManageChurch } from "@/lib/permissions";
+import { canManageFromClaims } from "@/lib/permissions";
 import { syncEventQuestions } from "@/lib/dal/questions";
 import {
   cancelManyNotifications,
@@ -69,7 +69,9 @@ type DalError = { error: string } | { fieldErrors: Record<string, string[]> };
 export async function createEvent(
   data: CreateEventInput,
   userId: string,
-  userRole: string
+  userRole: string,
+  organiserChurchIds: string[],
+  adminChurchIds: string[]
 ): Promise<
   | DalError
   | {
@@ -124,7 +126,7 @@ export async function createEvent(
 
   if (!churchId) return { fieldErrors: { churchId: ["Church is required"] } };
 
-  const allowed = await canManageChurch(userId, userRole, churchId);
+  const allowed = canManageFromClaims(userRole, organiserChurchIds, adminChurchIds, churchId);
   if (!allowed) return { error: "You are not assigned to this church." };
 
   const isCamp = tag === "Camp";
@@ -192,7 +194,9 @@ export async function updateEvent(
   id: string,
   data: CreateEventInput,
   userId: string,
-  userRole: string
+  userRole: string,
+  organiserChurchIds: string[],
+  adminChurchIds: string[]
 ): Promise<
   | DalError
   | {
@@ -252,15 +256,11 @@ export async function updateEvent(
   });
   if (!existing) return { error: "Event not found." };
 
-  const allowedOriginal = await canManageChurch(
-    userId,
-    userRole,
-    existing.churchId
-  );
+  const allowedOriginal = canManageFromClaims(userRole, organiserChurchIds, adminChurchIds, existing.churchId);
   if (!allowedOriginal) return { error: "Unauthorised." };
 
   if (churchId !== existing.churchId) {
-    const allowedNew = await canManageChurch(userId, userRole, churchId);
+    const allowedNew = canManageFromClaims(userRole, organiserChurchIds, adminChurchIds, churchId);
     if (!allowedNew) return { error: "Unauthorised." };
   }
 
@@ -338,7 +338,9 @@ export async function cancelEvent(
   id: string,
   reason: string,
   userId: string,
-  userRole: string
+  userRole: string,
+  organiserChurchIds: string[],
+  adminChurchIds: string[]
 ): Promise<
   { error: string } | { churchId: string | null; seriesId: string | null }
 > {
@@ -348,7 +350,7 @@ export async function cancelEvent(
   });
   if (!event) return { error: "Event not found." };
 
-  const allowed = await canManageChurch(userId, userRole, event.churchId);
+  const allowed = canManageFromClaims(userRole, organiserChurchIds, adminChurchIds, event.churchId);
   if (!allowed) return { error: "Unauthorised." };
 
   await prisma.event.update({
@@ -372,7 +374,9 @@ export async function cancelEvent(
 export async function uncancelEvent(
   id: string,
   userId: string,
-  userRole: string
+  userRole: string,
+  organiserChurchIds: string[],
+  adminChurchIds: string[]
 ): Promise<
   { error: string } | { churchId: string | null; seriesId: string | null }
 > {
@@ -382,7 +386,7 @@ export async function uncancelEvent(
   });
   if (!event) return { error: "Event not found." };
 
-  const allowed = await canManageChurch(userId, userRole, event.churchId);
+  const allowed = canManageFromClaims(userRole, organiserChurchIds, adminChurchIds, event.churchId);
   if (!allowed) return { error: "Unauthorised." };
 
   await prisma.event.update({
@@ -396,7 +400,9 @@ export async function uncancelEvent(
 export async function publishEvent(
   id: string,
   userId: string,
-  userRole: string
+  userRole: string,
+  organiserChurchIds: string[],
+  adminChurchIds: string[]
 ): Promise<
   | { error: string }
   | {
@@ -417,7 +423,7 @@ export async function publishEvent(
   });
   if (!event) return { error: "Event not found." };
 
-  const allowed = await canManageChurch(userId, userRole, event.churchId);
+  const allowed = canManageFromClaims(userRole, organiserChurchIds, adminChurchIds, event.churchId);
   if (!allowed) return { error: "You are not assigned to this church." };
 
   if (!event.isDraft) {
@@ -465,7 +471,9 @@ export async function publishEvent(
 export async function unpublishEvent(
   id: string,
   userId: string,
-  userRole: string
+  userRole: string,
+  organiserChurchIds: string[],
+  adminChurchIds: string[]
 ): Promise<
   { error: string } | { churchId: string | null; seriesId: string | null }
 > {
@@ -475,7 +483,7 @@ export async function unpublishEvent(
   });
   if (!event) return { error: "Event not found." };
 
-  const allowed = await canManageChurch(userId, userRole, event.churchId);
+  const allowed = canManageFromClaims(userRole, organiserChurchIds, adminChurchIds, event.churchId);
   if (!allowed) return { error: "You are not assigned to this church." };
 
   await prisma.event.update({ where: { id }, data: { isDraft: true } });
@@ -501,7 +509,9 @@ export async function unpublishEvent(
 export async function deleteEvent(
   id: string,
   userId: string,
-  userRole: string
+  userRole: string,
+  organiserChurchIds: string[],
+  adminChurchIds: string[]
 ): Promise<
   { error: string } | { churchId: string | null; seriesId: string | null }
 > {
@@ -511,7 +521,7 @@ export async function deleteEvent(
   });
   if (!event) return { error: "Event not found." };
 
-  const allowed = await canManageChurch(userId, userRole, event.churchId);
+  const allowed = canManageFromClaims(userRole, organiserChurchIds, adminChurchIds, event.churchId);
   if (!allowed) return { error: "Unauthorised." };
 
   try {

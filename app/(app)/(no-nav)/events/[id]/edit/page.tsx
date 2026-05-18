@@ -2,7 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { UserRole } from "@prisma/client";
 import { getEventById } from "@/lib/actions/data-events";
-import { getChurchesByManager } from "@/lib/actions/data-churches";
+import { getChurchesByIds } from "@/lib/actions/data-churches";
 import {
   getEventQuestions,
   hasEventResponses,
@@ -27,9 +27,13 @@ export default async function EditEventPage({ params }: Props) {
     redirect("/");
   if (!event) notFound();
 
+  const managedIds = [
+    ...(session.user.organiserChurchIds ?? []),
+    ...(session.user.adminChurchIds ?? []),
+  ];
   const [churches, questions, libraryItems, questionsLocked] =
     await Promise.all([
-      getChurchesByManager(session.user.id),
+      getChurchesByIds(managedIds),
       getEventQuestions(id),
       getQuestionLibraryForUser(session.user.id),
       hasEventResponses(id),

@@ -3,7 +3,7 @@ import { auth } from "@/auth";
 import { UserRole } from "@prisma/client";
 import { CreateSeriesForm } from "./_components/create-series-form";
 import { PageHeader } from "@/components/ui/page-header";
-import { getChurchesByManager } from "@/lib/actions/data-churches";
+import { getChurchesByIds } from "@/lib/actions/data-churches";
 
 export default async function CreateSeriesPage() {
   const session = await auth();
@@ -15,7 +15,11 @@ export default async function CreateSeriesPage() {
     redirect("/");
   }
 
-  const churches = await getChurchesByManager(session.user.id);
+  const managedIds = [
+    ...(session.user.organiserChurchIds ?? []),
+    ...(session.user.adminChurchIds ?? []),
+  ];
+  const churches = await getChurchesByIds(managedIds);
 
   return (
     <div className="mx-auto max-w-lg">

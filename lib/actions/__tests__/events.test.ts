@@ -56,7 +56,7 @@ jest.mock("@/auth", () => ({
 }));
 
 jest.mock("@/lib/permissions", () => ({
-  canManageChurch: jest.fn(),
+  canManageFromClaims: jest.fn().mockReturnValue(true),
 }));
 
 jest.mock("@/lib/dal/questions", () => ({
@@ -90,7 +90,6 @@ import {
 import { extractResponses } from "@/lib/utils/forms";
 import { prisma } from "@/lib/db";
 import { auth } from "@/auth";
-import { canManageChurch } from "@/lib/permissions";
 import {
   registerEvent as _registerEvent,
   attendEvent as _attendEvent,
@@ -111,7 +110,8 @@ const mockSeriesFollowerFindMany = prisma.seriesFollower.findMany as jest.Mock;
 const mockQueueNotification = jest.requireMock("@/lib/notifications/queue")
   .queueNotification as jest.Mock;
 const mockAuth = auth as jest.Mock;
-const mockCanManageChurch = canManageChurch as jest.Mock;
+const mockCanManageFromClaims = jest.requireMock("@/lib/permissions")
+  .canManageFromClaims as jest.Mock;
 const mockRegisterEvent = _registerEvent as jest.Mock;
 const mockAttendEvent = _attendEvent as jest.Mock;
 const mockUnattendEvent = _unattendEvent as jest.Mock;
@@ -138,8 +138,10 @@ const validData = {
 
 beforeEach(() => {
   jest.clearAllMocks();
-  mockAuth.mockResolvedValue({ user: { id: "user-1", role: "ORGANISER" } });
-  mockCanManageChurch.mockResolvedValue(true);
+  mockAuth.mockResolvedValue({
+    user: { id: "user-1", role: "ORGANISER", organiserChurchIds: [], adminChurchIds: [] },
+  });
+  mockCanManageFromClaims.mockReturnValue(true);
   mockSeriesFollowerFindMany.mockResolvedValue([]);
   mockEventAttendeeFindMany.mockResolvedValue([]);
   mockEventAttendeeFindUnique.mockResolvedValue(null); // not already registered by default
@@ -269,7 +271,7 @@ describe("createEventAction", () => {
   });
 
   it("returns an error when organiser is not assigned to the church", async () => {
-    mockCanManageChurch.mockResolvedValue(false);
+    mockCanManageFromClaims.mockReturnValue(false);
 
     const result = await createEventAction(validData);
 
@@ -420,7 +422,7 @@ describe("cancelEventAction", () => {
 
   it("redirects away when the user cannot manage the church", async () => {
     mockEventFindUnique.mockResolvedValue({ churchId: "ch-1" });
-    mockCanManageChurch.mockResolvedValue(false);
+    mockCanManageFromClaims.mockReturnValue(false);
     mockRedirect.mockImplementationOnce(() => {
       throw new Error("NEXT_REDIRECT");
     });
@@ -728,7 +730,7 @@ describe("updateEventAction", () => {
 
   it("redirects away when the organiser cannot manage the original church", async () => {
     mockEventFindUnique.mockResolvedValue(existingPublished);
-    mockCanManageChurch.mockResolvedValue(false);
+    mockCanManageFromClaims.mockReturnValue(false);
     mockRedirect.mockImplementationOnce(() => {
       throw new Error("NEXT_REDIRECT");
     });
@@ -824,10 +826,10 @@ describe("updateEventAction", () => {
 
   it("checks new church permission when church changes", async () => {
     mockEventFindUnique.mockResolvedValue(existingPublished);
-    // First canManageChurch call (original church) returns true, second (new church) returns false
-    mockCanManageChurch
-      .mockResolvedValueOnce(true)
-      .mockResolvedValueOnce(false);
+    // First canManageFromClaims call (original church) returns true, second (new church) returns false
+    mockCanManageFromClaims
+      .mockReturnValueOnce(true)
+      .mockReturnValueOnce(false);
     mockRedirect.mockImplementationOnce(() => {
       throw new Error("NEXT_REDIRECT");
     });
@@ -917,7 +919,7 @@ describe("deleteEventAction", () => {
 
   it("redirects away when the organiser cannot manage the church", async () => {
     mockEventFindUnique.mockResolvedValue({ churchId: "ch-1" });
-    mockCanManageChurch.mockResolvedValue(false);
+    mockCanManageFromClaims.mockReturnValue(false);
     mockRedirect.mockImplementationOnce(() => {
       throw new Error("NEXT_REDIRECT");
     });
@@ -1027,7 +1029,7 @@ describe("publishEventAction", () => {
       title: "Test",
       isDraft: true,
     });
-    mockCanManageChurch.mockResolvedValue(false);
+    mockCanManageFromClaims.mockReturnValue(false);
 
     const result = await publishEventAction("evt-1");
 
@@ -1219,7 +1221,7 @@ describe("unpublishEventAction", () => {
 
   it("returns an error when the organiser cannot manage the church", async () => {
     mockEventFindUnique.mockResolvedValue({ churchId: "ch-1" });
-    mockCanManageChurch.mockResolvedValue(false);
+    mockCanManageFromClaims.mockReturnValue(false);
 
     const result = await unpublishEventAction("evt-1");
 

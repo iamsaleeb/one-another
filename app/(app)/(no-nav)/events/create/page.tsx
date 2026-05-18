@@ -3,7 +3,7 @@ import { auth } from "@/auth";
 import { EventWizard } from "./_components/event-wizard";
 import { UserRole } from "@prisma/client";
 import { PageHeader } from "@/components/ui/page-header";
-import { getChurchesByManager } from "@/lib/actions/data-churches";
+import { getChurchesByIds } from "@/lib/actions/data-churches";
 import { getSeriesForEvent } from "@/lib/actions/data-series";
 import { getQuestionLibraryForUser } from "@/lib/dal/questions";
 
@@ -23,8 +23,12 @@ export default async function CreateEventPage({ searchParams }: Props) {
 
   const { seriesId } = await searchParams;
 
+  const managedIds = [
+    ...(session.user.organiserChurchIds ?? []),
+    ...(session.user.adminChurchIds ?? []),
+  ];
   const [churches, series, libraryItems] = await Promise.all([
-    getChurchesByManager(session.user.id),
+    getChurchesByIds(managedIds),
     seriesId ? getSeriesForEvent(seriesId) : null,
     getQuestionLibraryForUser(session.user.id),
   ]);

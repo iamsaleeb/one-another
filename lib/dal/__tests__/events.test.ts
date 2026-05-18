@@ -24,7 +24,7 @@ jest.mock("@/lib/notifications/queue", () => ({
 }));
 
 jest.mock("@/lib/permissions", () => ({
-  canManageChurch: jest.fn().mockResolvedValue(true),
+  canManageFromClaims: jest.fn().mockReturnValue(true),
 }));
 
 jest.mock("@/lib/dal/questions", () => ({
@@ -59,7 +59,7 @@ describe("notifySeriesFollowers deduplication", () => {
       { userId: "user-2" },
     ]);
 
-    await publishEvent("evt-1", "admin-user", "ADMIN");
+    await publishEvent("evt-1", "admin-user", "ADMIN", [], ["ch-1"]);
 
     expect(mockPrisma.notification.createMany).not.toHaveBeenCalled();
     expect(mockQueue.queueNotification).toHaveBeenCalledWith(
@@ -95,7 +95,7 @@ describe("notifyEventAttendees deduplication", () => {
       { userId: "user-4" },
     ]);
 
-    await cancelEvent("evt-2", "Venue unavailable", "admin-user", "ADMIN");
+    await cancelEvent("evt-2", "Venue unavailable", "admin-user", "ADMIN", [], ["ch-1"]);
 
     expect(mockPrisma.notification.createMany).not.toHaveBeenCalled();
     expect(mockQueue.queueNotification).toHaveBeenCalledWith(

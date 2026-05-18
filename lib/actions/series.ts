@@ -35,7 +35,9 @@ export async function createSeriesAction(
   const result = await createSeries(
     parsed.data,
     session.user.id,
-    session.user.role
+    session.user.role,
+    session.user.organiserChurchIds ?? [],
+    session.user.adminChurchIds ?? []
   );
   if ("error" in result || "fieldErrors" in result) return result;
 
@@ -62,7 +64,9 @@ export async function updateSeriesAction(
     id,
     parsed.data,
     session.user.id,
-    session.user.role
+    session.user.role,
+    session.user.organiserChurchIds ?? [],
+    session.user.adminChurchIds ?? []
   );
   if ("error" in result || "fieldErrors" in result) redirect("/organiser");
 
@@ -126,7 +130,13 @@ export async function deleteSeriesAction(id: string): Promise<void> {
   )
     redirect("/");
 
-  const result = await deleteSeries(id, session.user.id, session.user.role);
+  const result = await deleteSeries(
+    id,
+    session.user.id,
+    session.user.role,
+    session.user.organiserChurchIds ?? [],
+    session.user.adminChurchIds ?? []
+  );
   if ("error" in result) redirect("/organiser");
 
   broadcastSeriesChange(id, result.churchId);

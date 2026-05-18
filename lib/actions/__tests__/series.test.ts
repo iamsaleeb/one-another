@@ -26,7 +26,7 @@ jest.mock("@/auth", () => ({
 }));
 
 jest.mock("@/lib/permissions", () => ({
-  canManageChurch: jest.fn(),
+  canManageFromClaims: jest.fn().mockReturnValue(true),
 }));
 
 import { redirect } from "next/navigation";
@@ -40,7 +40,6 @@ import {
 } from "@/lib/actions/series";
 import { prisma } from "@/lib/db";
 import { auth } from "@/auth";
-import { canManageChurch } from "@/lib/permissions";
 
 const mockRedirect = redirect as unknown as jest.Mock;
 const mockUpdateTag = updateTag as jest.Mock;
@@ -51,7 +50,8 @@ const mockSeriesFindUnique = prisma.series.findUnique as jest.Mock;
 const mockSeriesFollowerCreate = prisma.seriesFollower.create as jest.Mock;
 const mockSeriesFollowerDelete = prisma.seriesFollower.delete as jest.Mock;
 const mockAuth = auth as jest.Mock;
-const mockCanManageChurch = canManageChurch as jest.Mock;
+const mockCanManageFromClaims = jest.requireMock("@/lib/permissions")
+  .canManageFromClaims as jest.Mock;
 
 const validData = {
   name: "Weekly Bible Study",
@@ -65,8 +65,10 @@ const validData = {
 
 beforeEach(() => {
   jest.clearAllMocks();
-  mockAuth.mockResolvedValue({ user: { id: "user-1", role: "ORGANISER" } });
-  mockCanManageChurch.mockResolvedValue(true);
+  mockAuth.mockResolvedValue({
+    user: { id: "user-1", role: "ORGANISER", organiserChurchIds: [], adminChurchIds: [] },
+  });
+  mockCanManageFromClaims.mockReturnValue(true);
 });
 
 describe("createSeriesAction", () => {
@@ -147,7 +149,7 @@ describe("createSeriesAction", () => {
   });
 
   it("returns an error when organiser is not assigned to the church", async () => {
-    mockCanManageChurch.mockResolvedValue(false);
+    mockCanManageFromClaims.mockReturnValue(false);
 
     const result = await createSeriesAction(validData);
 
@@ -308,7 +310,7 @@ describe("updateSeriesAction", () => {
   });
 
   it("redirects to /organiser when organiser is not assigned to the church", async () => {
-    mockCanManageChurch.mockResolvedValue(false);
+    mockCanManageFromClaims.mockReturnValue(false);
     mockRedirect.mockImplementationOnce(() => {
       throw new Error("NEXT_REDIRECT");
     });
@@ -362,7 +364,7 @@ describe("deleteSeriesAction", () => {
   });
 
   it("redirects to /organiser when organiser is not assigned to the church", async () => {
-    mockCanManageChurch.mockResolvedValue(false);
+    mockCanManageFromClaims.mockReturnValue(false);
     mockRedirect.mockImplementationOnce(() => {
       throw new Error("NEXT_REDIRECT");
     });

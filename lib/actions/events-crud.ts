@@ -42,7 +42,9 @@ export async function createEventAction(
   const result = await createEvent(
     parsed.data,
     session.user.id,
-    session.user.role
+    session.user.role,
+    session.user.organiserChurchIds ?? [],
+    session.user.adminChurchIds ?? []
   );
   if ("error" in result || "fieldErrors" in result) return result;
 
@@ -77,7 +79,9 @@ export async function updateEventAction(
     id,
     parsed.data,
     session.user.id,
-    session.user.role
+    session.user.role,
+    session.user.organiserChurchIds ?? [],
+    session.user.adminChurchIds ?? []
   );
   if ("error" in result) redirect("/organiser");
   if ("fieldErrors" in result) return result;
@@ -101,7 +105,9 @@ export async function cancelEventAction(
     id,
     reason,
     session.user.id,
-    session.user.role
+    session.user.role,
+    session.user.organiserChurchIds ?? [],
+    session.user.adminChurchIds ?? []
   );
   if ("error" in result) redirect("/organiser");
 
@@ -117,7 +123,13 @@ export async function uncancelEventAction(id: string): Promise<void> {
   )
     redirect("/");
 
-  const result = await uncancelEvent(id, session.user.id, session.user.role);
+  const result = await uncancelEvent(
+    id,
+    session.user.id,
+    session.user.role,
+    session.user.organiserChurchIds ?? [],
+    session.user.adminChurchIds ?? []
+  );
   if ("error" in result) redirect("/organiser");
 
   invalidateEventCaches(id, result.churchId, result.seriesId);
@@ -133,7 +145,13 @@ export async function publishEventAction(id: string): Promise<ActionResult> {
     return { error: "Unauthorised." };
   }
 
-  const result = await publishEvent(id, session.user.id, session.user.role);
+  const result = await publishEvent(
+    id,
+    session.user.id,
+    session.user.role,
+    session.user.organiserChurchIds ?? [],
+    session.user.adminChurchIds ?? []
+  );
   if ("error" in result) return result;
 
   invalidateEventCaches(id, result.churchId, result.seriesId, {
@@ -151,7 +169,13 @@ export async function unpublishEventAction(id: string): Promise<ActionResult> {
     return { error: "Unauthorised." };
   }
 
-  const result = await unpublishEvent(id, session.user.id, session.user.role);
+  const result = await unpublishEvent(
+    id,
+    session.user.id,
+    session.user.role,
+    session.user.organiserChurchIds ?? [],
+    session.user.adminChurchIds ?? []
+  );
   if ("error" in result) return result;
 
   invalidateEventCaches(id, result.churchId, result.seriesId, {
@@ -181,11 +205,16 @@ export async function saveDraftAction(
     questions: parsed.data.questions ?? [],
   };
 
+  const organiserIds = session.user.organiserChurchIds ?? [];
+  const adminIds = session.user.adminChurchIds ?? [];
+
   if (!id) {
     const result = await createEvent(
       { ...dataWithDefaults, isDraft: true },
       session.user.id,
-      session.user.role
+      session.user.role,
+      organiserIds,
+      adminIds
     );
     if ("error" in result || "fieldErrors" in result) return result;
     invalidateEventCaches(result.id, result.churchId, result.seriesId ?? null);
@@ -195,7 +224,9 @@ export async function saveDraftAction(
       id,
       { ...dataWithDefaults, isDraft: dataWithDefaults.isDraft ?? true },
       session.user.id,
-      session.user.role
+      session.user.role,
+      organiserIds,
+      adminIds
     );
     if ("error" in result || "fieldErrors" in result) return result;
     invalidateEventUpdate(id, result);
@@ -223,7 +254,9 @@ export async function saveEventAction(
     id,
     parsed.data,
     session.user.id,
-    session.user.role
+    session.user.role,
+    session.user.organiserChurchIds ?? [],
+    session.user.adminChurchIds ?? []
   );
   if ("error" in result || "fieldErrors" in result) return result;
 
@@ -240,7 +273,13 @@ export async function deleteEventAction(id: string): Promise<void> {
   )
     redirect("/");
 
-  const result = await deleteEvent(id, session.user.id, session.user.role);
+  const result = await deleteEvent(
+    id,
+    session.user.id,
+    session.user.role,
+    session.user.organiserChurchIds ?? [],
+    session.user.adminChurchIds ?? []
+  );
   if ("error" in result) redirect("/organiser");
 
   invalidateEventCaches(id, result.churchId, result.seriesId, {

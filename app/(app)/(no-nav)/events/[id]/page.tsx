@@ -27,7 +27,7 @@ import {
   parseEventMetadata,
   parseEventAttendeeMetadata,
 } from "@/lib/validations/event";
-import { canManageChurch } from "@/lib/permissions";
+import { canManageChurchFromSession } from "@/lib/permissions";
 import { EventDatetime } from "@/components/event-datetime";
 import { formatDateOnly, parseDateOfBirth } from "@/lib/datetime";
 import { InfoField } from "@/components/ui/info-field";
@@ -47,14 +47,9 @@ export async function generateMetadata({ params }: Props) {
   const event = await getEventById(id);
   if (!event) return { title: "Event Not Found" };
   if (event.isDraft) {
-    // Draft: need auth check — infrequent, cost is acceptable
     const session = await auth();
-    const canManage = await canManageChurch(
-      session?.user?.id,
-      session?.user?.role,
-      event.churchId
-    );
-    if (!canManage) return { title: "Event Not Found" };
+    if (!canManageChurchFromSession(session, event.churchId ?? ""))
+      return { title: "Event Not Found" };
   }
   const description = event.description.slice(0, 160);
   return {
@@ -84,10 +79,8 @@ export default async function EventDetailPage({ params }: Props) {
 
   const isAttending = myAttendance !== null;
 
-  const [canManage, questions] = await Promise.all([
-    canManageChurch(session?.user?.id, session?.user?.role, event.churchId),
-    getEventQuestions(id),
-  ]);
+  const canManage = canManageChurchFromSession(session, event.churchId ?? "");
+  const questions = await getEventQuestions(id);
 
   if (event.isDraft && !canManage) notFound();
 

@@ -36,7 +36,7 @@ import {
   getChurches,
   getChurchById,
   getMyChurchFollow,
-  getChurchesByManager,
+  getChurchesByIds,
   getOrganisersByChurch,
 } from "@/lib/actions/data-churches";
 import {
@@ -62,7 +62,7 @@ const mockSeriesFindMany = prisma.series.findMany as jest.Mock;
 const mockSeriesFindUnique = prisma.series.findUnique as jest.Mock;
 const mockChurchOrganiserFindMany = prisma.churchOrganiser
   .findMany as jest.Mock;
-const mockChurchAdminFindMany = prisma.churchAdmin.findMany as jest.Mock;
+const _mockChurchAdminFindMany = prisma.churchAdmin.findMany as jest.Mock;
 const mockEventAttendeeFindMany = prisma.eventAttendee.findMany as jest.Mock;
 const mockEventAttendeeFindUnique = prisma.eventAttendee
   .findUnique as jest.Mock;
@@ -199,42 +199,30 @@ describe("getOrganisersByChurch", () => {
   });
 });
 
-describe("getChurchesByManager", () => {
-  it("merges and deduplicates churches from both organiser and admin tables, sorted by name", async () => {
-    mockChurchOrganiserFindMany.mockResolvedValue([
-      { church: { id: "ch-1", name: "Grace Church" } },
-    ]);
-    mockChurchAdminFindMany.mockResolvedValue([
-      { church: { id: "ch-2", name: "Harvest Church" } },
+describe("getChurchesByIds", () => {
+  it("returns churches matching the given IDs ordered by name", async () => {
+    mockChurchFindMany.mockResolvedValue([
+      { id: "ch-1", name: "Grace Church" },
+      { id: "ch-2", name: "Harvest Church" },
     ]);
 
-    const result = await getChurchesByManager("user-1");
+    const result = await getChurchesByIds(["ch-1", "ch-2"]);
 
     expect(result).toEqual([
       { id: "ch-1", name: "Grace Church" },
       { id: "ch-2", name: "Harvest Church" },
     ]);
+    expect(mockChurchFindMany).toHaveBeenCalledWith({
+      where: { id: { in: ["ch-1", "ch-2"] } },
+      select: { id: true, name: true },
+      orderBy: { name: "asc" },
+    });
   });
 
-  it("deduplicates when the same church appears in both tables", async () => {
-    mockChurchOrganiserFindMany.mockResolvedValue([
-      { church: { id: "ch-1", name: "Grace Church" } },
-    ]);
-    mockChurchAdminFindMany.mockResolvedValue([
-      { church: { id: "ch-1", name: "Grace Church" } },
-    ]);
-
-    const result = await getChurchesByManager("user-1");
-
-    expect(result).toHaveLength(1);
-    expect(result[0].id).toBe("ch-1");
-  });
-
-  it("returns empty array when user has no assignments in either table", async () => {
-    mockChurchOrganiserFindMany.mockResolvedValue([]);
-    mockChurchAdminFindMany.mockResolvedValue([]);
-
-    expect(await getChurchesByManager("user-none")).toEqual([]);
+  it("returns empty array without hitting the DB when ids is empty", async () => {
+    const result = await getChurchesByIds([]);
+    expect(result).toEqual([]);
+    expect(mockChurchFindMany).not.toHaveBeenCalled();
   });
 });
 

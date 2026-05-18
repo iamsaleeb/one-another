@@ -9,6 +9,8 @@ declare module "next-auth" {
       role: UserRole;
       onboardingCompleted?: boolean;
       isEmailVerified?: boolean;
+      organiserChurchIds: string[];
+      adminChurchIds: string[];
     } & DefaultSession["user"];
   }
 }
@@ -19,5 +21,7 @@ declare module "next-auth/jwt" {
     role?: UserRole;
     onboardingCompleted?: boolean;
     isEmailVerified?: boolean;
+    organiserChurchIds?: string[];
+    adminChurchIds?: string[];
   }
 }

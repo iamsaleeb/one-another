@@ -53,28 +53,15 @@ export async function getMyChurchFollow(churchId: string, userId: string) {
   });
 }
 
-export async function getChurchesByManager(userId: string) {
-  cacheTag("churches", `user-churches-${userId}`);
+export async function getChurchesByIds(ids: string[]) {
+  if (ids.length === 0) return [];
+  cacheTag("churches");
   cacheLife("hours");
-  const [organiserRows, adminRows] = await Promise.all([
-    prisma.churchOrganiser.findMany({
-      where: { userId },
-      select: { church: { select: { id: true, name: true } } },
-    }),
-    prisma.churchAdmin.findMany({
-      where: { userId },
-      select: { church: { select: { id: true, name: true } } },
-    }),
-  ]);
-  const seen = new Set<string>();
-  const churches: Array<{ id: string; name: string }> = [];
-  for (const row of [...organiserRows, ...adminRows]) {
-    if (!seen.has(row.church.id)) {
-      seen.add(row.church.id);
-      churches.push(row.church);
-    }
-  }
-  return churches.sort((a, b) => a.name.localeCompare(b.name));
+  return prisma.church.findMany({
+    where: { id: { in: ids } },
+    select: { id: true, name: true },
+    orderBy: { name: "asc" },
+  });
 }
 
 export async function getOrganisersByChurch(churchId: string) {

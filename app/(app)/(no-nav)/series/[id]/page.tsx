@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Church, MapPin, Pencil, Plus, Tag, User } from "lucide-react";
 import { auth } from "@/auth";
 import { getSeriesById, getMySeriesFollow } from "@/lib/actions/data-series";
-import { canManageChurch } from "@/lib/permissions";
+import { canManageChurchFromSession } from "@/lib/permissions";
 import { InfoField } from "@/components/ui/info-field";
 import { HeroBanner } from "@/components/ui/hero-banner";
 import { EventCard } from "@/components/event-card";
@@ -36,11 +36,7 @@ export default async function SeriesDetailPage({ params }: Props) {
 
   if (!series) notFound();
 
-  const canManage = await canManageChurch(
-    session?.user?.id,
-    session?.user?.role,
-    series.churchId
-  );
+  const canManage = canManageChurchFromSession(session, series.churchId);
   const isFollowing = myFollow !== null;
 
   return (

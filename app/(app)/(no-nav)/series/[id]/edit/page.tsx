@@ -2,7 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { UserRole } from "@prisma/client";
 import { getSeriesById } from "@/lib/actions/data-series";
-import { getChurchesByManager } from "@/lib/actions/data-churches";
+import { getChurchesByIds } from "@/lib/actions/data-churches";
 import { PageHeader } from "@/components/ui/page-header";
 import { EditSeriesForm } from "./_components/edit-series-form";
 
@@ -21,7 +21,11 @@ export default async function EditSeriesPage({ params }: Props) {
     redirect("/");
   if (!series) notFound();
 
-  const churches = await getChurchesByManager(session.user.id);
+  const managedIds = [
+    ...(session.user.organiserChurchIds ?? []),
+    ...(session.user.adminChurchIds ?? []),
+  ];
+  const churches = await getChurchesByIds(managedIds);
   if (!churches.some((c) => c.id === series.churchId)) notFound();
 
   return (

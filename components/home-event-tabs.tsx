@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarDays, LogIn } from "lucide-react";
+import { LogIn } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { InfiniteEventList } from "@/components/infinite-event-list";
 import { EmptyState } from "@/components/empty-state";
@@ -23,10 +23,9 @@ export function HomeEventTabs({
   loadMoreFollowed,
   loadMoreOther,
 }: HomeEventTabsProps) {
+  // defaultValue intentionally used: tab state is seeded once from server, then owned by Radix
   return (
-    <>
-      {/* defaultValue intentionally used: tab state is seeded once from server, then owned by Radix */}
-      <Tabs defaultValue={defaultTab}>
+    <Tabs defaultValue={defaultTab}>
       <TabsList className="w-full">
         <TabsTrigger value="followed" className="flex-1">
           Your churches
@@ -60,7 +59,6 @@ export function HomeEventTabs({
           emptyMessage="No upcoming events"
         />
       </TabsContent>
-      </Tabs>
-    </>
+    </Tabs>
   );
 }

@@ -76,11 +76,19 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       }
       // Re-fetch from DB once per hour OR when church IDs haven't been populated yet
       const now = Math.floor(Date.now() / 1000);
-      if (token.id && (token.organiserChurchIds === undefined || now - (token.iat ?? 0) > 60 * 60)) {
+      if (
+        token.id &&
+        (token.organiserChurchIds === undefined ||
+          now - (token.iat ?? 0) > 60 * 60)
+      ) {
         const [freshUser, memberships] = await Promise.all([
           prisma.user.findUnique({
             where: { id: token.id },
-            select: { role: true, onboardingCompleted: true, emailVerified: true },
+            select: {
+              role: true,
+              onboardingCompleted: true,
+              emailVerified: true,
+            },
           }),
           fetchChurchMemberships(token.id),
         ]);

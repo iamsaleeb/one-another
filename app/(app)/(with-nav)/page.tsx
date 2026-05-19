@@ -33,7 +33,7 @@ export default async function Home({
   const query = q?.trim() ?? "";
   const hasFilters = !!(query || type !== "all" || when || category);
 
-  const userId = hasFilters ? null : (await auth())?.user?.id ?? null;
+  const userId = hasFilters ? null : ((await auth())?.user?.id ?? null);
 
   const [searchResults, followedPage, otherPage] = await Promise.all([
     hasFilters
@@ -65,8 +65,7 @@ export default async function Home({
     type && type !== "all" ? TYPE_LABELS[type] : null,
   ].filter(Boolean);
 
-  const defaultTab =
-    followedPage.items.length > 0 ? "followed" : "other";
+  const defaultTab = followedPage.items.length > 0 ? "followed" : "other";
 
   return (
     <div className="flex flex-col">

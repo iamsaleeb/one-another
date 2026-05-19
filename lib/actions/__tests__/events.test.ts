@@ -139,7 +139,12 @@ const validData = {
 beforeEach(() => {
   jest.clearAllMocks();
   mockAuth.mockResolvedValue({
-    user: { id: "user-1", role: "ORGANISER", organiserChurchIds: [], adminChurchIds: [] },
+    user: {
+      id: "user-1",
+      role: "ORGANISER",
+      organiserChurchIds: [],
+      adminChurchIds: [],
+    },
   });
   mockCanManageFromClaims.mockReturnValue(true);
   mockSeriesFollowerFindMany.mockResolvedValue([]);

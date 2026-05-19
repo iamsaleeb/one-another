@@ -27,7 +27,10 @@ jest.mock("@/components/infinite-event-list", () => ({
   ),
 }));
 
-jest.mock("lucide-react", () => ({ CalendarDays: () => null, LogIn: () => null }));
+jest.mock("lucide-react", () => ({
+  CalendarDays: () => null,
+  LogIn: () => null,
+}));
 
 const makeItem = (id: string): EventCardItem => ({
   id,
@@ -72,9 +75,10 @@ describe("HomeEventTabs", () => {
         loadMoreOther={loadMore}
       />
     );
-    expect(
-      screen.getByRole("tab", { name: "Your churches" })
-    ).toHaveAttribute("data-state", "active");
+    expect(screen.getByRole("tab", { name: "Your churches" })).toHaveAttribute(
+      "data-state",
+      "active"
+    );
   });
 
   it("shows sign-in prompt on 'Your churches' tab when not authenticated", () => {
@@ -114,7 +118,10 @@ describe("HomeEventTabs", () => {
     render(
       <HomeEventTabs
         defaultTab="followed"
-        followedPage={{ items: [makeItem("a"), makeItem("b")], nextCursor: null }}
+        followedPage={{
+          items: [makeItem("a"), makeItem("b")],
+          nextCursor: null,
+        }}
         otherPage={emptyPage}
         isAuthenticated={true}
         loadMoreFollowed={loadMore}

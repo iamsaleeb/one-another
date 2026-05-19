@@ -26,14 +26,14 @@ export function HomeEventTabs({
   // defaultValue intentionally used: tab state is seeded once from server, then owned by Radix
   return (
     <Tabs defaultValue={defaultTab}>
-      <div className="bg-muted/20 sticky top-0 z-10 px-4 pt-2 backdrop-blur-sm">
+      <div className="bg-muted/20 sticky top-0 z-10 pt-2 backdrop-blur-sm">
         <TabsList variant="line" className="w-full">
           <TabsTrigger value="followed">Your churches</TabsTrigger>
           <TabsTrigger value="other">Other events</TabsTrigger>
         </TabsList>
       </div>
 
-      <div className="px-4 pt-5">
+      <div className="pt-5">
         <TabsContent value="followed">
           {!isAuthenticated ? (
             <EmptyState

@@ -26,39 +26,39 @@ export function HomeEventTabs({
   // defaultValue intentionally used: tab state is seeded once from server, then owned by Radix
   return (
     <Tabs defaultValue={defaultTab}>
-      <TabsList className="w-full">
-        <TabsTrigger value="followed" className="flex-1">
-          Your churches
-        </TabsTrigger>
-        <TabsTrigger value="other" className="flex-1">
-          Other events
-        </TabsTrigger>
-      </TabsList>
+      <div className="bg-muted/20 sticky top-0 z-10 px-4 pt-2 backdrop-blur-sm">
+        <TabsList variant="line" className="w-full">
+          <TabsTrigger value="followed">Your churches</TabsTrigger>
+          <TabsTrigger value="other">Other events</TabsTrigger>
+        </TabsList>
+      </div>
 
-      <TabsContent value="followed" className="mt-4">
-        {!isAuthenticated ? (
-          <EmptyState
-            icon={LogIn}
-            label="Sign in to follow churches and see their events here"
-          />
-        ) : (
+      <div className="px-4 pt-5">
+        <TabsContent value="followed">
+          {!isAuthenticated ? (
+            <EmptyState
+              icon={LogIn}
+              label="Sign in to follow churches and see their events here"
+            />
+          ) : (
+            <InfiniteEventList
+              initialItems={followedPage.items}
+              initialCursor={followedPage.nextCursor}
+              loadMore={loadMoreFollowed}
+              emptyMessage="No upcoming events from churches you follow"
+            />
+          )}
+        </TabsContent>
+
+        <TabsContent value="other">
           <InfiniteEventList
-            initialItems={followedPage.items}
-            initialCursor={followedPage.nextCursor}
-            loadMore={loadMoreFollowed}
-            emptyMessage="No upcoming events from churches you follow"
+            initialItems={otherPage.items}
+            initialCursor={otherPage.nextCursor}
+            loadMore={loadMoreOther}
+            emptyMessage="No upcoming events"
           />
-        )}
-      </TabsContent>
-
-      <TabsContent value="other" className="mt-4">
-        <InfiniteEventList
-          initialItems={otherPage.items}
-          initialCursor={otherPage.nextCursor}
-          loadMore={loadMoreOther}
-          emptyMessage="No upcoming events"
-        />
-      </TabsContent>
+        </TabsContent>
+      </div>
     </Tabs>
   );
 }

@@ -30,7 +30,7 @@ export function ServicesTab({ church }: ServicesTabProps) {
             {services.slice(0, SHOW_PER_DAY).map((service) => (
               <Card
                 key={service.id}
-                className="shadow-card rounded-2xl border-0 bg-white"
+                className="shadow-card rounded-2xl border-0 bg-white py-0"
               >
                 <CardContent className="flex items-center justify-between px-4 py-2">
                   <p className="text-foreground text-sm font-bold">

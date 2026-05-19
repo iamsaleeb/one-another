@@ -22,7 +22,7 @@ export function EventsTab({ events, churchName }: EventsTabProps) {
           className="py-10"
         />
       ) : (
-        <div className="space-y-3">
+        <div className="flex flex-col gap-3">
           {events.map((event) => (
             <EventCard
               key={event.id}

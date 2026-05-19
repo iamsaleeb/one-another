@@ -25,7 +25,7 @@ export function SeriesTab({ series }: SeriesTabProps) {
       {series.length === 0 ? (
         <EmptyState icon={Repeat} label="No series yet" className="py-10" />
       ) : (
-        <div className="space-y-3">
+        <div className="flex flex-col gap-3">
           {series.map((s) => (
             <Link key={s.id} href={`/series/${s.id}`}>
               <Card className="shadow-card rounded-2xl border-0 bg-white py-0">

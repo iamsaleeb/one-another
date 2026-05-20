@@ -60,6 +60,11 @@ export async function verifyOtpAction(
   email: string,
   otp: string
 ): Promise<ActionResult> {
+  const emailParsed = z.string().email().safeParse(email);
+  if (!emailParsed.success) {
+    return { error: "Invalid or expired code. Please try again." };
+  }
+
   const valid = await verifyOtp(`auth:${email}`, otp);
   if (!valid) {
     return { error: "Invalid or expired code. Please try again." };

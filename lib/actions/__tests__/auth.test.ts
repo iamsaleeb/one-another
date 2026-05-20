@@ -133,6 +133,12 @@ describe("requestOtpAction", () => {
 // verifyOtpAction
 // ─────────────────────────────────────────────────────────────────────────────
 describe("verifyOtpAction", () => {
+  it("returns error for invalid email", async () => {
+    const result = await verifyOtpAction("not-an-email", "123456");
+    expect(result.error).toBeDefined();
+    expect(mockVerifyOtp).not.toHaveBeenCalled();
+  });
+
   it("returns error for invalid OTP", async () => {
     mockVerifyOtp.mockResolvedValue(false);
     const result = await verifyOtpAction("user@example.com", "000000");

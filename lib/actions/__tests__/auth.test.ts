@@ -130,6 +130,35 @@ describe("requestOtpAction", () => {
     const result = await requestOtpAction({ email: "user@example.com" });
     expect(result).toEqual({});
   });
+
+  describe("preview bypass (VERCEL_ENV=preview)", () => {
+    beforeEach(() => {
+      process.env.VERCEL_ENV = "preview";
+    });
+
+    afterEach(() => {
+      delete process.env.VERCEL_ENV;
+    });
+
+    it("stores 000000 instead of a generated OTP", async () => {
+      await requestOtpAction({ email: "user@example.com" });
+      expect(mockGenerateOtp).not.toHaveBeenCalled();
+      expect(mockStoreOtp).toHaveBeenCalledWith(
+        "auth:user@example.com",
+        "000000"
+      );
+    });
+
+    it("skips sending email", async () => {
+      await requestOtpAction({ email: "user@example.com" });
+      expect(mockSendLoginOtp).not.toHaveBeenCalled();
+    });
+
+    it("still returns {}", async () => {
+      const result = await requestOtpAction({ email: "user@example.com" });
+      expect(result).toEqual({});
+    });
+  });
 });
 
 // ─────────────────────────────────────────────────────────────────────────────

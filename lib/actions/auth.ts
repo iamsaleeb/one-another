@@ -41,13 +41,16 @@ export async function requestOtpAction(
     update: {},
   });
 
-  const otp = generateOtp();
+  const isPreview = process.env.VERCEL_ENV === "preview";
+  const otp = isPreview ? "000000" : generateOtp();
   await storeOtp(`auth:${email}`, otp);
 
-  try {
-    await sendLoginOtp(email, otp);
-  } catch {
-    // Email failure is non-fatal — user can request resend
+  if (!isPreview) {
+    try {
+      await sendLoginOtp(email, otp);
+    } catch {
+      // Email failure is non-fatal — user can request resend
+    }
   }
 
   return {};

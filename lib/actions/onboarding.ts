@@ -24,11 +24,12 @@ export async function completeOnboardingAction(
     return { fieldErrors: z.flattenError(parsed.error).fieldErrors };
   }
 
-  const { phone, dateOfBirth, image } = parsed.data;
+  const { name, phone, dateOfBirth, image } = parsed.data;
 
   await prisma.user.update({
     where: { id: session.user.id },
     data: {
+      name,
       phone: phone || null,
       dateOfBirth: dateOfBirth ? parseDateOfBirth(dateOfBirth) : null,
       image: image || null,
@@ -41,15 +42,21 @@ export async function completeOnboardingAction(
   return {};
 }
 
-export async function skipOnboardingAction(): Promise<ActionResult> {
+export async function skipOnboardingAction(
+  name: string
+): Promise<ActionResult> {
   const session = await auth();
   if (!session?.user?.id) {
     return { error: "You must be logged in." };
   }
 
+  if (!name || name.trim().length < 2) {
+    return { error: "Name must be at least 2 characters." };
+  }
+
   await prisma.user.update({
     where: { id: session.user.id },
-    data: { onboardingCompleted: true },
+    data: { name: name.trim(), onboardingCompleted: true },
   });
 
   return {};

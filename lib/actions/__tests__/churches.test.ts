@@ -41,6 +41,7 @@ describe("followChurchAction", () => {
       data: { churchId: "ch-1", userId: "user-1" },
     });
     expect(mockUpdateTag).toHaveBeenCalledWith("church-ch-1");
+    expect(mockUpdateTag).toHaveBeenCalledWith("user-follows-user-1");
   });
 
   it("returns an error when the user is not signed in", async () => {
@@ -59,6 +60,7 @@ describe("unfollowChurchAction", () => {
       where: { churchId_userId: { churchId: "ch-1", userId: "user-1" } },
     });
     expect(mockUpdateTag).toHaveBeenCalledWith("church-ch-1");
+    expect(mockUpdateTag).toHaveBeenCalledWith("user-follows-user-1");
   });
 
   it("returns an error when the user is not signed in", async () => {

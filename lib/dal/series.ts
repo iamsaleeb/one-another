@@ -24,7 +24,12 @@ export async function createSeries(
     photoUrl,
   } = data;
 
-  const allowed = canManageFromClaims(userRole, organiserChurchIds, adminChurchIds, churchId);
+  const allowed = canManageFromClaims(
+    userRole,
+    organiserChurchIds,
+    adminChurchIds,
+    churchId
+  );
   if (!allowed) return { error: "You are not assigned to this church." };
 
   const created = await prisma.series.create({
@@ -69,11 +74,21 @@ export async function updateSeries(
   });
   if (!existing) return { error: "Series not found." };
 
-  const allowedOriginal = canManageFromClaims(userRole, organiserChurchIds, adminChurchIds, existing.churchId);
+  const allowedOriginal = canManageFromClaims(
+    userRole,
+    organiserChurchIds,
+    adminChurchIds,
+    existing.churchId
+  );
   if (!allowedOriginal) return { error: "Unauthorised." };
 
   if (churchId !== existing.churchId) {
-    const allowedNew = canManageFromClaims(userRole, organiserChurchIds, adminChurchIds, churchId);
+    const allowedNew = canManageFromClaims(
+      userRole,
+      organiserChurchIds,
+      adminChurchIds,
+      churchId
+    );
     if (!allowedNew) return { error: "Unauthorised." };
   }
 
@@ -107,7 +122,12 @@ export async function deleteSeries(
   });
   if (!series) return { error: "Series not found." };
 
-  const allowed = canManageFromClaims(userRole, organiserChurchIds, adminChurchIds, series.churchId);
+  const allowed = canManageFromClaims(
+    userRole,
+    organiserChurchIds,
+    adminChurchIds,
+    series.churchId
+  );
   if (!allowed) return { error: "Unauthorised." };
 
   await prisma.series.delete({ where: { id } });

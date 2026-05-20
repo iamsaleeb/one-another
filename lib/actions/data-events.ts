@@ -238,3 +238,67 @@ export async function getEventsNotByCreatorPaged(
     nextCursor: hasMore ? rows[PAGE_SIZE - 1].id : null,
   };
 }
+
+export async function getFollowedChurchEventsPaged(
+  userId: string,
+  cursor: string | null
+): Promise<{ items: EventCardItem[]; nextCursor: string | null }> {
+  cacheTag("events-list", `user-follows-${userId}`);
+  cacheLife("minutes");
+  const follows = await prisma.churchFollower.findMany({
+    where: { userId },
+    select: { churchId: true },
+  });
+  const churchIds = follows.map((f) => f.churchId);
+  if (churchIds.length === 0) return { items: [], nextCursor: null };
+  const rows = await prisma.event.findMany({
+    where: {
+      churchId: { in: churchIds },
+      datetime: { gte: new Date() },
+      isDraft: false,
+    },
+    orderBy: { datetime: "asc" },
+    take: PAGE_SIZE + 1,
+    ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+    include: { church: { select: { name: true } } },
+  });
+  const hasMore = rows.length > PAGE_SIZE;
+  return {
+    items: hasMore ? rows.slice(0, PAGE_SIZE) : rows,
+    nextCursor: hasMore ? rows[PAGE_SIZE - 1].id : null,
+  };
+}
+
+export async function getOtherChurchEventsPaged(
+  userId: string | null,
+  cursor: string | null
+): Promise<{ items: EventCardItem[]; nextCursor: string | null }> {
+  if (userId !== null) {
+    cacheTag("events-list", `user-follows-${userId}`);
+  } else {
+    cacheTag("events-list");
+  }
+  cacheLife("minutes");
+  const excludedIds =
+    userId === null
+      ? []
+      : await prisma.churchFollower
+          .findMany({ where: { userId }, select: { churchId: true } })
+          .then((rows) => rows.map((r) => r.churchId));
+  const rows = await prisma.event.findMany({
+    where: {
+      churchId: { notIn: excludedIds },
+      datetime: { gte: new Date() },
+      isDraft: false,
+    },
+    orderBy: { datetime: "asc" },
+    take: PAGE_SIZE + 1,
+    ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+    include: { church: { select: { name: true } } },
+  });
+  const hasMore = rows.length > PAGE_SIZE;
+  return {
+    items: hasMore ? rows.slice(0, PAGE_SIZE) : rows,
+    nextCursor: hasMore ? rows[PAGE_SIZE - 1].id : null,
+  };
+}

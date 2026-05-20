@@ -95,7 +95,14 @@ describe("notifyEventAttendees deduplication", () => {
       { userId: "user-4" },
     ]);
 
-    await cancelEvent("evt-2", "Venue unavailable", "admin-user", "ADMIN", [], ["ch-1"]);
+    await cancelEvent(
+      "evt-2",
+      "Venue unavailable",
+      "admin-user",
+      "ADMIN",
+      [],
+      ["ch-1"]
+    );
 
     expect(mockPrisma.notification.createMany).not.toHaveBeenCalled();
     expect(mockQueue.queueNotification).toHaveBeenCalledWith(

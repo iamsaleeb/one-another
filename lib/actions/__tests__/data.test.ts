@@ -31,6 +31,8 @@ import {
   getUserAttendedPastEventsPaged,
   getEventsByCreatorPaged,
   getEventsNotByCreatorPaged,
+  getFollowedChurchEventsPaged,
+  getOtherChurchEventsPaged,
 } from "@/lib/actions/data-events";
 import {
   getChurches,
@@ -66,6 +68,7 @@ const _mockChurchAdminFindMany = prisma.churchAdmin.findMany as jest.Mock;
 const mockEventAttendeeFindMany = prisma.eventAttendee.findMany as jest.Mock;
 const mockEventAttendeeFindUnique = prisma.eventAttendee
   .findUnique as jest.Mock;
+const mockChurchFollowerFindMany = prisma.churchFollower.findMany as jest.Mock;
 const mockChurchFollowerFindUnique = prisma.churchFollower
   .findUnique as jest.Mock;
 const mockSeriesFollowerFindUnique = prisma.seriesFollower
@@ -894,6 +897,138 @@ describe("getEventsNotByCreatorPaged", () => {
         where: expect.objectContaining({
           OR: [{ createdById: { not: "user-1" } }, { createdById: null }],
         }),
+      })
+    );
+  });
+});
+
+describe("getFollowedChurchEventsPaged", () => {
+  it("returns events from followed churches, first page", async () => {
+    mockChurchFollowerFindMany.mockResolvedValue([
+      { churchId: "ch-1" },
+      { churchId: "ch-2" },
+    ]);
+    mockEventFindMany.mockResolvedValue([sampleEvent]);
+
+    const result = await getFollowedChurchEventsPaged("user-1", null);
+
+    expect(mockChurchFollowerFindMany).toHaveBeenCalledWith({
+      where: { userId: "user-1" },
+      select: { churchId: true },
+    });
+    expect(mockEventFindMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          churchId: { in: ["ch-1", "ch-2"] },
+          isDraft: false,
+          datetime: { gte: expect.any(Date) },
+        }),
+        orderBy: { datetime: "asc" },
+        take: 11,
+      })
+    );
+    expect(result.items).toHaveLength(1);
+    expect(result.nextCursor).toBeNull();
+  });
+
+  it("returns nextCursor when more pages exist", async () => {
+    mockChurchFollowerFindMany.mockResolvedValue([{ churchId: "ch-1" }]);
+    const events = Array.from({ length: 11 }, (_, i) => ({
+      ...sampleEvent,
+      id: `evt-${i}`,
+    }));
+    mockEventFindMany.mockResolvedValue(events);
+
+    const result = await getFollowedChurchEventsPaged("user-1", null);
+
+    expect(result.items).toHaveLength(10);
+    expect(result.nextCursor).toBe("evt-9");
+  });
+
+  it("passes cursor when provided", async () => {
+    mockChurchFollowerFindMany.mockResolvedValue([{ churchId: "ch-1" }]);
+    mockEventFindMany.mockResolvedValue([sampleEvent]);
+
+    await getFollowedChurchEventsPaged("user-1", "cursor-id");
+
+    expect(mockEventFindMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        cursor: { id: "cursor-id" },
+        skip: 1,
+      })
+    );
+  });
+
+  it("returns empty page when user follows no churches", async () => {
+    mockChurchFollowerFindMany.mockResolvedValue([]);
+    mockEventFindMany.mockResolvedValue([]);
+
+    const result = await getFollowedChurchEventsPaged("user-1", null);
+
+    expect(result.items).toHaveLength(0);
+    expect(result.nextCursor).toBeNull();
+  });
+});
+
+describe("getOtherChurchEventsPaged", () => {
+  it("excludes followed church events for authenticated user", async () => {
+    mockChurchFollowerFindMany.mockResolvedValue([{ churchId: "ch-1" }]);
+    mockEventFindMany.mockResolvedValue([sampleEvent]);
+
+    const result = await getOtherChurchEventsPaged("user-1", null);
+
+    expect(mockEventFindMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          churchId: { notIn: ["ch-1"] },
+          isDraft: false,
+          datetime: { gte: expect.any(Date) },
+        }),
+      })
+    );
+    expect(result.items).toHaveLength(1);
+  });
+
+  it("returns all events when userId is null (unauthenticated)", async () => {
+    mockEventFindMany.mockResolvedValue([sampleEvent]);
+
+    const result = await getOtherChurchEventsPaged(null, null);
+
+    expect(mockChurchFollowerFindMany).not.toHaveBeenCalled();
+    expect(mockEventFindMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          churchId: { notIn: [] },
+        }),
+      })
+    );
+    expect(result.items).toHaveLength(1);
+  });
+
+  it("returns nextCursor when more pages exist", async () => {
+    mockChurchFollowerFindMany.mockResolvedValue([]);
+    const events = Array.from({ length: 11 }, (_, i) => ({
+      ...sampleEvent,
+      id: `evt-${i}`,
+    }));
+    mockEventFindMany.mockResolvedValue(events);
+
+    const result = await getOtherChurchEventsPaged("user-1", null);
+
+    expect(result.items).toHaveLength(10);
+    expect(result.nextCursor).toBe("evt-9");
+  });
+
+  it("passes cursor when provided", async () => {
+    mockChurchFollowerFindMany.mockResolvedValue([]);
+    mockEventFindMany.mockResolvedValue([sampleEvent]);
+
+    await getOtherChurchEventsPaged("user-1", "cursor-id");
+
+    expect(mockEventFindMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        cursor: { id: "cursor-id" },
+        skip: 1,
       })
     );
   });

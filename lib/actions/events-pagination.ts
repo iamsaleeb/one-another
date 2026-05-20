@@ -8,6 +8,8 @@ import {
   getUserAttendedPastEventsPaged,
   getEventsByCreatorPaged,
   getEventsNotByCreatorPaged,
+  getFollowedChurchEventsPaged,
+  getOtherChurchEventsPaged,
 } from "@/lib/actions/data-events";
 
 interface Page {
@@ -53,4 +55,19 @@ export async function loadMoreCommunityEventsAction(
   const session = await auth();
   if (!session?.user?.id) return empty;
   return getEventsNotByCreatorPaged(session.user.id, cursor);
+}
+
+export async function loadMoreFollowedEventsAction(
+  cursor: string | null
+): Promise<Page> {
+  const session = await auth();
+  if (!session?.user?.id) return empty;
+  return getFollowedChurchEventsPaged(session.user.id, cursor);
+}
+
+export async function loadMoreOtherEventsAction(
+  cursor: string | null
+): Promise<Page> {
+  const session = await auth();
+  return getOtherChurchEventsPaged(session?.user?.id ?? null, cursor);
 }

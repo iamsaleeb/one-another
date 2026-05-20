@@ -3,12 +3,19 @@ import { Card, CardContent } from "@/components/ui/card";
 import { MapPin, SearchX } from "lucide-react";
 import { EventCard } from "@/components/event-card";
 import { searchEventsAndChurches } from "@/lib/actions/data-user";
-import { getEventsPaged } from "@/lib/actions/data-events";
-import { loadMoreEventsAction } from "@/lib/actions/events-pagination";
+import {
+  getFollowedChurchEventsPaged,
+  getOtherChurchEventsPaged,
+} from "@/lib/actions/data-events";
+import {
+  loadMoreFollowedEventsAction,
+  loadMoreOtherEventsAction,
+} from "@/lib/actions/events-pagination";
 import { PageHeader } from "@/components/ui/page-header";
 import { WHEN_LABELS, TYPE_LABELS, type WhenFilter } from "@/types/search";
 import { searchParamsSchema } from "@/lib/validations/search";
-import { InfiniteEventList } from "@/components/infinite-event-list";
+import { HomeEventTabs } from "@/components/home-event-tabs";
+import { auth } from "@/auth";
 
 export default async function Home({
   searchParams,
@@ -26,7 +33,9 @@ export default async function Home({
   const query = q?.trim() ?? "";
   const hasFilters = !!(query || type !== "all" || when || category);
 
-  const [searchResults, eventPage] = await Promise.all([
+  const userId = hasFilters ? null : ((await auth())?.user?.id ?? null);
+
+  const [searchResults, followedPage, otherPage] = await Promise.all([
     hasFilters
       ? searchEventsAndChurches({
           query,
@@ -35,7 +44,12 @@ export default async function Home({
           category: category ?? "",
         })
       : Promise.resolve(null),
-    hasFilters ? Promise.resolve(null) : getEventsPaged(null),
+    !hasFilters && userId
+      ? getFollowedChurchEventsPaged(userId, null)
+      : Promise.resolve({ items: [], nextCursor: null }),
+    !hasFilters
+      ? getOtherChurchEventsPaged(userId, null)
+      : Promise.resolve({ items: [], nextCursor: null }),
   ]);
 
   const filteredEvents = searchResults?.events ?? null;
@@ -50,6 +64,8 @@ export default async function Home({
     when ? WHEN_LABELS[when as WhenFilter] : null,
     type && type !== "all" ? TYPE_LABELS[type] : null,
   ].filter(Boolean);
+
+  const defaultTab = followedPage.items.length > 0 ? "followed" : "other";
 
   return (
     <div className="flex flex-col">
@@ -122,15 +138,14 @@ export default async function Home({
             </>
           )
         ) : (
-          eventPage && (
-            <InfiniteEventList
-              initialItems={eventPage.items}
-              initialCursor={eventPage.nextCursor}
-              loadMore={loadMoreEventsAction}
-              title="Upcoming Events"
-              emptyMessage="No upcoming events"
-            />
-          )
+          <HomeEventTabs
+            defaultTab={defaultTab}
+            followedPage={followedPage}
+            otherPage={otherPage}
+            isAuthenticated={!!userId}
+            loadMoreFollowed={loadMoreFollowedEventsAction}
+            loadMoreOther={loadMoreOtherEventsAction}
+          />
         )}
       </div>
     </div>

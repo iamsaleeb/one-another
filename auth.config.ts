@@ -7,10 +7,7 @@ export const authConfig = {
   callbacks: {
     authorized({ auth, request: { nextUrl } }) {
       const isLoggedIn = !!auth?.user;
-      const isAuthPage =
-        nextUrl.pathname.startsWith("/login") ||
-        nextUrl.pathname.startsWith("/register") ||
-        nextUrl.pathname.startsWith("/forgot-password");
+      const isAuthPage = nextUrl.pathname.startsWith("/login");
       const isPublicPage =
         nextUrl.pathname.startsWith("/terms") ||
         nextUrl.pathname.startsWith("/privacy") ||

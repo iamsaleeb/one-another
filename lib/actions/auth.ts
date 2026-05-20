@@ -36,11 +36,11 @@ export async function requestOtpAction(
     update: {},
   });
 
-  const isPreview = process.env.VERCEL_ENV === "preview";
-  const otp = isPreview ? "000000" : generateOtp();
+  const isDevBypass = process.env.VERCEL_ENV !== "production";
+  const otp = isDevBypass ? "000000" : generateOtp();
   await storeOtp(`auth:${email}`, otp);
 
-  if (!isPreview) {
+  if (!isDevBypass) {
     try {
       await sendLoginOtp(email, otp);
     } catch (err) {

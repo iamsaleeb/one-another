@@ -84,6 +84,14 @@ beforeEach(() => {
 // requestOtpAction
 // ─────────────────────────────────────────────────────────────────────────────
 describe("requestOtpAction", () => {
+  beforeEach(() => {
+    process.env.VERCEL_ENV = "production";
+  });
+
+  afterEach(() => {
+    delete process.env.VERCEL_ENV;
+  });
+
   it("returns fieldErrors for invalid email", async () => {
     const result = await requestOtpAction({ email: "not-an-email" });
     expect(result.fieldErrors?.email).toBeDefined();
@@ -131,30 +139,39 @@ describe("requestOtpAction", () => {
     expect(result).toEqual({});
   });
 
-  describe("preview bypass (VERCEL_ENV=preview)", () => {
-    beforeEach(() => {
-      process.env.VERCEL_ENV = "preview";
-    });
-
+  describe("dev bypass (VERCEL_ENV !== production)", () => {
     afterEach(() => {
       delete process.env.VERCEL_ENV;
     });
 
-    it("stores 000000 instead of a generated OTP", async () => {
+    it.each([
+      ["preview", "preview"],
+      ["local dev (undefined)", undefined],
+      ["development", "development"],
+    ])("stores 000000 and skips email for %s", async (_label, env) => {
+      if (env !== undefined) {
+        process.env.VERCEL_ENV = env;
+      } else {
+        delete process.env.VERCEL_ENV;
+      }
       await requestOtpAction({ email: "user@example.com" });
       expect(mockGenerateOtp).not.toHaveBeenCalled();
       expect(mockStoreOtp).toHaveBeenCalledWith(
         "auth:user@example.com",
         "000000"
       );
-    });
-
-    it("skips sending email", async () => {
-      await requestOtpAction({ email: "user@example.com" });
       expect(mockSendLoginOtp).not.toHaveBeenCalled();
     });
 
+    it("does not bypass when VERCEL_ENV=production", async () => {
+      process.env.VERCEL_ENV = "production";
+      await requestOtpAction({ email: "user@example.com" });
+      expect(mockGenerateOtp).toHaveBeenCalled();
+      expect(mockSendLoginOtp).toHaveBeenCalled();
+    });
+
     it("still returns {}", async () => {
+      process.env.VERCEL_ENV = "preview";
       const result = await requestOtpAction({ email: "user@example.com" });
       expect(result).toEqual({});
     });

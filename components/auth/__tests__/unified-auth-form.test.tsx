@@ -90,8 +90,8 @@ describe("UnifiedAuthForm — email step", () => {
 });
 
 describe("UnifiedAuthForm — OTP step", () => {
-  async function navigateToOtpStep() {
-    render(<UnifiedAuthForm />);
+  async function navigateToOtpStep(props: { devMode?: boolean } = {}) {
+    render(<UnifiedAuthForm {...props} />);
     await userEvent.type(screen.getByLabelText(/email/i), "user@example.com");
     await userEvent.click(screen.getByRole("button", { name: /continue/i }));
     await waitFor(() => screen.getByText(/check your email/i));
@@ -125,5 +125,16 @@ describe("UnifiedAuthForm — OTP step", () => {
     await waitFor(() => {
       expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
     });
+  });
+
+  it("shows dev hint with 000000 when devMode=true", async () => {
+    await navigateToOtpStep({ devMode: true });
+    expect(screen.getByText(/dev environment/i)).toBeInTheDocument();
+    expect(screen.getByText("000000")).toBeInTheDocument();
+  });
+
+  it("does not show dev hint when devMode=false", async () => {
+    await navigateToOtpStep({ devMode: false });
+    expect(screen.queryByText(/dev environment/i)).not.toBeInTheDocument();
   });
 });

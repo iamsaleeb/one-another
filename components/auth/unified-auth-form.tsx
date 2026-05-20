@@ -45,8 +45,9 @@ type Step = "email" | "otp";
 
 export function UnifiedAuthForm({
   className,
+  devMode = false,
   ...props
-}: React.ComponentProps<"div">) {
+}: React.ComponentProps<"div"> & { devMode?: boolean }) {
   const [step, setStep] = useState<Step>("email");
   const [email, setEmail] = useState("");
   const [cooldown, setCooldown] = useState(0);
@@ -223,6 +224,14 @@ export function UnifiedAuthForm({
                         </FormItem>
                       )}
                     />
+                    {devMode && (
+                      <Alert>
+                        <AlertDescription className="text-center text-sm">
+                          Dev environment — use code{" "}
+                          <span className="font-mono font-bold">000000</span>
+                        </AlertDescription>
+                      </Alert>
+                    )}
                     <Button
                       type="submit"
                       className="w-full"

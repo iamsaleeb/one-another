@@ -1,7 +1,6 @@
 import "dotenv/config";
 import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
-import bcrypt from "bcryptjs";
 
 const connectionString = process.env.DATABASE_URL;
 if (!connectionString)
@@ -2002,7 +2001,6 @@ async function main() {
     data: {
       name: "Fr. Bishoy Lamie",
       email: "organiser1@example.com",
-      password: await bcrypt.hash("password123", 10),
       emailVerified: new Date(),
       onboardingCompleted: true,
       role: "ORGANISER",
@@ -2013,7 +2011,6 @@ async function main() {
     data: {
       name: "Deacon Mina Nashed",
       email: "organiser2@example.com",
-      password: await bcrypt.hash("password123", 10),
       emailVerified: new Date(),
       onboardingCompleted: true,
       role: "ORGANISER",
@@ -2024,7 +2021,6 @@ async function main() {
     data: {
       name: "Fr. Antonious Farag",
       email: "organiser3@example.com",
-      password: await bcrypt.hash("password123", 10),
       emailVerified: new Date(),
       onboardingCompleted: true,
       role: "ORGANISER",
@@ -2035,7 +2031,6 @@ async function main() {
     data: {
       name: "Fr. Demetrius Botros",
       email: "organiser4@example.com",
-      password: await bcrypt.hash("password123", 10),
       emailVerified: new Date(),
       onboardingCompleted: true,
       role: "ORGANISER",
@@ -2046,7 +2041,6 @@ async function main() {
     data: {
       name: "Fr. Marcos Khalil",
       email: "organiser5@example.com",
-      password: await bcrypt.hash("password123", 10),
       emailVerified: new Date(),
       onboardingCompleted: true,
       role: "ORGANISER",
@@ -2067,7 +2061,6 @@ async function main() {
     data: {
       name: "Carol Admin",
       email: "admin@example.com",
-      password: await bcrypt.hash("password123", 10),
       emailVerified: new Date(),
       onboardingCompleted: true,
       role: "ADMIN",
@@ -2715,7 +2708,6 @@ async function main() {
     data: {
       name: "Mark Girgis",
       email: "user@example.com",
-      password: await bcrypt.hash("password123", 10),
       emailVerified: new Date(),
       onboardingCompleted: true,
       role: "ATTENDEE",
@@ -2726,7 +2718,6 @@ async function main() {
     data: {
       name: "Sara Hanna",
       email: "user2@example.com",
-      password: await bcrypt.hash("password123", 10),
       emailVerified: new Date(),
       onboardingCompleted: true,
       role: "ATTENDEE",

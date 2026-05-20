@@ -42,14 +42,19 @@ export function OnboardingForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSkipping, setIsSkipping] = useState(false);
   const [calendarOpen, setCalendarOpen] = useState(false);
+
   const form = useForm<OnboardingInput>({
     resolver: zodResolver(onboardingSchema),
     defaultValues: {
+      name: "",
       phone: "",
       dateOfBirth: undefined,
       image: undefined,
     },
   });
+
+  const nameValue = form.watch("name");
+  const canSkip = nameValue.trim().length >= 2;
 
   async function handleSubmit(data: OnboardingInput) {
     setIsSubmitting(true);
@@ -59,13 +64,21 @@ export function OnboardingForm() {
       setIsSubmitting(false);
       return;
     }
+    if (result.fieldErrors) {
+      Object.entries(result.fieldErrors).forEach(([field, msgs]) =>
+        form.setError(field as keyof OnboardingInput, { message: msgs[0] })
+      );
+      setIsSubmitting(false);
+      return;
+    }
     await update({ onboardingCompleted: true });
     router.push("/");
   }
 
   async function handleSkip() {
+    if (!canSkip) return;
     setIsSkipping(true);
-    await skipOnboardingAction();
+    await skipOnboardingAction(nameValue.trim());
     await update({ onboardingCompleted: true });
     router.push("/");
   }
@@ -77,7 +90,7 @@ export function OnboardingForm() {
         <span className="text-primary text-2xl font-bold">1Another</span>
         <h1 className="mt-2 text-xl font-bold">Complete your profile</h1>
         <p className="text-muted-foreground text-sm">
-          Help us personalise your experience. All fields are optional.
+          Your name is required. Other details are optional.
         </p>
       </div>
 
@@ -86,6 +99,24 @@ export function OnboardingForm() {
           onSubmit={form.handleSubmit(handleSubmit)}
           className="flex flex-col gap-5"
         >
+          {/* Name */}
+          <div className="shadow-card flex flex-col gap-4 rounded-2xl bg-white p-5">
+            <p className="text-sm font-medium">Your name</p>
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Full name</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Jane Doe" autoComplete="name" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+
           {/* Profile Photo */}
           <div className="shadow-card flex flex-col gap-4 rounded-2xl bg-white p-5">
             <p className="text-sm font-medium">Profile photo</p>
@@ -210,10 +241,10 @@ export function OnboardingForm() {
               type="button"
               variant="ghost"
               className="text-muted-foreground w-full"
-              disabled={isSubmitting || isSkipping}
+              disabled={isSubmitting || isSkipping || !canSkip}
               onClick={handleSkip}
             >
-              {isSkipping ? "Skipping..." : "Skip for now"}
+              {isSkipping ? "Skipping..." : "Skip optional details"}
             </Button>
           </div>
         </form>

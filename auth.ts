@@ -2,6 +2,7 @@ import NextAuth from "next-auth";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import Credentials from "next-auth/providers/credentials";
 import { prisma } from "@/lib/db";
+import { verifyOtp } from "@/lib/email/otp";
 import { authConfig } from "./auth.config";
 import type { UserRole } from "@prisma/client";
 
@@ -33,13 +34,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [
     Credentials({
       id: "otp",
-      credentials: { email: {} },
+      credentials: { email: {}, otp: {} },
       async authorize(credentials) {
         const email = credentials?.email as string | undefined;
-        if (!email) return null;
-        const user = await prisma.user.findUnique({ where: { email } });
-        if (!user || !user.emailVerified) return null;
-        return user;
+        const otp = credentials?.otp as string | undefined;
+        if (!email || !otp) return null;
+        const valid = await verifyOtp(`auth:${email}`, otp);
+        if (!valid) return null;
+        return prisma.user.update({
+          where: { email },
+          data: { emailVerified: new Date() },
+        });
       },
     }),
   ],

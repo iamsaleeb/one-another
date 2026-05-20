@@ -78,7 +78,12 @@ export function OnboardingForm() {
   async function handleSkip() {
     if (!canSkip) return;
     setIsSkipping(true);
-    await skipOnboardingAction(nameValue.trim());
+    const result = await skipOnboardingAction(nameValue.trim());
+    if (result.error) {
+      form.setError("root", { message: result.error });
+      setIsSkipping(false);
+      return;
+    }
     await update({ onboardingCompleted: true });
     router.push("/");
   }

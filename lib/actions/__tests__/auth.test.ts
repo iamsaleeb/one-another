@@ -168,35 +168,17 @@ describe("verifyOtpAction", () => {
   it("returns error for invalid email", async () => {
     const result = await verifyOtpAction("not-an-email", "123456");
     expect(result.error).toBeDefined();
-    expect(mockVerifyOtp).not.toHaveBeenCalled();
-  });
-
-  it("returns error for invalid OTP", async () => {
-    mockVerifyOtp.mockResolvedValue(false);
-    const result = await verifyOtpAction("user@example.com", "000000");
-    expect(result.error).toBeDefined();
-    expect(mockUpdate).not.toHaveBeenCalled();
     expect(mockSignIn).not.toHaveBeenCalled();
   });
 
-  it("sets emailVerified on valid OTP before signIn", async () => {
-    mockVerifyOtp.mockResolvedValue(true);
-    mockSignIn.mockImplementation(() => {
-      throw Object.assign(new Error("NEXT_REDIRECT"), {
-        digest: "NEXT_REDIRECT",
-      });
-    });
-    try {
-      await verifyOtpAction("user@example.com", "123456");
-    } catch {}
-    expect(mockUpdate).toHaveBeenCalledWith({
-      where: { email: "user@example.com" },
-      data: { emailVerified: expect.any(Date) },
-    });
+  it("returns rate limit error when rate-limited", async () => {
+    mockIsOtpRateLimited.mockResolvedValue(true);
+    const result = await verifyOtpAction("user@example.com", "000000");
+    expect(result.error).toMatch(/too many requests/i);
+    expect(mockSignIn).not.toHaveBeenCalled();
   });
 
-  it("calls signIn with otp provider and redirectTo /", async () => {
-    mockVerifyOtp.mockResolvedValue(true);
+  it("calls signIn with otp provider, email, otp, and redirectTo /", async () => {
     mockSignIn.mockImplementation(() => {
       throw Object.assign(new Error("NEXT_REDIRECT"), {
         digest: "NEXT_REDIRECT",
@@ -207,12 +189,12 @@ describe("verifyOtpAction", () => {
     } catch {}
     expect(mockSignIn).toHaveBeenCalledWith("otp", {
       email: "user@example.com",
+      otp: "123456",
       redirectTo: "/",
     });
   });
 
   it("re-throws NEXT_REDIRECT", async () => {
-    mockVerifyOtp.mockResolvedValue(true);
     const redirectError = Object.assign(new Error("NEXT_REDIRECT"), {
       digest: "NEXT_REDIRECT",
     });
@@ -222,10 +204,9 @@ describe("verifyOtpAction", () => {
     );
   });
 
-  it("returns error for AuthError", async () => {
-    mockVerifyOtp.mockResolvedValue(true);
+  it("returns error for AuthError (invalid OTP)", async () => {
     mockSignIn.mockRejectedValue(new AuthError("CredentialsSignin"));
-    const result = await verifyOtpAction("user@example.com", "123456");
+    const result = await verifyOtpAction("user@example.com", "000000");
     expect(result.error).toBeDefined();
   });
 });

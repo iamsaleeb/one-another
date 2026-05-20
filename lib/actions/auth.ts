@@ -8,7 +8,6 @@ import { requestOtpSchema, type RequestOtpInput } from "@/lib/validations/auth";
 import {
   generateOtp,
   storeOtp,
-  verifyOtp,
   isOtpRateLimited,
 } from "@/lib/email/otp";
 import { sendLoginOtp } from "@/lib/email/send-login-otp";
@@ -48,8 +47,8 @@ export async function requestOtpAction(
   if (!isPreview) {
     try {
       await sendLoginOtp(email, otp);
-    } catch {
-      // Email failure is non-fatal — user can request resend
+    } catch (err) {
+      console.error("Failed to send OTP email:", err);
     }
   }
 
@@ -65,18 +64,13 @@ export async function verifyOtpAction(
     return { error: "Invalid or expired code. Please try again." };
   }
 
-  const valid = await verifyOtp(`auth:${email}`, otp);
-  if (!valid) {
-    return { error: "Invalid or expired code. Please try again." };
+  const rateLimited = await isOtpRateLimited(`verify:${email}`, 10);
+  if (rateLimited) {
+    return { error: "Too many requests. Please wait before trying again." };
   }
 
-  await prisma.user.update({
-    where: { email },
-    data: { emailVerified: new Date() },
-  });
-
   try {
-    await signIn("otp", { email, redirectTo: "/" });
+    await signIn("otp", { email, otp, redirectTo: "/" });
   } catch (error) {
     if (error instanceof AuthError) {
       return { error: "Sign-in failed. Please try again." };

@@ -3,7 +3,9 @@ import { requestOtpSchema, otpSchema } from "@/lib/validations/auth";
 
 describe("requestOtpSchema", () => {
   it("accepts a valid email", () => {
-    expect(requestOtpSchema.safeParse({ email: "user@example.com" }).success).toBe(true);
+    expect(
+      requestOtpSchema.safeParse({ email: "user@example.com" }).success
+    ).toBe(true);
   });
 
   it("rejects an invalid email format", () => {

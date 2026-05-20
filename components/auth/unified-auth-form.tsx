@@ -156,7 +156,7 @@ export function UnifiedAuthForm({
                         <span className="w-full border-t" />
                       </div>
                       <div className="relative flex justify-center text-xs uppercase">
-                        <span className="bg-background px-2 text-muted-foreground">
+                        <span className="bg-background text-muted-foreground px-2">
                           Or continue with
                         </span>
                       </div>
@@ -228,7 +228,9 @@ export function UnifiedAuthForm({
                       className="w-full"
                       disabled={otpForm.formState.isSubmitting}
                     >
-                      {otpForm.formState.isSubmitting ? "Verifying..." : "Verify"}
+                      {otpForm.formState.isSubmitting
+                        ? "Verifying..."
+                        : "Verify"}
                     </Button>
                     <div className="text-muted-foreground text-center text-sm">
                       Didn&apos;t receive a code?{" "}
@@ -238,13 +240,15 @@ export function UnifiedAuthForm({
                         disabled={cooldown > 0}
                         className="hover:text-primary underline underline-offset-4 disabled:cursor-not-allowed disabled:opacity-50"
                       >
-                        {cooldown > 0 ? `Resend in ${cooldown}s` : "Resend code"}
+                        {cooldown > 0
+                          ? `Resend in ${cooldown}s`
+                          : "Resend code"}
                       </button>
                     </div>
                     <button
                       type="button"
                       onClick={handleBack}
-                      className="text-muted-foreground text-center text-sm hover:text-primary underline underline-offset-4"
+                      className="text-muted-foreground hover:text-primary text-center text-sm underline underline-offset-4"
                     >
                       Use a different email
                     </button>

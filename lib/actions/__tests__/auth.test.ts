@@ -109,7 +109,10 @@ describe("requestOtpAction", () => {
 
   it("stores OTP under auth: key", async () => {
     await requestOtpAction({ email: "user@example.com" });
-    expect(mockStoreOtp).toHaveBeenCalledWith("auth:user@example.com", "123456");
+    expect(mockStoreOtp).toHaveBeenCalledWith(
+      "auth:user@example.com",
+      "123456"
+    );
   });
 
   it("sends login OTP email", async () => {
@@ -150,7 +153,9 @@ describe("verifyOtpAction", () => {
   it("sets emailVerified on valid OTP before signIn", async () => {
     mockVerifyOtp.mockResolvedValue(true);
     mockSignIn.mockImplementation(() => {
-      throw Object.assign(new Error("NEXT_REDIRECT"), { digest: "NEXT_REDIRECT" });
+      throw Object.assign(new Error("NEXT_REDIRECT"), {
+        digest: "NEXT_REDIRECT",
+      });
     });
     try {
       await verifyOtpAction("user@example.com", "123456");
@@ -164,7 +169,9 @@ describe("verifyOtpAction", () => {
   it("calls signIn with otp provider and redirectTo /", async () => {
     mockVerifyOtp.mockResolvedValue(true);
     mockSignIn.mockImplementation(() => {
-      throw Object.assign(new Error("NEXT_REDIRECT"), { digest: "NEXT_REDIRECT" });
+      throw Object.assign(new Error("NEXT_REDIRECT"), {
+        digest: "NEXT_REDIRECT",
+      });
     });
     try {
       await verifyOtpAction("user@example.com", "123456");
@@ -181,9 +188,9 @@ describe("verifyOtpAction", () => {
       digest: "NEXT_REDIRECT",
     });
     mockSignIn.mockRejectedValue(redirectError);
-    await expect(
-      verifyOtpAction("user@example.com", "123456")
-    ).rejects.toThrow("NEXT_REDIRECT");
+    await expect(verifyOtpAction("user@example.com", "123456")).rejects.toThrow(
+      "NEXT_REDIRECT"
+    );
   });
 
   it("returns error for AuthError", async () => {
@@ -200,7 +207,9 @@ describe("verifyOtpAction", () => {
 describe("signOutAction", () => {
   it("calls signOut with /login redirect", async () => {
     mockSignOut.mockImplementation(() => {
-      throw Object.assign(new Error("NEXT_REDIRECT"), { digest: "NEXT_REDIRECT" });
+      throw Object.assign(new Error("NEXT_REDIRECT"), {
+        digest: "NEXT_REDIRECT",
+      });
     });
     try {
       await signOutAction();
@@ -225,7 +234,9 @@ describe("deleteAccountAction", () => {
     mockAuth.mockResolvedValue({ user: { id: "u1" } });
     mockDelete.mockResolvedValue({});
     mockSignOut.mockImplementation(() => {
-      throw Object.assign(new Error("NEXT_REDIRECT"), { digest: "NEXT_REDIRECT" });
+      throw Object.assign(new Error("NEXT_REDIRECT"), {
+        digest: "NEXT_REDIRECT",
+      });
     });
     try {
       await deleteAccountAction();

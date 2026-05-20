@@ -4,10 +4,7 @@ import { signIn, signOut, auth } from "@/auth";
 import { AuthError } from "next-auth";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
-import {
-  requestOtpSchema,
-  type RequestOtpInput,
-} from "@/lib/validations/auth";
+import { requestOtpSchema, type RequestOtpInput } from "@/lib/validations/auth";
 import {
   generateOtp,
   storeOtp,

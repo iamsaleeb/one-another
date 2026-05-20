@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { format, parse } from "date-fns";
 import { CalendarIcon } from "lucide-react";
@@ -53,7 +53,7 @@ export function OnboardingForm() {
     },
   });
 
-  const nameValue = form.watch("name");
+  const nameValue = useWatch({ control: form.control, name: "name" }) ?? "";
   const canSkip = nameValue.trim().length >= 2;
 
   async function handleSubmit(data: OnboardingInput) {
@@ -109,7 +109,11 @@ export function OnboardingForm() {
                 <FormItem>
                   <FormLabel>Full name</FormLabel>
                   <FormControl>
-                    <Input placeholder="Jane Doe" autoComplete="name" {...field} />
+                    <Input
+                      placeholder="Jane Doe"
+                      autoComplete="name"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

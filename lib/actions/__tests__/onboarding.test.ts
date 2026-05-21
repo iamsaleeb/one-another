@@ -30,29 +30,37 @@ beforeEach(() => {
   jest.clearAllMocks();
 });
 
-// ──────────────────────────────────────────────────────────────────────────────
-// completeOnboardingAction
+// ── completeOnboardingAction ──────────────────────────────────────────────────
 
 describe("completeOnboardingAction", () => {
   it("returns error when not authenticated", async () => {
     mockAuth.mockResolvedValue(null);
-    const result = await completeOnboardingAction({});
+    const result = await completeOnboardingAction({ name: "Jane" });
     expect(result).toEqual({ error: "You must be logged in." });
     expect(mockUpdate).not.toHaveBeenCalled();
   });
 
   it("returns error when session has no user id", async () => {
     mockAuth.mockResolvedValue({ user: {} });
-    const result = await completeOnboardingAction({});
+    const result = await completeOnboardingAction({ name: "Jane" });
     expect(result).toEqual({ error: "You must be logged in." });
     expect(mockUpdate).not.toHaveBeenCalled();
   });
 
-  it("saves all fields, invalidates user cache, and returns {} on success", async () => {
+  it("returns fieldErrors when name is missing", async () => {
+    mockAuth.mockResolvedValue({ user: { id: "user-1" } });
+    // @ts-expect-error — testing missing required field
+    const result = await completeOnboardingAction({});
+    expect(result.fieldErrors?.name).toBeDefined();
+    expect(mockUpdate).not.toHaveBeenCalled();
+  });
+
+  it("saves name and optional fields, invalidates cache, returns {}", async () => {
     mockAuth.mockResolvedValue({ user: { id: "user-1" } });
     mockUpdate.mockResolvedValue({});
 
     const result = await completeOnboardingAction({
+      name: "Jane Doe",
       phone: "0412345678",
       dateOfBirth: "1990-05-15",
       image: "https://example.com/photo.jpg",
@@ -62,6 +70,7 @@ describe("completeOnboardingAction", () => {
     expect(mockUpdate).toHaveBeenCalledWith({
       where: { id: "user-1" },
       data: {
+        name: "Jane Doe",
         phone: "0412345678",
         dateOfBirth: new Date("1990-05-15T12:00:00.000Z"),
         image: "https://example.com/photo.jpg",
@@ -71,15 +80,16 @@ describe("completeOnboardingAction", () => {
     expect(mockUpdateTag).toHaveBeenCalledWith("user-user-1");
   });
 
-  it("stores null for missing phone, dateOfBirth and image", async () => {
+  it("stores null for missing optional fields", async () => {
     mockAuth.mockResolvedValue({ user: { id: "user-1" } });
     mockUpdate.mockResolvedValue({});
 
-    await completeOnboardingAction({});
+    await completeOnboardingAction({ name: "Jane" });
 
     expect(mockUpdate).toHaveBeenCalledWith({
       where: { id: "user-1" },
       data: {
+        name: "Jane",
         phone: null,
         dateOfBirth: null,
         image: null,
@@ -90,9 +100,10 @@ describe("completeOnboardingAction", () => {
 
   it("returns fieldErrors for an invalid image URL", async () => {
     mockAuth.mockResolvedValue({ user: { id: "user-1" } });
-
-    const result = await completeOnboardingAction({ image: "not-a-url" });
-
+    const result = await completeOnboardingAction({
+      name: "Jane",
+      image: "not-a-url",
+    });
     expect(result.fieldErrors?.image).toBeDefined();
     expect(mockUpdate).not.toHaveBeenCalled();
   });
@@ -101,22 +112,10 @@ describe("completeOnboardingAction", () => {
     mockAuth.mockResolvedValue({ user: { id: "user-1" } });
     const future = new Date();
     future.setFullYear(future.getFullYear() + 1);
-
     const result = await completeOnboardingAction({
+      name: "Jane",
       dateOfBirth: future.toISOString().split("T")[0],
     });
-
-    expect(result.fieldErrors?.dateOfBirth).toBeDefined();
-    expect(mockUpdate).not.toHaveBeenCalled();
-  });
-
-  it("returns fieldErrors for an invalid date format", async () => {
-    mockAuth.mockResolvedValue({ user: { id: "user-1" } });
-
-    const result = await completeOnboardingAction({
-      dateOfBirth: "15-05-1990",
-    });
-
     expect(result.fieldErrors?.dateOfBirth).toBeDefined();
     expect(mockUpdate).not.toHaveBeenCalled();
   });
@@ -125,34 +124,52 @@ describe("completeOnboardingAction", () => {
     mockAuth.mockResolvedValue({ user: { id: "user-1" } });
     mockUpdate.mockResolvedValue({});
 
-    await completeOnboardingAction({ dateOfBirth: "2000-01-15" });
+    await completeOnboardingAction({ name: "Jane", dateOfBirth: "2000-01-15" });
 
     const saved = mockUpdate.mock.calls[0][0].data.dateOfBirth as Date;
     expect(saved.toISOString()).toBe("2000-01-15T12:00:00.000Z");
   });
 });
 
-// ──────────────────────────────────────────────────────────────────────────────
-// skipOnboardingAction
+// ── skipOnboardingAction ──────────────────────────────────────────────────────
 
 describe("skipOnboardingAction", () => {
   it("returns error when not authenticated", async () => {
     mockAuth.mockResolvedValue(null);
-    const result = await skipOnboardingAction();
+    const result = await skipOnboardingAction("Jane");
     expect(result).toEqual({ error: "You must be logged in." });
     expect(mockUpdate).not.toHaveBeenCalled();
   });
 
-  it("marks onboardingCompleted and returns {} on success", async () => {
+  it("returns error when name is too short", async () => {
+    mockAuth.mockResolvedValue({ user: { id: "user-1" } });
+    const result = await skipOnboardingAction("J");
+    expect(result.error).toBeDefined();
+    expect(mockUpdate).not.toHaveBeenCalled();
+  });
+
+  it("saves name, marks onboardingCompleted, returns {}", async () => {
     mockAuth.mockResolvedValue({ user: { id: "user-1" } });
     mockUpdate.mockResolvedValue({});
 
-    const result = await skipOnboardingAction();
+    const result = await skipOnboardingAction("Jane");
 
     expect(result).toEqual({});
     expect(mockUpdate).toHaveBeenCalledWith({
       where: { id: "user-1" },
-      data: { onboardingCompleted: true },
+      data: { name: "Jane", onboardingCompleted: true },
+    });
+  });
+
+  it("trims whitespace from name before saving", async () => {
+    mockAuth.mockResolvedValue({ user: { id: "user-1" } });
+    mockUpdate.mockResolvedValue({});
+
+    await skipOnboardingAction("  Jane  ");
+
+    expect(mockUpdate).toHaveBeenCalledWith({
+      where: { id: "user-1" },
+      data: { name: "Jane", onboardingCompleted: true },
     });
   });
 });

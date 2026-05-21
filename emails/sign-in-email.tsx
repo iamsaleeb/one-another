@@ -1,10 +1,10 @@
 import * as React from "react";
 
-interface ResetPasswordEmailProps {
+interface SignInEmailProps {
   otp: string;
 }
 
-export function ResetPasswordEmail({ otp }: ResetPasswordEmailProps) {
+export function SignInEmail({ otp }: SignInEmailProps) {
   return (
     <div
       style={{
@@ -19,8 +19,7 @@ export function ResetPasswordEmail({ otp }: ResetPasswordEmailProps) {
         1Another
       </h1>
       <p style={{ fontSize: 16, color: "#444", marginBottom: 32 }}>
-        We received a request to reset your password. Use the code below to
-        continue.
+        Use the code below to sign in to your account.
       </p>
       <div
         style={{
@@ -32,7 +31,7 @@ export function ResetPasswordEmail({ otp }: ResetPasswordEmailProps) {
         }}
       >
         <p style={{ fontSize: 14, color: "#666", marginBottom: 8 }}>
-          Your password reset code
+          Your sign-in code
         </p>
         <p
           style={{
@@ -47,8 +46,8 @@ export function ResetPasswordEmail({ otp }: ResetPasswordEmailProps) {
         </p>
       </div>
       <p style={{ fontSize: 14, color: "#888" }}>
-        This code expires in 15 minutes. If you didn&apos;t request a password
-        reset, you can safely ignore this email.
+        This code expires in 15 minutes. If you didn&apos;t request this, you
+        can safely ignore this email.
       </p>
     </div>
   );

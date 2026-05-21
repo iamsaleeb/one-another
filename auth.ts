@@ -41,10 +41,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         if (!email || !otp) return null;
         const valid = await verifyOtp(`auth:${email}`, otp);
         if (!valid) return null;
-        return prisma.user.update({
-          where: { email },
-          data: { emailVerified: new Date() },
-        });
+        return prisma.user
+          .update({
+            where: { email },
+            data: { emailVerified: new Date() },
+          })
+          .catch(() => null);
       },
     }),
   ],

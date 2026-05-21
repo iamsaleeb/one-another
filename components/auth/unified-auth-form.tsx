@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -48,6 +49,7 @@ export function UnifiedAuthForm({
   devMode = false,
   ...props
 }: React.ComponentProps<"div"> & { devMode?: boolean }) {
+  const router = useRouter();
   const [step, setStep] = useState<Step>("email");
   const [email, setEmail] = useState("");
   const [cooldown, setCooldown] = useState(0);
@@ -85,7 +87,11 @@ export function UnifiedAuthForm({
     if (result?.error) {
       otpForm.setError("root", { message: result.error });
       otpForm.resetField("otp");
+      return;
     }
+    // Server redirect (NEXT_REDIRECT) normally navigates before reaching here.
+    // This fallback handles the rare case where it doesn't.
+    router.push("/");
   });
 
   const handleResend = useCallback(async () => {

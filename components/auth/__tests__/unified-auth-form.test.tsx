@@ -4,6 +4,11 @@ import userEvent from "@testing-library/user-event";
 
 const mockRequestOtpAction = jest.fn();
 const mockVerifyOtpAction = jest.fn();
+const mockRouterPush = jest.fn();
+
+jest.mock("next/navigation", () => ({
+  useRouter: () => ({ push: mockRouterPush }),
+}));
 
 jest.mock("@/lib/actions/auth", () => ({
   requestOtpAction: (...args: unknown[]) => mockRequestOtpAction(...args),
@@ -25,6 +30,44 @@ jest.mock("next/link", () => {
   MockLink.displayName = "MockLink";
   return MockLink;
 });
+
+jest.mock("@/components/ui/input-otp", () => ({
+  InputOTP: ({
+    value,
+    onChange,
+    onComplete,
+    maxLength,
+    disabled,
+  }: {
+    value: string;
+    onChange: (v: string) => void;
+    onComplete?: () => void;
+    maxLength: number;
+    disabled?: boolean;
+  }) => (
+    <input
+      data-testid="otp-input"
+      value={value}
+      maxLength={maxLength}
+      disabled={disabled}
+      onChange={(e) => {
+        onChange(e.target.value);
+        if (e.target.value.length === maxLength && onComplete) {
+          onComplete();
+        }
+      }}
+    />
+  ),
+  InputOTPGroup: ({ children }: { children: React.ReactNode }) => (
+    <>{children}</>
+  ),
+  InputOTPSeparator: () => <span aria-hidden>-</span>,
+  InputOTPSlot: () => null,
+}));
+
+jest.mock("input-otp", () => ({
+  REGEXP_ONLY_DIGITS: /^\d*$/,
+}));
 
 import { UnifiedAuthForm } from "@/components/auth/unified-auth-form";
 
@@ -125,6 +168,28 @@ describe("UnifiedAuthForm — OTP step", () => {
     await waitFor(() => {
       expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
     });
+  });
+
+  it("calls router.push('/') on successful OTP verify", async () => {
+    await navigateToOtpStep();
+    await userEvent.type(screen.getByTestId("otp-input"), "123456");
+    await waitFor(() => {
+      expect(mockVerifyOtpAction).toHaveBeenCalledWith(
+        "user@example.com",
+        "123456"
+      );
+      expect(mockRouterPush).toHaveBeenCalledWith("/");
+    });
+  });
+
+  it("does not call router.push on verify error", async () => {
+    mockVerifyOtpAction.mockResolvedValue({ error: "Invalid code" });
+    await navigateToOtpStep();
+    await userEvent.type(screen.getByTestId("otp-input"), "000000");
+    await waitFor(() => {
+      expect(screen.getByText("Invalid code")).toBeInTheDocument();
+    });
+    expect(mockRouterPush).not.toHaveBeenCalled();
   });
 
   it("shows dev hint with 000000 when devMode=true", async () => {

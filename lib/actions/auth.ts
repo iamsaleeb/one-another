@@ -57,7 +57,7 @@ export async function verifyOtpAction(
 ): Promise<ActionResult> {
   const emailParsed = z.string().email().safeParse(email);
   if (!emailParsed.success) {
-    return { error: "Invalid or expired code. Please try again." };
+    return { error: "Invalid request." };
   }
 
   const rateLimited = await isOtpRateLimited(`verify:${email}`, 10);

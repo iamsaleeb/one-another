@@ -44,11 +44,26 @@ const RESEND_COOLDOWN = 60;
 
 type Step = "email" | "otp";
 
+function intentBannerText(intent: string, label: string): string {
+  if (intent === "attend") return `One step away from attending ${label}`;
+  if (intent === "register") return `One step away from registering for ${label}`;
+  if (intent === "follow") return `One step away from following ${label}`;
+  return "";
+}
+
 export function UnifiedAuthForm({
   className,
   devMode = false,
+  intent,
+  label,
+  callbackUrl,
   ...props
-}: React.ComponentProps<"div"> & { devMode?: boolean }) {
+}: React.ComponentProps<"div"> & {
+  devMode?: boolean;
+  intent?: string;
+  label?: string;
+  callbackUrl?: string;
+}) {
   const router = useRouter();
   const [step, setStep] = useState<Step>("email");
   const [email, setEmail] = useState("");
@@ -83,7 +98,7 @@ export function UnifiedAuthForm({
   });
 
   const onOtpSubmit = otpForm.handleSubmit(async (data) => {
-    const result = await verifyOtpAction(email, data.otp);
+    const result = await verifyOtpAction(email, data.otp, callbackUrl);
     if (result?.error) {
       otpForm.setError("root", { message: result.error });
       otpForm.resetField("otp");
@@ -91,7 +106,7 @@ export function UnifiedAuthForm({
     }
     // Server redirect (NEXT_REDIRECT) normally navigates before reaching here.
     // This fallback handles the rare case where it doesn't.
-    router.push("/");
+    router.push(callbackUrl ?? "/");
   });
 
   const handleResend = useCallback(async () => {
@@ -112,6 +127,13 @@ export function UnifiedAuthForm({
 
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
+      {intent && label && (
+        <Alert>
+          <AlertDescription className="text-center font-medium">
+            {intentBannerText(intent, label)}
+          </AlertDescription>
+        </Alert>
+      )}
       <Card>
         {step === "email" ? (
           <>
@@ -274,6 +296,11 @@ export function UnifiedAuthForm({
           </>
         )}
       </Card>
+      <div className="text-center">
+        <Button variant="link" size="sm" asChild>
+          <Link href={callbackUrl ?? "/"}>Continue browsing as guest</Link>
+        </Button>
+      </div>
       <div className="text-muted-foreground text-center text-xs text-balance">
         By continuing, you agree to our{" "}
         <Link

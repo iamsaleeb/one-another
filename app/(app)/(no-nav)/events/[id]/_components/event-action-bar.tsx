@@ -114,7 +114,11 @@ export function EventActionBar({
               !isDraft &&
               (requiresRegistration ? (
                 <Button
-                  onClick={() => isAuthenticated ? setDrawerOpen(true) : router.push(loginUrl)}
+                  onClick={() =>
+                    isAuthenticated
+                      ? setDrawerOpen(true)
+                      : router.push(loginUrl)
+                  }
                   variant={isAttending ? "outline" : "default"}
                   className={isAttending ? "gap-1.5" : ""}
                   disabled={isFull}

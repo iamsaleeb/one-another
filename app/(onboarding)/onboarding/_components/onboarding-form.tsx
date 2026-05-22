@@ -36,7 +36,7 @@ import {
 } from "@/components/ui/popover";
 import { PhotoUploadField } from "@/components/photo-upload-field";
 
-export function OnboardingForm() {
+export function OnboardingForm({ callbackUrl = "/" }: { callbackUrl?: string }) {
   const router = useRouter();
   const { update } = useSession();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -72,7 +72,7 @@ export function OnboardingForm() {
       return;
     }
     await update({ onboardingCompleted: true });
-    router.push("/");
+    router.push(callbackUrl);
   }
 
   async function handleSkip() {
@@ -85,7 +85,7 @@ export function OnboardingForm() {
       return;
     }
     await update({ onboardingCompleted: true });
-    router.push("/");
+    router.push(callbackUrl);
   }
 
   return (

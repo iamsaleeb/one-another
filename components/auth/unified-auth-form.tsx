@@ -46,7 +46,8 @@ type Step = "email" | "otp";
 
 function intentBannerText(intent: string, label: string): string {
   if (intent === "attend") return `One step away from attending ${label}`;
-  if (intent === "register") return `One step away from registering for ${label}`;
+  if (intent === "register")
+    return `One step away from registering for ${label}`;
   if (intent === "follow") return `One step away from following ${label}`;
   return "";
 }

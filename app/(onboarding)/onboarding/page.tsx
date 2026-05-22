@@ -2,7 +2,11 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { OnboardingForm } from "./_components/onboarding-form";
 
-export default async function OnboardingPage() {
+export default async function OnboardingPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ callbackUrl?: string }>;
+}) {
   const session = await auth();
 
   if (!session?.user) {
@@ -13,5 +17,6 @@ export default async function OnboardingPage() {
     redirect("/");
   }
 
-  return <OnboardingForm />;
+  const { callbackUrl } = await searchParams;
+  return <OnboardingForm callbackUrl={callbackUrl} />;
 }

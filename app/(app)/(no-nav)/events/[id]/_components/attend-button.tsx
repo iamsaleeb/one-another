@@ -1,6 +1,7 @@
 "use client";
 
 import { useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,12 +12,24 @@ import {
 interface AttendButtonProps {
   eventId: string;
   isAttending: boolean;
+  isAuthenticated: boolean;
+  loginUrl: string;
 }
 
-export function AttendButton({ eventId, isAttending }: AttendButtonProps) {
+export function AttendButton({
+  eventId,
+  isAttending,
+  isAuthenticated,
+  loginUrl,
+}: AttendButtonProps) {
+  const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
   function handleClick() {
+    if (!isAuthenticated) {
+      router.push(loginUrl);
+      return;
+    }
     startTransition(async () => {
       if (isAttending) {
         await unattendEventAction(eventId);

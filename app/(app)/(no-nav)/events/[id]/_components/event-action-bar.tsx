@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Check, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AttendButton } from "./attend-button";
@@ -23,6 +24,7 @@ interface EventActionBarProps {
   price?: string | null;
   isCancelled?: boolean;
   isDraft?: boolean;
+  isAuthenticated: boolean;
   attendees?: Awaited<ReturnType<typeof getEventAttendees>>;
   camp?: EventMetadata["camp"];
   campStartDate?: string;
@@ -47,6 +49,7 @@ export function EventActionBar({
   price,
   isCancelled,
   isDraft,
+  isAuthenticated,
   attendees,
   camp,
   campStartDate,
@@ -56,6 +59,8 @@ export function EventActionBar({
 }: EventActionBarProps) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [attendeesDrawerOpen, setAttendeesDrawerOpen] = useState(false);
+  const router = useRouter();
+  const loginUrl = `/login?callbackUrl=/events/${eventId}&intent=${requiresRegistration ? "register" : "attend"}&label=${encodeURIComponent(eventTitle)}`;
 
   const spotsLeft = capacity != null ? capacity - spotsUsed : null;
   const isFull = spotsLeft != null && spotsLeft <= 0 && !isAttending;
@@ -109,7 +114,7 @@ export function EventActionBar({
               !isDraft &&
               (requiresRegistration ? (
                 <Button
-                  onClick={() => setDrawerOpen(true)}
+                  onClick={() => isAuthenticated ? setDrawerOpen(true) : router.push(loginUrl)}
                   variant={isAttending ? "outline" : "default"}
                   className={isAttending ? "gap-1.5" : ""}
                   disabled={isFull}
@@ -122,7 +127,12 @@ export function EventActionBar({
                       : "Register"}
                 </Button>
               ) : (
-                <AttendButton eventId={eventId} isAttending={isAttending} />
+                <AttendButton
+                  eventId={eventId}
+                  isAttending={isAttending}
+                  isAuthenticated={isAuthenticated}
+                  loginUrl={loginUrl}
+                />
               ))}
           </div>
         </div>

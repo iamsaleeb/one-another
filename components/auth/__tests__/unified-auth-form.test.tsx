@@ -134,7 +134,9 @@ describe("UnifiedAuthForm — email step", () => {
 });
 
 describe("UnifiedAuthForm — OTP step", () => {
-  async function navigateToOtpStep(props: { devMode?: boolean } = {}) {
+  async function navigateToOtpStep(
+    props: React.ComponentProps<typeof UnifiedAuthForm> = {}
+  ) {
     render(<UnifiedAuthForm {...props} />);
     await userEvent.type(screen.getByLabelText(/email/i), "user@example.com");
     await userEvent.click(screen.getByRole("button", { name: /continue/i }));
@@ -180,6 +182,27 @@ describe("UnifiedAuthForm — OTP step", () => {
         "123456",
         undefined
       );
+      expect(mockRouterPush).toHaveBeenCalledWith("/");
+    });
+  });
+
+  it("passes callbackUrl to verifyOtpAction and router.push when valid", async () => {
+    await navigateToOtpStep({ callbackUrl: "/events/123" });
+    await userEvent.type(screen.getByTestId("otp-input"), "123456");
+    await waitFor(() => {
+      expect(mockVerifyOtpAction).toHaveBeenCalledWith(
+        "user@example.com",
+        "123456",
+        "/events/123"
+      );
+      expect(mockRouterPush).toHaveBeenCalledWith("/events/123");
+    });
+  });
+
+  it("falls back to '/' for unsafe callbackUrl", async () => {
+    await navigateToOtpStep({ callbackUrl: "https://evil.com" });
+    await userEvent.type(screen.getByTestId("otp-input"), "123456");
+    await waitFor(() => {
       expect(mockRouterPush).toHaveBeenCalledWith("/");
     });
   });

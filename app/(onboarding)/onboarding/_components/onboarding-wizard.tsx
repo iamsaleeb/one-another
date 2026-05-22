@@ -227,21 +227,23 @@ export function OnboardingWizard({ callbackUrl }: { callbackUrl?: string }) {
 
   const handleSubmit = async () => {
     setIsSubmitting(true);
-    const result = await completeOnboardingAction(form.getValues());
-    if (result.error) {
-      form.setError("root", { message: result.error });
+    try {
+      const result = await completeOnboardingAction(form.getValues());
+      if (result.error) {
+        form.setError("root", { message: result.error });
+        return;
+      }
+      if (result.fieldErrors) {
+        Object.entries(result.fieldErrors).forEach(([field, msgs]) =>
+          form.setError(field as keyof OnboardingInput, { message: msgs[0] })
+        );
+        return;
+      }
+      await update({ onboardingCompleted: true });
+      router.push(safeCallback);
+    } finally {
       setIsSubmitting(false);
-      return;
     }
-    if (result.fieldErrors) {
-      Object.entries(result.fieldErrors).forEach(([field, msgs]) =>
-        form.setError(field as keyof OnboardingInput, { message: msgs[0] })
-      );
-      setIsSubmitting(false);
-      return;
-    }
-    await update({ onboardingCompleted: true });
-    router.push(safeCallback);
   };
 
   const renderStep = () => {

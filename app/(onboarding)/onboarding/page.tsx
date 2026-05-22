@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
-import { OnboardingForm } from "./_components/onboarding-form";
+import { OnboardingWizard } from "./_components/onboarding-wizard";
 
 export default async function OnboardingPage({
   searchParams,
@@ -18,5 +18,5 @@ export default async function OnboardingPage({
   }
 
   const { callbackUrl } = await searchParams;
-  return <OnboardingForm callbackUrl={callbackUrl} />;
+  return <OnboardingWizard callbackUrl={callbackUrl} />;
 }

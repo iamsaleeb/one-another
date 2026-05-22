@@ -14,10 +14,7 @@ jest.mock("@/lib/db", () => ({
   },
 }));
 
-import {
-  completeOnboardingAction,
-  skipOnboardingAction,
-} from "@/lib/actions/onboarding";
+import { completeOnboardingAction } from "@/lib/actions/onboarding";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
 import { updateTag } from "next/cache";
@@ -128,48 +125,5 @@ describe("completeOnboardingAction", () => {
 
     const saved = mockUpdate.mock.calls[0][0].data.dateOfBirth as Date;
     expect(saved.toISOString()).toBe("2000-01-15T12:00:00.000Z");
-  });
-});
-
-// ── skipOnboardingAction ──────────────────────────────────────────────────────
-
-describe("skipOnboardingAction", () => {
-  it("returns error when not authenticated", async () => {
-    mockAuth.mockResolvedValue(null);
-    const result = await skipOnboardingAction("Jane");
-    expect(result).toEqual({ error: "You must be logged in." });
-    expect(mockUpdate).not.toHaveBeenCalled();
-  });
-
-  it("returns error when name is too short", async () => {
-    mockAuth.mockResolvedValue({ user: { id: "user-1" } });
-    const result = await skipOnboardingAction("J");
-    expect(result.error).toBeDefined();
-    expect(mockUpdate).not.toHaveBeenCalled();
-  });
-
-  it("saves name, marks onboardingCompleted, returns {}", async () => {
-    mockAuth.mockResolvedValue({ user: { id: "user-1" } });
-    mockUpdate.mockResolvedValue({});
-
-    const result = await skipOnboardingAction("Jane");
-
-    expect(result).toEqual({});
-    expect(mockUpdate).toHaveBeenCalledWith({
-      where: { id: "user-1" },
-      data: { name: "Jane", onboardingCompleted: true },
-    });
-  });
-
-  it("trims whitespace from name before saving", async () => {
-    mockAuth.mockResolvedValue({ user: { id: "user-1" } });
-    mockUpdate.mockResolvedValue({});
-
-    await skipOnboardingAction("  Jane  ");
-
-    expect(mockUpdate).toHaveBeenCalledWith({
-      where: { id: "user-1" },
-      data: { name: "Jane", onboardingCompleted: true },
-    });
   });
 });

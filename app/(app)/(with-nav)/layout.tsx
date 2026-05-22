@@ -26,6 +26,7 @@ function NavShellFallback() {
 
 async function NavShell() {
   const session = await auth();
+  const isAuthenticated = !!session?.user;
   const isOrganiser = session?.user?.role === UserRole.ORGANISER;
   const isAdmin = session?.user?.role === UserRole.ADMIN;
   const unreadCount = session?.user?.id
@@ -35,6 +36,7 @@ async function NavShell() {
   return (
     <>
       <BottomNav
+        isAuthenticated={isAuthenticated}
         isOrganiser={isOrganiser}
         isAdmin={isAdmin}
         unreadCount={unreadCount}

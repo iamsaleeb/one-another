@@ -65,11 +65,12 @@ function StepName() {
 }
 
 function StepPhoto() {
+  const form = useFormContext<OnboardingInput>();
   return (
     <div className="flex flex-col gap-4">
       <p className="text-muted-foreground text-sm">
-        Your photo helps organisers recognise you at events. Only organisers
-        can see it.
+        Your photo helps organisers recognise you at events. Only organisers can
+        see it.
       </p>
       <FormField
         control={form.control}

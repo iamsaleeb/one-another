@@ -11,7 +11,12 @@ export const authConfig = {
       const isPublicPage =
         nextUrl.pathname.startsWith("/terms") ||
         nextUrl.pathname.startsWith("/privacy") ||
-        nextUrl.pathname === "/api/cron/process-notifications";
+        nextUrl.pathname === "/api/cron/process-notifications" ||
+        nextUrl.pathname === "/" ||
+        nextUrl.pathname.startsWith("/churches") ||
+        nextUrl.pathname.startsWith("/series") ||
+        (nextUrl.pathname !== "/events/create" &&
+          /^\/events\/[^/]+$/.test(nextUrl.pathname));
       const isOnboardingPage = nextUrl.pathname.startsWith("/onboarding");
 
       if (isPublicPage) return true;
@@ -40,7 +45,9 @@ export const authConfig = {
       }
 
       if (auth?.user?.onboardingCompleted === false) {
-        return Response.redirect(new URL("/onboarding", nextUrl));
+        const onboardingUrl = new URL("/onboarding", nextUrl);
+        onboardingUrl.searchParams.set("callbackUrl", nextUrl.pathname);
+        return Response.redirect(onboardingUrl);
       }
 
       const role = auth?.user?.role;

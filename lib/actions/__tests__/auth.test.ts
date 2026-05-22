@@ -195,7 +195,7 @@ describe("verifyOtpAction", () => {
     expect(mockSignIn).not.toHaveBeenCalled();
   });
 
-  it("calls signIn with otp provider, email, otp, and redirectTo /", async () => {
+  it("calls signIn with redirectTo / when no callbackUrl provided", async () => {
     mockSignIn.mockImplementation(() => {
       throw Object.assign(new Error("NEXT_REDIRECT"), {
         digest: "NEXT_REDIRECT",
@@ -208,6 +208,22 @@ describe("verifyOtpAction", () => {
       email: "user@example.com",
       otp: "123456",
       redirectTo: "/",
+    });
+  });
+
+  it("calls signIn with provided callbackUrl as redirectTo", async () => {
+    mockSignIn.mockImplementation(() => {
+      throw Object.assign(new Error("NEXT_REDIRECT"), {
+        digest: "NEXT_REDIRECT",
+      });
+    });
+    try {
+      await verifyOtpAction("user@example.com", "123456", "/events/abc123");
+    } catch {}
+    expect(mockSignIn).toHaveBeenCalledWith("otp", {
+      email: "user@example.com",
+      otp: "123456",
+      redirectTo: "/events/abc123",
     });
   });
 

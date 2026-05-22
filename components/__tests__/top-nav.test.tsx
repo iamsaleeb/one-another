@@ -53,13 +53,20 @@ describe("TopNav — home page", () => {
     expect(screen.getByPlaceholderText(/search events/i)).toBeInTheDocument();
   });
 
-  it("renders a link to the profile page", () => {
-    render(<TopNav />);
+  it("renders a link to the profile page when authenticated", () => {
+    render(<TopNav user={{ name: "Test User" }} />);
     const links = screen.getAllByRole("link");
     const profileLink = links.find(
       (l) => l.getAttribute("href") === "/profile"
     );
     expect(profileLink).toBeInTheDocument();
+  });
+
+  it("renders a Sign in link when not authenticated", () => {
+    render(<TopNav />);
+    const links = screen.getAllByRole("link");
+    const signInLink = links.find((l) => l.getAttribute("href") === "/login");
+    expect(signInLink).toBeInTheDocument();
   });
 
   it("pre-fills search input from URL query param", () => {
@@ -152,8 +159,8 @@ describe("TopNav — user avatar initials (getInitials)", () => {
     expect(screen.getByText("T")).toBeInTheDocument();
   });
 
-  it('shows "?" when no user info is available', () => {
-    render(<TopNav />);
+  it('shows "?" when user is provided but has no name or email', () => {
+    render(<TopNav user={{}} />);
     expect(screen.getByText("?")).toBeInTheDocument();
   });
 });

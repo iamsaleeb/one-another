@@ -12,9 +12,12 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const baseTabs = [
+const publicTabs = [
   { label: "Home", href: "/", icon: Home },
   { label: "Churches", href: "/churches", icon: Church },
+];
+
+const authTabs = [
   { label: "My Events", href: "/my-events", icon: CalendarDays },
   { label: "Notifications", href: "/notifications", icon: Bell },
 ];
@@ -23,23 +26,27 @@ const organiserTab = { label: "Tools", href: "/organiser", icon: Wrench };
 const adminTab = { label: "Admin", href: "/admin", icon: ShieldCheck };
 
 interface BottomNavProps {
+  isAuthenticated?: boolean;
   isOrganiser?: boolean;
   isAdmin?: boolean;
   unreadCount?: number;
 }
 
 export function BottomNav({
+  isAuthenticated,
   isOrganiser,
   isAdmin,
   unreadCount = 0,
 }: BottomNavProps) {
   const pathname = usePathname();
 
-  const tabs = isAdmin
-    ? [...baseTabs, organiserTab, adminTab]
-    : isOrganiser
-      ? [...baseTabs, organiserTab]
-      : baseTabs;
+  const tabs = isAuthenticated
+    ? isAdmin
+      ? [...publicTabs, ...authTabs, organiserTab, adminTab]
+      : isOrganiser
+        ? [...publicTabs, ...authTabs, organiserTab]
+        : [...publicTabs, ...authTabs]
+    : publicTabs;
 
   return (
     <nav className="pb-safe fixed right-0 bottom-0 left-0 z-50 bg-white shadow-[0px_-2px_31px_0px_#0000001A]">

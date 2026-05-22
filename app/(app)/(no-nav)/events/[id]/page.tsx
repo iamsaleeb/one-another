@@ -237,6 +237,7 @@ export default async function EventDetailPage({ params }: Props) {
         eventTitle={event.title}
         requiresRegistration={event.requiresRegistration}
         isAttending={isAttending}
+        isAuthenticated={!!session?.user}
         userName={session?.user?.name ?? ""}
         capacity={registration.capacity}
         spotsUsed={event._count.attendees}

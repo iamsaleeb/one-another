@@ -29,7 +29,6 @@ jest.mock("@/components/infinite-event-list", () => ({
 
 jest.mock("lucide-react", () => ({
   CalendarDays: () => null,
-  LogIn: () => null,
 }));
 
 const makeItem = (id: string): EventCardItem => ({
@@ -47,7 +46,7 @@ const loadMore = jest.fn();
 describe("HomeEventTabs", () => {
   beforeEach(() => jest.clearAllMocks());
 
-  it("defaults to 'other' tab when defaultTab is 'other'", () => {
+  it("shows single event list (no tabs) for guests", () => {
     render(
       <HomeEventTabs
         defaultTab="other"
@@ -58,10 +57,9 @@ describe("HomeEventTabs", () => {
         loadMoreOther={loadMore}
       />
     );
-    expect(screen.getByRole("tab", { name: "Other events" })).toHaveAttribute(
-      "data-state",
-      "active"
-    );
+    expect(screen.queryByRole("tab")).not.toBeInTheDocument();
+    expect(screen.getByTestId("infinite-list")).toBeInTheDocument();
+    expect(screen.getByTestId("event-item")).toHaveTextContent("Event 1");
   });
 
   it("defaults to 'followed' tab when defaultTab is 'followed'", () => {
@@ -81,18 +79,19 @@ describe("HomeEventTabs", () => {
     );
   });
 
-  it("shows sign-in prompt on 'Your churches' tab when not authenticated", () => {
+  it("shows other events feed for guests without tabs or sign-in prompt", () => {
     render(
       <HomeEventTabs
         defaultTab="followed"
         followedPage={emptyPage}
-        otherPage={emptyPage}
+        otherPage={{ items: [makeItem("g1")], nextCursor: null }}
         isAuthenticated={false}
         loadMoreFollowed={loadMore}
         loadMoreOther={loadMore}
       />
     );
-    expect(screen.getByText(/sign in/i)).toBeInTheDocument();
+    expect(screen.queryByRole("tab")).not.toBeInTheDocument();
+    expect(screen.getByTestId("event-item")).toHaveTextContent("Event g1");
   });
 
   it("shows empty state on 'Your churches' tab when authenticated with no events", async () => {

@@ -56,26 +56,32 @@ export function TopNav({ user }: TopNavProps) {
             1Another
           </Link>
         )}
-        <Link href="/profile">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="hover:bg-primary/80 rounded-full"
-            asChild
-          >
-            <span>
-              <Avatar className="size-8">
-                <AvatarImage
-                  src={user?.image ?? ""}
-                  alt={user?.name ?? "Profile"}
-                />
-                <AvatarFallback className="bg-primary-foreground text-primary text-xs font-semibold">
-                  {getInitials(user?.name, user?.email)}
-                </AvatarFallback>
-              </Avatar>
-            </span>
+        {user ? (
+          <Link href="/profile">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="hover:bg-primary/80 rounded-full"
+              asChild
+            >
+              <span>
+                <Avatar className="size-8">
+                  <AvatarImage
+                    src={user.image ?? ""}
+                    alt={user.name ?? "Profile"}
+                  />
+                  <AvatarFallback className="bg-primary-foreground text-primary text-xs font-semibold">
+                    {getInitials(user.name, user.email)}
+                  </AvatarFallback>
+                </Avatar>
+              </span>
+            </Button>
+          </Link>
+        ) : (
+          <Button size="sm" asChild>
+            <Link href="/login">Sign in</Link>
           </Button>
-        </Link>
+        )}
       </div>
 
       {!showBackButton && (

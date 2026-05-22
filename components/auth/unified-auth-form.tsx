@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -44,12 +44,38 @@ const RESEND_COOLDOWN = 60;
 
 type Step = "email" | "otp";
 
+function intentBannerText(intent: string, label: string): string | null {
+  if (intent === "attend") return `One step away from attending ${label}`;
+  if (intent === "register")
+    return `One step away from registering for ${label}`;
+  if (intent === "follow") return `One step away from following ${label}`;
+  return null;
+}
+
 export function UnifiedAuthForm({
   className,
   devMode = false,
+  intent: intentProp,
+  label: labelProp,
+  callbackUrl: callbackUrlProp,
   ...props
-}: React.ComponentProps<"div"> & { devMode?: boolean }) {
+}: React.ComponentProps<"div"> & {
+  devMode?: boolean;
+  intent?: string;
+  label?: string;
+  callbackUrl?: string;
+}) {
   const router = useRouter();
+  const searchParamsObj = useSearchParams();
+  const intent = intentProp ?? searchParamsObj.get("intent") ?? undefined;
+  const label = labelProp ?? searchParamsObj.get("label") ?? undefined;
+  const rawCallback =
+    callbackUrlProp ?? searchParamsObj.get("callbackUrl") ?? undefined;
+  const safeCallback =
+    rawCallback?.startsWith("/") && !rawCallback.startsWith("//")
+      ? rawCallback
+      : "/";
+  const intentText = intent && label ? intentBannerText(intent, label) : null;
   const [step, setStep] = useState<Step>("email");
   const [email, setEmail] = useState("");
   const [cooldown, setCooldown] = useState(0);
@@ -83,7 +109,7 @@ export function UnifiedAuthForm({
   });
 
   const onOtpSubmit = otpForm.handleSubmit(async (data) => {
-    const result = await verifyOtpAction(email, data.otp);
+    const result = await verifyOtpAction(email, data.otp, rawCallback);
     if (result?.error) {
       otpForm.setError("root", { message: result.error });
       otpForm.resetField("otp");
@@ -91,7 +117,7 @@ export function UnifiedAuthForm({
     }
     // Server redirect (NEXT_REDIRECT) normally navigates before reaching here.
     // This fallback handles the rare case where it doesn't.
-    router.push("/");
+    router.push(safeCallback);
   });
 
   const handleResend = useCallback(async () => {
@@ -112,6 +138,13 @@ export function UnifiedAuthForm({
 
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
+      {intentText && (
+        <Alert>
+          <AlertDescription className="text-center font-medium">
+            {intentText}
+          </AlertDescription>
+        </Alert>
+      )}
       <Card>
         {step === "email" ? (
           <>
@@ -274,6 +307,11 @@ export function UnifiedAuthForm({
           </>
         )}
       </Card>
+      <div className="text-center">
+        <Button variant="link" size="sm" asChild>
+          <Link href={safeCallback}>Continue browsing as guest</Link>
+        </Button>
+      </div>
       <div className="text-muted-foreground text-center text-xs text-balance">
         By continuing, you agree to our{" "}
         <Link

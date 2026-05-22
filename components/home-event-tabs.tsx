@@ -1,9 +1,7 @@
 "use client";
 
-import { LogIn } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { InfiniteEventList } from "@/components/infinite-event-list";
-import { EmptyState } from "@/components/empty-state";
 import type { EventCardItem, LoadMoreFn } from "@/types/pagination";
 
 interface HomeEventTabsProps {
@@ -23,6 +21,17 @@ export function HomeEventTabs({
   loadMoreFollowed,
   loadMoreOther,
 }: HomeEventTabsProps) {
+  if (!isAuthenticated) {
+    return (
+      <InfiniteEventList
+        initialItems={otherPage.items}
+        initialCursor={otherPage.nextCursor}
+        loadMore={loadMoreOther}
+        emptyMessage="No upcoming events"
+      />
+    );
+  }
+
   // defaultValue intentionally used: tab state is seeded once from server, then owned by Radix
   return (
     <Tabs defaultValue={defaultTab}>
@@ -35,19 +44,12 @@ export function HomeEventTabs({
 
       <div className="pt-5">
         <TabsContent value="followed">
-          {!isAuthenticated ? (
-            <EmptyState
-              icon={LogIn}
-              label="Sign in to follow churches and see their events here"
-            />
-          ) : (
-            <InfiniteEventList
-              initialItems={followedPage.items}
-              initialCursor={followedPage.nextCursor}
-              loadMore={loadMoreFollowed}
-              emptyMessage="No upcoming events from churches you follow"
-            />
-          )}
+          <InfiniteEventList
+            initialItems={followedPage.items}
+            initialCursor={followedPage.nextCursor}
+            loadMore={loadMoreFollowed}
+            emptyMessage="No upcoming events from churches you follow"
+          />
         </TabsContent>
 
         <TabsContent value="other">

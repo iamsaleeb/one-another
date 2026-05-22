@@ -127,11 +127,7 @@ export function EditProfileForm({ defaultValues }: EditProfileFormProps) {
                   </span>
                 </FormLabel>
                 <FormControl>
-                  <Input
-                    type="tel"
-                    placeholder="+44 7700 900000"
-                    {...field}
-                  />
+                  <Input type="tel" placeholder="+44 7700 900000" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>

@@ -102,7 +102,10 @@ describe("updateProfileAction", () => {
 
   it("returns fieldErrors for an invalid image URL", async () => {
     mockAuth.mockResolvedValue({ user: { id: "user-1" } });
-    const result = await updateProfileAction({ name: "Jane", image: "not-a-url" });
+    const result = await updateProfileAction({
+      name: "Jane",
+      image: "not-a-url",
+    });
     expect(result.fieldErrors?.image).toBeDefined();
     expect(mockUpdate).not.toHaveBeenCalled();
   });

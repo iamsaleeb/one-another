@@ -66,6 +66,10 @@ export function UnifiedAuthForm({
   callbackUrl?: string;
 }) {
   const router = useRouter();
+  const safeCallback =
+    callbackUrl?.startsWith("/") && !callbackUrl.startsWith("//")
+      ? callbackUrl
+      : "/";
   const [step, setStep] = useState<Step>("email");
   const [email, setEmail] = useState("");
   const [cooldown, setCooldown] = useState(0);
@@ -107,7 +111,7 @@ export function UnifiedAuthForm({
     }
     // Server redirect (NEXT_REDIRECT) normally navigates before reaching here.
     // This fallback handles the rare case where it doesn't.
-    router.push(callbackUrl ?? "/");
+    router.push(safeCallback);
   });
 
   const handleResend = useCallback(async () => {
@@ -299,7 +303,7 @@ export function UnifiedAuthForm({
       </Card>
       <div className="text-center">
         <Button variant="link" size="sm" asChild>
-          <Link href={callbackUrl ?? "/"}>Continue browsing as guest</Link>
+          <Link href={safeCallback}>Continue browsing as guest</Link>
         </Button>
       </div>
       <div className="text-muted-foreground text-center text-xs text-balance">

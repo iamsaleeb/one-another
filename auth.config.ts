@@ -19,7 +19,14 @@ export const authConfig = {
           /^\/events\/[^/]+$/.test(nextUrl.pathname));
       const isOnboardingPage = nextUrl.pathname.startsWith("/onboarding");
 
-      if (isPublicPage) return true;
+      if (isPublicPage) {
+        if (isLoggedIn && auth?.user?.onboardingCompleted === false) {
+          const onboardingUrl = new URL("/onboarding", nextUrl);
+          onboardingUrl.searchParams.set("callbackUrl", nextUrl.pathname);
+          return Response.redirect(onboardingUrl);
+        }
+        return true;
+      }
 
       if (isAuthPage) {
         if (isLoggedIn) {

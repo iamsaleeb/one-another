@@ -66,8 +66,12 @@ export async function verifyOtpAction(
     return { error: "Too many requests. Please wait before trying again." };
   }
 
+  const safeRedirect =
+    callbackUrl?.startsWith("/") && !callbackUrl.startsWith("//")
+      ? callbackUrl
+      : "/";
   try {
-    await signIn("otp", { email, otp, redirectTo: callbackUrl ?? "/" });
+    await signIn("otp", { email, otp, redirectTo: safeRedirect });
   } catch (error) {
     if (error instanceof AuthError) {
       return { error: "Sign-in failed. Please try again." };

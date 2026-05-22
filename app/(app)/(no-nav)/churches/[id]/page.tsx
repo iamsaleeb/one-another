@@ -93,7 +93,12 @@ export default async function ChurchDetailPage({ params }: Props) {
             </Alert>
 
             {/* Follow Button */}
-            <FollowButton churchId={church.id} isFollowing={isFollowing} />
+            <FollowButton
+              churchId={church.id}
+              isFollowing={isFollowing}
+              isAuthenticated={!!session?.user}
+              loginUrl={`/login?callbackUrl=/churches/${id}&intent=follow&label=${encodeURIComponent(church.name)}`}
+            />
           </CardContent>
         </Card>
       </div>

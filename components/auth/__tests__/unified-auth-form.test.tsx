@@ -8,6 +8,7 @@ const mockRouterPush = jest.fn();
 
 jest.mock("next/navigation", () => ({
   useRouter: () => ({ push: mockRouterPush }),
+  useSearchParams: () => new URLSearchParams(),
 }));
 
 jest.mock("@/lib/actions/auth", () => ({

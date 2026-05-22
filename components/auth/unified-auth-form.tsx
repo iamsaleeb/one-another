@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -55,9 +55,9 @@ function intentBannerText(intent: string, label: string): string {
 export function UnifiedAuthForm({
   className,
   devMode = false,
-  intent,
-  label,
-  callbackUrl,
+  intent: intentProp,
+  label: labelProp,
+  callbackUrl: callbackUrlProp,
   ...props
 }: React.ComponentProps<"div"> & {
   devMode?: boolean;
@@ -66,9 +66,14 @@ export function UnifiedAuthForm({
   callbackUrl?: string;
 }) {
   const router = useRouter();
+  const searchParamsObj = useSearchParams();
+  const intent = intentProp ?? searchParamsObj.get("intent") ?? undefined;
+  const label = labelProp ?? searchParamsObj.get("label") ?? undefined;
+  const rawCallback =
+    callbackUrlProp ?? searchParamsObj.get("callbackUrl") ?? undefined;
   const safeCallback =
-    callbackUrl?.startsWith("/") && !callbackUrl.startsWith("//")
-      ? callbackUrl
+    rawCallback?.startsWith("/") && !rawCallback.startsWith("//")
+      ? rawCallback
       : "/";
   const [step, setStep] = useState<Step>("email");
   const [email, setEmail] = useState("");
@@ -103,7 +108,7 @@ export function UnifiedAuthForm({
   });
 
   const onOtpSubmit = otpForm.handleSubmit(async (data) => {
-    const result = await verifyOtpAction(email, data.otp, callbackUrl);
+    const result = await verifyOtpAction(email, data.otp, rawCallback);
     if (result?.error) {
       otpForm.setError("root", { message: result.error });
       otpForm.resetField("otp");

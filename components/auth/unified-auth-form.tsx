@@ -44,12 +44,12 @@ const RESEND_COOLDOWN = 60;
 
 type Step = "email" | "otp";
 
-function intentBannerText(intent: string, label: string): string {
+function intentBannerText(intent: string, label: string): string | null {
   if (intent === "attend") return `One step away from attending ${label}`;
   if (intent === "register")
     return `One step away from registering for ${label}`;
   if (intent === "follow") return `One step away from following ${label}`;
-  return "";
+  return null;
 }
 
 export function UnifiedAuthForm({
@@ -75,6 +75,7 @@ export function UnifiedAuthForm({
     rawCallback?.startsWith("/") && !rawCallback.startsWith("//")
       ? rawCallback
       : "/";
+  const intentText = intent && label ? intentBannerText(intent, label) : null;
   const [step, setStep] = useState<Step>("email");
   const [email, setEmail] = useState("");
   const [cooldown, setCooldown] = useState(0);
@@ -137,10 +138,10 @@ export function UnifiedAuthForm({
 
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
-      {intent && label && (
+      {intentText && (
         <Alert>
           <AlertDescription className="text-center font-medium">
-            {intentBannerText(intent, label)}
+            {intentText}
           </AlertDescription>
         </Alert>
       )}

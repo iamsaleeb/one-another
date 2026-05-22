@@ -62,6 +62,14 @@ export function EventActionBar({
   const router = useRouter();
   const loginUrl = `/login?callbackUrl=/events/${eventId}&intent=${requiresRegistration ? "register" : "attend"}&label=${encodeURIComponent(eventTitle)}`;
 
+  function handleRegisterClick() {
+    if (isAuthenticated) {
+      setDrawerOpen(true);
+    } else {
+      router.push(loginUrl);
+    }
+  }
+
   const spotsLeft = capacity != null ? capacity - spotsUsed : null;
   const isFull = spotsLeft != null && spotsLeft <= 0 && !isAttending;
 
@@ -114,11 +122,7 @@ export function EventActionBar({
               !isDraft &&
               (requiresRegistration ? (
                 <Button
-                  onClick={() =>
-                    isAuthenticated
-                      ? setDrawerOpen(true)
-                      : router.push(loginUrl)
-                  }
+                  onClick={handleRegisterClick}
                   variant={isAttending ? "outline" : "default"}
                   className={isAttending ? "gap-1.5" : ""}
                   disabled={isFull}

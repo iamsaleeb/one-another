@@ -14,7 +14,9 @@ export const authConfig = {
         nextUrl.pathname === "/api/cron/process-notifications" ||
         nextUrl.pathname === "/" ||
         nextUrl.pathname.startsWith("/churches") ||
-        nextUrl.pathname.startsWith("/series") ||
+        nextUrl.pathname === "/series" ||
+        (nextUrl.pathname !== "/series/create" &&
+          /^\/series\/[^/]+$/.test(nextUrl.pathname)) ||
         (nextUrl.pathname !== "/events/create" &&
           /^\/events\/[^/]+$/.test(nextUrl.pathname));
       const isOnboardingPage = nextUrl.pathname.startsWith("/onboarding");

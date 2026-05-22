@@ -176,7 +176,8 @@ describe("UnifiedAuthForm — OTP step", () => {
     await waitFor(() => {
       expect(mockVerifyOtpAction).toHaveBeenCalledWith(
         "user@example.com",
-        "123456"
+        "123456",
+        undefined
       );
       expect(mockRouterPush).toHaveBeenCalledWith("/");
     });

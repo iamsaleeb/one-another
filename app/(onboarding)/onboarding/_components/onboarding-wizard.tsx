@@ -65,7 +65,6 @@ function StepName() {
 }
 
 function StepPhoto() {
-  const form = useFormContext<OnboardingInput>();
   return (
     <div className="flex flex-col gap-4">
       <p className="text-muted-foreground text-sm">
@@ -220,7 +219,7 @@ export function OnboardingWizard({ callbackUrl }: { callbackUrl?: string }) {
       const valid = await form.trigger("name");
       if (!valid) return;
     }
-    setCurrentStep((s) => s + 1);
+    setCurrentStep((s) => Math.min(s + 1, STEPS.length - 1));
   };
 
   const handleBack = () => setCurrentStep((s) => Math.max(0, s - 1));

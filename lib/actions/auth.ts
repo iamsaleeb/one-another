@@ -53,7 +53,8 @@ export async function requestOtpAction(
 
 export async function verifyOtpAction(
   email: string,
-  otp: string
+  otp: string,
+  callbackUrl?: string
 ): Promise<ActionResult> {
   const emailParsed = z.string().email().safeParse(email);
   if (!emailParsed.success) {
@@ -66,7 +67,7 @@ export async function verifyOtpAction(
   }
 
   try {
-    await signIn("otp", { email, otp, redirectTo: "/" });
+    await signIn("otp", { email, otp, redirectTo: callbackUrl ?? "/" });
   } catch (error) {
     if (error instanceof AuthError) {
       return { error: "Sign-in failed. Please try again." };

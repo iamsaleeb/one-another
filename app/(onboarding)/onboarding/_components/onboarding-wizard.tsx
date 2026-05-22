@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useForm, useFormContext } from "react-hook-form";
@@ -203,7 +203,10 @@ export function OnboardingWizard({ callbackUrl }: { callbackUrl?: string }) {
       : "/";
   const { update } = useSession();
   const [currentStep, setCurrentStep] = useState(0);
+  const [isAdvancing, setIsAdvancing] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const advancingRef = useRef(false);
+  const submittingRef = useRef(false);
 
   const form = useForm<OnboardingInput>({
     resolver: zodResolver(onboardingSchema),
@@ -216,16 +219,26 @@ export function OnboardingWizard({ callbackUrl }: { callbackUrl?: string }) {
   });
 
   const handleNext = async () => {
-    if (currentStep === 0) {
-      const valid = await form.trigger("name");
-      if (!valid) return;
+    if (advancingRef.current) return;
+    advancingRef.current = true;
+    setIsAdvancing(true);
+    try {
+      if (currentStep === 0) {
+        const valid = await form.trigger("name");
+        if (!valid) return;
+      }
+      setCurrentStep((s) => Math.min(s + 1, STEPS.length - 1));
+    } finally {
+      advancingRef.current = false;
+      setIsAdvancing(false);
     }
-    setCurrentStep((s) => Math.min(s + 1, STEPS.length - 1));
   };
 
   const handleBack = () => setCurrentStep((s) => Math.max(0, s - 1));
 
   const handleSubmit = async () => {
+    if (submittingRef.current) return;
+    submittingRef.current = true;
     setIsSubmitting(true);
     try {
       const result = await completeOnboardingAction(form.getValues());
@@ -242,6 +255,7 @@ export function OnboardingWizard({ callbackUrl }: { callbackUrl?: string }) {
       await update({ onboardingCompleted: true });
       router.push(safeCallback);
     } finally {
+      submittingRef.current = false;
       setIsSubmitting(false);
     }
   };
@@ -273,7 +287,10 @@ export function OnboardingWizard({ callbackUrl }: { callbackUrl?: string }) {
       />
 
       <Form {...form}>
-        <form className="flex flex-col gap-5">
+        <form
+          className="flex flex-col gap-5"
+          onSubmit={(e) => e.preventDefault()}
+        >
           <div className="shadow-card rounded-2xl bg-white p-5">
             {renderStep()}
           </div>
@@ -296,8 +313,13 @@ export function OnboardingWizard({ callbackUrl }: { callbackUrl?: string }) {
               </Button>
             )}
             {currentStep < STEPS.length - 1 ? (
-              <Button type="button" onClick={handleNext} className="flex-1">
-                Continue
+              <Button
+                type="button"
+                onClick={handleNext}
+                disabled={isAdvancing}
+                className="flex-1"
+              >
+                {isAdvancing ? "Checking..." : "Continue"}
               </Button>
             ) : (
               <Button

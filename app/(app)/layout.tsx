@@ -3,7 +3,7 @@ import { auth } from "@/auth";
 import { TopNav } from "@/components/top-nav";
 import { PushNotificationProvider } from "@/components/push-notification-provider";
 import { BackButtonProvider } from "@/components/back-button-provider";
-import { SessionProvider } from "./session-provider";
+import { SessionProvider } from "@/components/session-provider";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (

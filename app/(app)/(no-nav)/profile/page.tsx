@@ -8,13 +8,11 @@ import {
   Bell,
   CalendarDays,
   ChevronRight,
-  Info,
   LogOut,
   Phone,
   ScrollText,
   Settings,
   Shield,
-  Tag,
   UserCog,
   UserPen,
   UserX,
@@ -137,28 +135,11 @@ export default async function ProfilePage() {
               <ChevronRight className="text-muted-foreground h-4 w-4" />
             </div>
           </Link>
-        </div>
-
-        {/* About */}
-        <div className="shadow-card overflow-hidden rounded-2xl bg-white">
-          <div className="border-border flex items-center gap-2 border-b px-4 py-3">
-            <Info className="text-primary h-3.5 w-3.5" />
-            <span className="text-sm font-semibold">About</span>
-          </div>
-          <div className="flex flex-col gap-3 px-4 py-3">
-            <p className="text-muted-foreground text-sm leading-relaxed">
-              One Another is a church event discovery and management platform.
-              Browse events from local churches, RSVP, follow churches, and
-              manage recurring event series — available as a web app and on
-              Android &amp; iOS.
-            </p>
-            <div className="flex items-center gap-2">
-              <Tag className="text-primary h-3.5 w-3.5 shrink-0" />
-              <span className="text-muted-foreground text-xs">
-                Version{" "}
-                <span className="text-foreground font-medium">{version}</span>
-              </span>
-            </div>
+          <div className="px-4 py-3">
+            <span className="text-muted-foreground text-xs">
+              Version{" "}
+              <span className="text-foreground font-medium">{version}</span>
+            </span>
           </div>
         </div>
 
@@ -173,7 +154,7 @@ export default async function ProfilePage() {
               type="submit"
               className="flex w-full items-center gap-3 px-4 py-3 text-left"
             >
-              <LogOut className="h-3.5 w-3.5" />
+              <LogOut className="text-primary h-3.5 w-3.5" />
               <span className="text-sm font-medium">Sign out</span>
             </button>
           </form>

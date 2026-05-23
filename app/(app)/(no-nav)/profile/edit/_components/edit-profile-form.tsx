@@ -64,7 +64,7 @@ export function EditProfileForm({ defaultValues }: EditProfileFormProps) {
         return;
       }
 
-      await update({ name: values.name, image: values.image });
+      await update({ name: values.name, image: values.image ?? null });
       router.push("/profile");
     });
   }

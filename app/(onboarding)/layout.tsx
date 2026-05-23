@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { SessionProvider } from "./session-provider";
+import { SessionProvider } from "@/components/session-provider";
 
 export default function OnboardingLayout({
   children,

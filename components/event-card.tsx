@@ -32,8 +32,10 @@ export function EventCard({ event, priority = false }: EventCardProps) {
                 alt=""
                 fill
                 className="object-cover"
-                sizes="(max-width: 768px) 100vw, 50vw"
+                sizes="(max-width: 640px) 100vw, 50vw"
                 priority={priority}
+                placeholder="blur"
+                blurDataURL="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mO8e+/+fwAI9AN2hc9PNgAAAABJRU5ErkJggg=="
               />
             </div>
           )}

@@ -3,19 +3,22 @@ import { auth } from "@/auth";
 import { TopNav } from "@/components/top-nav";
 import { PushNotificationProvider } from "@/components/push-notification-provider";
 import { BackButtonProvider } from "@/components/back-button-provider";
+import { SessionProvider } from "@/components/session-provider";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen">
-      <Suspense fallback={<TopNavFallback />}>
-        <TopNavServer />
-      </Suspense>
-      {children}
-      <PushNotificationProvider />
-      <Suspense>
-        <BackButtonProvider />
-      </Suspense>
-    </div>
+    <SessionProvider>
+      <div className="min-h-screen">
+        <Suspense fallback={<TopNavFallback />}>
+          <TopNavServer />
+        </Suspense>
+        {children}
+        <PushNotificationProvider />
+        <Suspense>
+          <BackButtonProvider />
+        </Suspense>
+      </div>
+    </SessionProvider>
   );
 }
 

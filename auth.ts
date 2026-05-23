@@ -67,8 +67,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.adminChurchIds = memberships.adminChurchIds;
         return token;
       }
-      if (trigger === "update" && session?.onboardingCompleted !== undefined) {
-        token.onboardingCompleted = session.onboardingCompleted;
+      if (trigger === "update") {
+        if (session?.onboardingCompleted !== undefined) {
+          token.onboardingCompleted = session.onboardingCompleted;
+        }
+        if (session?.name !== undefined) {
+          token.name = session.name;
+        }
+        if (session?.image !== undefined) {
+          token.picture = session.image;
+        }
         return token;
       }
       const now = Math.floor(Date.now() / 1000);

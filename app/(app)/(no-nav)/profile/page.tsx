@@ -3,20 +3,16 @@ import Link from "next/link";
 import { auth } from "@/auth";
 import { getProfileUser } from "@/lib/actions/data-user";
 import { signOutAction } from "@/lib/actions/auth";
-import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Bell,
   CalendarDays,
   ChevronRight,
-  Info,
-  KeyRound,
   LogOut,
   Phone,
   ScrollText,
   Settings,
   Shield,
-  Tag,
   UserCog,
   UserPen,
   UserX,
@@ -40,7 +36,7 @@ export default async function ProfilePage() {
   return (
     <div className="bg-background">
       <div className="flex flex-col gap-4 px-4 pt-6 pb-28">
-        {/* Profile header card */}
+        {/* Profile header */}
         <div className="shadow-card flex items-center gap-4 rounded-2xl bg-white p-5">
           <Avatar className="size-16 shrink-0 rounded-xl text-xl">
             <AvatarImage src={user?.image ?? ""} className="object-cover" />
@@ -95,27 +91,15 @@ export default async function ProfilePage() {
             <Settings className="text-primary h-3.5 w-3.5" />
             <span className="text-sm font-semibold">Settings</span>
           </div>
-          {/* Edit Profile — placeholder */}
-          <div className="flex items-center justify-between px-4 py-3 opacity-50">
-            <div className="flex items-center gap-3">
-              <UserPen className="text-primary h-3.5 w-3.5" />
-              <span className="text-sm font-medium">Edit Profile</span>
+          <Link href="/profile/edit">
+            <div className="flex items-center justify-between px-4 py-3">
+              <div className="flex items-center gap-3">
+                <UserPen className="text-primary h-3.5 w-3.5" />
+                <span className="text-sm font-medium">Edit Profile</span>
+              </div>
+              <ChevronRight className="text-muted-foreground h-4 w-4" />
             </div>
-            <span className="text-muted-foreground text-xs font-medium">
-              Soon
-            </span>
-          </div>
-          {/* Change Password — placeholder */}
-          <div className="flex items-center justify-between px-4 py-3 opacity-50">
-            <div className="flex items-center gap-3">
-              <KeyRound className="text-primary h-3.5 w-3.5" />
-              <span className="text-sm font-medium">Change Password</span>
-            </div>
-            <span className="text-muted-foreground text-xs font-medium">
-              Soon
-            </span>
-          </div>
-          {/* Notifications */}
+          </Link>
           <Link href="/profile/notifications">
             <div className="flex items-center justify-between px-4 py-3">
               <div className="flex items-center gap-3">
@@ -151,42 +135,13 @@ export default async function ProfilePage() {
               <ChevronRight className="text-muted-foreground h-4 w-4" />
             </div>
           </Link>
-        </div>
-
-        {/* About */}
-        <div className="shadow-card overflow-hidden rounded-2xl bg-white">
-          <div className="border-border flex items-center gap-2 border-b px-4 py-3">
-            <Info className="text-primary h-3.5 w-3.5" />
-            <span className="text-sm font-semibold">About</span>
-          </div>
-          <div className="flex flex-col gap-3 px-4 py-3">
-            <p className="text-muted-foreground text-sm leading-relaxed">
-              One Another is a church event discovery and management platform.
-              Browse events from local churches, RSVP, follow churches, and
-              manage recurring event series — available as a web app and on
-              Android &amp; iOS.
-            </p>
-            <div className="flex items-center gap-2">
-              <Tag className="text-primary h-3.5 w-3.5 shrink-0" />
-              <span className="text-muted-foreground text-xs">
-                Version{" "}
-                <span className="text-foreground font-medium">{version}</span>
-              </span>
-            </div>
+          <div className="px-4 py-3">
+            <span className="text-muted-foreground text-xs">
+              Version{" "}
+              <span className="text-foreground font-medium">{version}</span>
+            </span>
           </div>
         </div>
-
-        {/* Sign out */}
-        <form action={signOutAction}>
-          <Button
-            type="submit"
-            variant="outline"
-            className="text-destructive border-destructive/30 hover:bg-destructive/5 hover:text-destructive h-11 w-full gap-2 rounded-xl font-semibold"
-          >
-            <LogOut className="h-4 w-4" />
-            Sign out
-          </Button>
-        </form>
 
         {/* Account */}
         <div className="shadow-card divide-border divide-y overflow-hidden rounded-2xl bg-white">
@@ -194,6 +149,15 @@ export default async function ProfilePage() {
             <UserCog className="text-primary h-3.5 w-3.5" aria-hidden="true" />
             <span className="text-sm font-semibold">Account</span>
           </div>
+          <form action={signOutAction}>
+            <button
+              type="submit"
+              className="flex w-full items-center gap-3 px-4 py-3 text-left"
+            >
+              <LogOut className="text-primary h-3.5 w-3.5" />
+              <span className="text-sm font-medium">Sign out</span>
+            </button>
+          </form>
           <Link href="/profile/account">
             <div className="flex items-center justify-between px-4 py-3">
               <div className="flex items-center gap-3">

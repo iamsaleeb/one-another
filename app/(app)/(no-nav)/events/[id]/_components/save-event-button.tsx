@@ -2,8 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Bookmark, BookmarkCheck } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Heart } from "lucide-react";
 import { saveEventAction, unsaveEventAction } from "@/lib/actions/events-save";
 
 interface SaveEventButtonProps {
@@ -42,18 +41,16 @@ export function SaveEventButton({
   }
 
   return (
-    <Button
+    <button
       onClick={handleClick}
       disabled={isPending}
-      variant={saved ? "default" : "outline"}
-      className="flex-1 gap-2"
+      aria-label={saved ? "Unsave event" : "Save event"}
+      className="p-1 disabled:opacity-50"
+      type="button"
     >
-      {saved ? (
-        <BookmarkCheck className="size-4" />
-      ) : (
-        <Bookmark className="size-4" />
-      )}
-      {saved ? "Saved" : "Save"}
-    </Button>
+      <Heart
+        className={`size-5 transition-colors ${saved ? "fill-rose-500 text-rose-500" : "text-muted-foreground"}`}
+      />
+    </button>
   );
 }

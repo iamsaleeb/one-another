@@ -30,6 +30,7 @@ model User {
   questionLibrary         QuestionLibraryItem[]    @relation("UserQuestionLibrary")
   series                  Series[]                 @relation("UserSeries")
   seriesFollows           SeriesFollower[]
+  savedEvents             SavedEvent[]
   sessions                Session[]
 }
 
@@ -163,6 +164,7 @@ model Event {
   series               Series?         @relation(fields: [seriesId], references: [id])
   attendees            EventAttendee[]
   questions            EventQuestion[]
+  savedBy              SavedEvent[]
 
   @@index([datetime, isDraft])
   @@index([churchId])
@@ -297,6 +299,18 @@ model Notification {
   @@unique([userId, type, dedupeKey])
   @@index([scheduledFor, sentAt, cancelledAt])
   @@index([userId, sentAt, readAt])
+}
+
+model SavedEvent {
+  id        String   @id @default(cuid())
+  userId    String
+  eventId   String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, eventId])
+  @@index([userId])
 }
 
 enum UserRole {

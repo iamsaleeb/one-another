@@ -14,12 +14,14 @@ export default async function MyEventsPage() {
   if (!session?.user?.id) redirect("/");
   const userId = session.user.id;
 
-  const [upcomingPage, pastPage, followedSeries, savedPage] = await Promise.all([
-    getUserAttendedEventsPaged(userId, null),
-    getUserAttendedPastEventsPaged(userId, null),
-    getUserFollowedSeries(userId),
-    getMySavedEventsPaged(userId, null),
-  ]);
+  const [upcomingPage, pastPage, followedSeries, savedPage] = await Promise.all(
+    [
+      getUserAttendedEventsPaged(userId, null),
+      getUserAttendedPastEventsPaged(userId, null),
+      getUserFollowedSeries(userId),
+      getMySavedEventsPaged(userId, null),
+    ]
+  );
 
   return (
     <div className="flex flex-col">

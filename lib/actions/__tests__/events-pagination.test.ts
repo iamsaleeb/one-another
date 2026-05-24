@@ -137,6 +137,9 @@ describe("loadMoreMySavedEventsAction", () => {
   it("calls getMySavedEventsPaged with userId and cursor", async () => {
     mockAuth.mockResolvedValue({ user: { id: "user-1" } });
     await loadMoreMySavedEventsAction("cursor-abc");
-    expect(mockGetMySavedEventsPaged).toHaveBeenCalledWith("user-1", "cursor-abc");
+    expect(mockGetMySavedEventsPaged).toHaveBeenCalledWith(
+      "user-1",
+      "cursor-abc"
+    );
   });
 });

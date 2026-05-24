@@ -49,10 +49,13 @@ describe("saveEventAction", () => {
   });
 
   it("ignores P2002 duplicate error and returns empty state", async () => {
-    const p2002 = new Prisma.PrismaClientKnownRequestError("Unique constraint", {
-      code: "P2002",
-      clientVersion: "5.0.0",
-    });
+    const p2002 = new Prisma.PrismaClientKnownRequestError(
+      "Unique constraint",
+      {
+        code: "P2002",
+        clientVersion: "5.0.0",
+      }
+    );
     mockSavedEventCreate.mockRejectedValue(p2002);
     const result = await saveEventAction("event-1");
     expect(result.error).toBeUndefined();

@@ -111,16 +111,15 @@ export default async function EventDetailPage({ params }: Props) {
     <div className="bg-background">
       <HeroBanner size="md" photoUrl={event.photoUrl ?? undefined} />
 
-      <div className="flex gap-3 px-4 pt-4">
+      <div className="flex justify-end gap-2 px-4 pt-4">
         <SaveEventButton
           eventId={id}
           initialSaved={isSaved}
           isAuthenticated={!!session?.user}
         />
-        <Button variant="outline" className="flex-1 gap-2" disabled>
-          <Share2 className="size-4" />
-          Share
-        </Button>
+        <button type="button" disabled className="p-1 opacity-50">
+          <Share2 className="text-muted-foreground size-5" />
+        </button>
       </div>
 
       {/* Content */}

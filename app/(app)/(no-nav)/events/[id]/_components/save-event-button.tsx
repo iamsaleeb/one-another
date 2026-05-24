@@ -23,16 +23,20 @@ export function SaveEventButton({
 
   function handleClick() {
     if (!isAuthenticated) {
-      router.push("/login");
+      router.push(`/login?callbackUrl=/events/${eventId}`);
       return;
     }
     const next = !saved;
     setSaved(next);
     startTransition(async () => {
-      if (next) {
-        await saveEventAction(eventId);
-      } else {
-        await unsaveEventAction(eventId);
+      try {
+        if (next) {
+          await saveEventAction(eventId);
+        } else {
+          await unsaveEventAction(eventId);
+        }
+      } catch {
+        setSaved(!next);
       }
     });
   }

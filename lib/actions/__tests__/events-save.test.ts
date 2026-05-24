@@ -39,7 +39,6 @@ describe("saveEventAction", () => {
       data: { userId: "user-1", eventId: "event-1" },
     });
     expect(mockUpdateTag).toHaveBeenCalledWith("saved-events-user-1");
-    expect(mockUpdateTag).toHaveBeenCalledWith("event-event-1");
   });
 
   it("returns error when unauthenticated", async () => {
@@ -68,7 +67,6 @@ describe("unsaveEventAction", () => {
       where: { userId_eventId: { userId: "user-1", eventId: "event-1" } },
     });
     expect(mockUpdateTag).toHaveBeenCalledWith("saved-events-user-1");
-    expect(mockUpdateTag).toHaveBeenCalledWith("event-event-1");
   });
 
   it("returns error when unauthenticated", async () => {

@@ -29,7 +29,6 @@ export async function saveEventAction(
   }
 
   updateTag(`saved-events-${userId}`);
-  updateTag(`event-${eventId}`);
   return {};
 }
 
@@ -55,6 +54,5 @@ export async function unsaveEventAction(
   }
 
   updateTag(`saved-events-${userId}`);
-  updateTag(`event-${eventId}`);
   return {};
 }

@@ -11,6 +11,7 @@ const nextConfig: NextConfig = {
     "192.168.0.3", // physical device on LAN
   ],
   images: {
+    minimumCacheTTL: 60 * 60 * 24 * 7, // 7 days — optimized images are immutable for a given URL
     remotePatterns: [
       {
         protocol: "https",

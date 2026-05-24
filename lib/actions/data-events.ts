@@ -245,15 +245,9 @@ export async function getFollowedChurchEventsPaged(
 ): Promise<{ items: EventCardItem[]; nextCursor: string | null }> {
   cacheTag("events-list", `user-follows-${userId}`);
   cacheLife("minutes");
-  const follows = await prisma.churchFollower.findMany({
-    where: { userId },
-    select: { churchId: true },
-  });
-  const churchIds = follows.map((f) => f.churchId);
-  if (churchIds.length === 0) return { items: [], nextCursor: null };
   const rows = await prisma.event.findMany({
     where: {
-      churchId: { in: churchIds },
+      church: { followers: { some: { userId } } },
       datetime: { gte: new Date() },
       isDraft: false,
     },
@@ -279,15 +273,11 @@ export async function getOtherChurchEventsPaged(
     cacheTag("events-list");
   }
   cacheLife("minutes");
-  const excludedIds =
-    userId === null
-      ? []
-      : await prisma.churchFollower
-          .findMany({ where: { userId }, select: { churchId: true } })
-          .then((rows) => rows.map((r) => r.churchId));
   const rows = await prisma.event.findMany({
     where: {
-      churchId: { notIn: excludedIds },
+      ...(userId !== null
+        ? { church: { followers: { none: { userId } } } }
+        : {}),
       datetime: { gte: new Date() },
       isDraft: false,
     },

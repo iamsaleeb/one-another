@@ -6,6 +6,7 @@ jest.mock("@/lib/actions/data-events", () => ({
   getUserAttendedPastEventsPaged: jest.fn(),
   getEventsByCreatorPaged: jest.fn(),
   getEventsNotByCreatorPaged: jest.fn(),
+  getMySavedEventsPaged: jest.fn(),
 }));
 
 import { auth } from "@/auth";
@@ -15,6 +16,7 @@ import {
   getUserAttendedPastEventsPaged,
   getEventsByCreatorPaged,
   getEventsNotByCreatorPaged,
+  getMySavedEventsPaged,
 } from "@/lib/actions/data-events";
 import {
   loadMoreEventsAction,
@@ -22,6 +24,7 @@ import {
   loadMoreMyPastEventsAction,
   loadMoreMyCreatedEventsAction,
   loadMoreCommunityEventsAction,
+  loadMoreMySavedEventsAction,
 } from "@/lib/actions/events-pagination";
 
 const mockAuth = auth as jest.Mock;
@@ -31,6 +34,7 @@ const mockGetUserAttendedPastEventsPaged =
   getUserAttendedPastEventsPaged as jest.Mock;
 const mockGetEventsByCreatorPaged = getEventsByCreatorPaged as jest.Mock;
 const mockGetEventsNotByCreatorPaged = getEventsNotByCreatorPaged as jest.Mock;
+const mockGetMySavedEventsPaged = getMySavedEventsPaged as jest.Mock;
 
 const fakePage = { items: [], nextCursor: null };
 
@@ -41,6 +45,7 @@ beforeEach(() => {
   mockGetUserAttendedPastEventsPaged.mockResolvedValue(fakePage);
   mockGetEventsByCreatorPaged.mockResolvedValue(fakePage);
   mockGetEventsNotByCreatorPaged.mockResolvedValue(fakePage);
+  mockGetMySavedEventsPaged.mockResolvedValue(fakePage);
 });
 
 describe("loadMoreEventsAction", () => {
@@ -118,5 +123,20 @@ describe("loadMoreCommunityEventsAction", () => {
       "user-1",
       "cursor-z"
     );
+  });
+});
+
+describe("loadMoreMySavedEventsAction", () => {
+  it("returns empty page when unauthenticated", async () => {
+    mockAuth.mockResolvedValue(null);
+    const result = await loadMoreMySavedEventsAction("cursor-abc");
+    expect(result).toEqual({ items: [], nextCursor: null });
+    expect(mockGetMySavedEventsPaged).not.toHaveBeenCalled();
+  });
+
+  it("calls getMySavedEventsPaged with userId and cursor", async () => {
+    mockAuth.mockResolvedValue({ user: { id: "user-1" } });
+    await loadMoreMySavedEventsAction("cursor-abc");
+    expect(mockGetMySavedEventsPaged).toHaveBeenCalledWith("user-1", "cursor-abc");
   });
 });

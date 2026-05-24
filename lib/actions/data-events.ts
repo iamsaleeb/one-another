@@ -292,3 +292,51 @@ export async function getOtherChurchEventsPaged(
     nextCursor: hasMore ? rows[PAGE_SIZE - 1].id : null,
   };
 }
+
+export async function getMySavedEventsPaged(
+  userId: string,
+  cursor: string | null
+): Promise<{ items: EventCardItem[]; nextCursor: string | null }> {
+  cacheTag(`saved-events-${userId}`);
+  cacheLife("minutes");
+  const rows = await prisma.savedEvent.findMany({
+    where: { userId },
+    orderBy: { createdAt: "desc" },
+    take: PAGE_SIZE + 1,
+    ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+    include: {
+      event: {
+        include: { church: { select: { name: true } } },
+      },
+    },
+  });
+  const hasMore = rows.length > PAGE_SIZE;
+  const items = (hasMore ? rows.slice(0, PAGE_SIZE) : rows).map((r) => ({
+    id: r.event.id,
+    datetime: r.event.datetime,
+    title: r.event.title,
+    tag: r.event.tag,
+    host: r.event.host,
+    cancelledAt: r.event.cancelledAt,
+    isDraft: r.event.isDraft,
+    photoUrl: r.event.photoUrl,
+    church: r.event.church,
+  }));
+  return {
+    items,
+    nextCursor: hasMore ? rows[PAGE_SIZE - 1].id : null,
+  };
+}
+
+export async function getIsEventSaved(
+  eventId: string,
+  userId: string
+): Promise<boolean> {
+  cacheTag(`saved-events-${userId}`);
+  cacheLife("seconds");
+  const record = await prisma.savedEvent.findUnique({
+    where: { userId_eventId: { userId, eventId } },
+    select: { id: true },
+  });
+  return record !== null;
+}

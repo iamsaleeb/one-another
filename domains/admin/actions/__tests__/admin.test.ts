@@ -30,7 +30,7 @@ import { updateTag } from "next/cache";
 import {
   addOrganiserToChurchAction,
   removeOrganiserFromChurchAction,
-} from "@/lib/actions/admin";
+} from "@/domains/admin/actions/admin";
 import { prisma } from "@/lib/db";
 import { auth } from "@/auth";
 import { isAdminForChurch } from "@/lib/permissions";

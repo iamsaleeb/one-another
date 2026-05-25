@@ -1,4 +1,4 @@
-// Re-exported from churches domain. Left here for backward compat until Task 7 migrates admin actions.
+// Re-exported from churches domain (schemas live there as they are church-specific).
 export {
   addOrganiserSchema,
   removeOrganiserSchema,

@@ -1,5 +1,5 @@
 import { render } from "@testing-library/react";
-import { PushNotificationProvider } from "@/components/push-notification-provider";
+import { PushNotificationProvider } from "@/domains/notifications/components/push-notification-provider";
 
 const mockRemoveHandle = jest.fn();
 const mockCheckPermissions = jest.fn();

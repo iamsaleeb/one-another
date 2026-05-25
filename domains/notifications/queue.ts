@@ -1,3 +1,4 @@
+import "server-only";
 import { prisma } from "@/lib/db";
 import { NotificationType, Prisma } from "@prisma/client";
 import { subHours } from "date-fns";

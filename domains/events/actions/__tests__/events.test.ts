@@ -42,7 +42,7 @@ jest.mock("@/lib/db", () => ({
   },
 }));
 
-jest.mock("@/lib/notifications/queue", () => ({
+jest.mock("@/domains/notifications/queue", () => ({
   queueNotification: jest.fn(),
   cancelNotification: jest.fn(),
   cancelManyNotifications: jest.fn(),
@@ -107,7 +107,7 @@ const mockEventAttendeeFindMany = prisma.eventAttendee.findMany as jest.Mock;
 const mockEventAttendeeFindUnique = prisma.eventAttendee
   .findUnique as jest.Mock;
 const mockSeriesFollowerFindMany = prisma.seriesFollower.findMany as jest.Mock;
-const mockQueueNotification = jest.requireMock("@/lib/notifications/queue")
+const mockQueueNotification = jest.requireMock("@/domains/notifications/queue")
   .queueNotification as jest.Mock;
 const mockAuth = auth as jest.Mock;
 const mockCanManageFromClaims = jest.requireMock("@/lib/permissions")
@@ -748,7 +748,7 @@ describe("updateEventAction", () => {
   });
 
   it("reschedules reminders when datetime changes on a published event", async () => {
-    const mockReschedule = jest.requireMock("@/lib/notifications/queue")
+    const mockReschedule = jest.requireMock("@/domains/notifications/queue")
       .rescheduleEventReminderNotifications as jest.Mock;
     mockEventFindUnique.mockResolvedValue(existingPublished);
     mockEventUpdate.mockResolvedValue({});
@@ -764,7 +764,7 @@ describe("updateEventAction", () => {
   });
 
   it("does not reschedule when the datetime is unchanged", async () => {
-    const mockReschedule = jest.requireMock("@/lib/notifications/queue")
+    const mockReschedule = jest.requireMock("@/domains/notifications/queue")
       .rescheduleEventReminderNotifications as jest.Mock;
     // existingPublished.datetime is new Date('2026-05-01T09:00:00Z') — match exactly using local-time constructor
     const sameDate = "2026-05-01";
@@ -786,7 +786,7 @@ describe("updateEventAction", () => {
   });
 
   it("does not reschedule reminders when the event is a draft", async () => {
-    const mockReschedule = jest.requireMock("@/lib/notifications/queue")
+    const mockReschedule = jest.requireMock("@/domains/notifications/queue")
       .rescheduleEventReminderNotifications as jest.Mock;
     mockEventFindUnique.mockResolvedValue(existingDraft);
     mockEventUpdate.mockResolvedValue({});
@@ -880,7 +880,7 @@ describe("updateEventAction", () => {
 
 describe("deleteEventAction", () => {
   it("cancels reminders, deletes the event, and redirects to /organiser", async () => {
-    const mockCancelAll = jest.requireMock("@/lib/notifications/queue")
+    const mockCancelAll = jest.requireMock("@/domains/notifications/queue")
       .cancelManyNotifications as jest.Mock;
     mockEventFindUnique.mockResolvedValue({ churchId: "ch-1" });
     mockEventDelete.mockResolvedValue({});
@@ -935,7 +935,7 @@ describe("deleteEventAction", () => {
   });
 
   it("handles cancelManyNotifications failure gracefully", async () => {
-    const mockCancelAll = jest.requireMock("@/lib/notifications/queue")
+    const mockCancelAll = jest.requireMock("@/domains/notifications/queue")
       .cancelManyNotifications as jest.Mock;
     mockEventFindUnique.mockResolvedValue({ churchId: "ch-1" });
     mockEventDelete.mockResolvedValue({});
@@ -950,7 +950,7 @@ describe("deleteEventAction", () => {
 
 describe("publishEventAction", () => {
   const mockScheduleReminderNotifs = jest.requireMock(
-    "@/lib/notifications/queue"
+    "@/domains/notifications/queue"
   ).scheduleEventReminderNotifications as jest.Mock;
   const mockEventAttendeeFindMany = prisma.eventAttendee.findMany as jest.Mock;
 
@@ -1193,7 +1193,7 @@ describe("extractResponses", () => {
 });
 
 describe("unpublishEventAction", () => {
-  const mockCancelAll = jest.requireMock("@/lib/notifications/queue")
+  const mockCancelAll = jest.requireMock("@/domains/notifications/queue")
     .cancelManyNotifications as jest.Mock;
 
   it("sets isDraft to true, cancels pending reminders, and redirects to the event page", async () => {

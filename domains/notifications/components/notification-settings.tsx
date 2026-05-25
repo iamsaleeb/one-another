@@ -9,11 +9,11 @@ import {
 import {
   NOTIFICATION_TYPES,
   type NotificationTypeKey,
-} from "@/lib/notification-types";
+} from "@/domains/notifications/types";
 import {
   updateNotificationPreferenceAction,
   type NotificationPreferenceMap,
-} from "@/lib/actions/notifications";
+} from "../actions/notifications";
 
 interface Props {
   preferences: NotificationPreferenceMap;

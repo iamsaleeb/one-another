@@ -6,7 +6,7 @@ import { parseEventMetadata } from "../validations/event";
 import {
   scheduleEventReminderNotification,
   cancelNotification,
-} from "@/lib/notifications/queue";
+} from "@/domains/notifications/queue";
 import { saveResponses } from "../questions/responses";
 import type { ResponseInput } from "../questions/validations";
 interface DalError {

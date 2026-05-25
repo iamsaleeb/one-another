@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { PageHeader } from "@/components/ui/page-header";
-import { getInboxNotifications } from "@/lib/notifications/inbox";
+import { getInboxNotifications } from "@/domains/notifications/inbox";
 import { NotificationList } from "./_components/notification-list";
 
 export const metadata: Metadata = {

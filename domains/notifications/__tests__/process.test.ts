@@ -22,7 +22,7 @@ jest.mock("@/lib/firebase-admin", () => ({
 
 import { prisma } from "@/lib/db";
 import { getFirebaseAdmin } from "@/lib/firebase-admin";
-import { processNotifications } from "@/lib/notifications/process";
+import { processNotifications } from "@/domains/notifications/process";
 
 const mockNotificationFindMany = prisma.notification.findMany as jest.Mock;
 const mockNotificationUpdateMany = prisma.notification.updateMany as jest.Mock;

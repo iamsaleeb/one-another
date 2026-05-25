@@ -8,13 +8,13 @@ import {
   NOTIFICATION_TYPES,
   NotificationType,
   type NotificationTypeKey,
-} from "@/lib/notification-types";
-import { updateUserReminderSchedule } from "@/lib/notifications/queue";
+} from "../types";
+import { updateUserReminderSchedule } from "../queue";
 import {
   markNotificationsRead,
   getInboxNotifications,
   type InboxNotification,
-} from "@/lib/notifications/inbox";
+} from "../inbox";
 import { getStoredNotificationPreferences } from "@/lib/actions/data-user";
 
 export type NotificationPreferenceMap = {

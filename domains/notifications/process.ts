@@ -1,3 +1,4 @@
+import "server-only";
 import { updateTag } from "next/cache";
 import { prisma } from "@/lib/db";
 import { getFirebaseAdmin } from "@/lib/firebase-admin";

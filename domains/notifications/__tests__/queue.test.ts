@@ -25,7 +25,7 @@ import {
   scheduleEventReminderNotification,
   rescheduleEventReminderNotifications,
   updateUserReminderSchedule,
-} from "@/lib/notifications/queue";
+} from "@/domains/notifications/queue";
 
 const mockUpsert = prisma.notification.upsert as jest.Mock;
 const mockCreate = prisma.notification.create as jest.Mock;

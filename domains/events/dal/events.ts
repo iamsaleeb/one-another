@@ -9,7 +9,7 @@ import {
   queueNotification,
   rescheduleEventReminderNotifications,
   scheduleEventReminderNotifications,
-} from "@/lib/notifications/queue";
+} from "@/domains/notifications/queue";
 import type { CreateEventInput } from "../validations/event";
 
 const NOTIFY_CONCURRENCY = 20;

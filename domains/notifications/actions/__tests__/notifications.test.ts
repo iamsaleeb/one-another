@@ -19,24 +19,24 @@ jest.mock("@/lib/db", () => ({
   },
 }));
 
-jest.mock("@/lib/notifications/queue", () => ({
+jest.mock("@/domains/notifications/queue", () => ({
   updateUserReminderSchedule: jest.fn(),
 }));
 
-jest.mock("@/lib/notifications/inbox", () => ({
+jest.mock("@/domains/notifications/inbox", () => ({
   markNotificationsRead: jest.fn(),
 }));
 
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
 import { updateTag, revalidatePath } from "next/cache";
-import { updateUserReminderSchedule } from "@/lib/notifications/queue";
-import { markNotificationsRead } from "@/lib/notifications/inbox";
+import { updateUserReminderSchedule } from "@/domains/notifications/queue";
+import { markNotificationsRead } from "@/domains/notifications/inbox";
 import {
   getNotificationPreferencesAction,
   updateNotificationPreferenceAction,
   markReadAction,
-} from "@/lib/actions/notifications";
+} from "@/domains/notifications/actions/notifications";
 
 const mockAuth = auth as jest.Mock;
 const mockPrefFindMany = prisma.notificationPreference.findMany as jest.Mock;

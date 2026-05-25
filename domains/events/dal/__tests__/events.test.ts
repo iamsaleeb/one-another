@@ -15,7 +15,7 @@ jest.mock("@/lib/db", () => ({
   },
 }));
 
-jest.mock("@/lib/notifications/queue", () => ({
+jest.mock("@/domains/notifications/queue", () => ({
   scheduleEventReminderNotifications: jest.fn().mockResolvedValue(undefined),
   scheduleEventReminderNotification: jest.fn().mockResolvedValue(undefined),
   rescheduleEventReminderNotifications: jest.fn().mockResolvedValue(undefined),
@@ -35,7 +35,7 @@ import { prisma } from "@/lib/db";
 import { publishEvent, cancelEvent } from "../events";
 
 const mockPrisma = prisma as jest.Mocked<typeof prisma>;
-const mockQueue = jest.requireMock("@/lib/notifications/queue") as {
+const mockQueue = jest.requireMock("@/domains/notifications/queue") as {
   queueNotification: jest.Mock;
   cancelManyNotifications: jest.Mock;
 };

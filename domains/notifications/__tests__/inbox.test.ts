@@ -13,7 +13,7 @@ import {
   getInboxNotifications,
   getUnreadCount,
   markNotificationsRead,
-} from "@/lib/notifications/inbox";
+} from "@/domains/notifications/inbox";
 
 const mockFindMany = prisma.notification.findMany as jest.Mock;
 const mockCount = prisma.notification.count as jest.Mock;

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { type ElementType } from "react";
 import { Bell, CalendarX, Repeat } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
-import type { InboxNotification } from "@/lib/notifications/inbox";
+import type { InboxNotification } from "@/domains/notifications/inbox";
 
 const TYPE_ICON: Record<string, ElementType> = {
   EVENT_REMINDER: Bell,

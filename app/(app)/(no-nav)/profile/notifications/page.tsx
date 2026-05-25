@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import { getNotificationPreferencesAction } from "@/lib/actions/notifications";
-import { NotificationSettings } from "@/components/notification-settings";
+import { getNotificationPreferencesAction } from "@/domains/notifications/actions/notifications";
+import { NotificationSettings } from "@/domains/notifications/components/notification-settings";
 import { PageHeader } from "@/components/ui/page-header";
 
 export const metadata: Metadata = {

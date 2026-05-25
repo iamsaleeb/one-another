@@ -1,11 +1,11 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { NotificationSettings } from "@/components/notification-settings";
-import type { NotificationPreferenceMap } from "@/lib/actions/notifications";
+import { NotificationSettings } from "@/domains/notifications/components/notification-settings";
+import type { NotificationPreferenceMap } from "@/domains/notifications/actions/notifications";
 
 const mockUpdatePreference = jest.fn().mockResolvedValue({});
 
-jest.mock("@/lib/actions/notifications", () => ({
+jest.mock("@/domains/notifications/actions/notifications", () => ({
   updateNotificationPreferenceAction: (...args: unknown[]) =>
     mockUpdatePreference(...args),
 }));

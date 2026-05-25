@@ -8,6 +8,7 @@ import {
   MapPin,
   Pencil,
   Repeat,
+  Share2,
   TableProperties,
   User,
 } from "lucide-react";
@@ -18,6 +19,7 @@ import {
   getEventById,
   getEventAttendees,
   getMyEventAttendance,
+  getIsEventSaved,
 } from "@/lib/actions/data-events";
 import {
   getEventQuestions,
@@ -37,6 +39,7 @@ import { CancelEventButton } from "./_components/cancel-event-button";
 import { UncancelEventButton } from "./_components/uncancel-event-button";
 import { EventActionBar } from "./_components/event-action-bar";
 import { CampAgenda } from "./_components/camp-agenda";
+import { SaveEventButton } from "./_components/save-event-button";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -68,11 +71,14 @@ export async function generateMetadata({ params }: Props) {
 export default async function EventDetailPage({ params }: Props) {
   const [{ id }, session] = await Promise.all([params, auth()]);
 
-  const [event, myAttendance] = await Promise.all([
+  const [event, myAttendance, isSaved] = await Promise.all([
     getEventById(id),
     session?.user?.id
       ? getMyEventAttendance(id, session.user.id)
       : Promise.resolve(null),
+    session?.user?.id
+      ? getIsEventSaved(id, session.user.id)
+      : Promise.resolve(false),
   ]);
 
   if (!event) notFound();
@@ -104,6 +110,22 @@ export default async function EventDetailPage({ params }: Props) {
   return (
     <div className="bg-background">
       <HeroBanner size="md" photoUrl={event.photoUrl ?? undefined} />
+
+      <div className="flex justify-end gap-2 px-4 pt-4">
+        <SaveEventButton
+          eventId={id}
+          initialSaved={isSaved}
+          isAuthenticated={!!session?.user}
+        />
+        <button
+          type="button"
+          disabled
+          aria-label="Share event"
+          className="p-1 opacity-50"
+        >
+          <Share2 className="text-muted-foreground size-5" />
+        </button>
+      </div>
 
       {/* Content */}
       <div className="flex flex-col gap-4 px-4 pt-5 pb-28">

@@ -10,6 +10,7 @@ import {
   getEventsNotByCreatorPaged,
   getFollowedChurchEventsPaged,
   getOtherChurchEventsPaged,
+  getMySavedEventsPaged,
 } from "@/lib/actions/data-events";
 
 interface Page {
@@ -70,4 +71,12 @@ export async function loadMoreOtherEventsAction(
 ): Promise<Page> {
   const session = await auth();
   return getOtherChurchEventsPaged(session?.user?.id ?? null, cursor);
+}
+
+export async function loadMoreMySavedEventsAction(
+  cursor: string | null
+): Promise<Page> {
+  const session = await auth();
+  if (!session?.user?.id) return empty;
+  return getMySavedEventsPaged(session.user.id, cursor);
 }

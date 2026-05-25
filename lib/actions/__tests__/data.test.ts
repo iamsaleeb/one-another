@@ -14,6 +14,7 @@ jest.mock("@/lib/db", () => ({
     churchFollower: { findMany: jest.fn(), findUnique: jest.fn() },
     seriesFollower: { findUnique: jest.fn() },
     eventAttendee: { findMany: jest.fn(), findUnique: jest.fn() },
+    savedEvent: { findMany: jest.fn(), findUnique: jest.fn() },
   },
 }));
 
@@ -33,6 +34,8 @@ import {
   getEventsNotByCreatorPaged,
   getFollowedChurchEventsPaged,
   getOtherChurchEventsPaged,
+  getMySavedEventsPaged,
+  getIsEventSaved,
 } from "@/lib/actions/data-events";
 import {
   getChurches,
@@ -68,6 +71,8 @@ const _mockChurchAdminFindMany = prisma.churchAdmin.findMany as jest.Mock;
 const mockEventAttendeeFindMany = prisma.eventAttendee.findMany as jest.Mock;
 const mockEventAttendeeFindUnique = prisma.eventAttendee
   .findUnique as jest.Mock;
+const mockSavedEventFindMany = prisma.savedEvent.findMany as jest.Mock;
+const mockSavedEventFindUnique = prisma.savedEvent.findUnique as jest.Mock;
 const mockChurchFollowerFindMany = prisma.churchFollower.findMany as jest.Mock;
 const mockChurchFollowerFindUnique = prisma.churchFollower
   .findUnique as jest.Mock;
@@ -1020,5 +1025,74 @@ describe("getOtherChurchEventsPaged", () => {
         skip: 1,
       })
     );
+  });
+});
+
+const savedRow = {
+  id: "se-1",
+  createdAt: new Date("2026-05-01T00:00:00Z"),
+  event: {
+    id: "evt-1",
+    datetime: new Date("2026-06-01T09:00:00Z"),
+    title: "Sunday Service",
+    tag: "Youth Meeting",
+    host: "Pastor John",
+    cancelledAt: null,
+    isDraft: false,
+    photoUrl: null,
+    church: { name: "Grace Church" },
+  },
+};
+
+describe("getMySavedEventsPaged", () => {
+  it("queries savedEvent with isDraft:false filter and returns mapped items", async () => {
+    mockSavedEventFindMany.mockResolvedValue([savedRow]);
+    const result = await getMySavedEventsPaged("user-1", null);
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0].id).toBe("evt-1");
+    expect(result.nextCursor).toBeNull();
+    expect(mockSavedEventFindMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { userId: "user-1", event: { isDraft: false } },
+        orderBy: { createdAt: "desc" },
+      })
+    );
+  });
+
+  it("returns PAGE_SIZE items and nextCursor when more results exist", async () => {
+    const eleven = Array.from({ length: 11 }, (_, i) => ({
+      ...savedRow,
+      id: `se-${i}`,
+      event: { ...savedRow.event, id: `evt-${i}` },
+    }));
+    mockSavedEventFindMany.mockResolvedValue(eleven);
+    const result = await getMySavedEventsPaged("user-1", null);
+    expect(result.items).toHaveLength(10);
+    expect(result.nextCursor).toBe("se-9");
+  });
+
+  it("passes cursor and skip when cursor is provided", async () => {
+    mockSavedEventFindMany.mockResolvedValue([savedRow]);
+    await getMySavedEventsPaged("user-1", "se-5");
+    expect(mockSavedEventFindMany).toHaveBeenCalledWith(
+      expect.objectContaining({ cursor: { id: "se-5" }, skip: 1 })
+    );
+  });
+});
+
+describe("getIsEventSaved", () => {
+  it("returns true when a savedEvent record exists", async () => {
+    mockSavedEventFindUnique.mockResolvedValue({ id: "se-1" });
+    const result = await getIsEventSaved("evt-1", "user-1");
+    expect(result).toBe(true);
+    expect(mockSavedEventFindUnique).toHaveBeenCalledWith({
+      where: { userId_eventId: { userId: "user-1", eventId: "evt-1" } },
+      select: { id: true },
+    });
+  });
+
+  it("returns false when no record exists", async () => {
+    mockSavedEventFindUnique.mockResolvedValue(null);
+    expect(await getIsEventSaved("evt-1", "user-99")).toBe(false);
   });
 });

@@ -1,5 +1,5 @@
 import { CalendarDays } from "lucide-react";
-import { EventCard } from "@/components/event-card";
+import { EventCard } from "@/domains/events/components/event-card";
 import { EmptyState } from "@/components/empty-state";
 import type { getChurchById } from "@/lib/actions/data-churches";
 

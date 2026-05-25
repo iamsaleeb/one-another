@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { Repeat } from "lucide-react";
-import { InfiniteEventList } from "@/components/infinite-event-list";
+import { InfiniteEventList } from "@/domains/events/components/infinite-event-list";
 import { EmptyState } from "@/components/empty-state";
 import { Card, CardContent } from "@/components/ui/card";
-import { loadMoreMyCreatedEventsAction } from "@/lib/actions/events-pagination";
+import { loadMoreMyCreatedEventsAction } from "@/domains/events/actions/pagination";
 import type { getSeriesByCreator } from "@/lib/actions/data-series";
 import type { EventCardItem } from "@/types/pagination";
 

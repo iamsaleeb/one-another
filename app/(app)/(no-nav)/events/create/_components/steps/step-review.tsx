@@ -5,7 +5,7 @@ import { useFormContext, useWatch } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import type { CreateEventInput } from "@/lib/validations/event";
+import type { CreateEventInput } from "@/domains/events/validations/event";
 
 interface StepReviewProps {
   onPublish: () => void;

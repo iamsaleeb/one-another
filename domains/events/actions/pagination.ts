@@ -11,7 +11,7 @@ import {
   getFollowedChurchEventsPaged,
   getOtherChurchEventsPaged,
   getMySavedEventsPaged,
-} from "@/lib/actions/data-events";
+} from "./data";
 
 interface Page {
   items: EventCardItem[];

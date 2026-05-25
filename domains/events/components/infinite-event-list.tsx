@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useTransition } from "react";
 import { CalendarDays } from "lucide-react";
-import { EventCard } from "@/components/event-card";
+import { EventCard } from "./event-card";
 import { EmptyState } from "@/components/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { EventCardItem, LoadMoreFn } from "@/types/pagination";

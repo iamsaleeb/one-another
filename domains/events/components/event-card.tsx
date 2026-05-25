@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { Card, CardContent } from "@/components/ui/card";
-import { EventDatetime } from "@/components/event-datetime";
+import { EventDatetime } from "./event-datetime";
 import { TAG_COLORS, type Category } from "@/types/search";
 
 interface EventCardProps {

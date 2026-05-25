@@ -1,5 +1,5 @@
 import { render, screen } from "@testing-library/react";
-import { EventCard } from "@/components/event-card";
+import { EventCard } from "@/domains/events/components/event-card";
 
 const sampleEvent = {
   id: "evt-1",

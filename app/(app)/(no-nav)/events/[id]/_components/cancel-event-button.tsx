@@ -13,7 +13,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { cancelEventAction } from "@/lib/actions/events-crud";
+import { cancelEventAction } from "@/domains/events/actions/crud";
 
 export function CancelEventButton({ eventId }: { eventId: string }) {
   const [reason, setReason] = useState("");

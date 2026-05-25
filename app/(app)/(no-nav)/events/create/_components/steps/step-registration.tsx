@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { PriceInput } from "@/components/price-input";
+import { PriceInput } from "@/domains/events/components/price-input";
 import {
   FormControl,
   FormField,
@@ -12,7 +12,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import type { CreateEventInput } from "@/lib/validations/event";
+import type { CreateEventInput } from "@/domains/events/validations/event";
 
 export function StepRegistration() {
   const form = useFormContext<CreateEventInput>();

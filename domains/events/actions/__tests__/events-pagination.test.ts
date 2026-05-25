@@ -1,6 +1,6 @@
 jest.mock("@/auth", () => ({ auth: jest.fn() }));
 
-jest.mock("@/lib/actions/data-events", () => ({
+jest.mock("@/domains/events/actions/data", () => ({
   getEventsPaged: jest.fn(),
   getUserAttendedEventsPaged: jest.fn(),
   getUserAttendedPastEventsPaged: jest.fn(),
@@ -17,7 +17,7 @@ import {
   getEventsByCreatorPaged,
   getEventsNotByCreatorPaged,
   getMySavedEventsPaged,
-} from "@/lib/actions/data-events";
+} from "@/domains/events/actions/data";
 import {
   loadMoreEventsAction,
   loadMoreMyUpcomingEventsAction,
@@ -25,7 +25,7 @@ import {
   loadMoreMyCreatedEventsAction,
   loadMoreCommunityEventsAction,
   loadMoreMySavedEventsAction,
-} from "@/lib/actions/events-pagination";
+} from "@/domains/events/actions/pagination";
 
 const mockAuth = auth as jest.Mock;
 const mockGetEventsPaged = getEventsPaged as jest.Mock;

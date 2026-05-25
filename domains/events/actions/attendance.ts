@@ -5,13 +5,13 @@ import { auth } from "@/auth";
 import {
   registrationFormSchema,
   type RegistrationFormValues,
-} from "@/lib/validations/event";
+} from "../validations/event";
 import {
   attendEvent,
   unattendEvent,
   registerEvent,
-} from "@/lib/dal/attendance";
-import type { ResponseInput } from "@/lib/validations/questions";
+} from "../dal/attendance";
+import type { ResponseInput } from "../questions/validations";
 
 export interface AttendEventState {
   error?: string;

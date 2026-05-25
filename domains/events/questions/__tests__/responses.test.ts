@@ -6,7 +6,7 @@ jest.mock("@/lib/db", () => ({
   },
 }));
 
-import { saveResponses } from "@/lib/dal/responses";
+import { saveResponses } from "@/domains/events/questions/responses";
 import { prisma } from "@/lib/db";
 
 const mockQuestionFindMany = prisma.eventQuestion.findMany as jest.Mock;

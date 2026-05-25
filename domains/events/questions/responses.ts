@@ -2,7 +2,7 @@
 import "server-only";
 
 import { prisma } from "@/lib/db";
-import type { ResponseInput } from "@/lib/validations/questions";
+import type { ResponseInput } from "./validations";
 
 export async function saveResponses(
   eventAttendeeId: string,

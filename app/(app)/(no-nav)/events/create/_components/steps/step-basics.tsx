@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/form";
 import { PhotoUploadField } from "@/components/photo-upload-field";
 import { CATEGORY_OPTIONS } from "@/types/search";
-import type { CreateEventInput } from "@/lib/validations/event";
+import type { CreateEventInput } from "@/domains/events/validations/event";
 
 interface StepBasicsProps {
   churches: Array<{ id: string; name: string }>;

@@ -11,7 +11,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { uncancelEventAction } from "@/lib/actions/events-crud";
+import { uncancelEventAction } from "@/domains/events/actions/crud";
 
 export function UncancelEventButton({ eventId }: { eventId: string }) {
   const action = uncancelEventAction.bind(null, eventId);

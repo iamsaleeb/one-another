@@ -2,7 +2,7 @@
 import "server-only";
 
 import { prisma } from "@/lib/db";
-import type { QuestionInput } from "@/lib/validations/questions";
+import type { QuestionInput } from "./validations";
 
 export async function syncEventQuestions(
   eventId: string,

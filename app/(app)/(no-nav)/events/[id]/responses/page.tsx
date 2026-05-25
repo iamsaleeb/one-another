@@ -1,7 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
-import { getEventById } from "@/lib/actions/data-events";
-import { getEventResponses } from "@/lib/actions/data-questions";
+import { getEventById } from "@/domains/events/actions/data";
+import { getEventResponses } from "@/domains/events/questions/actions";
 import { canManageChurchFromSession } from "@/lib/permissions";
 import { PageHeader } from "@/components/ui/page-header";
 import { ResponsesTable } from "./_components/responses-table";

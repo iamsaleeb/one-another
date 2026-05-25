@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { questionSchema, responseValueSchema } from "./questions";
+import { questionSchema, responseValueSchema } from "../questions/validations";
 
 // --- Event form schemas ---
 

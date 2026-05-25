@@ -22,13 +22,13 @@ import { cn } from "@/lib/utils";
 import {
   registerEventAction,
   unattendEventAction,
-} from "@/lib/actions/events-attendance";
+} from "@/domains/events/actions/attendance";
 import {
   registrationFormSchema,
   type RegistrationFormValues,
   type EventMetadata,
-} from "@/lib/validations/event";
-import { QuestionType, type Question } from "@/lib/validations/questions";
+} from "@/domains/events/validations/event";
+import { QuestionType, type Question } from "@/domains/events/questions/validations";
 import { getCampDays, formatDayLabel } from "@/lib/datetime";
 import { QuestionsForm } from "./questions-form";
 

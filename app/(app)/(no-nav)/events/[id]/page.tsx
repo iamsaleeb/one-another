@@ -20,17 +20,17 @@ import {
   getEventAttendees,
   getMyEventAttendance,
   getIsEventSaved,
-} from "@/lib/actions/data-events";
+} from "@/domains/events/actions/data";
 import {
   getEventQuestions,
   getMyResponses,
-} from "@/lib/actions/data-questions";
+} from "@/domains/events/questions/actions";
 import {
   parseEventMetadata,
   parseEventAttendeeMetadata,
-} from "@/lib/validations/event";
+} from "@/domains/events/validations/event";
 import { canManageChurchFromSession } from "@/lib/permissions";
-import { EventDatetime } from "@/components/event-datetime";
+import { EventDatetime } from "@/domains/events/components/event-datetime";
 import { formatDateOnly, parseDateOfBirth } from "@/lib/datetime";
 import { InfoField } from "@/components/ui/info-field";
 import { HeroBanner } from "@/components/ui/hero-banner";

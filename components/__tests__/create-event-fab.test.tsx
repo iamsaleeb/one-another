@@ -1,5 +1,5 @@
 import { render, screen, fireEvent } from "@testing-library/react";
-import { CreateEventFAB } from "@/components/create-event-fab";
+import { CreateEventFAB } from "@/domains/events/components/create-event-fab";
 
 describe("CreateEventFAB", () => {
   it("renders nothing when isOrganiser is false", () => {

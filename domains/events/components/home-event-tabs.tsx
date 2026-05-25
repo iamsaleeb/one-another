@@ -1,7 +1,7 @@
 "use client";
 
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { InfiniteEventList } from "@/components/infinite-event-list";
+import { InfiniteEventList } from "./infinite-event-list";
 import type { EventCardItem, LoadMoreFn } from "@/types/pagination";
 
 interface HomeEventTabsProps {

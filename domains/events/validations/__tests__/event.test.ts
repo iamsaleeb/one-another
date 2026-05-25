@@ -2,7 +2,7 @@ import {
   createEventSchema,
   parseEventMetadata,
   parseEventAttendeeMetadata,
-} from "@/lib/validations/event";
+} from "@/domains/events/validations/event";
 
 const validInput = {
   title: "Sunday Worship",

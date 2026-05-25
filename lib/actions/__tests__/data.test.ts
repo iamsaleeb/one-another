@@ -36,7 +36,7 @@ import {
   getOtherChurchEventsPaged,
   getMySavedEventsPaged,
   getIsEventSaved,
-} from "@/lib/actions/data-events";
+} from "@/domains/events/actions/data";
 import {
   getChurches,
   getChurchById,

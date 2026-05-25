@@ -1,5 +1,5 @@
-import { InfiniteEventList } from "@/components/infinite-event-list";
-import { loadMoreMySavedEventsAction } from "@/lib/actions/events-pagination";
+import { InfiniteEventList } from "@/domains/events/components/infinite-event-list";
+import { loadMoreMySavedEventsAction } from "@/domains/events/actions/pagination";
 import type { EventCardItem } from "@/types/pagination";
 
 interface MySavedTabProps {

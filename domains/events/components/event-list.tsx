@@ -1,5 +1,5 @@
-import type { getEvents } from "@/lib/actions/data-events";
-import { EventCard } from "@/components/event-card";
+import type { getEvents } from "../actions/data";
+import { EventCard } from "./event-card";
 
 type Event = Awaited<ReturnType<typeof getEvents>>[number];
 

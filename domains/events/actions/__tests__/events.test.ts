@@ -59,12 +59,12 @@ jest.mock("@/lib/permissions", () => ({
   canManageFromClaims: jest.fn().mockReturnValue(true),
 }));
 
-jest.mock("@/lib/dal/questions", () => ({
+jest.mock("@/domains/events/questions/dal", () => ({
   syncEventQuestions: jest.fn().mockResolvedValue(undefined),
   getQuestionLibraryForUser: jest.fn().mockResolvedValue([]),
 }));
 
-jest.mock("@/lib/dal/attendance", () => ({
+jest.mock("@/domains/events/dal/attendance", () => ({
   attendEvent: jest.fn(),
   unattendEvent: jest.fn(),
   registerEvent: jest.fn(),
@@ -81,12 +81,12 @@ import {
   deleteEventAction,
   publishEventAction,
   unpublishEventAction,
-} from "@/lib/actions/events-crud";
+} from "@/domains/events/actions/crud";
 import {
   attendEventAction,
   unattendEventAction,
   registerEventAction,
-} from "@/lib/actions/events-attendance";
+} from "@/domains/events/actions/attendance";
 import { extractResponses } from "@/lib/utils/forms";
 import { prisma } from "@/lib/db";
 import { auth } from "@/auth";
@@ -94,7 +94,7 @@ import {
   registerEvent as _registerEvent,
   attendEvent as _attendEvent,
   unattendEvent as _unattendEvent,
-} from "@/lib/dal/attendance";
+} from "@/domains/events/dal/attendance";
 
 const mockRedirect = redirect as unknown as jest.Mock;
 const mockUpdateTag = updateTag as jest.Mock;

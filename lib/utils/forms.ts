@@ -1,4 +1,4 @@
-import type { ResponseInput } from "@/lib/validations/questions";
+import type { ResponseInput } from "@/domains/events/questions/validations";
 
 export function extractResponses(formData: FormData): ResponseInput[] {
   const map = new Map<string, ResponseInput>();

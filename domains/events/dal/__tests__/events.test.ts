@@ -27,7 +27,7 @@ jest.mock("@/lib/permissions", () => ({
   canManageFromClaims: jest.fn().mockReturnValue(true),
 }));
 
-jest.mock("@/lib/dal/questions", () => ({
+jest.mock("@/domains/events/questions/dal", () => ({
   syncEventQuestions: jest.fn().mockResolvedValue(undefined),
 }));
 

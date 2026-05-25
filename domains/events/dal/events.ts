@@ -3,14 +3,14 @@ import "server-only";
 import { prisma } from "@/lib/db";
 import { NotificationType } from "@prisma/client";
 import { canManageFromClaims } from "@/lib/permissions";
-import { syncEventQuestions } from "@/lib/dal/questions";
+import { syncEventQuestions } from "../questions/dal";
 import {
   cancelManyNotifications,
   queueNotification,
   rescheduleEventReminderNotifications,
   scheduleEventReminderNotifications,
 } from "@/lib/notifications/queue";
-import type { CreateEventInput } from "@/lib/validations/event";
+import type { CreateEventInput } from "../validations/event";
 
 const NOTIFY_CONCURRENCY = 20;
 

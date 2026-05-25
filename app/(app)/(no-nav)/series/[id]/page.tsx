@@ -6,7 +6,7 @@ import { getSeriesById, getMySeriesFollow } from "@/lib/actions/data-series";
 import { canManageChurchFromSession } from "@/lib/permissions";
 import { InfoField } from "@/components/ui/info-field";
 import { HeroBanner } from "@/components/ui/hero-banner";
-import { EventCard } from "@/components/event-card";
+import { EventCard } from "@/domains/events/components/event-card";
 import { Button } from "@/components/ui/button";
 import { DeleteSeriesButton } from "./_components/delete-series-button";
 import { FollowSeriesButton } from "./_components/follow-series-button";

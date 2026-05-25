@@ -5,7 +5,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import {
   getEventsByCreatorPaged,
   getEventsNotByCreatorPaged,
-} from "@/lib/actions/data-events";
+} from "@/domains/events/actions/data";
 import {
   getSeriesByCreator,
   getSeriesNotByCreator,

@@ -1,8 +1,8 @@
-import { InfiniteEventList } from "@/components/infinite-event-list";
+import { InfiniteEventList } from "@/domains/events/components/infinite-event-list";
 import {
   loadMoreMyUpcomingEventsAction,
   loadMoreMyPastEventsAction,
-} from "@/lib/actions/events-pagination";
+} from "@/domains/events/actions/pagination";
 import type { EventCardItem } from "@/types/pagination";
 
 interface MyEventsTabProps {

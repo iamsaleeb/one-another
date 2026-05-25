@@ -7,7 +7,7 @@ jest.mock("@/lib/db", () => ({
   },
 }));
 
-import { syncEventQuestions } from "@/lib/dal/questions";
+import { syncEventQuestions } from "@/domains/events/questions/dal";
 import { prisma } from "@/lib/db";
 import { QuestionType } from "@prisma/client";
 

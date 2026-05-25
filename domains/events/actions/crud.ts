@@ -8,7 +8,7 @@ import {
   saveDraftSchema,
   type CreateEventInput,
   type SaveDraftInput,
-} from "@/lib/validations/event";
+} from "../validations/event";
 import {
   createEvent,
   updateEvent,
@@ -17,12 +17,12 @@ import {
   publishEvent,
   unpublishEvent,
   deleteEvent,
-} from "@/lib/dal/events";
+} from "../dal/events";
 import type { ActionResult } from "@/lib/actions/auth";
 import {
   invalidateEventCaches,
   invalidateEventUpdate,
-} from "@/lib/actions/_cache";
+} from "../cache";
 
 export async function createEventAction(
   data: CreateEventInput

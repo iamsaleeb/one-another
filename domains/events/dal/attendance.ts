@@ -2,13 +2,13 @@ import "server-only";
 
 import { prisma } from "@/lib/db";
 import { Prisma, NotificationType } from "@prisma/client";
-import { parseEventMetadata } from "@/lib/validations/event";
+import { parseEventMetadata } from "../validations/event";
 import {
   scheduleEventReminderNotification,
   cancelNotification,
 } from "@/lib/notifications/queue";
-import { saveResponses } from "@/lib/dal/responses";
-import type { ResponseInput } from "@/lib/validations/questions";
+import { saveResponses } from "../questions/responses";
+import type { ResponseInput } from "../questions/validations";
 interface DalError {
   error: string;
 }

@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { auth } from "@/auth";
 import { BottomNav } from "@/components/bottom-nav";
-import { CreateEventFAB } from "@/components/create-event-fab";
+import { CreateEventFAB } from "@/domains/events/components/create-event-fab";
 import { getCachedUnreadCount } from "@/lib/actions/data-user";
 import { UserRole } from "@prisma/client";
 

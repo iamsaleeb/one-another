@@ -5,7 +5,7 @@ import { UserRole } from "@prisma/client";
 import { PageHeader } from "@/components/ui/page-header";
 import { getChurchesByIds } from "@/lib/actions/data-churches";
 import { getSeriesForEvent } from "@/lib/actions/data-series";
-import { getQuestionLibraryForUser } from "@/lib/dal/questions";
+import { getQuestionLibraryForUser } from "@/domains/events/questions/dal";
 
 interface Props {
   searchParams: Promise<{ seriesId?: string }>;

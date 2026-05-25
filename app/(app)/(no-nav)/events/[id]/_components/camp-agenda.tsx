@@ -1,4 +1,4 @@
-import type { CampAgendaItem } from "@/lib/validations/event";
+import type { CampAgendaItem } from "@/domains/events/validations/event";
 
 interface CampAgendaProps {
   agenda: CampAgendaItem[];

@@ -10,7 +10,7 @@ jest.mock("next/navigation", () => ({
 const mockAttendEventAction = jest.fn();
 const mockUnattendEventAction = jest.fn();
 
-jest.mock("@/lib/actions/events-attendance", () => ({
+jest.mock("@/domains/events/actions/attendance", () => ({
   attendEventAction: (...args: unknown[]) => mockAttendEventAction(...args),
   unattendEventAction: (...args: unknown[]) => mockUnattendEventAction(...args),
 }));

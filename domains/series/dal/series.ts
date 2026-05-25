@@ -2,7 +2,7 @@ import "server-only";
 
 import { prisma } from "@/lib/db";
 import { canManageFromClaims } from "@/lib/permissions";
-import type { CreateSeriesInput } from "@/lib/validations/series";
+import type { CreateSeriesInput } from "../validations/series";
 
 type DalError = { error: string } | { fieldErrors: Record<string, string[]> };
 

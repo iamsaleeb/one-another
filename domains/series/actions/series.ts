@@ -8,14 +8,14 @@ import { prisma } from "@/lib/db";
 import {
   createSeriesSchema,
   type CreateSeriesInput,
-} from "@/lib/validations/series";
-import { createSeries, updateSeries, deleteSeries } from "@/lib/dal/series";
+} from "../validations/series";
+import { createSeries, updateSeries, deleteSeries } from "../dal/series";
 import type { ActionResult } from "@/lib/actions/auth";
 import {
   broadcastSeriesChange,
   invalidateSeriesFields,
   invalidateSeriesFollowing,
-} from "@/lib/actions/_cache";
+} from "../cache";
 
 export async function createSeriesAction(
   data: CreateSeriesInput

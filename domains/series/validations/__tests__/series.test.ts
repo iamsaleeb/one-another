@@ -1,4 +1,4 @@
-import { createSeriesSchema } from "@/lib/validations/series";
+import { createSeriesSchema } from "@/domains/series/validations/series";
 
 const validInput = {
   name: "Weekly Bible Study",

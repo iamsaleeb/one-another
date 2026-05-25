@@ -37,7 +37,7 @@ import {
   deleteSeriesAction,
   followSeriesAction,
   unfollowSeriesAction,
-} from "@/lib/actions/series";
+} from "@/domains/series/actions/series";
 import { prisma } from "@/lib/db";
 import { auth } from "@/auth";
 

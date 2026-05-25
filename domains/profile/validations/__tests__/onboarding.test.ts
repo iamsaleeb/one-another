@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { onboardingSchema } from "@/lib/validations/onboarding";
+import { onboardingSchema } from "@/domains/profile/validations/onboarding";
 
 describe("onboardingSchema", () => {
   const validBase = { name: "Jane Doe" };

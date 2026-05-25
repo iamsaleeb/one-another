@@ -14,7 +14,7 @@ jest.mock("@/lib/db", () => ({
   },
 }));
 
-import { updateProfileAction } from "@/lib/actions/profile";
+import { updateProfileAction } from "@/domains/profile/actions/profile";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
 import { updateTag } from "next/cache";

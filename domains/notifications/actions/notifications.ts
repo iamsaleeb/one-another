@@ -15,7 +15,7 @@ import {
   getInboxNotifications,
   type InboxNotification,
 } from "../inbox";
-import { getStoredNotificationPreferences } from "@/lib/actions/data-user";
+import { getStoredNotificationPreferences } from "@/domains/profile/actions/data";
 
 export type NotificationPreferenceMap = {
   [K in NotificationTypeKey]: {

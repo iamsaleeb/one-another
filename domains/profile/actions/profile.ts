@@ -7,7 +7,7 @@ import { updateTag } from "next/cache";
 import {
   onboardingSchema,
   type OnboardingInput,
-} from "@/lib/validations/onboarding";
+} from "../validations/onboarding";
 import type { ActionResult } from "@/domains/auth/actions/auth";
 import { parseDateOfBirth } from "@/lib/datetime";
 

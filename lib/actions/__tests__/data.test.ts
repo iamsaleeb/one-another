@@ -1,4 +1,4 @@
-﻿jest.mock("next/cache", () => ({
+jest.mock("next/cache", () => ({
   cacheTag: jest.fn(),
   cacheLife: jest.fn(),
 }));
@@ -56,7 +56,7 @@ import {
 import {
   searchEventsAndChurches,
   getProfileUser,
-} from "@/lib/actions/data-user";
+} from "@/domains/profile/actions/data";
 import { prisma } from "@/lib/db";
 
 const mockEventFindMany = prisma.event.findMany as jest.Mock;

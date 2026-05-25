@@ -14,7 +14,7 @@ jest.mock("@/lib/db", () => ({
   },
 }));
 
-import { completeOnboardingAction } from "@/lib/actions/onboarding";
+import { completeOnboardingAction } from "@/domains/profile/actions/onboarding";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
 import { updateTag } from "next/cache";

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { MapPin, SearchX } from "lucide-react";
 import { EventCard } from "@/domains/events/components/event-card";
-import { searchEventsAndChurches } from "@/lib/actions/data-user";
+import { searchEventsAndChurches } from "@/domains/profile/actions/data";
 import {
   getFollowedChurchEventsPaged,
   getOtherChurchEventsPaged,

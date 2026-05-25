@@ -300,7 +300,7 @@ export async function getMySavedEventsPaged(
   cacheTag(`saved-events-${userId}`);
   cacheLife("minutes");
   const rows = await prisma.savedEvent.findMany({
-    where: { userId },
+    where: { userId, event: { isDraft: false } },
     orderBy: { createdAt: "desc" },
     take: PAGE_SIZE + 1,
     ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),

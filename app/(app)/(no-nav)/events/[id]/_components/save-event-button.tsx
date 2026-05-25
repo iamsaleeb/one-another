@@ -29,10 +29,14 @@ export function SaveEventButton({
     setSaved(next);
     startTransition(async () => {
       try {
-        if (next) {
-          await saveEventAction(eventId);
-        } else {
-          await unsaveEventAction(eventId);
+        const result = next
+          ? await saveEventAction(eventId)
+          : await unsaveEventAction(eventId);
+        if (result.error) {
+          setSaved(!next);
+          if (result.error === "You must be signed in.") {
+            router.push(`/login?callbackUrl=/events/${eventId}`);
+          }
         }
       } catch {
         setSaved(!next);

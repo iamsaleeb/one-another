@@ -16,6 +16,12 @@ export async function saveEventAction(
   if (!session?.user?.id) return { error: "You must be signed in." };
   const userId = session.user.id;
 
+  const event = await prisma.event.findUnique({
+    where: { id: eventId },
+    select: { isDraft: true },
+  });
+  if (!event || event.isDraft) return { error: "Event not found." };
+
   try {
     await prisma.savedEvent.create({ data: { userId, eventId } });
   } catch (err) {

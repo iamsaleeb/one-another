@@ -4,6 +4,7 @@ jest.mock("next/cache", () => ({
 
 jest.mock("@/lib/db", () => ({
   prisma: {
+    event: { findUnique: jest.fn() },
     savedEvent: {
       create: jest.fn(),
       delete: jest.fn(),
@@ -22,6 +23,7 @@ import { auth } from "@/auth";
 import { Prisma } from "@prisma/client";
 
 const mockUpdateTag = updateTag as jest.Mock;
+const mockEventFindUnique = prisma.event.findUnique as jest.Mock;
 const mockSavedEventCreate = prisma.savedEvent.create as jest.Mock;
 const mockSavedEventDelete = prisma.savedEvent.delete as jest.Mock;
 const mockAuth = auth as jest.Mock;
@@ -29,6 +31,7 @@ const mockAuth = auth as jest.Mock;
 beforeEach(() => {
   jest.clearAllMocks();
   mockAuth.mockResolvedValue({ user: { id: "user-1" } });
+  mockEventFindUnique.mockResolvedValue({ isDraft: false });
 });
 
 describe("saveEventAction", () => {
@@ -43,6 +46,20 @@ describe("saveEventAction", () => {
 
   it("returns error when unauthenticated", async () => {
     mockAuth.mockResolvedValue(null);
+    const result = await saveEventAction("event-1");
+    expect(result.error).toBeDefined();
+    expect(mockSavedEventCreate).not.toHaveBeenCalled();
+  });
+
+  it("returns error for draft event", async () => {
+    mockEventFindUnique.mockResolvedValue({ isDraft: true });
+    const result = await saveEventAction("event-1");
+    expect(result.error).toBeDefined();
+    expect(mockSavedEventCreate).not.toHaveBeenCalled();
+  });
+
+  it("returns error when event does not exist", async () => {
+    mockEventFindUnique.mockResolvedValue(null);
     const result = await saveEventAction("event-1");
     expect(result.error).toBeDefined();
     expect(mockSavedEventCreate).not.toHaveBeenCalled();

@@ -117,7 +117,12 @@ export default async function EventDetailPage({ params }: Props) {
           initialSaved={isSaved}
           isAuthenticated={!!session?.user}
         />
-        <button type="button" disabled className="p-1 opacity-50">
+        <button
+          type="button"
+          disabled
+          aria-label="Share event"
+          className="p-1 opacity-50"
+        >
           <Share2 className="text-muted-foreground size-5" />
         </button>
       </div>

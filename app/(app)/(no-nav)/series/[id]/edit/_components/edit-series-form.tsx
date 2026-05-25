@@ -24,8 +24,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   createSeriesSchema,
   type CreateSeriesInput,
-} from "@/lib/validations/series";
-import { updateSeriesAction } from "@/lib/actions/series";
+} from "@/domains/series/validations/series";
+import { updateSeriesAction } from "@/domains/series/actions/series";
 import { PhotoUploadField } from "@/components/photo-upload-field";
 import { CATEGORY_OPTIONS } from "@/types/search";
 

@@ -1,10 +1,10 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 import { Repeat } from "lucide-react";
 import { InfiniteEventList } from "@/domains/events/components/infinite-event-list";
 import { EmptyState } from "@/components/empty-state";
 import { Card, CardContent } from "@/components/ui/card";
 import { loadMoreCommunityEventsAction } from "@/domains/events/actions/pagination";
-import type { getSeriesNotByCreator } from "@/lib/actions/data-series";
+import type { getSeriesNotByCreator } from "@/domains/series/actions/data";
 import type { EventCardItem } from "@/types/pagination";
 
 const CADENCE_LABELS: Record<string, string> = {

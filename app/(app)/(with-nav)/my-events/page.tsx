@@ -1,4 +1,4 @@
-import { redirect } from "next/navigation";
+﻿import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { PageHeader } from "@/components/ui/page-header";
 import {
@@ -6,7 +6,7 @@ import {
   getUserAttendedPastEventsPaged,
   getMySavedEventsPaged,
 } from "@/domains/events/actions/data";
-import { getUserFollowedSeries } from "@/lib/actions/data-series";
+import { getUserFollowedSeries } from "@/domains/series/actions/data";
 import { MyEventsTabs } from "./_components/my-events-tabs";
 
 export default async function MyEventsPage() {

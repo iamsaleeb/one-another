@@ -1,4 +1,4 @@
-jest.mock("next/cache", () => ({
+﻿jest.mock("next/cache", () => ({
   cacheTag: jest.fn(),
   cacheLife: jest.fn(),
 }));
@@ -52,7 +52,7 @@ import {
   getSeriesNotByCreator,
   getUserFollowedSeries,
   getSeriesForEvent,
-} from "@/lib/actions/data-series";
+} from "@/domains/series/actions/data";
 import {
   searchEventsAndChurches,
   getProfileUser,

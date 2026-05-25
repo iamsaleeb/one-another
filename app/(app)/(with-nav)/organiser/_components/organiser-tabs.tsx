@@ -1,10 +1,10 @@
-"use client";
+﻿"use client";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type {
   getSeriesByCreator,
   getSeriesNotByCreator,
-} from "@/lib/actions/data-series";
+} from "@/domains/series/actions/data";
 import type { EventCardItem } from "@/types/pagination";
 import { MyContentTab } from "./my-content-tab";
 import { CommunityTab } from "./community-tab";

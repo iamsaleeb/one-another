@@ -1,10 +1,10 @@
-import { redirect } from "next/navigation";
+﻿import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { EventWizard } from "./_components/event-wizard";
 import { UserRole } from "@prisma/client";
 import { PageHeader } from "@/components/ui/page-header";
 import { getChurchesByIds } from "@/domains/churches/actions/data";
-import { getSeriesForEvent } from "@/lib/actions/data-series";
+import { getSeriesForEvent } from "@/domains/series/actions/data";
 import { getQuestionLibraryForUser } from "@/domains/events/questions/dal";
 
 interface Props {

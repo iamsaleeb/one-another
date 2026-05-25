@@ -8,7 +8,7 @@ import {
   onboardingSchema,
   type OnboardingInput,
 } from "@/lib/validations/onboarding";
-import type { ActionResult } from "@/lib/actions/auth";
+import type { ActionResult } from "@/domains/auth/actions/auth";
 import { parseDateOfBirth } from "@/lib/datetime";
 
 export async function updateProfileAction(

@@ -1,4 +1,4 @@
-jest.mock("@/lib/email/resend", () => ({
+jest.mock("@/domains/auth/email/resend", () => ({
   getResend: jest.fn(),
 }));
 
@@ -6,8 +6,8 @@ jest.mock("@/emails/sign-in-email", () => ({
   SignInEmail: jest.fn(() => null),
 }));
 
-import { sendLoginOtp } from "@/lib/email/send-login-otp";
-import { getResend } from "@/lib/email/resend";
+import { sendLoginOtp } from "@/domains/auth/email/send-login-otp";
+import { getResend } from "@/domains/auth/email/resend";
 
 const mockSend = jest.fn();
 const mockGetResend = getResend as jest.Mock;

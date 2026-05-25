@@ -8,7 +8,7 @@ jest.mock("sonner", () => ({
   toast: { info: (...args: unknown[]) => mockToastInfo(...args) },
 }));
 
-import { SocialAuthButtons } from "@/components/auth/social-auth-buttons";
+import { SocialAuthButtons } from "@/domains/auth/components/social-auth-buttons";
 
 beforeEach(() => {
   jest.clearAllMocks();

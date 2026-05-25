@@ -36,9 +36,9 @@ import {
   otpSchema,
   type RequestOtpInput,
   type OtpInput,
-} from "@/lib/validations/auth";
-import { requestOtpAction, verifyOtpAction } from "@/lib/actions/auth";
-import { SocialAuthButtons } from "@/components/auth/social-auth-buttons";
+} from "../validations/auth";
+import { requestOtpAction, verifyOtpAction } from "../actions/auth";
+import { SocialAuthButtons } from "./social-auth-buttons";
 
 const RESEND_COOLDOWN = 60;
 

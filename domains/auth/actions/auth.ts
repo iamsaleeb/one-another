@@ -4,9 +4,9 @@ import { signIn, signOut, auth } from "@/auth";
 import { AuthError } from "next-auth";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
-import { requestOtpSchema, type RequestOtpInput } from "@/lib/validations/auth";
-import { generateOtp, storeOtp, isOtpRateLimited } from "@/lib/email/otp";
-import { sendLoginOtp } from "@/lib/email/send-login-otp";
+import { requestOtpSchema, type RequestOtpInput } from "../validations/auth";
+import { generateOtp, storeOtp, isOtpRateLimited } from "../email/otp";
+import { sendLoginOtp } from "../email/send-login-otp";
 
 export interface ActionResult {
   error?: string;

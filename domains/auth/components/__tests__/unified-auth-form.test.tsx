@@ -11,12 +11,12 @@ jest.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams(),
 }));
 
-jest.mock("@/lib/actions/auth", () => ({
+jest.mock("@/domains/auth/actions/auth", () => ({
   requestOtpAction: (...args: unknown[]) => mockRequestOtpAction(...args),
   verifyOtpAction: (...args: unknown[]) => mockVerifyOtpAction(...args),
 }));
 
-jest.mock("@/components/auth/social-auth-buttons", () => ({
+jest.mock("@/domains/auth/components/social-auth-buttons", () => ({
   SocialAuthButtons: () => <div data-testid="social-auth-buttons" />,
 }));
 
@@ -70,7 +70,7 @@ jest.mock("input-otp", () => ({
   REGEXP_ONLY_DIGITS: /^\d*$/,
 }));
 
-import { UnifiedAuthForm } from "@/components/auth/unified-auth-form";
+import { UnifiedAuthForm } from "@/domains/auth/components/unified-auth-form";
 
 beforeEach(() => {
   jest.clearAllMocks();

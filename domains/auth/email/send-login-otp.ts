@@ -1,4 +1,4 @@
-import { getResend } from "@/lib/email/resend";
+import { getResend } from "./resend";
 import { SignInEmail } from "@/emails/sign-in-email";
 
 export async function sendLoginOtp(email: string, otp: string): Promise<void> {

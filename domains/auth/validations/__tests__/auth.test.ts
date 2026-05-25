@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { requestOtpSchema, otpSchema } from "@/lib/validations/auth";
+import { requestOtpSchema, otpSchema } from "@/domains/auth/validations/auth";
 
 describe("requestOtpSchema", () => {
   it("accepts a valid email", () => {

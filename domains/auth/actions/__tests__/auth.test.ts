@@ -29,14 +29,14 @@ jest.mock("@/lib/db", () => ({
   },
 }));
 
-jest.mock("@/lib/email/otp", () => ({
+jest.mock("@/domains/auth/email/otp", () => ({
   generateOtp: jest.fn(),
   storeOtp: jest.fn(),
   verifyOtp: jest.fn(),
   isOtpRateLimited: jest.fn().mockResolvedValue(false),
 }));
 
-jest.mock("@/lib/email/send-login-otp", () => ({
+jest.mock("@/domains/auth/email/send-login-otp", () => ({
   sendLoginOtp: jest.fn(),
 }));
 
@@ -45,7 +45,7 @@ import {
   verifyOtpAction,
   signOutAction,
   deleteAccountAction,
-} from "@/lib/actions/auth";
+} from "@/domains/auth/actions/auth";
 import { signIn, signOut, auth } from "@/auth";
 import { AuthError } from "next-auth";
 import { prisma } from "@/lib/db";
@@ -54,8 +54,8 @@ import {
   storeOtp,
   verifyOtp,
   isOtpRateLimited,
-} from "@/lib/email/otp";
-import { sendLoginOtp } from "@/lib/email/send-login-otp";
+} from "@/domains/auth/email/otp";
+import { sendLoginOtp } from "@/domains/auth/email/send-login-otp";
 
 const mockSignIn = signIn as jest.Mock;
 const mockSignOut = signOut as jest.Mock;

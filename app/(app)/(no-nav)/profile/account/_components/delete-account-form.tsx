@@ -14,7 +14,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { deleteAccountAction } from "@/lib/actions/auth";
+import { deleteAccountAction } from "@/domains/auth/actions/auth";
 
 const CONFIRM_PHRASE = "delete my account";
 

@@ -10,7 +10,7 @@ import {
   type CreateSeriesInput,
 } from "../validations/series";
 import { createSeries, updateSeries, deleteSeries } from "../dal/series";
-import type { ActionResult } from "@/lib/actions/auth";
+import type { ActionResult } from "@/domains/auth/actions/auth";
 import {
   broadcastSeriesChange,
   invalidateSeriesFields,

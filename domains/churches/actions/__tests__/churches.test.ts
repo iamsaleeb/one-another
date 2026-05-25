@@ -19,7 +19,7 @@ import { updateTag } from "next/cache";
 import {
   followChurchAction,
   unfollowChurchAction,
-} from "@/lib/actions/churches";
+} from "@/domains/churches/actions/churches";
 import { prisma } from "@/lib/db";
 import { auth } from "@/auth";
 

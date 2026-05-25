@@ -43,7 +43,7 @@ import {
   getMyChurchFollow,
   getChurchesByIds,
   getOrganisersByChurch,
-} from "@/lib/actions/data-churches";
+} from "@/domains/churches/actions/data";
 import {
   getSeries,
   getSeriesById,

@@ -3,7 +3,7 @@ import { Globe, MapPin, Share2, Bell } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { getChurchById, getMyChurchFollow } from "@/lib/actions/data-churches";
+import { getChurchById, getMyChurchFollow } from "@/domains/churches/actions/data";
 import { auth } from "@/auth";
 import { ChurchTabs } from "./_components/church-tabs";
 import { FollowButton } from "./_components/follow-button";

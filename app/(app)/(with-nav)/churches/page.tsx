@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Church } from "lucide-react";
-import { getChurches } from "@/lib/actions/data-churches";
+import { getChurches } from "@/domains/churches/actions/data";
 import { PageHeader } from "@/components/ui/page-header";
 
 const gradients = [

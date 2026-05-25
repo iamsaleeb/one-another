@@ -3,7 +3,7 @@ import { auth } from "@/auth";
 import { EventWizard } from "./_components/event-wizard";
 import { UserRole } from "@prisma/client";
 import { PageHeader } from "@/components/ui/page-header";
-import { getChurchesByIds } from "@/lib/actions/data-churches";
+import { getChurchesByIds } from "@/domains/churches/actions/data";
 import { getSeriesForEvent } from "@/lib/actions/data-series";
 import { getQuestionLibraryForUser } from "@/domains/events/questions/dal";
 

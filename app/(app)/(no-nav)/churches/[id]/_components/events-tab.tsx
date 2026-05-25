@@ -1,7 +1,7 @@
 import { CalendarDays } from "lucide-react";
 import { EventCard } from "@/domains/events/components/event-card";
 import { EmptyState } from "@/components/empty-state";
-import type { getChurchById } from "@/lib/actions/data-churches";
+import type { getChurchById } from "@/domains/churches/actions/data";
 
 type ChurchWithDetails = NonNullable<Awaited<ReturnType<typeof getChurchById>>>;
 

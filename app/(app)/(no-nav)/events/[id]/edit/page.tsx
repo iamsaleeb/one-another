@@ -2,7 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { UserRole } from "@prisma/client";
 import { getEventById } from "@/domains/events/actions/data";
-import { getChurchesByIds } from "@/lib/actions/data-churches";
+import { getChurchesByIds } from "@/domains/churches/actions/data";
 import {
   getEventQuestions,
   hasEventResponses,

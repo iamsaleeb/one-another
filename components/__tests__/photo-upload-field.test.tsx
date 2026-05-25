@@ -2,7 +2,7 @@ jest.mock("@vercel/blob/client", () => ({
   upload: jest.fn(),
 }));
 
-jest.mock("@/lib/actions/upload", () => ({
+jest.mock("@/domains/upload/actions/upload", () => ({
   deleteUploadedFileAction: jest.fn().mockResolvedValue(undefined),
 }));
 
@@ -15,7 +15,7 @@ import {
 } from "@testing-library/react";
 import { PhotoUploadField } from "@/components/photo-upload-field";
 import { upload } from "@vercel/blob/client";
-import { deleteUploadedFileAction } from "@/lib/actions/upload";
+import { deleteUploadedFileAction } from "@/domains/upload/actions/upload";
 
 const mockUpload = upload as jest.Mock;
 const mockDelete = deleteUploadedFileAction as jest.Mock;

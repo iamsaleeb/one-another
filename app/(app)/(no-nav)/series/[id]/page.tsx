@@ -2,7 +2,10 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { Church, MapPin, Pencil, Plus, Tag, User } from "lucide-react";
 import { auth } from "@/auth";
-import { getSeriesById, getMySeriesFollow } from "@/domains/series/actions/data";
+import {
+  getSeriesById,
+  getMySeriesFollow,
+} from "@/domains/series/actions/data";
 import { canManageChurchFromSession } from "@/lib/permissions";
 import { InfoField } from "@/components/ui/info-field";
 import { HeroBanner } from "@/components/ui/hero-banner";

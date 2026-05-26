@@ -17,7 +17,10 @@ jest.mock("@/auth", () => ({
 }));
 
 import { updateTag } from "next/cache";
-import { saveEventAction, unsaveEventAction } from "@/domains/events/actions/save";
+import {
+  saveEventAction,
+  unsaveEventAction,
+} from "@/domains/events/actions/save";
 import { prisma } from "@/lib/db";
 import { auth } from "@/auth";
 import { Prisma } from "@prisma/client";

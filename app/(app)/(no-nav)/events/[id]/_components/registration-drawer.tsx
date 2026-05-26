@@ -28,7 +28,10 @@ import {
   type RegistrationFormValues,
   type EventMetadata,
 } from "@/domains/events/validations/event";
-import { QuestionType, type Question } from "@/domains/events/questions/validations";
+import {
+  QuestionType,
+  type Question,
+} from "@/domains/events/questions/validations";
 import { getCampDays, formatDayLabel } from "@/lib/datetime";
 import { QuestionsForm } from "./questions-form";
 

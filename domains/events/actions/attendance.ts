@@ -6,11 +6,7 @@ import {
   registrationFormSchema,
   type RegistrationFormValues,
 } from "../validations/event";
-import {
-  attendEvent,
-  unattendEvent,
-  registerEvent,
-} from "../dal/attendance";
+import { attendEvent, unattendEvent, registerEvent } from "../dal/attendance";
 import type { ResponseInput } from "../questions/validations";
 
 export interface AttendEventState {

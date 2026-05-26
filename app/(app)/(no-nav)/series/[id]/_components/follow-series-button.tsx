@@ -3,7 +3,10 @@
 import { useOptimistic, useTransition } from "react";
 import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { followSeriesAction, unfollowSeriesAction } from "@/domains/series/actions/series";
+import {
+  followSeriesAction,
+  unfollowSeriesAction,
+} from "@/domains/series/actions/series";
 
 interface FollowSeriesButtonProps {
   seriesId: string;

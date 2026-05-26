@@ -25,6 +25,8 @@ const config = {
     // Exclude Next.js App Router pages and layouts — covered by e2e tests
     "!app/**",
     "!**/*.d.ts",
+    // Exclude barrel re-export files — no own logic, only re-exports
+    "!**/index.ts",
   ],
   coverageThreshold: {
     global: {

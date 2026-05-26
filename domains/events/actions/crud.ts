@@ -19,10 +19,7 @@ import {
   deleteEvent,
 } from "../dal/events";
 import type { ActionResult } from "@/domains/auth/actions/auth";
-import {
-  invalidateEventCaches,
-  invalidateEventUpdate,
-} from "../cache";
+import { invalidateEventCaches, invalidateEventUpdate } from "../cache";
 
 export async function createEventAction(
   data: CreateEventInput

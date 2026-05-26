@@ -1,1 +1,1 @@
-// payments domain — add exports here as features are built
+// Payments domain — public barrel (empty until features are built)

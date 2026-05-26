@@ -1,1 +1,1 @@
-// media domain — add exports here as features are built
+// Media domain — public barrel (empty until features are built)

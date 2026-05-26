@@ -1,1 +1,1 @@
-// messaging domain — add exports here as features are built
+// Messaging domain — public barrel (empty until features are built)

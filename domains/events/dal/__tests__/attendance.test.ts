@@ -238,7 +238,10 @@ describe("registerEvent", () => {
     expect(mockAttendeeUpdate).toHaveBeenCalledWith(
       expect.objectContaining({
         where: { id: "att-existing" },
-        data: expect.objectContaining({ phone: "0411111111", notes: "Updated" }),
+        data: expect.objectContaining({
+          phone: "0411111111",
+          notes: "Updated",
+        }),
       })
     );
     expect(mockAttendeeCreate).not.toHaveBeenCalled();

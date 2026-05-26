@@ -26,7 +26,7 @@ export const createEventSchema = z.object({
     .transform((v) => (v === "" ? undefined : v))
     .optional(),
   isDraft: z.boolean().optional(),
-  photoUrl: z.string().url().optional(),
+  photoUrl: z.url().optional(),
   // Camp-specific fields (only used when tag === "Camp")
   campEndDate: z.iso.date().optional(),
   campAllowPartialRegistration: z.boolean().optional(),

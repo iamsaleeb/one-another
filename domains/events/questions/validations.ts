@@ -41,7 +41,7 @@ export type QuestionInput = z.infer<typeof questionSchema>;
 
 export const responseValueSchema = z.object({
   answer: z.string().nullable().optional(),
-  fileUrl: z.string().url().nullable().optional(),
+  fileUrl: z.url().nullable().optional(),
 });
 
 export const responseInputSchema = responseValueSchema.extend({

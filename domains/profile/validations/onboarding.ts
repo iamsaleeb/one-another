@@ -12,7 +12,7 @@ export const onboardingSchema = z.object({
       "Date of birth cannot be in the future"
     )
     .optional(),
-  image: z.string().url().optional(),
+  image: z.url().optional(),
 });
 
 export type OnboardingInput = z.infer<typeof onboardingSchema>;

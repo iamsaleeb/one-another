@@ -56,7 +56,7 @@ export async function verifyOtpAction(
   otp: string,
   callbackUrl?: string
 ): Promise<ActionResult> {
-  const emailParsed = z.string().email().safeParse(email);
+  const emailParsed = z.email().safeParse(email);
   if (!emailParsed.success) {
     return { error: "Invalid request." };
   }

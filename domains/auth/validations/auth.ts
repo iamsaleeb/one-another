@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const requestOtpSchema = z.object({
-  email: z.string().email("Invalid email address"),
+  email: z.email({ error: "Invalid email address" }),
 });
 
 export const otpSchema = z.object({

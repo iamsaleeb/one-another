@@ -1,7 +1,7 @@
 "use server";
 
 import { auth } from "@/auth";
-import type { EventCardItem } from "@/types/pagination";
+import type { EventCardItem } from "@/lib/types/pagination";
 import {
   getEventsPaged,
   getUserAttendedEventsPaged,

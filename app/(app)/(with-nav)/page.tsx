@@ -12,7 +12,7 @@ import {
   loadMoreOtherEventsAction,
 } from "@/domains/events/actions/pagination";
 import { PageHeader } from "@/components/ui/page-header";
-import { WHEN_LABELS, TYPE_LABELS, type WhenFilter } from "@/types/search";
+import { WHEN_LABELS, TYPE_LABELS, type WhenFilter } from "@/lib/types/search";
 import { searchParamsSchema } from "@/lib/validations/search";
 import { HomeEventTabs } from "@/domains/events/components/home-event-tabs";
 import { auth } from "@/auth";

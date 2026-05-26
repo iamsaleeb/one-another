@@ -3,7 +3,7 @@ import {
   loadMoreMyUpcomingEventsAction,
   loadMoreMyPastEventsAction,
 } from "@/domains/events/actions/pagination";
-import type { EventCardItem } from "@/types/pagination";
+import type { EventCardItem } from "@/lib/types/pagination";
 
 interface MyEventsTabProps {
   upcomingItems: EventCardItem[];

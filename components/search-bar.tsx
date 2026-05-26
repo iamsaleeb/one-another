@@ -15,7 +15,7 @@ import {
   type WhenFilter,
   type TypeFilter,
   type Category,
-} from "@/types/search";
+} from "@/lib/types/search";
 
 interface SearchBarProps {
   initialQuery?: string;

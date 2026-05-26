@@ -19,7 +19,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { PhotoUploadField } from "@/components/photo-upload-field";
-import { CATEGORY_OPTIONS } from "@/types/search";
+import { CATEGORY_OPTIONS } from "@/lib/types/search";
 import type { CreateEventInput } from "@/domains/events/validations/event";
 
 interface StepBasicsProps {

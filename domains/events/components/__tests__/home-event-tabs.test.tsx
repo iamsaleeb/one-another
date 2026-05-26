@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HomeEventTabs } from "@/domains/events/components/home-event-tabs";
-import type { EventCardItem } from "@/types/pagination";
+import type { EventCardItem } from "@/lib/types/pagination";
 
 jest.mock("@/domains/events/components/infinite-event-list", () => ({
   InfiniteEventList: ({

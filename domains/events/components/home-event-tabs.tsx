@@ -2,7 +2,7 @@
 
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { InfiniteEventList } from "./infinite-event-list";
-import type { EventCardItem, LoadMoreFn } from "@/types/pagination";
+import type { EventCardItem, LoadMoreFn } from "@/lib/types/pagination";
 
 interface HomeEventTabsProps {
   defaultTab: "followed" | "other";

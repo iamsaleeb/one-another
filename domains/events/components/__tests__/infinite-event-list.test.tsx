@@ -1,6 +1,6 @@
 import { render, screen, act, waitFor } from "@testing-library/react";
 import { InfiniteEventList } from "@/domains/events/components/infinite-event-list";
-import type { EventCardItem } from "@/types/pagination";
+import type { EventCardItem } from "@/lib/types/pagination";
 
 // Mock EventCard to keep tests simple
 jest.mock("@/domains/events/components/event-card", () => ({

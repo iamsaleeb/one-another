@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { getSeries } from "@/domains/series/actions/data";
-import { CADENCE_LABELS } from "@/types/search";
+import { CADENCE_LABELS } from "@/lib/types/search";
 
 type Series = Awaited<ReturnType<typeof getSeries>>[number];
 

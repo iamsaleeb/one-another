@@ -2,7 +2,7 @@
 
 import { cacheTag, cacheLife } from "next/cache";
 import { prisma } from "@/lib/db";
-import type { EventCardItem } from "@/types/pagination";
+import type { EventCardItem } from "@/lib/types/pagination";
 
 const PAGE_SIZE = 10;
 const FLAT_LIST_LIMIT = 50;

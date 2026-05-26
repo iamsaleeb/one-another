@@ -4,7 +4,7 @@ import { cacheTag, cacheLife } from "next/cache";
 import { prisma } from "@/lib/db";
 import type { Prisma } from "@prisma/client";
 import { startOfDay, endOfDay, addDays, getDay } from "date-fns";
-import type { WhenFilter, TypeFilter } from "@/types/search";
+import type { WhenFilter, TypeFilter } from "@/lib/types/search";
 
 export interface SearchFilters {
   query: string;

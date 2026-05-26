@@ -10,7 +10,7 @@ import { EventCard } from "@/domains/events/components/event-card";
 import { Button } from "@/components/ui/button";
 import { DeleteSeriesButton } from "./_components/delete-series-button";
 import { FollowSeriesButton } from "./_components/follow-series-button";
-import { CADENCE_LABELS } from "@/types/search";
+import { CADENCE_LABELS } from "@/lib/types/search";
 
 interface Props {
   params: Promise<{ id: string }>;

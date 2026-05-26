@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -27,7 +27,7 @@ import {
 } from "@/domains/series/validations/series";
 import { createSeriesAction } from "@/domains/series/actions/series";
 import { PhotoUploadField } from "@/components/photo-upload-field";
-import { CATEGORY_OPTIONS } from "@/types/search";
+import { CATEGORY_OPTIONS } from "@/lib/types/search";
 
 const CADENCE_OPTIONS = [
   { value: "WEEKLY", label: "Weekly" },

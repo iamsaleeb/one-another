@@ -13,6 +13,7 @@ const config = {
   testPathIgnorePatterns: ["<rootDir>/node_modules/", "<rootDir>/.next/"],
   collectCoverageFrom: [
     "components/**/*.{ts,tsx}",
+    "domains/**/*.{ts,tsx}",
     "lib/**/*.{ts,tsx}",
     // Exclude generated shadcn/ui primitives — third-party, not our logic
     "!components/ui/**",

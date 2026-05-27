@@ -1,4 +1,4 @@
-﻿import { redirect } from "next/navigation";
+import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { EventWizard } from "./_components/event-wizard";
 import { UserRole } from "@prisma/client";

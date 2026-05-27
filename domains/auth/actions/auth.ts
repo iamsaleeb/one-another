@@ -5,13 +5,10 @@ import { AuthError } from "next-auth";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { requestOtpSchema, type RequestOtpInput } from "../validations/auth";
+import type { ActionResult } from "@/lib/types/action";
 import { generateOtp, storeOtp, isOtpRateLimited } from "../email/otp";
 import { sendLoginOtp } from "../email/send-login-otp";
 
-export interface ActionResult {
-  error?: string;
-  fieldErrors?: Record<string, string[]>;
-}
 
 export async function requestOtpAction(
   data: RequestOtpInput

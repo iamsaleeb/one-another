@@ -8,7 +8,7 @@ import { isAdminForChurch } from "@/lib/permissions";
 import {
   addOrganiserSchema,
   removeOrganiserSchema,
-} from "../validations/admin";
+} from "@/domains/churches/validations/churches";
 
 export interface AdminActionState {
   error?: string;

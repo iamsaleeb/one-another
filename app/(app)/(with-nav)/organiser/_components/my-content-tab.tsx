@@ -6,13 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { loadMoreMyCreatedEventsAction } from "@/domains/events/actions/pagination";
 import type { getSeriesByCreator } from "@/domains/series/actions/data";
 import type { EventCardItem } from "@/lib/types/pagination";
-
-const CADENCE_LABELS: Record<string, string> = {
-  WEEKLY: "Weekly",
-  BIWEEKLY: "Bi-weekly",
-  MONTHLY: "Monthly",
-  CUSTOM: "Custom",
-};
+import { CADENCE_LABELS } from "@/lib/types/search";
 
 interface MyContentTabProps {
   items: EventCardItem[];

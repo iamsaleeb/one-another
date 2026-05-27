@@ -3,19 +3,13 @@ import { Repeat } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { EmptyState } from "@/components/empty-state";
 import type { getChurchById } from "@/domains/churches/actions/data";
+import { CADENCE_LABELS } from "@/lib/types/search";
 
 type ChurchWithDetails = NonNullable<Awaited<ReturnType<typeof getChurchById>>>;
 
 interface SeriesTabProps {
   series: ChurchWithDetails["series"];
 }
-
-const CADENCE_LABELS: Record<string, string> = {
-  WEEKLY: "Weekly",
-  BIWEEKLY: "Bi-weekly",
-  MONTHLY: "Monthly",
-  CUSTOM: "Custom",
-};
 
 export function SeriesTab({ series }: SeriesTabProps) {
   return (

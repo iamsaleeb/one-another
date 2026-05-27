@@ -8,7 +8,7 @@ import {
   onboardingSchema,
   type OnboardingInput,
 } from "../validations/onboarding";
-import type { ActionResult } from "@/domains/auth/actions/auth";
+import type { ActionResult } from "@/lib/types/action";
 import { parseDateOfBirth } from "@/lib/datetime";
 
 export async function completeOnboardingAction(

@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import { auth } from "@/auth";
 import { BottomNav } from "@/components/bottom-nav";
 import { CreateEventFAB } from "@/domains/events/components/create-event-fab";
-import { getCachedUnreadCount } from "@/domains/profile/actions/data";
+import { getCachedUnreadCount } from "@/domains/notifications/actions/data";
 import { UserRole } from "@prisma/client";
 
 export default function NavLayout({ children }: { children: React.ReactNode }) {

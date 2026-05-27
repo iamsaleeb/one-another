@@ -29,7 +29,7 @@ import {
   TYPE_LABELS,
   type QuestionInput,
   type LibraryItem,
-} from "@/lib/validations/questions";
+} from "@/domains/events/questions/validations";
 
 interface QuestionDrawerProps {
   open: boolean;

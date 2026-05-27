@@ -1,20 +1,20 @@
 import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { MapPin, SearchX } from "lucide-react";
-import { EventCard } from "@/components/event-card";
-import { searchEventsAndChurches } from "@/lib/actions/data-user";
+import { EventCard } from "@/domains/events/components/event-card";
+import { searchEventsAndChurches } from "@/domains/profile/actions/data";
 import {
   getFollowedChurchEventsPaged,
   getOtherChurchEventsPaged,
-} from "@/lib/actions/data-events";
+} from "@/domains/events/actions/data";
 import {
   loadMoreFollowedEventsAction,
   loadMoreOtherEventsAction,
-} from "@/lib/actions/events-pagination";
+} from "@/domains/events/actions/pagination";
 import { PageHeader } from "@/components/ui/page-header";
-import { WHEN_LABELS, TYPE_LABELS, type WhenFilter } from "@/types/search";
+import { WHEN_LABELS, TYPE_LABELS, type WhenFilter } from "@/lib/types/search";
 import { searchParamsSchema } from "@/lib/validations/search";
-import { HomeEventTabs } from "@/components/home-event-tabs";
+import { HomeEventTabs } from "@/domains/events/components/home-event-tabs";
 import { auth } from "@/auth";
 
 export default async function Home({

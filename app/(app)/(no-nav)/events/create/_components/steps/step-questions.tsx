@@ -20,8 +20,8 @@ import {
   type QuestionType,
   type QuestionInput,
   type LibraryItem,
-} from "@/lib/validations/questions";
-import type { CreateEventInput } from "@/lib/validations/event";
+} from "@/domains/events/questions/validations";
+import type { CreateEventInput } from "@/domains/events/validations/event";
 
 interface StepQuestionsProps {
   libraryItems: LibraryItem[];

@@ -13,6 +13,7 @@ const config = {
   testPathIgnorePatterns: ["<rootDir>/node_modules/", "<rootDir>/.next/"],
   collectCoverageFrom: [
     "components/**/*.{ts,tsx}",
+    "domains/**/*.{ts,tsx}",
     "lib/**/*.{ts,tsx}",
     // Exclude generated shadcn/ui primitives — third-party, not our logic
     "!components/ui/**",
@@ -24,6 +25,8 @@ const config = {
     // Exclude Next.js App Router pages and layouts — covered by e2e tests
     "!app/**",
     "!**/*.d.ts",
+    // Exclude barrel re-export files — no own logic, only re-exports
+    "!**/index.ts",
   ],
   coverageThreshold: {
     global: {

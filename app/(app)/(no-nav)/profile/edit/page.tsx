@@ -2,10 +2,10 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { format } from "date-fns";
 import { auth } from "@/auth";
-import { getProfileUser } from "@/lib/actions/data-user";
+import { getProfileUser } from "@/domains/profile/actions/data";
 import { PageHeader } from "@/components/ui/page-header";
 import { EditProfileForm } from "./_components/edit-profile-form";
-import type { OnboardingInput } from "@/lib/validations/onboarding";
+import type { OnboardingInput } from "@/domains/profile/validations/onboarding";
 
 export const metadata: Metadata = {
   title: "Edit Profile — One Another",

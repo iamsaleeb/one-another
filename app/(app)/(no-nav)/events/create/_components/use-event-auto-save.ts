@@ -3,9 +3,9 @@
 import { useEffect, useRef, useState } from "react";
 import type { UseFormReturn } from "react-hook-form";
 import { toast } from "sonner";
-import { saveDraftAction } from "@/lib/actions/events-crud";
+import { saveDraftAction } from "@/domains/events/actions/crud";
 import { localInputsToUtcDate } from "@/lib/datetime";
-import type { CreateEventInput } from "@/lib/validations/event";
+import type { CreateEventInput } from "@/domains/events/validations/event";
 
 export type AutoSaveStatus = "idle" | "saving" | "saved";
 

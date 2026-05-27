@@ -2,7 +2,7 @@ import NextAuth from "next-auth";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import Credentials from "next-auth/providers/credentials";
 import { prisma } from "@/lib/db";
-import { verifyOtp } from "@/lib/email/otp";
+import { verifyOtp } from "@/domains/auth/email/otp";
 import { authConfig } from "./auth.config";
 import type { UserRole } from "@prisma/client";
 

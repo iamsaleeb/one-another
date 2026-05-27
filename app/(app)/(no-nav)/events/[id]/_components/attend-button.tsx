@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import {
   attendEventAction,
   unattendEventAction,
-} from "@/lib/actions/events-attendance";
+} from "@/domains/events/actions/attendance";
 
 interface AttendButtonProps {
   eventId: string;

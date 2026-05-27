@@ -5,8 +5,8 @@ import {
   getUserAttendedEventsPaged,
   getUserAttendedPastEventsPaged,
   getMySavedEventsPaged,
-} from "@/lib/actions/data-events";
-import { getUserFollowedSeries } from "@/lib/actions/data-series";
+} from "@/domains/events/actions/data";
+import { getUserFollowedSeries } from "@/domains/series/actions/data";
 import { MyEventsTabs } from "./_components/my-events-tabs";
 
 export default async function MyEventsPage() {

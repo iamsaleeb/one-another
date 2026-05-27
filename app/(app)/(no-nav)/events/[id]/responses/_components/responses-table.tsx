@@ -11,7 +11,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CsvExportButton } from "./csv-export-button";
-import { QuestionType } from "@/lib/validations/questions";
+import { QuestionType } from "@/domains/events/questions/validations";
 
 interface Question {
   id: string;

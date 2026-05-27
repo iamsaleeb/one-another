@@ -3,7 +3,10 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Heart } from "lucide-react";
-import { saveEventAction, unsaveEventAction } from "@/lib/actions/events-save";
+import {
+  saveEventAction,
+  unsaveEventAction,
+} from "@/domains/events/actions/save";
 
 interface SaveEventButtonProps {
   eventId: string;

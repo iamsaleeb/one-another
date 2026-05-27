@@ -12,8 +12,8 @@ import { cn } from "@/lib/utils";
 import {
   onboardingSchema,
   type OnboardingInput,
-} from "@/lib/validations/onboarding";
-import { completeOnboardingAction } from "@/lib/actions/onboarding";
+} from "@/domains/profile/validations/onboarding";
+import { completeOnboardingAction } from "@/domains/profile/actions/onboarding";
 
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";

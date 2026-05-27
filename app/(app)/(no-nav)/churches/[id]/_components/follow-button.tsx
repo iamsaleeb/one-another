@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import {
   followChurchAction,
   unfollowChurchAction,
-} from "@/lib/actions/churches";
+} from "@/domains/churches/actions/churches";
 
 interface FollowButtonProps {
   churchId: string;

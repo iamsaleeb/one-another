@@ -12,8 +12,11 @@ import { Button } from "@/components/ui/button";
 import {
   createEventSchema,
   type CreateEventInput,
-} from "@/lib/validations/event";
-import { saveDraftAction, saveEventAction } from "@/lib/actions/events-crud";
+} from "@/domains/events/validations/event";
+import {
+  saveDraftAction,
+  saveEventAction,
+} from "@/domains/events/actions/crud";
 import { localInputsToUtcDate, utcIsoToLocalInputs } from "@/lib/datetime";
 import { WizardProgress } from "./wizard-progress";
 import { StepBasics } from "./steps/step-basics";
@@ -22,7 +25,7 @@ import { StepRegistration } from "./steps/step-registration";
 import { StepCampDetails } from "./steps/step-camp-details";
 import { StepReview } from "./steps/step-review";
 import { StepQuestions } from "./steps/step-questions";
-import type { LibraryItem } from "@/lib/validations/questions";
+import type { LibraryItem } from "@/domains/events/questions/validations";
 
 interface Church {
   id: string;

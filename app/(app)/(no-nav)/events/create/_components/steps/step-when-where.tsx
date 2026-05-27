@@ -9,7 +9,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import type { CreateEventInput } from "@/lib/validations/event";
+import type { CreateEventInput } from "@/domains/events/validations/event";
 
 export function StepWhenWhere() {
   const form = useFormContext<CreateEventInput>();

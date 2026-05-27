@@ -2,9 +2,9 @@ import { renderHook, act, waitFor } from "@testing-library/react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { useEventAutoSave } from "../use-event-auto-save";
-import * as eventsCrud from "@/lib/actions/events-crud";
+import * as eventsCrud from "@/domains/events/actions/crud";
 
-jest.mock("@/lib/actions/events-crud", () => ({
+jest.mock("@/domains/events/actions/crud", () => ({
   saveDraftAction: jest.fn(),
 }));
 jest.mock("sonner", () => ({ toast: { info: jest.fn() } }));

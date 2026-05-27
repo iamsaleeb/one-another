@@ -13,7 +13,10 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { TYPE_LABELS, type LibraryItem } from "@/lib/validations/questions";
+import {
+  TYPE_LABELS,
+  type LibraryItem,
+} from "@/domains/events/questions/validations";
 
 interface LibraryDrawerProps {
   open: boolean;

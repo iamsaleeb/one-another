@@ -9,7 +9,7 @@ import {
   addOrganiserToChurchAction,
   removeOrganiserFromChurchAction,
   type AdminActionState,
-} from "@/lib/actions/admin";
+} from "@/domains/admin/actions/admin";
 
 interface Organiser {
   id: string;

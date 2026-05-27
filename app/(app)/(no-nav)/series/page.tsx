@@ -1,8 +1,8 @@
 import Link from "next/link";
-import { getSeries } from "@/lib/actions/data-series";
+import { getSeries } from "@/domains/series/actions/data";
 import { PageHeader } from "@/components/ui/page-header";
 import { Card, CardContent } from "@/components/ui/card";
-import { CADENCE_LABELS } from "@/types/search";
+import { CADENCE_LABELS } from "@/lib/types/search";
 
 export default async function SeriesPage() {
   const allSeries = await getSeries();

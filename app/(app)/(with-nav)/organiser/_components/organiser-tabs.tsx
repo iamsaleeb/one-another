@@ -4,8 +4,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type {
   getSeriesByCreator,
   getSeriesNotByCreator,
-} from "@/lib/actions/data-series";
-import type { EventCardItem } from "@/types/pagination";
+} from "@/domains/series/actions/data";
+import type { EventCardItem } from "@/lib/types/pagination";
 import { MyContentTab } from "./my-content-tab";
 import { CommunityTab } from "./community-tab";
 

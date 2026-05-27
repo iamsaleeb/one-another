@@ -2,15 +2,18 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { Church, MapPin, Pencil, Plus, Tag, User } from "lucide-react";
 import { auth } from "@/auth";
-import { getSeriesById, getMySeriesFollow } from "@/lib/actions/data-series";
+import {
+  getSeriesById,
+  getMySeriesFollow,
+} from "@/domains/series/actions/data";
 import { canManageChurchFromSession } from "@/lib/permissions";
 import { InfoField } from "@/components/ui/info-field";
 import { HeroBanner } from "@/components/ui/hero-banner";
-import { EventCard } from "@/components/event-card";
+import { EventCard } from "@/domains/events/components/event-card";
 import { Button } from "@/components/ui/button";
 import { DeleteSeriesButton } from "./_components/delete-series-button";
 import { FollowSeriesButton } from "./_components/follow-series-button";
-import { CADENCE_LABELS } from "@/types/search";
+import { CADENCE_LABELS } from "@/lib/types/search";
 
 interface Props {
   params: Promise<{ id: string }>;

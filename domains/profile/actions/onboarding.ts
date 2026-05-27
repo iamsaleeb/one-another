@@ -1,0 +1,43 @@
+"use server";
+
+import { z } from "zod";
+import { auth } from "@/auth";
+import { prisma } from "@/lib/db";
+import { updateTag } from "next/cache";
+import {
+  onboardingSchema,
+  type OnboardingInput,
+} from "../validations/onboarding";
+import type { ActionResult } from "@/lib/types/action";
+import { parseDateOfBirth } from "@/lib/datetime";
+
+export async function completeOnboardingAction(
+  data: OnboardingInput
+): Promise<ActionResult> {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return { error: "You must be logged in." };
+  }
+
+  const parsed = onboardingSchema.safeParse(data);
+  if (!parsed.success) {
+    return { fieldErrors: z.flattenError(parsed.error).fieldErrors };
+  }
+
+  const { name, phone, dateOfBirth, image } = parsed.data;
+
+  await prisma.user.update({
+    where: { id: session.user.id },
+    data: {
+      name,
+      phone: phone || null,
+      dateOfBirth: dateOfBirth ? parseDateOfBirth(dateOfBirth) : null,
+      image: image || null,
+      onboardingCompleted: true,
+    },
+  });
+
+  updateTag(`user-${session.user.id}`);
+
+  return {};
+}

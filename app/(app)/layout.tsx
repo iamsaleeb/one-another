@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { auth } from "@/auth";
 import { TopNav } from "@/components/top-nav";
-import { PushNotificationProvider } from "@/components/push-notification-provider";
+import { PushNotificationProvider } from "@/domains/notifications/components/push-notification-provider";
 import { BackButtonProvider } from "@/components/back-button-provider";
 import { SessionProvider } from "@/components/session-provider";
 

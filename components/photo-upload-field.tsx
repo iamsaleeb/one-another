@@ -7,7 +7,7 @@ import { ImageIcon, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
-import { deleteUploadedFileAction } from "@/lib/actions/upload";
+import { deleteUploadedFileAction } from "@/domains/upload/actions/upload";
 
 const MAX_SIZE_BYTES = 4 * 1024 * 1024;
 

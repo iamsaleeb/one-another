@@ -9,7 +9,7 @@ import { ChevronLeft } from "lucide-react";
 import { getInitials } from "@/lib/utils";
 import { useShowBackButton } from "@/hooks/use-show-back-button";
 import { SearchBar } from "@/components/search-bar";
-import type { WhenFilter, TypeFilter } from "@/types/search";
+import type { WhenFilter, TypeFilter } from "@/lib/types/search";
 
 interface TopNavUser {
   name?: string | null;

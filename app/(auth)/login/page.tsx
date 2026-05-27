@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { UnifiedAuthForm } from "@/components/auth/unified-auth-form";
+import { UnifiedAuthForm } from "@/domains/auth/components/unified-auth-form";
 
 const devMode = process.env.VERCEL_ENV !== "production";
 

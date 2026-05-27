@@ -14,8 +14,8 @@ import { Button } from "@/components/ui/button";
 import {
   parseEventAttendeeMetadata,
   type EventMetadata,
-} from "@/lib/validations/event";
-import type { getEventAttendees } from "@/lib/actions/data-events";
+} from "@/domains/events/validations/event";
+import type { getEventAttendees } from "@/domains/events/actions/data";
 import { formatDayShort } from "@/lib/datetime";
 
 interface AttendeesDrawerProps {

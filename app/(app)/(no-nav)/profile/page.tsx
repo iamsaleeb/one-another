@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { auth } from "@/auth";
-import { getProfileUser } from "@/lib/actions/data-user";
-import { signOutAction } from "@/lib/actions/auth";
+import { getProfileUser } from "@/domains/profile/actions/data";
+import { signOutAction } from "@/domains/auth/actions/auth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Bell,

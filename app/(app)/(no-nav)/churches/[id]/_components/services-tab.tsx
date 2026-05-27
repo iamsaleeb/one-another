@@ -1,6 +1,6 @@
 import { ChevronDown } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import type { getChurchById } from "@/lib/actions/data-churches";
+import type { getChurchById } from "@/domains/churches/actions/data";
 
 type ChurchWithDetails = NonNullable<Awaited<ReturnType<typeof getChurchById>>>;
 

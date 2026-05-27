@@ -1,8 +1,8 @@
 import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { UserRole } from "@prisma/client";
-import { getSeriesById } from "@/lib/actions/data-series";
-import { getChurchesByIds } from "@/lib/actions/data-churches";
+import { getSeriesById } from "@/domains/series/actions/data";
+import { getChurchesByIds } from "@/domains/churches/actions/data";
 import { PageHeader } from "@/components/ui/page-header";
 import { EditSeriesForm } from "./_components/edit-series-form";
 

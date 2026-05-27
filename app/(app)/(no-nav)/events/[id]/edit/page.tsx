@@ -1,14 +1,14 @@
 import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { UserRole } from "@prisma/client";
-import { getEventById } from "@/lib/actions/data-events";
-import { getChurchesByIds } from "@/lib/actions/data-churches";
+import { getEventById } from "@/domains/events/actions/data";
+import { getChurchesByIds } from "@/domains/churches/actions/data";
 import {
   getEventQuestions,
   hasEventResponses,
-} from "@/lib/actions/data-questions";
-import { getQuestionLibraryForUser } from "@/lib/dal/questions";
-import { parseEventMetadata } from "@/lib/validations/event";
+} from "@/domains/events/questions/actions";
+import { getQuestionLibraryForUser } from "@/domains/events/questions/dal";
+import { parseEventMetadata } from "@/domains/events/validations/event";
 import { PageHeader } from "@/components/ui/page-header";
 import { EventWizard } from "@/app/(app)/(no-nav)/events/create/_components/event-wizard";
 

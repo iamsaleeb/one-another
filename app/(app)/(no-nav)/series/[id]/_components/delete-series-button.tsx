@@ -11,7 +11,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { deleteSeriesAction } from "@/lib/actions/series";
+import { deleteSeriesAction } from "@/domains/series/actions/series";
 
 export function DeleteSeriesButton({ seriesId }: { seriesId: string }) {
   const action = deleteSeriesAction.bind(null, seriesId);

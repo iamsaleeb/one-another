@@ -10,7 +10,7 @@ jest.mock("next/navigation", () => ({
 const mockFollowChurchAction = jest.fn();
 const mockUnfollowChurchAction = jest.fn();
 
-jest.mock("@/lib/actions/churches", () => ({
+jest.mock("@/domains/churches/actions/churches", () => ({
   followChurchAction: (...args: unknown[]) => mockFollowChurchAction(...args),
   unfollowChurchAction: (...args: unknown[]) =>
     mockUnfollowChurchAction(...args),

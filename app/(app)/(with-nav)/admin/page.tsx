@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { UserRole } from "@prisma/client";
 import { PageHeader } from "@/components/ui/page-header";
-import { getAdminChurches } from "@/lib/actions/data-churches";
+import { getAdminChurches } from "@/domains/churches/actions/data";
 import { AdminChurchCard } from "./_components/admin-church-card";
 
 export default async function AdminPage() {

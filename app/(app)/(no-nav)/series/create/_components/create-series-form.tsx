@@ -24,10 +24,10 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   createSeriesSchema,
   type CreateSeriesInput,
-} from "@/lib/validations/series";
-import { createSeriesAction } from "@/lib/actions/series";
+} from "@/domains/series/validations/series";
+import { createSeriesAction } from "@/domains/series/actions/series";
 import { PhotoUploadField } from "@/components/photo-upload-field";
-import { CATEGORY_OPTIONS } from "@/types/search";
+import { CATEGORY_OPTIONS } from "@/lib/types/search";
 
 const CADENCE_OPTIONS = [
   { value: "WEEKLY", label: "Weekly" },

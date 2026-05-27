@@ -3,13 +3,13 @@
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Bell, Loader2 } from "lucide-react";
-import { NotificationItem } from "@/components/notifications/notification-item";
+import { NotificationItem } from "@/domains/notifications/components/notification-item";
 import {
   markReadAction,
   loadMoreNotificationsAction,
-} from "@/lib/actions/notifications";
+} from "@/domains/notifications/actions/notifications";
 import { Button } from "@/components/ui/button";
-import type { InboxNotification } from "@/lib/notifications/inbox";
+import type { InboxNotification } from "@/domains/notifications/inbox";
 
 export function NotificationList({
   initialNotifications,

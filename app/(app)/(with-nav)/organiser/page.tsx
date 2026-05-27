@@ -5,11 +5,11 @@ import { PageHeader } from "@/components/ui/page-header";
 import {
   getEventsByCreatorPaged,
   getEventsNotByCreatorPaged,
-} from "@/lib/actions/data-events";
+} from "@/domains/events/actions/data";
 import {
   getSeriesByCreator,
   getSeriesNotByCreator,
-} from "@/lib/actions/data-series";
+} from "@/domains/series/actions/data";
 import { OrganiserTabs } from "./_components/organiser-tabs";
 
 export default async function OrganiserPage() {

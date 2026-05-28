@@ -59,7 +59,10 @@ describe("notifySeriesFollowers deduplication", () => {
       { userId: "user-2" },
     ]);
 
-    const claims = { isPlatformAdmin: false, churchMemberships: [{ churchId: 'ch-1', role: 'EVENT_MANAGER' as const }] };
+    const claims = {
+      isPlatformAdmin: false,
+      churchMemberships: [{ churchId: "ch-1", role: "EVENT_MANAGER" as const }],
+    };
     await publishEvent("evt-1", "admin-user", claims);
 
     expect(mockPrisma.notification.createMany).not.toHaveBeenCalled();
@@ -96,13 +99,11 @@ describe("notifyEventAttendees deduplication", () => {
       { userId: "user-4" },
     ]);
 
-    const claims = { isPlatformAdmin: false, churchMemberships: [{ churchId: 'ch-1', role: 'EVENT_MANAGER' as const }] };
-    await cancelEvent(
-      "evt-2",
-      "Venue unavailable",
-      "admin-user",
-      claims
-    );
+    const claims = {
+      isPlatformAdmin: false,
+      churchMemberships: [{ churchId: "ch-1", role: "EVENT_MANAGER" as const }],
+    };
+    await cancelEvent("evt-2", "Venue unavailable", "admin-user", claims);
 
     expect(mockPrisma.notification.createMany).not.toHaveBeenCalled();
     expect(mockQueue.queueNotification).toHaveBeenCalledWith(

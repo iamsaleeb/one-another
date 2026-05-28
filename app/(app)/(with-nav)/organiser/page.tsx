@@ -13,13 +13,14 @@ import { OrganiserTabs } from "./_components/organiser-tabs";
 
 export default async function OrganiserPage() {
   const session = await auth();
-  const churchMemberships = session?.user?.churchMemberships ?? [];
+  if (!session) redirect("/");
 
-  if (!session?.user?.isPlatformAdmin && churchMemberships.length === 0) {
+  const churchMemberships = session.user.churchMemberships ?? [];
+  if (!session.user.isPlatformAdmin && churchMemberships.length === 0) {
     redirect("/");
   }
 
-  const userId = session!.user.id;
+  const { id: userId } = session.user;
 
   const [myEventsPage, mySeries, communityEventsPage, communitySeries] =
     await Promise.all([

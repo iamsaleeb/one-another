@@ -9,7 +9,10 @@ const ALLOWED_HOST_PATTERN = /^[a-z0-9-]+\.public\.blob\.vercel-storage\.com$/;
 export async function deleteUploadedFileAction(url: string): Promise<void> {
   const session = await auth();
   const claims = sessionToClaims(session);
-  if (!claims || (!claims.isPlatformAdmin && claims.churchMemberships.length === 0)) {
+  if (
+    !claims ||
+    (!claims.isPlatformAdmin && claims.churchMemberships.length === 0)
+  ) {
     return;
   }
 

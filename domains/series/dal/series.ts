@@ -24,7 +24,10 @@ export async function createSeries(
     photoUrl,
   } = data;
 
-  const allowed = can(claims, Capabilities.EVENT_CREATE, { scope: 'CHURCH', churchId });
+  const allowed = can(claims, Capabilities.EVENT_CREATE, {
+    scope: "CHURCH",
+    churchId,
+  });
   if (!allowed) return { error: "You are not assigned to this church." };
 
   const created = await prisma.series.create({
@@ -67,11 +70,17 @@ export async function updateSeries(
   });
   if (!existing) return { error: "Series not found." };
 
-  const allowedOriginal = can(claims, Capabilities.EVENT_CREATE, { scope: 'CHURCH', churchId: existing.churchId });
+  const allowedOriginal = can(claims, Capabilities.EVENT_CREATE, {
+    scope: "CHURCH",
+    churchId: existing.churchId,
+  });
   if (!allowedOriginal) return { error: "Unauthorised." };
 
   if (churchId !== existing.churchId) {
-    const allowedNew = can(claims, Capabilities.EVENT_CREATE, { scope: 'CHURCH', churchId });
+    const allowedNew = can(claims, Capabilities.EVENT_CREATE, {
+      scope: "CHURCH",
+      churchId,
+    });
     if (!allowedNew) return { error: "Unauthorised." };
   }
 
@@ -103,7 +112,10 @@ export async function deleteSeries(
   });
   if (!series) return { error: "Series not found." };
 
-  const allowed = can(claims, Capabilities.EVENT_CREATE, { scope: 'CHURCH', churchId: series.churchId });
+  const allowed = can(claims, Capabilities.EVENT_CREATE, {
+    scope: "CHURCH",
+    churchId: series.churchId,
+  });
   if (!allowed) return { error: "Unauthorised." };
 
   await prisma.series.delete({ where: { id } });

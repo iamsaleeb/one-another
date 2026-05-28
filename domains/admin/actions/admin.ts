@@ -26,6 +26,7 @@ export async function addOrganiserToChurchAction(
   formData: FormData
 ): Promise<AdminActionState> {
   const session = await auth();
+  if (!session) return { error: "Unauthorised." };
   const claims = sessionToClaims(session);
   if (!claims) return { error: "Unauthorised." };
 
@@ -54,7 +55,7 @@ export async function addOrganiserToChurchAction(
     targetUser.id,
     churchId,
     ChurchRole.EVENT_MANAGER,
-    session!.user.id
+    session.user.id
   );
 
   updateTag("churches");
@@ -66,6 +67,7 @@ export async function removeOrganiserFromChurchAction(
   formData: FormData
 ): Promise<AdminActionState> {
   const session = await auth();
+  if (!session) return { error: "Unauthorised." };
   const claims = sessionToClaims(session);
   if (!claims) return { error: "Unauthorised." };
 

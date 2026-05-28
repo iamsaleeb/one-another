@@ -135,7 +135,10 @@ describe("addOrganiserToChurchAction", () => {
 
   it("returns success without creating when user is already a member (getChurchMembership returns existing record)", async () => {
     mockUserFindUnique.mockResolvedValue({ id: "user-2" });
-    mockGetChurchMembership.mockResolvedValue({ userId: "user-2", churchId: "ch-1" });
+    mockGetChurchMembership.mockResolvedValue({
+      userId: "user-2",
+      churchId: "ch-1",
+    });
 
     const result = await addOrganiserToChurchAction(
       {},

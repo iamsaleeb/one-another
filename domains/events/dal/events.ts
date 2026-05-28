@@ -126,7 +126,10 @@ export async function createEvent(
 
   if (!churchId) return { fieldErrors: { churchId: ["Church is required"] } };
 
-  const allowed = can(claims, Capabilities.EVENT_CREATE, { scope: 'CHURCH', churchId });
+  const allowed = can(claims, Capabilities.EVENT_CREATE, {
+    scope: "CHURCH",
+    churchId,
+  });
   if (!allowed) return { error: "You are not assigned to this church." };
 
   const isCamp = tag === "Camp";
@@ -254,11 +257,17 @@ export async function updateEvent(
   });
   if (!existing) return { error: "Event not found." };
 
-  const allowedOriginal = can(claims, Capabilities.EVENT_UPDATE, { scope: 'CHURCH', churchId: existing.churchId });
+  const allowedOriginal = can(claims, Capabilities.EVENT_UPDATE, {
+    scope: "CHURCH",
+    churchId: existing.churchId,
+  });
   if (!allowedOriginal) return { error: "Unauthorised." };
 
   if (churchId !== existing.churchId) {
-    const allowedNew = can(claims, Capabilities.EVENT_UPDATE, { scope: 'CHURCH', churchId });
+    const allowedNew = can(claims, Capabilities.EVENT_UPDATE, {
+      scope: "CHURCH",
+      churchId,
+    });
     if (!allowedNew) return { error: "Unauthorised." };
   }
 
@@ -346,7 +355,10 @@ export async function cancelEvent(
   });
   if (!event) return { error: "Event not found." };
 
-  const allowed = can(claims, Capabilities.EVENT_UPDATE, { scope: 'CHURCH', churchId: event.churchId });
+  const allowed = can(claims, Capabilities.EVENT_UPDATE, {
+    scope: "CHURCH",
+    churchId: event.churchId,
+  });
   if (!allowed) return { error: "Unauthorised." };
 
   await prisma.event.update({
@@ -380,7 +392,10 @@ export async function uncancelEvent(
   });
   if (!event) return { error: "Event not found." };
 
-  const allowed = can(claims, Capabilities.EVENT_UPDATE, { scope: 'CHURCH', churchId: event.churchId });
+  const allowed = can(claims, Capabilities.EVENT_UPDATE, {
+    scope: "CHURCH",
+    churchId: event.churchId,
+  });
   if (!allowed) return { error: "Unauthorised." };
 
   await prisma.event.update({
@@ -415,7 +430,10 @@ export async function publishEvent(
   });
   if (!event) return { error: "Event not found." };
 
-  const allowed = can(claims, Capabilities.EVENT_PUBLISH, { scope: 'CHURCH', churchId: event.churchId });
+  const allowed = can(claims, Capabilities.EVENT_PUBLISH, {
+    scope: "CHURCH",
+    churchId: event.churchId,
+  });
   if (!allowed) return { error: "You are not assigned to this church." };
 
   if (!event.isDraft) {
@@ -473,7 +491,10 @@ export async function unpublishEvent(
   });
   if (!event) return { error: "Event not found." };
 
-  const allowed = can(claims, Capabilities.EVENT_PUBLISH, { scope: 'CHURCH', churchId: event.churchId });
+  const allowed = can(claims, Capabilities.EVENT_PUBLISH, {
+    scope: "CHURCH",
+    churchId: event.churchId,
+  });
   if (!allowed) return { error: "You are not assigned to this church." };
 
   await prisma.event.update({ where: { id }, data: { isDraft: true } });
@@ -509,7 +530,10 @@ export async function deleteEvent(
   });
   if (!event) return { error: "Event not found." };
 
-  const allowed = can(claims, Capabilities.EVENT_DELETE, { scope: 'CHURCH', churchId: event.churchId });
+  const allowed = can(claims, Capabilities.EVENT_DELETE, {
+    scope: "CHURCH",
+    churchId: event.churchId,
+  });
   if (!allowed) return { error: "Unauthorised." };
 
   try {

@@ -5,7 +5,6 @@ import { updateTag } from "next/cache";
 import { auth } from "@/auth";
 import { Prisma } from "@prisma/client";
 import { sessionToClaims } from "@/domains/roles/lib/session";
-import { churchPolicy } from "@/domains/roles/policies/church";
 import { prisma } from "@/lib/db";
 import {
   createSeriesSchema,
@@ -23,6 +22,7 @@ export async function createSeriesAction(
   data: CreateSeriesInput
 ): Promise<ActionResult> {
   const session = await auth();
+  if (!session) return { error: "Unauthorised." };
   const claims = sessionToClaims(session);
   if (!claims) return { error: "Unauthorised." };
 
@@ -30,7 +30,7 @@ export async function createSeriesAction(
   if (!parsed.success)
     return { fieldErrors: parsed.error.flatten().fieldErrors };
 
-  const result = await createSeries(parsed.data, session!.user.id, claims);
+  const result = await createSeries(parsed.data, session.user.id, claims);
   if ("error" in result || "fieldErrors" in result) return result;
 
   broadcastSeriesChange(result.id, result.churchId);
@@ -42,6 +42,7 @@ export async function updateSeriesAction(
   data: CreateSeriesInput
 ): Promise<ActionResult> {
   const session = await auth();
+  if (!session) redirect("/");
   const claims = sessionToClaims(session);
   if (!claims) redirect("/");
 
@@ -49,7 +50,7 @@ export async function updateSeriesAction(
   if (!parsed.success)
     return { fieldErrors: parsed.error.flatten().fieldErrors };
 
-  const result = await updateSeries(id, parsed.data, session!.user.id, claims);
+  const result = await updateSeries(id, parsed.data, session.user.id, claims);
   if ("error" in result || "fieldErrors" in result) redirect("/organiser");
 
   invalidateSeriesFields(id, result.oldChurchId);
@@ -70,7 +71,7 @@ export async function followSeriesAction(
 
   try {
     await prisma.seriesFollower.create({
-      data: { seriesId, userId: session!.user.id },
+      data: { seriesId, userId: session.user.id },
     });
   } catch (err) {
     if (
@@ -82,7 +83,7 @@ export async function followSeriesAction(
     return { error: "Failed to follow series." };
   }
 
-  invalidateSeriesFollowing(seriesId, session!.user.id);
+  invalidateSeriesFollowing(seriesId, session.user.id);
   return {};
 }
 
@@ -94,22 +95,23 @@ export async function unfollowSeriesAction(
 
   try {
     await prisma.seriesFollower.delete({
-      where: { seriesId_userId: { seriesId, userId: session!.user.id } },
+      where: { seriesId_userId: { seriesId, userId: session.user.id } },
     });
   } catch {
     return { error: "Failed to unfollow series." };
   }
 
-  invalidateSeriesFollowing(seriesId, session!.user.id);
+  invalidateSeriesFollowing(seriesId, session.user.id);
   return {};
 }
 
 export async function deleteSeriesAction(id: string): Promise<void> {
   const session = await auth();
+  if (!session) redirect("/");
   const claims = sessionToClaims(session);
   if (!claims) redirect("/");
 
-  const result = await deleteSeries(id, session!.user.id, claims);
+  const result = await deleteSeries(id, session.user.id, claims);
   if ("error" in result) redirect("/organiser");
 
   broadcastSeriesChange(id, result.churchId);

@@ -1,7 +1,6 @@
 import { handleUpload, type HandleUploadBody } from "@vercel/blob/client";
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { sessionToClaims } from "@/domains/roles/lib/session";
 
 export async function POST(request: Request): Promise<NextResponse> {
   try {
@@ -24,8 +23,8 @@ export async function POST(request: Request): Promise<NextResponse> {
               : "profile";
 
         if (variant === "cover") {
-          const claims = sessionToClaims(session)!;
-          if (!claims.isPlatformAdmin && claims.churchMemberships.length === 0) {
+          const memberships = session.user.churchMemberships ?? [];
+          if (!session.user.isPlatformAdmin && memberships.length === 0) {
             throw new Error("Forbidden");
           }
         }

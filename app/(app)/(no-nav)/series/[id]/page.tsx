@@ -40,8 +40,9 @@ export default async function SeriesDetailPage({ params }: Props) {
 
   if (!series) notFound();
 
-  const _claims = sessionToClaims(session)
-  const canManage = !!_claims && churchPolicy.canManageMembers(_claims, series.churchId);
+  const _claims = sessionToClaims(session);
+  const canManage =
+    !!_claims && churchPolicy.canManageMembers(_claims, series.churchId);
   const isFollowing = myFollow !== null;
 
   return (

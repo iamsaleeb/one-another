@@ -6,14 +6,18 @@ import { AdminChurchCard } from "./_components/admin-church-card";
 
 export default async function AdminPage() {
   const session = await auth();
-  const churchMemberships = session?.user?.churchMemberships ?? [];
-  const isChurchAdmin = churchMemberships.some((m) => m.role === "CHURCH_ADMIN");
+  if (!session) redirect("/");
 
-  if (!session?.user?.isPlatformAdmin && !isChurchAdmin) {
+  const churchMemberships = session.user.churchMemberships ?? [];
+  const isChurchAdmin = churchMemberships.some(
+    (m) => m.role === "CHURCH_ADMIN"
+  );
+
+  if (!session.user.isPlatformAdmin && !isChurchAdmin) {
     redirect("/");
   }
 
-  const churchesWithOrganisers = await getAdminChurches(session!.user.id);
+  const churchesWithOrganisers = await getAdminChurches(session.user.id);
 
   return (
     <div className="flex flex-col">

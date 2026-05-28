@@ -52,7 +52,7 @@ export async function generateMetadata({ params }: Props) {
   if (!event) return { title: "Event Not Found" };
   if (event.isDraft) {
     const session = await auth();
-    const claims = sessionToClaims(session)
+    const claims = sessionToClaims(session);
     if (!claims || !churchPolicy.canManageMembers(claims, event.churchId ?? ""))
       return { title: "Event Not Found" };
   }
@@ -87,8 +87,9 @@ export default async function EventDetailPage({ params }: Props) {
 
   const isAttending = myAttendance !== null;
 
-  const _claims = sessionToClaims(session)
-  const canManage = !!_claims && churchPolicy.canManageMembers(_claims, event.churchId ?? "");
+  const _claims = sessionToClaims(session);
+  const canManage =
+    !!_claims && churchPolicy.canManageMembers(_claims, event.churchId ?? "");
   const questions = await getEventQuestions(id);
 
   if (event.isDraft && !canManage) notFound();

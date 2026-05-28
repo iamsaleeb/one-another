@@ -68,7 +68,7 @@ beforeEach(() => {
     user: {
       id: "user-1",
       isPlatformAdmin: false,
-      churchMemberships: [{ churchId: 'ch-1', role: 'EVENT_MANAGER' as const }],
+      churchMemberships: [{ churchId: "ch-1", role: "EVENT_MANAGER" as const }],
       onboardingCompleted: true,
       isEmailVerified: true,
     },

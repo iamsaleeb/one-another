@@ -141,7 +141,7 @@ beforeEach(() => {
     user: {
       id: "user-1",
       isPlatformAdmin: false,
-      churchMemberships: [{ churchId: 'ch-1', role: 'EVENT_MANAGER' as const }],
+      churchMemberships: [{ churchId: "ch-1", role: "EVENT_MANAGER" as const }],
       onboardingCompleted: true,
       isEmailVerified: true,
     },
@@ -832,9 +832,7 @@ describe("updateEventAction", () => {
   it("checks new church permission when church changes", async () => {
     mockEventFindUnique.mockResolvedValue(existingPublished);
     // First canManageFromClaims call (original church) returns true, second (new church) returns false
-    mockCan
-      .mockReturnValueOnce(true)
-      .mockReturnValueOnce(false);
+    mockCan.mockReturnValueOnce(true).mockReturnValueOnce(false);
     mockRedirect.mockImplementationOnce(() => {
       throw new Error("NEXT_REDIRECT");
     });

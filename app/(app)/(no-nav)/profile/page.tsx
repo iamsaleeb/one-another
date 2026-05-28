@@ -53,9 +53,7 @@ export default async function ProfilePage() {
             </p>
             {((user?.churchMemberships?.length ?? 0) > 0 ||
               user?.isPlatformAdmin) && (
-              <RoleBadge
-                role={user!.isPlatformAdmin ? "ADMIN" : "ORGANISER"}
-              />
+              <RoleBadge role={user?.isPlatformAdmin ? "ADMIN" : "ORGANISER"} />
             )}
           </div>
         </div>

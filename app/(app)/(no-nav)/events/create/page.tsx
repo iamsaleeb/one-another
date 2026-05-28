@@ -12,9 +12,10 @@ interface Props {
 
 export default async function CreateEventPage({ searchParams }: Props) {
   const session = await auth();
-  const churchMemberships = session?.user?.churchMemberships ?? [];
+  if (!session) redirect("/");
 
-  if (!session?.user?.isPlatformAdmin && churchMemberships.length === 0) {
+  const churchMemberships = session.user.churchMemberships ?? [];
+  if (!session.user.isPlatformAdmin && churchMemberships.length === 0) {
     redirect("/");
   }
 
@@ -24,7 +25,7 @@ export default async function CreateEventPage({ searchParams }: Props) {
   const [churches, series, libraryItems] = await Promise.all([
     getChurchesByIds(managedIds),
     seriesId ? getSeriesForEvent(seriesId) : null,
-    getQuestionLibraryForUser(session!.user.id),
+    getQuestionLibraryForUser(session.user.id),
   ]);
 
   return (

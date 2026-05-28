@@ -9,7 +9,6 @@ import type { ActionResult } from "@/lib/types/action";
 import { generateOtp, storeOtp, isOtpRateLimited } from "../email/otp";
 import { sendLoginOtp } from "../email/send-login-otp";
 
-
 export async function requestOtpAction(
   data: RequestOtpInput
 ): Promise<ActionResult> {

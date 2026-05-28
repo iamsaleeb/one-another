@@ -1,11 +1,11 @@
-import type { ChurchRole } from '@prisma/client'
+import type { ChurchRole } from "@prisma/client";
 
 export type ScopeContext =
-  | { scope: 'PLATFORM' }
-  | { scope: 'CHURCH'; churchId: string }
-  | { scope: 'EVENT'; eventId: string; churchId: string }
+  | { scope: "PLATFORM" }
+  | { scope: "CHURCH"; churchId: string }
+  | { scope: "EVENT"; eventId: string; churchId: string };
 
 export interface RoleClaims {
-  isPlatformAdmin: boolean
-  churchMemberships: { churchId: string; role: ChurchRole }[]
+  isPlatformAdmin: boolean;
+  churchMemberships: Array<{ churchId: string; role: ChurchRole }>;
 }

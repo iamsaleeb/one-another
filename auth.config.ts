@@ -59,16 +59,16 @@ export const authConfig = {
         return Response.redirect(onboardingUrl);
       }
 
-      const { isPlatformAdmin, churchMemberships } = auth?.user ?? {}
+      const { isPlatformAdmin, churchMemberships } = auth?.user ?? {};
       if (
-        nextUrl.pathname.startsWith('/organiser') &&
+        nextUrl.pathname.startsWith("/organiser") &&
         !isPlatformAdmin &&
         (!churchMemberships || churchMemberships.length === 0)
       ) {
-        return Response.redirect(new URL('/', nextUrl))
+        return Response.redirect(new URL("/", nextUrl));
       }
-      if (nextUrl.pathname.startsWith('/admin') && !isPlatformAdmin) {
-        return Response.redirect(new URL('/', nextUrl))
+      if (nextUrl.pathname.startsWith("/admin") && !isPlatformAdmin) {
+        return Response.redirect(new URL("/", nextUrl));
       }
 
       return true;

@@ -19,8 +19,9 @@ export default async function EditEventPage({ params }: Props) {
   const { id } = await params;
   const [event, session] = await Promise.all([getEventById(id), auth()]);
 
-  const churchMemberships = session?.user?.churchMemberships ?? [];
-  if (!session?.user?.isPlatformAdmin && churchMemberships.length === 0)
+  if (!session) redirect("/");
+  const churchMemberships = session.user.churchMemberships ?? [];
+  if (!session.user.isPlatformAdmin && churchMemberships.length === 0)
     redirect("/");
   if (!event) notFound();
 
@@ -29,7 +30,7 @@ export default async function EditEventPage({ params }: Props) {
     await Promise.all([
       getChurchesByIds(managedIds),
       getEventQuestions(id),
-      getQuestionLibraryForUser(session!.user.id),
+      getQuestionLibraryForUser(session.user.id),
       hasEventResponses(id),
     ]);
   if (!churches.some((c) => c.id === event.churchId)) notFound();

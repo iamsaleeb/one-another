@@ -38,6 +38,7 @@ async function main() {
   await prisma.seriesFollower.deleteMany();
   await prisma.churchFollower.deleteMany();
   await prisma.savedEvent.deleteMany();
+  await prisma.seriesStaffAssignment.deleteMany();
   await prisma.eventStaffAssignment.deleteMany();
   await prisma.event.deleteMany();
   await prisma.series.deleteMany();
@@ -1999,6 +2000,7 @@ async function main() {
 
   // ── Users ─────────────────────────────────────────────────────────────────────
 
+  // Church Admins — full control over their church and all its events/series
   const organiser1 = await prisma.user.create({
     data: {
       name: "Fr. Bishoy Lamie",
@@ -2044,6 +2046,16 @@ async function main() {
     },
   });
 
+  // Church Admin for Archangel Michael — manages the sixth church
+  const organiser6 = await prisma.user.create({
+    data: {
+      name: "Fr. Boulos Samir",
+      email: "organiser6@example.com",
+      emailVerified: new Date(),
+      onboardingCompleted: true,
+    },
+  });
+
   await prisma.churchMembership.createMany({
     data: [
       { userId: organiser1.id, churchId: stMary.id, role: "CHURCH_ADMIN" },
@@ -2051,20 +2063,102 @@ async function main() {
       { userId: organiser3.id, churchId: stGeorge.id, role: "CHURCH_ADMIN" },
       { userId: organiser4.id, churchId: stPishoy.id, role: "CHURCH_ADMIN" },
       { userId: organiser5.id, churchId: stAnthony.id, role: "CHURCH_ADMIN" },
+      { userId: organiser6.id, churchId: archangel.id, role: "CHURCH_ADMIN" },
     ],
   });
 
-  const admin1 = await prisma.user.create({
+  // Event Manager — can create, edit, publish, delete events and manage series at stMary
+  // Cannot manage church membership or church settings
+  const eventManager1 = await prisma.user.create({
     data: {
-      name: "Carol Admin",
-      email: "admin@example.com",
+      name: "Maryam Iskander",
+      email: "eventmanager@example.com",
+      emailVerified: new Date(),
+      onboardingCompleted: true,
+    },
+  });
+
+  await prisma.churchMembership.create({
+    data: {
+      userId: eventManager1.id,
+      churchId: stMary.id,
+      role: "EVENT_MANAGER",
+      assignedBy: organiser1.id,
+    },
+  });
+
+  // Event Creator — can create events at stGeorge; auto-assigned EVENT_EDITOR on their own events
+  // Cannot edit or delete events they did not create
+  const eventCreator1 = await prisma.user.create({
+    data: {
+      name: "George Tadros",
+      email: "eventcreator@example.com",
+      emailVerified: new Date(),
+      onboardingCompleted: true,
+    },
+  });
+
+  await prisma.churchMembership.create({
+    data: {
+      userId: eventCreator1.id,
+      churchId: stGeorge.id,
+      role: "EVENT_CREATOR",
+      assignedBy: organiser3.id,
+    },
+  });
+
+  // Series Manager — can edit the Lenten Tasbeha series and add/modify its sessions
+  // Does not have church-level access; access is scoped to this series only
+  const seriesManager1 = await prisma.user.create({
+    data: {
+      name: "Cantor George Mikhail",
+      email: "seriesmanager@example.com",
+      emailVerified: new Date(),
+      onboardingCompleted: true,
+    },
+  });
+
+  await prisma.seriesStaffAssignment.create({
+    data: {
+      userId: seriesManager1.id,
+      seriesId: lentSeries.id,
+      role: "SERIES_MANAGER",
+      assignedBy: organiser1.id,
+    },
+  });
+
+  // Series Session Creator — can add sessions to the Young Adults series
+  // Cannot edit series metadata; can modify any event within the series
+  const seriesSessionCreator1 = await prisma.user.create({
+    data: {
+      name: "Deacon Peter Naguib",
+      email: "seriescreator@example.com",
+      emailVerified: new Date(),
+      onboardingCompleted: true,
+    },
+  });
+
+  await prisma.seriesStaffAssignment.create({
+    data: {
+      userId: seriesSessionCreator1.id,
+      seriesId: youngAdults.id,
+      role: "SERIES_SESSION_CREATOR",
+      assignedBy: organiser2.id,
+    },
+  });
+
+  // Platform Admin — full access across all churches and events
+  const platformAdmin = await prisma.user.create({
+    data: {
+      name: "Anthony Saleeb",
+      email: "anthonysaleeb@gmail.com",
       emailVerified: new Date(),
       onboardingCompleted: true,
     },
   });
 
   await prisma.platformRoleAssignment.create({
-    data: { userId: admin1.id, role: "PLATFORM_ADMIN" },
+    data: { userId: platformAdmin.id, role: "PLATFORM_ADMIN" },
   });
 
   // ── Question Library ──────────────────────────────────────────────────────────

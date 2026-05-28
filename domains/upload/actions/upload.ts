@@ -2,16 +2,14 @@
 
 import { del } from "@vercel/blob";
 import { auth } from "@/auth";
-import { UserRole } from "@prisma/client";
+import { sessionToClaims } from "@/domains/roles/lib/session";
 
 const ALLOWED_HOST_PATTERN = /^[a-z0-9-]+\.public\.blob\.vercel-storage\.com$/;
 
 export async function deleteUploadedFileAction(url: string): Promise<void> {
   const session = await auth();
-  if (
-    session?.user?.role !== UserRole.ORGANISER &&
-    session?.user?.role !== UserRole.ADMIN
-  ) {
+  const claims = sessionToClaims(session);
+  if (!claims || (!claims.isPlatformAdmin && claims.churchMemberships.length === 0)) {
     return;
   }
 

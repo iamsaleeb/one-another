@@ -6,7 +6,8 @@ import {
   getSeriesById,
   getMySeriesFollow,
 } from "@/domains/series/actions/data";
-import { canManageChurchFromSession } from "@/lib/permissions";
+import { sessionToClaims } from "@/domains/roles/lib/session";
+import { churchPolicy } from "@/domains/roles/policies/church";
 import { InfoField } from "@/components/ui/info-field";
 import { HeroBanner } from "@/components/ui/hero-banner";
 import { EventCard } from "@/domains/events/components/event-card";
@@ -39,7 +40,8 @@ export default async function SeriesDetailPage({ params }: Props) {
 
   if (!series) notFound();
 
-  const canManage = canManageChurchFromSession(session, series.churchId);
+  const _claims = sessionToClaims(session)
+  const canManage = !!_claims && churchPolicy.canManageMembers(_claims, series.churchId);
   const isFollowing = myFollow !== null;
 
   return (

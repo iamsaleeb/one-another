@@ -51,8 +51,11 @@ export default async function ProfilePage() {
             <p className="text-muted-foreground truncate text-sm">
               {user?.email}
             </p>
-            {(user?.role === "ORGANISER" || user?.role === "ADMIN") && (
-              <RoleBadge role={user.role as "ORGANISER" | "ADMIN"} />
+            {((user?.churchMemberships?.length ?? 0) > 0 ||
+              user?.isPlatformAdmin) && (
+              <RoleBadge
+                role={user!.isPlatformAdmin ? "ADMIN" : "ORGANISER"}
+              />
             )}
           </div>
         </div>

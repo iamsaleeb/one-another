@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { EventWizard } from "./_components/event-wizard";
-import { UserRole } from "@prisma/client";
 import { PageHeader } from "@/components/ui/page-header";
 import { getChurchesByIds } from "@/domains/churches/actions/data";
 import { getSeriesForEvent } from "@/domains/series/actions/data";
@@ -13,24 +12,19 @@ interface Props {
 
 export default async function CreateEventPage({ searchParams }: Props) {
   const session = await auth();
+  const churchMemberships = session?.user?.churchMemberships ?? [];
 
-  if (
-    session?.user?.role !== UserRole.ORGANISER &&
-    session?.user?.role !== UserRole.ADMIN
-  ) {
+  if (!session?.user?.isPlatformAdmin && churchMemberships.length === 0) {
     redirect("/");
   }
 
   const { seriesId } = await searchParams;
 
-  const managedIds = [
-    ...(session.user.organiserChurchIds ?? []),
-    ...(session.user.adminChurchIds ?? []),
-  ];
+  const managedIds = churchMemberships.map((m) => m.churchId);
   const [churches, series, libraryItems] = await Promise.all([
     getChurchesByIds(managedIds),
     seriesId ? getSeriesForEvent(seriesId) : null,
-    getQuestionLibraryForUser(session.user.id),
+    getQuestionLibraryForUser(session!.user.id),
   ]);
 
   return (

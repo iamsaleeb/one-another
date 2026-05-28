@@ -1,7 +1,7 @@
 import { handleUpload, type HandleUploadBody } from "@vercel/blob/client";
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { UserRole } from "@prisma/client";
+import { sessionToClaims } from "@/domains/roles/lib/session";
 
 export async function POST(request: Request): Promise<NextResponse> {
   try {
@@ -24,10 +24,8 @@ export async function POST(request: Request): Promise<NextResponse> {
               : "profile";
 
         if (variant === "cover") {
-          if (
-            session.user.role !== UserRole.ORGANISER &&
-            session.user.role !== UserRole.ADMIN
-          ) {
+          const claims = sessionToClaims(session)!;
+          if (!claims.isPlatformAdmin && claims.churchMemberships.length === 0) {
             throw new Error("Forbidden");
           }
         }

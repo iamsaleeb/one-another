@@ -2,7 +2,8 @@ import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { getEventById } from "@/domains/events/actions/data";
 import { getEventResponses } from "@/domains/events/questions/actions";
-import { canManageChurchFromSession } from "@/lib/permissions";
+import { sessionToClaims } from "@/domains/roles/lib/session";
+import { churchPolicy } from "@/domains/roles/policies/church";
 import { PageHeader } from "@/components/ui/page-header";
 import { ResponsesTable } from "./_components/responses-table";
 
@@ -22,7 +23,8 @@ export default async function EventResponsesPage({ params }: Props) {
   const event = await getEventById(id);
   if (!event) notFound();
 
-  const canManage = canManageChurchFromSession(session, event.churchId ?? "");
+  const _claims = sessionToClaims(session)
+  const canManage = !!_claims && churchPolicy.canManageMembers(_claims, event.churchId ?? "")
   if (!canManage) redirect(`/events/${id}`);
 
   const { questions, attendees } = await getEventResponses(id);

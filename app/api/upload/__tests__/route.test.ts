@@ -6,14 +6,19 @@ jest.mock("@/auth", () => ({ auth: jest.fn() }));
 jest.mock("@vercel/blob/client", () => ({
   handleUpload: jest.fn(),
 }));
+jest.mock("@/domains/roles/lib/session", () => ({
+  sessionToClaims: jest.fn(),
+}));
 
 import { NextRequest } from "next/server";
 import { auth } from "@/auth";
 import { handleUpload } from "@vercel/blob/client";
+import { sessionToClaims } from "@/domains/roles/lib/session";
 import { POST } from "../route";
 
 const mockAuth = auth as jest.Mock;
 const mockHandleUpload = handleUpload as jest.Mock;
+const mockSessionToClaims = sessionToClaims as jest.Mock;
 
 function makeRequest(body: unknown) {
   return new NextRequest("http://localhost/api/upload", {
@@ -25,7 +30,12 @@ function makeRequest(body: unknown) {
 
 beforeEach(() => {
   jest.clearAllMocks();
-  mockAuth.mockResolvedValue({ user: { id: "user-1", role: "MEMBER" } });
+  mockAuth.mockResolvedValue({ user: { id: "user-1" } });
+  // Default: authenticated user with no church memberships (plain member)
+  mockSessionToClaims.mockReturnValue({
+    isPlatformAdmin: false,
+    churchMemberships: [],
+  });
   mockHandleUpload.mockResolvedValue({
     url: "https://example.public.blob.vercel-storage.com/img.jpg",
   });
@@ -61,7 +71,11 @@ describe("POST /api/upload", () => {
     });
 
     it("allows ORGANISER to request a cover token", async () => {
-      mockAuth.mockResolvedValue({ user: { id: "user-2", role: "ORGANISER" } });
+      mockAuth.mockResolvedValue({ user: { id: "user-2" } });
+      mockSessionToClaims.mockReturnValue({
+        isPlatformAdmin: false,
+        churchMemberships: [{ churchId: "ch-1", role: "EVENT_MANAGER" }],
+      });
       mockHandleUpload.mockImplementation(async ({ onBeforeGenerateToken }) => {
         const opts = await onBeforeGenerateToken("img.jpg", "cover");
         return { tokenPayload: opts.tokenPayload };
@@ -73,7 +87,11 @@ describe("POST /api/upload", () => {
     });
 
     it("allows ADMIN to request a cover token", async () => {
-      mockAuth.mockResolvedValue({ user: { id: "user-3", role: "ADMIN" } });
+      mockAuth.mockResolvedValue({ user: { id: "user-3" } });
+      mockSessionToClaims.mockReturnValue({
+        isPlatformAdmin: true,
+        churchMemberships: [],
+      });
       mockHandleUpload.mockImplementation(async ({ onBeforeGenerateToken }) => {
         const opts = await onBeforeGenerateToken("img.jpg", "cover");
         return { tokenPayload: opts.tokenPayload };
@@ -148,7 +166,11 @@ describe("POST /api/upload", () => {
 
     it("includes userId and variant in tokenPayload", async () => {
       mockAuth.mockResolvedValue({
-        user: { id: "user-42", role: "ORGANISER" },
+        user: { id: "user-42" },
+      });
+      mockSessionToClaims.mockReturnValue({
+        isPlatformAdmin: false,
+        churchMemberships: [{ churchId: "ch-1", role: "EVENT_MANAGER" }],
       });
       let capturedOpts:
         | Awaited<

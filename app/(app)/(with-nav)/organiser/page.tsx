@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
-import { UserRole } from "@prisma/client";
 import { PageHeader } from "@/components/ui/page-header";
 import {
   getEventsByCreatorPaged,
@@ -14,15 +13,13 @@ import { OrganiserTabs } from "./_components/organiser-tabs";
 
 export default async function OrganiserPage() {
   const session = await auth();
+  const churchMemberships = session?.user?.churchMemberships ?? [];
 
-  if (
-    session?.user?.role !== UserRole.ORGANISER &&
-    session?.user?.role !== UserRole.ADMIN
-  ) {
+  if (!session?.user?.isPlatformAdmin && churchMemberships.length === 0) {
     redirect("/");
   }
 
-  const userId = session.user.id;
+  const userId = session!.user.id;
 
   const [myEventsPage, mySeries, communityEventsPage, communitySeries] =
     await Promise.all([

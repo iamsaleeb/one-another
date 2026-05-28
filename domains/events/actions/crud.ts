@@ -33,7 +33,7 @@ export async function createEventAction(
   if (!parsed.success)
     return { fieldErrors: parsed.error.flatten().fieldErrors };
 
-  const result = await createEvent(parsed.data, session.user.id, claims);
+  const result = await createEvent(parsed.data, session!.user.id, claims);
   if ("error" in result || "fieldErrors" in result) return result;
 
   invalidateEventCaches(result.id, result.churchId, result.seriesId, {
@@ -60,7 +60,7 @@ export async function updateEventAction(
   if (!parsed.success)
     return { fieldErrors: parsed.error.flatten().fieldErrors };
 
-  const result = await updateEvent(id, parsed.data, session.user.id, claims);
+  const result = await updateEvent(id, parsed.data, session!.user.id, claims);
   if ("error" in result) redirect("/organiser");
   if ("fieldErrors" in result) return result;
 
@@ -76,7 +76,7 @@ export async function cancelEventAction(
   const claims = sessionToClaims(session);
   if (!claims) redirect("/");
 
-  const result = await cancelEvent(id, reason, session.user.id, claims);
+  const result = await cancelEvent(id, reason, session!.user.id, claims);
   if ("error" in result) redirect("/organiser");
 
   invalidateEventCaches(id, result.churchId, result.seriesId);
@@ -88,7 +88,7 @@ export async function uncancelEventAction(id: string): Promise<void> {
   const claims = sessionToClaims(session);
   if (!claims) redirect("/");
 
-  const result = await uncancelEvent(id, session.user.id, claims);
+  const result = await uncancelEvent(id, session!.user.id, claims);
   if ("error" in result) redirect("/organiser");
 
   invalidateEventCaches(id, result.churchId, result.seriesId);
@@ -100,7 +100,7 @@ export async function publishEventAction(id: string): Promise<ActionResult> {
   const claims = sessionToClaims(session);
   if (!claims) return { error: "Unauthorised." };
 
-  const result = await publishEvent(id, session.user.id, claims);
+  const result = await publishEvent(id, session!.user.id, claims);
   if ("error" in result) return result;
 
   invalidateEventCaches(id, result.churchId, result.seriesId, {
@@ -114,7 +114,7 @@ export async function unpublishEventAction(id: string): Promise<ActionResult> {
   const claims = sessionToClaims(session);
   if (!claims) return { error: "Unauthorised." };
 
-  const result = await unpublishEvent(id, session.user.id, claims);
+  const result = await unpublishEvent(id, session!.user.id, claims);
   if ("error" in result) return result;
 
   invalidateEventCaches(id, result.churchId, result.seriesId, {
@@ -143,7 +143,7 @@ export async function saveDraftAction(
   if (!id) {
     const result = await createEvent(
       { ...dataWithDefaults, isDraft: true },
-      session.user.id,
+      session!.user.id,
       claims
     );
     if ("error" in result || "fieldErrors" in result) return result;
@@ -153,7 +153,7 @@ export async function saveDraftAction(
     const result = await updateEvent(
       id,
       { ...dataWithDefaults, isDraft: dataWithDefaults.isDraft ?? true },
-      session.user.id,
+      session!.user.id,
       claims
     );
     if ("error" in result || "fieldErrors" in result) return result;
@@ -174,7 +174,7 @@ export async function saveEventAction(
   if (!parsed.success)
     return { fieldErrors: parsed.error.flatten().fieldErrors };
 
-  const result = await updateEvent(id, parsed.data, session.user.id, claims);
+  const result = await updateEvent(id, parsed.data, session!.user.id, claims);
   if ("error" in result || "fieldErrors" in result) return result;
 
   invalidateEventUpdate(id, result);
@@ -187,7 +187,7 @@ export async function deleteEventAction(id: string): Promise<void> {
   const claims = sessionToClaims(session);
   if (!claims) redirect("/");
 
-  const result = await deleteEvent(id, session.user.id, claims);
+  const result = await deleteEvent(id, session!.user.id, claims);
   if ("error" in result) redirect("/organiser");
 
   invalidateEventCaches(id, result.churchId, result.seriesId, {

@@ -1,6 +1,5 @@
 import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
-import { UserRole } from "@prisma/client";
 import { getSeriesById } from "@/domains/series/actions/data";
 import { getChurchesByIds } from "@/domains/churches/actions/data";
 import { PageHeader } from "@/components/ui/page-header";
@@ -14,17 +13,12 @@ export default async function EditSeriesPage({ params }: Props) {
   const { id } = await params;
   const [series, session] = await Promise.all([getSeriesById(id), auth()]);
 
-  if (
-    session?.user?.role !== UserRole.ORGANISER &&
-    session?.user?.role !== UserRole.ADMIN
-  )
+  const churchMemberships = session?.user?.churchMemberships ?? [];
+  if (!session?.user?.isPlatformAdmin && churchMemberships.length === 0)
     redirect("/");
   if (!series) notFound();
 
-  const managedIds = [
-    ...(session.user.organiserChurchIds ?? []),
-    ...(session.user.adminChurchIds ?? []),
-  ];
+  const managedIds = churchMemberships.map((m) => m.churchId);
   const churches = await getChurchesByIds(managedIds);
   if (!churches.some((c) => c.id === series.churchId)) notFound();
 

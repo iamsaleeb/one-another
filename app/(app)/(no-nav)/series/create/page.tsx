@@ -1,24 +1,18 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
-import { UserRole } from "@prisma/client";
 import { CreateSeriesForm } from "./_components/create-series-form";
 import { PageHeader } from "@/components/ui/page-header";
 import { getChurchesByIds } from "@/domains/churches/actions/data";
 
 export default async function CreateSeriesPage() {
   const session = await auth();
+  const churchMemberships = session?.user?.churchMemberships ?? [];
 
-  if (
-    session?.user?.role !== UserRole.ORGANISER &&
-    session?.user?.role !== UserRole.ADMIN
-  ) {
+  if (!session?.user?.isPlatformAdmin && churchMemberships.length === 0) {
     redirect("/");
   }
 
-  const managedIds = [
-    ...(session.user.organiserChurchIds ?? []),
-    ...(session.user.adminChurchIds ?? []),
-  ];
+  const managedIds = churchMemberships.map((m) => m.churchId);
   const churches = await getChurchesByIds(managedIds);
 
   return (

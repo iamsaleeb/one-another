@@ -1,6 +1,5 @@
 import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
-import { UserRole } from "@prisma/client";
 import { getEventById } from "@/domains/events/actions/data";
 import { getChurchesByIds } from "@/domains/churches/actions/data";
 import {
@@ -20,22 +19,17 @@ export default async function EditEventPage({ params }: Props) {
   const { id } = await params;
   const [event, session] = await Promise.all([getEventById(id), auth()]);
 
-  if (
-    session?.user?.role !== UserRole.ORGANISER &&
-    session?.user?.role !== UserRole.ADMIN
-  )
+  const churchMemberships = session?.user?.churchMemberships ?? [];
+  if (!session?.user?.isPlatformAdmin && churchMemberships.length === 0)
     redirect("/");
   if (!event) notFound();
 
-  const managedIds = [
-    ...(session.user.organiserChurchIds ?? []),
-    ...(session.user.adminChurchIds ?? []),
-  ];
+  const managedIds = churchMemberships.map((m) => m.churchId);
   const [churches, questions, libraryItems, questionsLocked] =
     await Promise.all([
       getChurchesByIds(managedIds),
       getEventQuestions(id),
-      getQuestionLibraryForUser(session.user.id),
+      getQuestionLibraryForUser(session!.user.id),
       hasEventResponses(id),
     ]);
   if (!churches.some((c) => c.id === event.churchId)) notFound();

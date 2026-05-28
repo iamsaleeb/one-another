@@ -67,25 +67,26 @@ export async function getChurchesByIds(ids: string[]) {
 export async function getOrganisersByChurch(churchId: string) {
   cacheTag("churches");
   cacheLife("hours");
-  const assignments = await prisma.churchOrganiser.findMany({
+  const memberships = await prisma.churchMembership.findMany({
     where: { churchId },
     select: { user: { select: { id: true, name: true, email: true } } },
     orderBy: { user: { name: "asc" } },
   });
-  return assignments.map((a) => a.user);
+  return memberships.map((m) => m.user);
 }
 
 export async function getAdminChurches(userId: string) {
   cacheTag("churches");
   cacheLife("hours");
-  const assignments = await prisma.churchAdmin.findMany({
-    where: { userId },
+  const memberships = await prisma.churchMembership.findMany({
+    where: { userId, role: "CHURCH_ADMIN" },
     select: {
       church: {
         select: {
           id: true,
           name: true,
-          organisers: {
+          memberships: {
+            where: { role: "EVENT_MANAGER" },
             select: { user: { select: { id: true, name: true, email: true } } },
             orderBy: { user: { name: "asc" } },
           },
@@ -94,9 +95,9 @@ export async function getAdminChurches(userId: string) {
     },
     orderBy: { church: { name: "asc" } },
   });
-  return assignments.map((a) => ({
-    id: a.church.id,
-    name: a.church.name,
-    organisers: a.church.organisers.map((o) => o.user),
+  return memberships.map((m) => ({
+    id: m.church.id,
+    name: m.church.name,
+    organisers: m.church.memberships.map((mb) => mb.user),
   }));
 }

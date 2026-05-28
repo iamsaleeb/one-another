@@ -3,7 +3,9 @@
 import { redirect } from "next/navigation";
 import { updateTag } from "next/cache";
 import { auth } from "@/auth";
-import { UserRole, Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
+import { sessionToClaims } from "@/domains/roles/lib/session";
+import { churchPolicy } from "@/domains/roles/policies/church";
 import { prisma } from "@/lib/db";
 import {
   createSeriesSchema,
@@ -21,24 +23,14 @@ export async function createSeriesAction(
   data: CreateSeriesInput
 ): Promise<ActionResult> {
   const session = await auth();
-  if (
-    session?.user?.role !== UserRole.ORGANISER &&
-    session?.user?.role !== UserRole.ADMIN
-  ) {
-    return { error: "Unauthorised." };
-  }
+  const claims = sessionToClaims(session);
+  if (!claims) return { error: "Unauthorised." };
 
   const parsed = createSeriesSchema.safeParse(data);
   if (!parsed.success)
     return { fieldErrors: parsed.error.flatten().fieldErrors };
 
-  const result = await createSeries(
-    parsed.data,
-    session.user.id,
-    session.user.role,
-    session.user.organiserChurchIds ?? [],
-    session.user.adminChurchIds ?? []
-  );
+  const result = await createSeries(parsed.data, session.user.id, claims);
   if ("error" in result || "fieldErrors" in result) return result;
 
   broadcastSeriesChange(result.id, result.churchId);
@@ -50,24 +42,14 @@ export async function updateSeriesAction(
   data: CreateSeriesInput
 ): Promise<ActionResult> {
   const session = await auth();
-  if (
-    session?.user?.role !== UserRole.ORGANISER &&
-    session?.user?.role !== UserRole.ADMIN
-  )
-    redirect("/");
+  const claims = sessionToClaims(session);
+  if (!claims) redirect("/");
 
   const parsed = createSeriesSchema.safeParse(data);
   if (!parsed.success)
     return { fieldErrors: parsed.error.flatten().fieldErrors };
 
-  const result = await updateSeries(
-    id,
-    parsed.data,
-    session.user.id,
-    session.user.role,
-    session.user.organiserChurchIds ?? [],
-    session.user.adminChurchIds ?? []
-  );
+  const result = await updateSeries(id, parsed.data, session.user.id, claims);
   if ("error" in result || "fieldErrors" in result) redirect("/organiser");
 
   invalidateSeriesFields(id, result.oldChurchId);
@@ -124,19 +106,10 @@ export async function unfollowSeriesAction(
 
 export async function deleteSeriesAction(id: string): Promise<void> {
   const session = await auth();
-  if (
-    session?.user?.role !== UserRole.ORGANISER &&
-    session?.user?.role !== UserRole.ADMIN
-  )
-    redirect("/");
+  const claims = sessionToClaims(session);
+  if (!claims) redirect("/");
 
-  const result = await deleteSeries(
-    id,
-    session.user.id,
-    session.user.role,
-    session.user.organiserChurchIds ?? [],
-    session.user.adminChurchIds ?? []
-  );
+  const result = await deleteSeries(id, session.user.id, claims);
   if ("error" in result) redirect("/organiser");
 
   broadcastSeriesChange(id, result.churchId);

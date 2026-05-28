@@ -3,7 +3,11 @@ import "server-only";
 import { prisma } from "@/lib/db";
 import { NotificationType } from "@prisma/client";
 import { can } from "@/domains/roles/lib/can";
-import { Capabilities } from "@/domains/roles/lib/capabilities";
+import {
+  Capabilities,
+  type Capability,
+} from "@/domains/roles/lib/capabilities";
+import { EVENT_ROLE_CAPABILITIES } from "@/domains/roles/lib/roles";
 import type { RoleClaims } from "@/domains/roles/lib/types";
 import { syncEventQuestions } from "../questions/dal";
 import {
@@ -67,6 +71,25 @@ async function notifyEventAttendees(eventId: string, title: string) {
 }
 
 type DalError = { error: string } | { fieldErrors: Record<string, string[]> };
+
+// Church-level check first; falls back to EventStaffAssignment for event:update only.
+// event:delete is intentionally excluded — only church-level roles can delete.
+async function canForEvent(
+  userId: string,
+  eventId: string,
+  churchId: string,
+  capability: Capability,
+  claims: RoleClaims
+): Promise<boolean> {
+  if (claims.isPlatformAdmin) return true;
+  if (can(claims, capability, { scope: "CHURCH", churchId })) return true;
+  const staff = await prisma.eventStaffAssignment.findUnique({
+    where: { userId_eventId: { userId, eventId } },
+    select: { role: true },
+  });
+  if (!staff) return false;
+  return (EVENT_ROLE_CAPABILITIES[staff.role] as string[]).includes(capability);
+}
 
 export async function createEvent(
   data: CreateEventInput,
@@ -177,6 +200,22 @@ export async function createEvent(
     await syncEventQuestions(created.id, questions, userId);
   }
 
+  // Event creators get automatic EVENT_EDITOR staff assignment on their own event
+  // so they can edit/cancel it while remaining unable to touch other church events.
+  const creatorChurchRole = claims.churchMemberships.find(
+    (m) => m.churchId === churchId
+  )?.role;
+  if (creatorChurchRole === "EVENT_CREATOR") {
+    await prisma.eventStaffAssignment.create({
+      data: {
+        userId,
+        eventId: created.id,
+        role: "EVENT_EDITOR",
+        assignedBy: userId,
+      },
+    });
+  }
+
   if (!isDraft && seriesId) {
     try {
       await notifySeriesFollowers(seriesId, title, created.id);
@@ -257,10 +296,13 @@ export async function updateEvent(
   });
   if (!existing) return { error: "Event not found." };
 
-  const allowedOriginal = can(claims, Capabilities.EVENT_UPDATE, {
-    scope: "CHURCH",
-    churchId: existing.churchId,
-  });
+  const allowedOriginal = await canForEvent(
+    userId,
+    id,
+    existing.churchId,
+    Capabilities.EVENT_UPDATE,
+    claims
+  );
   if (!allowedOriginal) return { error: "Unauthorised." };
 
   if (churchId !== existing.churchId) {
@@ -355,10 +397,13 @@ export async function cancelEvent(
   });
   if (!event) return { error: "Event not found." };
 
-  const allowed = can(claims, Capabilities.EVENT_UPDATE, {
-    scope: "CHURCH",
-    churchId: event.churchId,
-  });
+  const allowed = await canForEvent(
+    userId,
+    id,
+    event.churchId,
+    Capabilities.EVENT_UPDATE,
+    claims
+  );
   if (!allowed) return { error: "Unauthorised." };
 
   await prisma.event.update({
@@ -392,10 +437,13 @@ export async function uncancelEvent(
   });
   if (!event) return { error: "Event not found." };
 
-  const allowed = can(claims, Capabilities.EVENT_UPDATE, {
-    scope: "CHURCH",
-    churchId: event.churchId,
-  });
+  const allowed = await canForEvent(
+    userId,
+    id,
+    event.churchId,
+    Capabilities.EVENT_UPDATE,
+    claims
+  );
   if (!allowed) return { error: "Unauthorised." };
 
   await prisma.event.update({

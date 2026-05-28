@@ -120,6 +120,14 @@ describe("can", () => {
         })
       ).toBe(false);
     });
+    it("returns false when EVENT_CREATOR checks event:update at church scope", () => {
+      expect(
+        can(eventCreatorClaims, Capabilities.EVENT_UPDATE, {
+          scope: "CHURCH",
+          churchId: "church-1",
+        })
+      ).toBe(false);
+    });
     it("returns false with no memberships", () => {
       expect(
         can(noClaims, Capabilities.EVENT_CREATE, {

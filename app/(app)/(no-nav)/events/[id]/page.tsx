@@ -31,6 +31,7 @@ import {
 } from "@/domains/events/validations/event";
 import { sessionToClaims } from "@/domains/roles/lib/session";
 import { churchPolicy } from "@/domains/roles/policies/church";
+import { getEventStaffForUser } from "@/domains/roles/dal/event-staff";
 import { EventDatetime } from "@/domains/events/components/event-datetime";
 import { formatDateOnly, parseDateOfBirth } from "@/lib/datetime";
 import { InfoField } from "@/components/ui/info-field";
@@ -90,9 +91,18 @@ export default async function EventDetailPage({ params }: Props) {
   const claims = sessionToClaims(session);
   const canManage =
     !!claims && churchPolicy.canManageMembers(claims, event.churchId ?? "");
+
+  const eventStaff =
+    !canManage && session?.user?.id
+      ? await getEventStaffForUser(session.user.id, id)
+      : null;
+
+  const canEdit = canManage || !!eventStaff;
+  const canDelete = canManage;
+
   const questions = await getEventQuestions(id);
 
-  if (event.isDraft && !canManage) notFound();
+  if (event.isDraft && !canEdit) notFound();
 
   const [attendees, myResponses] = await Promise.all([
     canManage ? getEventAttendees(id) : Promise.resolve(undefined),
@@ -159,7 +169,7 @@ export default async function EventDetailPage({ params }: Props) {
         <div className="shadow-card flex flex-col gap-4 rounded-2xl bg-white p-5">
           <div className="flex items-start justify-between gap-2">
             <h1 className="text-xl leading-snug font-bold">{event.title}</h1>
-            {canManage && (
+            {canEdit && (
               <div className="flex shrink-0 flex-col items-end gap-2">
                 <div className="flex items-center gap-2">
                   <Button
@@ -177,16 +187,23 @@ export default async function EventDetailPage({ params }: Props) {
                   ) : (
                     <CancelEventButton eventId={id} />
                   )}
-                  <DeleteEventButton eventId={id} />
+                  {canDelete && <DeleteEventButton eventId={id} />}
                 </div>
-                {event.requiresRegistration && questions.length > 0 && (
-                  <Button asChild variant="outline" size="sm" className="mt-2">
-                    <Link href={`/events/${id}/responses`}>
-                      <TableProperties className="mr-1.5 size-4" />
-                      View responses
-                    </Link>
-                  </Button>
-                )}
+                {canManage &&
+                  event.requiresRegistration &&
+                  questions.length > 0 && (
+                    <Button
+                      asChild
+                      variant="outline"
+                      size="sm"
+                      className="mt-2"
+                    >
+                      <Link href={`/events/${id}/responses`}>
+                        <TableProperties className="mr-1.5 size-4" />
+                        View responses
+                      </Link>
+                    </Button>
+                  )}
               </div>
             )}
           </div>

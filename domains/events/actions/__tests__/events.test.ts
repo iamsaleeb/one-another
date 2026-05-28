@@ -14,6 +14,10 @@ jest.mock("@/lib/db", () => ({
       update: jest.fn(),
       delete: jest.fn(),
     },
+    eventStaffAssignment: {
+      findUnique: jest.fn(),
+      create: jest.fn(),
+    },
     series: {
       findUnique: jest.fn(),
     },
@@ -107,6 +111,7 @@ const mockEventAttendeeFindMany = prisma.eventAttendee.findMany as jest.Mock;
 const mockEventAttendeeFindUnique = prisma.eventAttendee
   .findUnique as jest.Mock;
 const mockSeriesFollowerFindMany = prisma.seriesFollower.findMany as jest.Mock;
+const mockStaffCreate = prisma.eventStaffAssignment.create as jest.Mock;
 const mockQueueNotification = jest.requireMock("@/domains/notifications/queue")
   .queueNotification as jest.Mock;
 const mockAuth = auth as jest.Mock;
@@ -391,6 +396,41 @@ describe("createEventAction", () => {
         data: expect.objectContaining({ photoUrl: null }),
       })
     );
+  });
+
+  it("auto-assigns EVENT_EDITOR staff role when creator has EVENT_CREATOR church role", async () => {
+    mockAuth.mockResolvedValue({
+      user: {
+        id: "creator-1",
+        isPlatformAdmin: false,
+        churchMemberships: [
+          { churchId: "ch-1", role: "EVENT_CREATOR" as const },
+        ],
+        onboardingCompleted: true,
+        isEmailVerified: true,
+      },
+    });
+    mockEventCreate.mockResolvedValue({ id: "evt-creator" });
+    mockStaffCreate.mockResolvedValue({});
+
+    await createEventAction(validData);
+
+    expect(mockStaffCreate).toHaveBeenCalledWith({
+      data: {
+        userId: "creator-1",
+        eventId: "evt-creator",
+        role: "EVENT_EDITOR",
+        assignedBy: "creator-1",
+      },
+    });
+  });
+
+  it("does not auto-assign staff when creator has EVENT_MANAGER church role", async () => {
+    mockEventCreate.mockResolvedValue({ id: "evt-manager" });
+
+    await createEventAction(validData);
+
+    expect(mockStaffCreate).not.toHaveBeenCalled();
   });
 });
 

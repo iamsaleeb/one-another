@@ -22,7 +22,7 @@ export const CHURCH_ROLE_CAPABILITIES = {
     "event:view_attendees",
     "event:scan_attendees",
   ],
-  EVENT_CREATOR: ["event:create", "event:update"],
+  EVENT_CREATOR: ["event:create"],
 } satisfies Record<ChurchRole, Capability[]>;
 
 export const EVENT_ROLE_CAPABILITIES = {

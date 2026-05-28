@@ -7,6 +7,7 @@ import {
   hasEventResponses,
 } from "@/domains/events/questions/actions";
 import { getQuestionLibraryForUser } from "@/domains/events/questions/dal";
+import { getEventStaffForUser } from "@/domains/roles/dal/event-staff";
 import { parseEventMetadata } from "@/domains/events/validations/event";
 import { PageHeader } from "@/components/ui/page-header";
 import { EventWizard } from "@/app/(app)/(no-nav)/events/create/_components/event-wizard";
@@ -20,20 +21,32 @@ export default async function EditEventPage({ params }: Props) {
   const [event, session] = await Promise.all([getEventById(id), auth()]);
 
   if (!session) redirect("/");
-  const churchMemberships = session.user.churchMemberships ?? [];
-  if (!session.user.isPlatformAdmin && churchMemberships.length === 0)
-    redirect("/");
   if (!event) notFound();
 
+  const churchMemberships = session.user.churchMemberships ?? [];
   const managedIds = churchMemberships.map((m) => m.churchId);
-  const [churches, questions, libraryItems, questionsLocked] =
+
+  const [churchesFromMemberships, questions, libraryItems, questionsLocked] =
     await Promise.all([
       getChurchesByIds(managedIds),
       getEventQuestions(id),
       getQuestionLibraryForUser(session.user.id),
       hasEventResponses(id),
     ]);
-  if (!churches.some((c) => c.id === event.churchId)) notFound();
+
+  let churches = churchesFromMemberships;
+  if (!churches.some((c) => c.id === event.churchId)) {
+    if (!session.user.isPlatformAdmin) {
+      const staff = await getEventStaffForUser(session.user.id, id);
+      if (!staff) notFound();
+    }
+    // Platform admins and event staff are limited to the event's own church
+    if (event.church) {
+      churches = [event.church];
+    } else {
+      notFound();
+    }
+  }
 
   const datetimeISO = event.datetime?.toISOString() ?? "";
   const { registration, camp } = parseEventMetadata(event.metadata);

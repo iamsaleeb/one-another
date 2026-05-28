@@ -1,6 +1,7 @@
 // Actions
 export * from "./actions/church-memberships";
 export * from "./actions/event-staff";
+export * from "./actions/series-staff";
 export * from "./actions/platform-roles";
 
 // Validations + inferred types
@@ -9,6 +10,7 @@ export * from "./validations/roles";
 // Policies
 export { eventPolicy } from "./policies/event";
 export { churchPolicy } from "./policies/church";
+export { seriesPolicy } from "./policies/series";
 
 // Core permission API
 export { can } from "./lib/can";

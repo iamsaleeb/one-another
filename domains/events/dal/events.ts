@@ -7,7 +7,10 @@ import {
   Capabilities,
   type Capability,
 } from "@/domains/roles/lib/capabilities";
-import { EVENT_ROLE_CAPABILITIES } from "@/domains/roles/lib/roles";
+import {
+  EVENT_ROLE_CAPABILITIES,
+  SERIES_ROLE_CAPABILITIES,
+} from "@/domains/roles/lib/roles";
 import type { RoleClaims } from "@/domains/roles/lib/types";
 import { syncEventQuestions } from "../questions/dal";
 import {
@@ -72,23 +75,46 @@ async function notifyEventAttendees(eventId: string, title: string) {
 
 type DalError = { error: string } | { fieldErrors: Record<string, string[]> };
 
-// Church-level check first; falls back to EventStaffAssignment for event:update only.
-// event:delete is intentionally excluded — only church-level roles can delete.
+// Church-level check first; falls back to EventStaffAssignment then
+// SeriesStaffAssignment for event:update. event:delete is intentionally
+// excluded — only church-level roles can delete.
 async function canForEvent(
   userId: string,
   eventId: string,
+  seriesId: string | null,
   churchId: string,
   capability: Capability,
   claims: RoleClaims
 ): Promise<boolean> {
   if (claims.isPlatformAdmin) return true;
   if (can(claims, capability, { scope: "CHURCH", churchId })) return true;
-  const staff = await prisma.eventStaffAssignment.findUnique({
-    where: { userId_eventId: { userId, eventId } },
-    select: { role: true },
-  });
-  if (!staff) return false;
-  return (EVENT_ROLE_CAPABILITIES[staff.role] as string[]).includes(capability);
+
+  const [eventStaff, seriesStaff] = await Promise.all([
+    prisma.eventStaffAssignment.findUnique({
+      where: { userId_eventId: { userId, eventId } },
+      select: { role: true },
+    }),
+    seriesId
+      ? prisma.seriesStaffAssignment.findUnique({
+          where: { userId_seriesId: { userId, seriesId } },
+          select: { role: true },
+        })
+      : null,
+  ]);
+
+  if (
+    eventStaff &&
+    (EVENT_ROLE_CAPABILITIES[eventStaff.role] as string[]).includes(capability)
+  )
+    return true;
+  if (
+    seriesStaff &&
+    (SERIES_ROLE_CAPABILITIES[seriesStaff.role] as string[]).includes(
+      capability
+    )
+  )
+    return true;
+  return false;
 }
 
 export async function createEvent(
@@ -149,11 +175,22 @@ export async function createEvent(
 
   if (!churchId) return { fieldErrors: { churchId: ["Church is required"] } };
 
-  const allowed = can(claims, Capabilities.EVENT_CREATE, {
+  let allowed = can(claims, Capabilities.EVENT_CREATE, {
     scope: "CHURCH",
     churchId,
   });
-  if (!allowed) return { error: "You are not assigned to this church." };
+  if (!allowed && seriesId) {
+    const seriesStaff = await prisma.seriesStaffAssignment.findUnique({
+      where: { userId_seriesId: { userId, seriesId } },
+      select: { role: true },
+    });
+    allowed =
+      !!seriesStaff &&
+      (SERIES_ROLE_CAPABILITIES[seriesStaff.role] as string[]).includes(
+        Capabilities.EVENT_CREATE
+      );
+  }
+  if (!allowed) return { error: "Unauthorised." };
 
   const isCamp = tag === "Camp";
   if (isCamp && !campEndDate && !isDraft)
@@ -200,12 +237,17 @@ export async function createEvent(
     await syncEventQuestions(created.id, questions, userId);
   }
 
-  // Event creators get automatic EVENT_EDITOR staff assignment on their own event
-  // so they can edit/cancel it while remaining unable to touch other church events.
+  // Auto-assign EVENT_EDITOR on the new event for any user who lacks
+  // church-level event:update — covers EVENT_CREATOR church role and
+  // series staff who created via their series assignment.
   const creatorChurchRole = claims.churchMemberships.find(
     (m) => m.churchId === churchId
   )?.role;
-  if (creatorChurchRole === "EVENT_CREATOR") {
+  const hasChurchUpdateAccess =
+    claims.isPlatformAdmin ||
+    creatorChurchRole === "CHURCH_ADMIN" ||
+    creatorChurchRole === "EVENT_MANAGER";
+  if (!hasChurchUpdateAccess) {
     await prisma.eventStaffAssignment.create({
       data: {
         userId,
@@ -299,6 +341,7 @@ export async function updateEvent(
   const allowedOriginal = await canForEvent(
     userId,
     id,
+    existing.seriesId,
     existing.churchId,
     Capabilities.EVENT_UPDATE,
     claims
@@ -400,6 +443,7 @@ export async function cancelEvent(
   const allowed = await canForEvent(
     userId,
     id,
+    event.seriesId,
     event.churchId,
     Capabilities.EVENT_UPDATE,
     claims
@@ -440,6 +484,7 @@ export async function uncancelEvent(
   const allowed = await canForEvent(
     userId,
     id,
+    event.seriesId,
     event.churchId,
     Capabilities.EVENT_UPDATE,
     claims

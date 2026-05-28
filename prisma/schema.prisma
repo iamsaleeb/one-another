@@ -27,6 +27,7 @@ model User {
   questionLibrary         QuestionLibraryItem[]    @relation("UserQuestionLibrary")
   series                  Series[]                 @relation("UserSeries")
   seriesFollows           SeriesFollower[]
+  seriesStaff             SeriesStaffAssignment[]
   savedEvents             SavedEvent[]
   sessions                Session[]
   platformRoles           PlatformRoleAssignment[]
@@ -110,9 +111,10 @@ model Series {
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
   events      Event[]
-  church      Church           @relation(fields: [churchId], references: [id])
-  createdBy   User?            @relation("UserSeries", fields: [createdById], references: [id])
+  church      Church                  @relation(fields: [churchId], references: [id])
+  createdBy   User?                   @relation("UserSeries", fields: [createdById], references: [id])
   followers   SeriesFollower[]
+  staff       SeriesStaffAssignment[]
 
   @@index([churchId])
   @@index([createdById])
@@ -351,6 +353,27 @@ enum ChurchRole {
 enum EventRole {
   EVENT_MANAGER
   EVENT_EDITOR
+}
+
+enum SeriesRole {
+  SERIES_MANAGER
+  SERIES_SESSION_CREATOR
+}
+
+model SeriesStaffAssignment {
+  userId     String
+  seriesId   String
+  role       SeriesRole
+  assignedAt DateTime   @default(now())
+  assignedBy String?
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  series Series @relation(fields: [seriesId], references: [id], onDelete: Cascade)
+
+  @@id([userId, seriesId])
+  @@index([userId])
+  @@index([seriesId])
+  @@map("series_staff_assignments")
 }
 
 enum Cadence {

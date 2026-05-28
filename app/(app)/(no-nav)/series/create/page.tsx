@@ -3,18 +3,24 @@ import { auth } from "@/auth";
 import { CreateSeriesForm } from "./_components/create-series-form";
 import { PageHeader } from "@/components/ui/page-header";
 import { getChurchesByIds } from "@/domains/churches/actions/data";
+import { sessionToClaims } from "@/domains/roles/lib/session";
+import { seriesPolicy } from "@/domains/roles/policies/series";
 
 export default async function CreateSeriesPage() {
   const session = await auth();
   if (!session) redirect("/");
 
+  const claims = sessionToClaims(session);
   const churchMemberships = session.user.churchMemberships ?? [];
-  if (!session.user.isPlatformAdmin && churchMemberships.length === 0) {
-    redirect("/");
-  }
+  const eligibleIds = session.user.isPlatformAdmin
+    ? churchMemberships.map((m) => m.churchId)
+    : churchMemberships
+        .filter((m) => claims && seriesPolicy.canCreate(claims, m.churchId))
+        .map((m) => m.churchId);
 
-  const managedIds = churchMemberships.map((m) => m.churchId);
-  const churches = await getChurchesByIds(managedIds);
+  if (!session.user.isPlatformAdmin && eligibleIds.length === 0) redirect("/");
+
+  const churches = await getChurchesByIds(eligibleIds);
 
   return (
     <div className="mx-auto max-w-lg">

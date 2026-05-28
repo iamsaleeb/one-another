@@ -1,5 +1,10 @@
 import { z } from "zod";
-import { ChurchRole, EventRole, PlatformRole } from "@prisma/client";
+import {
+  ChurchRole,
+  EventRole,
+  PlatformRole,
+  SeriesRole,
+} from "@prisma/client";
 
 export const AssignChurchRoleSchema = z.object({
   userId: z.string().min(1),
@@ -28,6 +33,17 @@ export const RemoveEventStaffSchema = z.object({
   eventId: z.string().min(1),
 });
 
+export const AssignSeriesRoleSchema = z.object({
+  userId: z.string().min(1),
+  seriesId: z.string().min(1),
+  role: z.enum(SeriesRole),
+});
+
+export const RemoveSeriesStaffSchema = z.object({
+  userId: z.string().min(1),
+  seriesId: z.string().min(1),
+});
+
 export type AssignChurchRoleInput = z.infer<typeof AssignChurchRoleSchema>;
 export type AssignEventRoleInput = z.infer<typeof AssignEventRoleSchema>;
 export type AssignPlatformRoleInput = z.infer<typeof AssignPlatformRoleSchema>;
@@ -35,3 +51,5 @@ export type RemoveChurchMembershipInput = z.infer<
   typeof RemoveChurchMembershipSchema
 >;
 export type RemoveEventStaffInput = z.infer<typeof RemoveEventStaffSchema>;
+export type AssignSeriesRoleInput = z.infer<typeof AssignSeriesRoleSchema>;
+export type RemoveSeriesStaffInput = z.infer<typeof RemoveSeriesStaffSchema>;

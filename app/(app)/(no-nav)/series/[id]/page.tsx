@@ -7,7 +7,9 @@ import {
   getMySeriesFollow,
 } from "@/domains/series/actions/data";
 import { sessionToClaims } from "@/domains/roles/lib/session";
-import { churchPolicy } from "@/domains/roles/policies/church";
+import { seriesPolicy } from "@/domains/roles/policies/series";
+import { eventPolicy } from "@/domains/roles/policies/event";
+import { getSeriesStaffForUser } from "@/domains/roles/dal/series-staff";
 import { InfoField } from "@/components/ui/info-field";
 import { HeroBanner } from "@/components/ui/hero-banner";
 import { EventCard } from "@/domains/events/components/event-card";
@@ -41,8 +43,19 @@ export default async function SeriesDetailPage({ params }: Props) {
   if (!series) notFound();
 
   const claims = sessionToClaims(session);
-  const canManage =
-    !!claims && churchPolicy.canManageMembers(claims, series.churchId);
+  const canEditFromChurch =
+    !!claims && seriesPolicy.canUpdate(claims, series.churchId);
+  const canDelete = !!claims && seriesPolicy.canDelete(claims, series.churchId);
+  const canAddSessionFromChurch =
+    !!claims && eventPolicy.canCreate(claims, series.churchId);
+
+  const seriesStaff =
+    !canEditFromChurch && session?.user?.id
+      ? await getSeriesStaffForUser(session.user.id, series.id)
+      : null;
+
+  const canEdit = canEditFromChurch || seriesStaff?.role === "SERIES_MANAGER";
+  const canAddSession = canAddSessionFromChurch || !!seriesStaff;
   const isFollowing = myFollow !== null;
 
   return (
@@ -58,21 +71,19 @@ export default async function SeriesDetailPage({ params }: Props) {
               <span className="bg-primary/10 text-primary rounded-full px-2.5 py-1 text-xs font-medium whitespace-nowrap">
                 {CADENCE_LABELS[series.cadence] ?? series.cadence}
               </span>
-              {canManage && (
-                <>
-                  <Button
-                    asChild
-                    variant="outline"
-                    size="icon"
-                    className="size-9"
-                  >
-                    <Link href={`/series/${series.id}/edit`}>
-                      <Pencil className="size-4" />
-                    </Link>
-                  </Button>
-                  <DeleteSeriesButton seriesId={series.id} />
-                </>
+              {canEdit && (
+                <Button
+                  asChild
+                  variant="outline"
+                  size="icon"
+                  className="size-9"
+                >
+                  <Link href={`/series/${series.id}/edit`}>
+                    <Pencil className="size-4" />
+                  </Link>
+                </Button>
               )}
+              {canDelete && <DeleteSeriesButton seriesId={series.id} />}
             </div>
           </div>
 
@@ -110,7 +121,7 @@ export default async function SeriesDetailPage({ params }: Props) {
         <section className="flex flex-col gap-3">
           <div className="flex items-center justify-between">
             <h2 className="text-base font-semibold">Upcoming Sessions</h2>
-            {canManage && (
+            {canAddSession && (
               <Button asChild size="sm" variant="outline" className="gap-1.5">
                 <Link href={`/events/create?seriesId=${series.id}`}>
                   <Plus className="size-3.5" />

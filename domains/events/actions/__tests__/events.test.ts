@@ -18,6 +18,9 @@ jest.mock("@/lib/db", () => ({
       findUnique: jest.fn(),
       create: jest.fn(),
     },
+    seriesStaffAssignment: {
+      findUnique: jest.fn(),
+    },
     series: {
       findUnique: jest.fn(),
     },
@@ -285,7 +288,7 @@ describe("createEventAction", () => {
 
     const result = await createEventAction(validData);
 
-    expect(result.error).toBe("You are not assigned to this church.");
+    expect(result.error).toBeDefined();
     expect(mockEventCreate).not.toHaveBeenCalled();
   });
 

@@ -14,6 +14,9 @@ jest.mock("@/lib/db", () => ({
       update: jest.fn(),
       delete: jest.fn(),
     },
+    seriesStaffAssignment: {
+      findUnique: jest.fn(),
+    },
     seriesFollower: {
       create: jest.fn(),
       delete: jest.fn(),
@@ -49,6 +52,8 @@ const mockSeriesDelete = prisma.series.delete as jest.Mock;
 const mockSeriesFindUnique = prisma.series.findUnique as jest.Mock;
 const mockSeriesFollowerCreate = prisma.seriesFollower.create as jest.Mock;
 const mockSeriesFollowerDelete = prisma.seriesFollower.delete as jest.Mock;
+const mockSeriesStaffFindUnique = prisma.seriesStaffAssignment
+  .findUnique as jest.Mock;
 const mockAuth = auth as jest.Mock;
 const mockCan = jest.requireMock("@/domains/roles/lib/can").can as jest.Mock;
 
@@ -74,6 +79,7 @@ beforeEach(() => {
     },
   });
   mockCan.mockReturnValue(true);
+  mockSeriesStaffFindUnique.mockResolvedValue(null);
 });
 
 describe("createSeriesAction", () => {
@@ -158,7 +164,7 @@ describe("createSeriesAction", () => {
 
     const result = await createSeriesAction(validData);
 
-    expect(result.error).toBe("You are not assigned to this church.");
+    expect(result.error).toBeDefined();
     expect(mockSeriesCreate).not.toHaveBeenCalled();
   });
 

@@ -1,4 +1,4 @@
-import type { ChurchRole, EventRole } from "@prisma/client";
+import type { ChurchRole, EventRole, SeriesRole } from "@prisma/client";
 import type { Capability } from "./capabilities";
 
 export const CHURCH_ROLE_CAPABILITIES = {
@@ -12,6 +12,9 @@ export const CHURCH_ROLE_CAPABILITIES = {
     "event:manage_staff",
     "event:view_attendees",
     "event:scan_attendees",
+    "series:create",
+    "series:update",
+    "series:delete",
   ],
   EVENT_MANAGER: [
     "event:create",
@@ -21,6 +24,9 @@ export const CHURCH_ROLE_CAPABILITIES = {
     "event:manage_staff",
     "event:view_attendees",
     "event:scan_attendees",
+    "series:create",
+    "series:update",
+    "series:delete",
   ],
   EVENT_CREATOR: ["event:create"],
 } satisfies Record<ChurchRole, Capability[]>;
@@ -34,3 +40,8 @@ export const EVENT_ROLE_CAPABILITIES = {
   ],
   EVENT_EDITOR: ["event:update"],
 } satisfies Record<EventRole, Capability[]>;
+
+export const SERIES_ROLE_CAPABILITIES = {
+  SERIES_MANAGER: ["series:update", "event:create", "event:update"],
+  SERIES_SESSION_CREATOR: ["event:create", "event:update"],
+} satisfies Record<SeriesRole, Capability[]>;

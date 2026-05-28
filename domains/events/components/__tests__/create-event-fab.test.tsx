@@ -3,7 +3,9 @@ import { CreateEventFAB } from "@/domains/events/components/create-event-fab";
 
 describe("CreateEventFAB", () => {
   it("renders nothing when isOrganiser is false", () => {
-    const { container } = render(<CreateEventFAB isOrganiser={false} canCreateSeries={false} />);
+    const { container } = render(
+      <CreateEventFAB isOrganiser={false} canCreateSeries={false} />
+    );
     expect(container.firstChild).toBeNull();
   });
 

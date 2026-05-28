@@ -51,8 +51,11 @@ export function QuestionDrawer({
     initial?.type ?? QuestionType.SHORT_TEXT
   );
   const [required, setRequired] = useState(initial?.required ?? false);
-  const [options, setOptions] = useState<string[]>(
-    initial?.options?.length ? initial.options : [""]
+  const [options, setOptions] = useState<Array<{ id: string; value: string }>>(
+    (initial?.options?.length ? initial.options : [""]).map((value) => ({
+      id: crypto.randomUUID(),
+      value,
+    }))
   );
   const [libraryItemId, setLibraryItemId] = useState<string | undefined>(
     initial?.libraryItemId
@@ -62,11 +65,18 @@ export function QuestionDrawer({
   function handleLibrarySelect(item: LibraryItem) {
     setLabel(item.label);
     setType(item.type);
-    setOptions(item.options.length ? item.options : [""]);
+    setOptions(
+      (item.options.length ? item.options : [""]).map((value) => ({
+        id: crypto.randomUUID(),
+        value,
+      }))
+    );
     setLibraryItemId(item.id);
   }
 
-  const validOptions = options.filter((o) => o.trim().length > 0);
+  const validOptions = options
+    .map((o) => o.value)
+    .filter((v) => v.trim().length > 0);
   const canSave =
     questionSchema.safeParse({
       type,
@@ -144,16 +154,19 @@ export function QuestionDrawer({
               <div className="flex flex-col gap-2">
                 <Label>Options</Label>
                 {options.map((opt, i) => (
-                  // eslint-disable-next-line react/no-array-index-key
-                  <div key={i} className="flex gap-2">
+                  <div key={opt.id} className="flex gap-2">
                     <Input
                       placeholder={`Option ${i + 1}`}
-                      value={opt}
-                      onChange={(e) => {
-                        const next = [...options];
-                        next[i] = e.target.value;
-                        setOptions(next);
-                      }}
+                      value={opt.value}
+                      onChange={(e) =>
+                        setOptions(
+                          options.map((o) =>
+                            o.id === opt.id
+                              ? { ...o, value: e.target.value }
+                              : o
+                          )
+                        )
+                      }
                     />
                     {options.length > 1 && (
                       <Button
@@ -162,7 +175,7 @@ export function QuestionDrawer({
                         size="icon"
                         className="text-destructive hover:text-destructive size-10 shrink-0"
                         onClick={() =>
-                          setOptions(options.filter((_, j) => j !== i))
+                          setOptions(options.filter((o) => o.id !== opt.id))
                         }
                       >
                         <Trash2 className="size-4" />
@@ -175,7 +188,12 @@ export function QuestionDrawer({
                   variant="outline"
                   size="sm"
                   className="w-full"
-                  onClick={() => setOptions([...options, ""])}
+                  onClick={() =>
+                    setOptions([
+                      ...options,
+                      { id: crypto.randomUUID(), value: "" },
+                    ])
+                  }
                 >
                   <Plus className="mr-1 size-4" />
                   Add option

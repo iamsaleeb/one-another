@@ -10,14 +10,30 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
-const ROLE_DESCRIPTIONS: Record<string, string> = {
-  ORGANISER:
-    "Organisers can create and manage events and series for their church.",
-  ADMIN:
-    "Admins can manage organisers and settings for their assigned churches.",
+export type RoleBadgeRole =
+  | "PLATFORM_ADMIN"
+  | "CHURCH_ADMIN"
+  | "EVENT_MANAGER"
+  | "EVENT_CREATOR";
+
+const ROLE_LABELS: Record<RoleBadgeRole, string> = {
+  PLATFORM_ADMIN: "Platform Admin",
+  CHURCH_ADMIN: "Church Admin",
+  EVENT_MANAGER: "Event Manager",
+  EVENT_CREATOR: "Event Creator",
 };
 
-export function RoleBadge({ role }: { role: "ORGANISER" | "ADMIN" }) {
+const ROLE_DESCRIPTIONS: Record<RoleBadgeRole, string> = {
+  PLATFORM_ADMIN: "Full access across all churches and events on the platform.",
+  CHURCH_ADMIN:
+    "Full control of their church — events, series, and member management.",
+  EVENT_MANAGER:
+    "Can create, publish, and manage events and series for their church.",
+  EVENT_CREATOR:
+    "Can create events for their church and edit the events they created.",
+};
+
+export function RoleBadge({ role }: { role: RoleBadgeRole }) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -30,7 +46,7 @@ export function RoleBadge({ role }: { role: "ORGANISER" | "ADMIN" }) {
             onClick={() => setOpen((v) => !v)}
           >
             <Shield className="h-3 w-3" />
-            {role === "ADMIN" ? "Admin" : "Organiser"}
+            {ROLE_LABELS[role]}
           </Badge>
         </TooltipTrigger>
         <TooltipContent side="bottom" className="max-w-56 text-center">

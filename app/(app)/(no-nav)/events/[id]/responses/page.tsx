@@ -4,6 +4,7 @@ import { getEventById } from "@/domains/events/actions/data";
 import { getEventResponses } from "@/domains/events/questions/actions";
 import { sessionToClaims } from "@/domains/roles/lib/session";
 import { churchPolicy } from "@/domains/roles/policies/church";
+import { getEventStaffForUser } from "@/domains/roles/dal/event-staff";
 import { PageHeader } from "@/components/ui/page-header";
 import { ResponsesTable } from "./_components/responses-table";
 
@@ -24,9 +25,17 @@ export default async function EventResponsesPage({ params }: Props) {
   if (!event) notFound();
 
   const claims = sessionToClaims(session);
-  const canManage =
+  const canManageFromChurch =
     !!claims && churchPolicy.canManageMembers(claims, event.churchId ?? "");
-  if (!canManage) redirect(`/events/${id}`);
+
+  // EVENT_MANAGER event staff also have event:view_attendees; EVENT_EDITOR does not
+  const canViewAttendees =
+    canManageFromChurch ||
+    (!!session?.user?.id &&
+      (await getEventStaffForUser(session.user.id, id))?.role ===
+        "EVENT_MANAGER");
+
+  if (!canViewAttendees) redirect(`/events/${id}`);
 
   const { questions, attendees } = await getEventResponses(id);
 

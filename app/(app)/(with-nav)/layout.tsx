@@ -26,8 +26,11 @@ function NavShellFallback() {
 async function NavShell() {
   const session = await auth();
   const isAuthenticated = !!session?.user;
-  const isOrganiser = (session?.user?.churchMemberships?.length ?? 0) > 0;
-  const isAdmin = session?.user?.isPlatformAdmin ?? false;
+  const churchMemberships = session?.user?.churchMemberships ?? [];
+  const isOrganiser = churchMemberships.length > 0;
+  const isAdmin =
+    (session?.user?.isPlatformAdmin ?? false) ||
+    churchMemberships.some((m) => m.role === "CHURCH_ADMIN");
   const unreadCount = session?.user?.id
     ? await getCachedUnreadCount(session.user.id)
     : 0;

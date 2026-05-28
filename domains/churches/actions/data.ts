@@ -75,9 +75,33 @@ export async function getOrganisersByChurch(churchId: string) {
   return memberships.map((m) => m.user);
 }
 
-export async function getAdminChurches(userId: string) {
+export async function getAdminChurches(
+  userId: string,
+  isPlatformAdmin = false
+) {
   cacheTag("churches");
   cacheLife("hours");
+
+  if (isPlatformAdmin) {
+    const churches = await prisma.church.findMany({
+      select: {
+        id: true,
+        name: true,
+        memberships: {
+          where: { role: "EVENT_MANAGER" },
+          select: { user: { select: { id: true, name: true, email: true } } },
+          orderBy: { user: { name: "asc" } },
+        },
+      },
+      orderBy: { name: "asc" },
+    });
+    return churches.map((c) => ({
+      id: c.id,
+      name: c.name,
+      organisers: c.memberships.map((mb) => mb.user),
+    }));
+  }
+
   const memberships = await prisma.churchMembership.findMany({
     where: { userId, role: "CHURCH_ADMIN" },
     select: {

@@ -1,5 +1,8 @@
 jest.mock("server-only", () => ({}));
 jest.mock("@/auth", () => ({ auth: jest.fn() }));
+jest.mock("@/lib/db", () => ({
+  prisma: { event: { findUnique: jest.fn() } },
+}));
 jest.mock("@/domains/roles/lib/session", () => ({
   sessionToClaims: jest.fn(),
 }));
@@ -13,6 +16,7 @@ jest.mock("@/domains/roles/dal/event-staff", () => ({
 
 import { assignEventRoleAction } from "../event-staff";
 import { auth } from "@/auth";
+import { prisma } from "@/lib/db";
 import { sessionToClaims } from "@/domains/roles/lib/session";
 import { eventPolicy } from "@/domains/roles/policies/event";
 import {
@@ -21,6 +25,7 @@ import {
 } from "@/domains/roles/dal/event-staff";
 
 const mockAuth = auth as jest.Mock;
+const mockEventFindUnique = prisma.event.findUnique as jest.Mock;
 const mockSessionToClaims = sessionToClaims as jest.Mock;
 const mockCanManageStaff = eventPolicy.canManageStaff as jest.Mock;
 const mockUpsert = upsertEventStaff as jest.Mock;
@@ -39,20 +44,32 @@ describe("assignEventRoleAction", () => {
       userId: "u1",
       eventId: "e1",
       role: "EVENT_EDITOR",
-      churchId: "c1",
     });
     expect(result).toEqual({ error: "Unauthorised." });
+  });
+
+  it("returns error when event not found", async () => {
+    mockAuth.mockResolvedValue(validSession);
+    mockSessionToClaims.mockReturnValue(validClaims);
+    mockEventFindUnique.mockResolvedValue(null);
+    const result = await assignEventRoleAction({
+      userId: "u1",
+      eventId: "e1",
+      role: "EVENT_EDITOR",
+    });
+    expect(result).toEqual({ error: "Event not found." });
+    expect(mockUpsert).not.toHaveBeenCalled();
   });
 
   it("returns error when not authorized to manage staff", async () => {
     mockAuth.mockResolvedValue(validSession);
     mockSessionToClaims.mockReturnValue(validClaims);
+    mockEventFindUnique.mockResolvedValue({ churchId: "c1" });
     mockCanManageStaff.mockReturnValue(false);
     const result = await assignEventRoleAction({
       userId: "u1",
       eventId: "e1",
       role: "EVENT_EDITOR",
-      churchId: "c1",
     });
     expect(result).toEqual({ error: "Unauthorised." });
     expect(mockUpsert).not.toHaveBeenCalled();
@@ -61,13 +78,13 @@ describe("assignEventRoleAction", () => {
   it("assigns event role when authorized", async () => {
     mockAuth.mockResolvedValue(validSession);
     mockSessionToClaims.mockReturnValue(validClaims);
+    mockEventFindUnique.mockResolvedValue({ churchId: "c1" });
     mockCanManageStaff.mockReturnValue(true);
     mockUpsert.mockResolvedValue({});
     const result = await assignEventRoleAction({
       userId: "u1",
       eventId: "e1",
       role: "EVENT_EDITOR",
-      churchId: "c1",
     });
     expect(result).toEqual({ success: "Staff role assigned." });
     expect(mockUpsert).toHaveBeenCalledWith(

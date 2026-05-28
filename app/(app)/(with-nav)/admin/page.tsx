@@ -17,7 +17,10 @@ export default async function AdminPage() {
     redirect("/");
   }
 
-  const churchesWithOrganisers = await getAdminChurches(session.user.id);
+  const churchesWithOrganisers = await getAdminChurches(
+    session.user.id,
+    session.user.isPlatformAdmin ?? false
+  );
 
   return (
     <div className="flex flex-col">

@@ -133,11 +133,12 @@ describe("addOrganiserToChurchAction", () => {
     expect(mockUpsertChurchMembership).not.toHaveBeenCalled();
   });
 
-  it("returns success without creating when user is already a member (getChurchMembership returns existing record)", async () => {
+  it("returns success without upserting when user is already an EVENT_MANAGER", async () => {
     mockUserFindUnique.mockResolvedValue({ id: "user-2" });
     mockGetChurchMembership.mockResolvedValue({
       userId: "user-2",
       churchId: "ch-1",
+      role: "EVENT_MANAGER",
     });
 
     const result = await addOrganiserToChurchAction(
@@ -147,6 +148,24 @@ describe("addOrganiserToChurchAction", () => {
 
     expect(result.success).toBeDefined();
     expect(mockUpsertChurchMembership).not.toHaveBeenCalled();
+  });
+
+  it("upgrades EVENT_CREATOR to EVENT_MANAGER", async () => {
+    mockUserFindUnique.mockResolvedValue({ id: "user-2" });
+    mockGetChurchMembership.mockResolvedValue({
+      userId: "user-2",
+      churchId: "ch-1",
+      role: "EVENT_CREATOR",
+    });
+    mockUpsertChurchMembership.mockResolvedValue(undefined);
+
+    const result = await addOrganiserToChurchAction(
+      {},
+      makeFormData({ churchId: "ch-1", email: "creator@example.com" })
+    );
+
+    expect(mockUpsertChurchMembership).toHaveBeenCalled();
+    expect(result.success).toBeDefined();
   });
 
   it("calls upsertChurchMembership and updateTag on success", async () => {

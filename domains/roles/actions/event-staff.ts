@@ -1,7 +1,7 @@
 "use server";
 
-import { z } from "zod";
 import { auth } from "@/auth";
+import { prisma } from "@/lib/db";
 import { sessionToClaims } from "@/domains/roles/lib/session";
 import { eventPolicy } from "@/domains/roles/policies/event";
 import { upsertEventStaff, removeEventStaff } from "../dal/event-staff";
@@ -11,9 +11,13 @@ import {
 } from "../validations/roles";
 import type { RoleActionState } from "../lib/types";
 
-const AssignEventRoleWithChurchSchema = AssignEventRoleSchema.extend({
-  churchId: z.string().min(1),
-});
+async function resolveEventChurchId(eventId: string): Promise<string | null> {
+  const event = await prisma.event.findUnique({
+    where: { id: eventId },
+    select: { churchId: true },
+  });
+  return event?.churchId ?? null;
+}
 
 export async function assignEventRoleAction(
   input: unknown
@@ -23,11 +27,14 @@ export async function assignEventRoleAction(
   const claims = sessionToClaims(session);
   if (!claims) return { error: "Unauthorised." };
 
-  const parsed = AssignEventRoleWithChurchSchema.safeParse(input);
+  const parsed = AssignEventRoleSchema.safeParse(input);
   if (!parsed.success)
     return { fieldErrors: parsed.error.flatten().fieldErrors };
 
-  const { userId, eventId, role, churchId } = parsed.data;
+  const { userId, eventId, role } = parsed.data;
+  const churchId = await resolveEventChurchId(eventId);
+  if (!churchId) return { error: "Event not found." };
+
   if (!eventPolicy.canManageStaff(claims, eventId, churchId))
     return { error: "Unauthorised." };
 
@@ -43,13 +50,14 @@ export async function removeEventStaffAction(
   const claims = sessionToClaims(session);
   if (!claims) return { error: "Unauthorised." };
 
-  const parsed = RemoveEventStaffSchema.extend({
-    churchId: z.string().min(1),
-  }).safeParse(input);
+  const parsed = RemoveEventStaffSchema.safeParse(input);
   if (!parsed.success)
     return { fieldErrors: parsed.error.flatten().fieldErrors };
 
-  const { userId, eventId, churchId } = parsed.data;
+  const { userId, eventId } = parsed.data;
+  const churchId = await resolveEventChurchId(eventId);
+  if (!churchId) return { error: "Event not found." };
+
   if (!eventPolicy.canManageStaff(claims, eventId, churchId))
     return { error: "Unauthorised." };
 

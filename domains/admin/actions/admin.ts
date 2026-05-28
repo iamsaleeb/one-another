@@ -49,7 +49,12 @@ export async function addOrganiserToChurchAction(
   if (!targetUser) return { error: "No account found with that email." };
 
   const existing = await getChurchMembership(targetUser.id, churchId);
-  if (existing) return { success: "User is already a member of this church." };
+  if (
+    existing?.role === ChurchRole.CHURCH_ADMIN ||
+    existing?.role === ChurchRole.EVENT_MANAGER
+  ) {
+    return { success: "User is already an organiser for this church." };
+  }
 
   await upsertChurchMembership(
     targetUser.id,

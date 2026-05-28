@@ -9,3 +9,9 @@ export interface RoleClaims {
   isPlatformAdmin: boolean;
   churchMemberships: Array<{ churchId: string; role: ChurchRole }>;
 }
+
+export interface RoleActionState {
+  error?: string;
+  success?: string;
+  fieldErrors?: Record<string, string[]>;
+}

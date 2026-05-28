@@ -87,9 +87,9 @@ export default async function EventDetailPage({ params }: Props) {
 
   const isAttending = myAttendance !== null;
 
-  const _claims = sessionToClaims(session);
+  const claims = sessionToClaims(session);
   const canManage =
-    !!_claims && churchPolicy.canManageMembers(_claims, event.churchId ?? "");
+    !!claims && churchPolicy.canManageMembers(claims, event.churchId ?? "");
   const questions = await getEventQuestions(id);
 
   if (event.isDraft && !canManage) notFound();

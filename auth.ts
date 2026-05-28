@@ -24,8 +24,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
   session: {
     strategy: "jwt",
-    maxAge: 14 * 24 * 60 * 60,
-    updateAge: 60 * 60,
+    maxAge: 14 * 24 * 60 * 60, // 14 days
+    updateAge: 60 * 60, // re-issue JWT hourly to shorten stale-role window
   },
   providers: [
     Credentials({
@@ -58,6 +58,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       const shouldRefresh =
         !!user ||
         token.isPlatformAdmin === undefined ||
+        token.churchMemberships === undefined ||
         now - (token.iat ?? 0) > 60 * 60;
 
       if (user) {

@@ -23,9 +23,9 @@ export default async function EventResponsesPage({ params }: Props) {
   const event = await getEventById(id);
   if (!event) notFound();
 
-  const _claims = sessionToClaims(session);
+  const claims = sessionToClaims(session);
   const canManage =
-    !!_claims && churchPolicy.canManageMembers(_claims, event.churchId ?? "");
+    !!claims && churchPolicy.canManageMembers(claims, event.churchId ?? "");
   if (!canManage) redirect(`/events/${id}`);
 
   const { questions, attendees } = await getEventResponses(id);

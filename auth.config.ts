@@ -67,7 +67,14 @@ export const authConfig = {
       ) {
         return Response.redirect(new URL("/", nextUrl));
       }
-      if (nextUrl.pathname.startsWith("/admin") && !isPlatformAdmin) {
+      const isChurchAdmin = churchMemberships?.some(
+        (m) => m.role === "CHURCH_ADMIN"
+      );
+      if (
+        nextUrl.pathname.startsWith("/admin") &&
+        !isPlatformAdmin &&
+        !isChurchAdmin
+      ) {
         return Response.redirect(new URL("/", nextUrl));
       }
 

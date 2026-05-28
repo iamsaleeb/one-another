@@ -11,12 +11,9 @@ import {
   AssignChurchRoleSchema,
   RemoveChurchMembershipSchema,
 } from "../validations/roles";
+import type { RoleActionState } from "../lib/types";
 
-export interface RoleActionState {
-  error?: string;
-  success?: string;
-  fieldErrors?: Record<string, string[]>;
-}
+export type { RoleActionState };
 
 export async function assignChurchRoleAction(
   input: unknown

@@ -9,7 +9,7 @@ import {
   AssignEventRoleSchema,
   RemoveEventStaffSchema,
 } from "../validations/roles";
-import type { RoleActionState } from "./church-memberships";
+import type { RoleActionState } from "../lib/types";
 
 const AssignEventRoleWithChurchSchema = AssignEventRoleSchema.extend({
   churchId: z.string().min(1),

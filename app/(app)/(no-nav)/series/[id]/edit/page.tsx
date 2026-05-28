@@ -13,8 +13,9 @@ export default async function EditSeriesPage({ params }: Props) {
   const { id } = await params;
   const [series, session] = await Promise.all([getSeriesById(id), auth()]);
 
-  const churchMemberships = session?.user?.churchMemberships ?? [];
-  if (!session?.user?.isPlatformAdmin && churchMemberships.length === 0)
+  if (!session) redirect("/");
+  const churchMemberships = session.user.churchMemberships ?? [];
+  if (!session.user.isPlatformAdmin && churchMemberships.length === 0)
     redirect("/");
   if (!series) notFound();
 

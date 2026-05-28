@@ -193,7 +193,7 @@ describe("getOrganisersByChurch", () => {
       { id: "user-1", name: "Alice", email: "alice@example.com" },
     ]);
     expect(mockChurchMembershipFindMany).toHaveBeenCalledWith({
-      where: { churchId: "ch-1" },
+      where: { churchId: "ch-1", role: { in: ["EVENT_MANAGER", "EVENT_CREATOR"] } },
       select: { user: { select: { id: true, name: true, email: true } } },
       orderBy: { user: { name: "asc" } },
     });

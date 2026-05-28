@@ -6,9 +6,10 @@ import { getChurchesByIds } from "@/domains/churches/actions/data";
 
 export default async function CreateSeriesPage() {
   const session = await auth();
-  const churchMemberships = session?.user?.churchMemberships ?? [];
+  if (!session) redirect("/");
 
-  if (!session?.user?.isPlatformAdmin && churchMemberships.length === 0) {
+  const churchMemberships = session.user.churchMemberships ?? [];
+  if (!session.user.isPlatformAdmin && churchMemberships.length === 0) {
     redirect("/");
   }
 

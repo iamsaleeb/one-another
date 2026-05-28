@@ -5,7 +5,7 @@ import { auth } from "@/auth";
 import { sessionToClaims } from "@/domains/roles/lib/session";
 import { upsertPlatformRole, removePlatformRole } from "../dal/platform-roles";
 import { AssignPlatformRoleSchema } from "../validations/roles";
-import type { RoleActionState } from "./church-memberships";
+import type { RoleActionState } from "../lib/types";
 
 export async function assignPlatformRoleAction(
   input: unknown

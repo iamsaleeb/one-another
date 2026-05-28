@@ -68,7 +68,7 @@ export async function getOrganisersByChurch(churchId: string) {
   cacheTag("churches");
   cacheLife("hours");
   const memberships = await prisma.churchMembership.findMany({
-    where: { churchId },
+    where: { churchId, role: { in: ["EVENT_MANAGER", "EVENT_CREATOR"] } },
     select: { user: { select: { id: true, name: true, email: true } } },
     orderBy: { user: { name: "asc" } },
   });

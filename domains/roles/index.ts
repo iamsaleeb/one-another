@@ -19,4 +19,4 @@ export {
 } from "./lib/require-capability";
 export { Capabilities } from "./lib/capabilities";
 export type { Capability } from "./lib/capabilities";
-export type { ScopeContext, RoleClaims } from "./lib/types";
+export type { ScopeContext, RoleClaims, RoleActionState } from "./lib/types";

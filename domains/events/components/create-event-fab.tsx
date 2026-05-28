@@ -4,7 +4,13 @@ import Link from "next/link";
 import { CalendarPlus, Plus, X, Repeat } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 
-export function CreateEventFAB({ isOrganiser }: { isOrganiser: boolean }) {
+export function CreateEventFAB({
+  isOrganiser,
+  canCreateSeries,
+}: {
+  isOrganiser: boolean;
+  canCreateSeries: boolean;
+}) {
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -31,14 +37,16 @@ export function CreateEventFAB({ isOrganiser }: { isOrganiser: boolean }) {
     >
       {open && (
         <>
-          <Link
-            href="/series/create"
-            onClick={() => setOpen(false)}
-            className="flex items-center gap-2 rounded-full bg-white px-4 py-2.5 text-sm font-medium shadow-lg transition-transform hover:scale-105 active:scale-95"
-          >
-            <Repeat className="text-primary size-4" />
-            New Series
-          </Link>
+          {canCreateSeries && (
+            <Link
+              href="/series/create"
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-2 rounded-full bg-white px-4 py-2.5 text-sm font-medium shadow-lg transition-transform hover:scale-105 active:scale-95"
+            >
+              <Repeat className="text-primary size-4" />
+              New Series
+            </Link>
+          )}
           <Link
             href="/events/create"
             onClick={() => setOpen(false)}

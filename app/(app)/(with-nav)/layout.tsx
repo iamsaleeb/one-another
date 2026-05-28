@@ -31,6 +31,11 @@ async function NavShell() {
   const isAdmin =
     (session?.user?.isPlatformAdmin ?? false) ||
     churchMemberships.some((m) => m.role === "CHURCH_ADMIN");
+  const canCreateSeries =
+    (session?.user?.isPlatformAdmin ?? false) ||
+    churchMemberships.some(
+      (m) => m.role === "CHURCH_ADMIN" || m.role === "EVENT_MANAGER"
+    );
   const unreadCount = session?.user?.id
     ? await getCachedUnreadCount(session.user.id)
     : 0;
@@ -43,7 +48,10 @@ async function NavShell() {
         isAdmin={isAdmin}
         unreadCount={unreadCount}
       />
-      <CreateEventFAB isOrganiser={isOrganiser || isAdmin} />
+      <CreateEventFAB
+        isOrganiser={isOrganiser || isAdmin}
+        canCreateSeries={canCreateSeries}
+      />
     </>
   );
 }

@@ -37,10 +37,12 @@ async function main() {
   await prisma.pushToken.deleteMany();
   await prisma.seriesFollower.deleteMany();
   await prisma.churchFollower.deleteMany();
+  await prisma.savedEvent.deleteMany();
+  await prisma.eventStaffAssignment.deleteMany();
   await prisma.event.deleteMany();
   await prisma.series.deleteMany();
-  await prisma.churchOrganiser.deleteMany();
-  await prisma.churchAdmin.deleteMany();
+  await prisma.churchMembership.deleteMany();
+  await prisma.platformRoleAssignment.deleteMany();
   await prisma.serviceTime.deleteMany();
   await prisma.user.deleteMany();
   await prisma.church.deleteMany();
@@ -2003,7 +2005,6 @@ async function main() {
       email: "organiser1@example.com",
       emailVerified: new Date(),
       onboardingCompleted: true,
-      role: "ORGANISER",
     },
   });
 
@@ -2013,7 +2014,6 @@ async function main() {
       email: "organiser2@example.com",
       emailVerified: new Date(),
       onboardingCompleted: true,
-      role: "ORGANISER",
     },
   });
 
@@ -2023,7 +2023,6 @@ async function main() {
       email: "organiser3@example.com",
       emailVerified: new Date(),
       onboardingCompleted: true,
-      role: "ORGANISER",
     },
   });
 
@@ -2033,7 +2032,6 @@ async function main() {
       email: "organiser4@example.com",
       emailVerified: new Date(),
       onboardingCompleted: true,
-      role: "ORGANISER",
     },
   });
 
@@ -2043,17 +2041,16 @@ async function main() {
       email: "organiser5@example.com",
       emailVerified: new Date(),
       onboardingCompleted: true,
-      role: "ORGANISER",
     },
   });
 
-  await prisma.churchOrganiser.createMany({
+  await prisma.churchMembership.createMany({
     data: [
-      { userId: organiser1.id, churchId: stMary.id },
-      { userId: organiser2.id, churchId: stMark.id },
-      { userId: organiser3.id, churchId: stGeorge.id },
-      { userId: organiser4.id, churchId: stPishoy.id },
-      { userId: organiser5.id, churchId: stAnthony.id },
+      { userId: organiser1.id, churchId: stMary.id, role: "CHURCH_ADMIN" },
+      { userId: organiser2.id, churchId: stMark.id, role: "CHURCH_ADMIN" },
+      { userId: organiser3.id, churchId: stGeorge.id, role: "CHURCH_ADMIN" },
+      { userId: organiser4.id, churchId: stPishoy.id, role: "CHURCH_ADMIN" },
+      { userId: organiser5.id, churchId: stAnthony.id, role: "CHURCH_ADMIN" },
     ],
   });
 
@@ -2063,12 +2060,11 @@ async function main() {
       email: "admin@example.com",
       emailVerified: new Date(),
       onboardingCompleted: true,
-      role: "ADMIN",
     },
   });
 
-  await prisma.churchAdmin.create({
-    data: { userId: admin1.id, churchId: stMary.id },
+  await prisma.platformRoleAssignment.create({
+    data: { userId: admin1.id, role: "PLATFORM_ADMIN" },
   });
 
   // ── Question Library ──────────────────────────────────────────────────────────
@@ -2710,7 +2706,6 @@ async function main() {
       email: "user@example.com",
       emailVerified: new Date(),
       onboardingCompleted: true,
-      role: "ATTENDEE",
     },
   });
 
@@ -2720,7 +2715,6 @@ async function main() {
       email: "user2@example.com",
       emailVerified: new Date(),
       onboardingCompleted: true,
-      role: "ATTENDEE",
     },
   });
 

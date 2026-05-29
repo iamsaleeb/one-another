@@ -2,7 +2,10 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { EventWizard } from "./_components/event-wizard";
 import { PageHeader } from "@/components/ui/page-header";
-import { getChurchesByIds } from "@/domains/churches/actions/data";
+import {
+  getChurches,
+  getChurchesByIds,
+} from "@/domains/churches/actions/data";
 import { getSeriesForEvent } from "@/domains/series/actions/data";
 import { getQuestionLibraryForUser } from "@/domains/events/questions/dal";
 
@@ -23,7 +26,7 @@ export default async function CreateEventPage({ searchParams }: Props) {
 
   const managedIds = churchMemberships.map((m) => m.churchId);
   const [churches, series, libraryItems] = await Promise.all([
-    getChurchesByIds(managedIds),
+    session.user.isPlatformAdmin ? getChurches() : getChurchesByIds(managedIds),
     seriesId ? getSeriesForEvent(seriesId) : null,
     getQuestionLibraryForUser(session.user.id),
   ]);

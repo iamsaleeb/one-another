@@ -3,7 +3,8 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
 import { sessionToClaims } from "@/domains/roles/lib/session";
-import { eventPolicy } from "@/domains/roles/policies/event";
+import { can } from "@/domains/roles/lib/can";
+import { Capabilities } from "@/domains/roles/lib/capabilities";
 import { upsertEventStaff, removeEventStaff } from "../dal/event-staff";
 import {
   AssignEventRoleSchema,
@@ -35,8 +36,17 @@ export async function assignEventRoleAction(
   const churchId = await resolveEventChurchId(eventId);
   if (!churchId) return { error: "Event not found." };
 
-  if (!eventPolicy.canManageStaff(claims, eventId, churchId))
-    return { error: "Unauthorised." };
+  const hasChurchAccess = can(claims, Capabilities.EVENT_MANAGE_STAFF, {
+    scope: "CHURCH",
+    churchId,
+  });
+  if (!hasChurchAccess) {
+    const callerStaff = await prisma.eventStaffAssignment.findUnique({
+      where: { userId_eventId: { userId: session.user.id, eventId } },
+      select: { role: true },
+    });
+    if (callerStaff?.role !== "EVENT_MANAGER") return { error: "Unauthorised." };
+  }
 
   await upsertEventStaff(userId, eventId, role, session.user.id);
   return { success: "Staff role assigned." };
@@ -58,8 +68,17 @@ export async function removeEventStaffAction(
   const churchId = await resolveEventChurchId(eventId);
   if (!churchId) return { error: "Event not found." };
 
-  if (!eventPolicy.canManageStaff(claims, eventId, churchId))
-    return { error: "Unauthorised." };
+  const hasChurchAccess = can(claims, Capabilities.EVENT_MANAGE_STAFF, {
+    scope: "CHURCH",
+    churchId,
+  });
+  if (!hasChurchAccess) {
+    const callerStaff = await prisma.eventStaffAssignment.findUnique({
+      where: { userId_eventId: { userId: session.user.id, eventId } },
+      select: { role: true },
+    });
+    if (callerStaff?.role !== "EVENT_MANAGER") return { error: "Unauthorised." };
+  }
 
   await removeEventStaff(userId, eventId);
   return { success: "Staff removed." };

@@ -25,8 +25,7 @@ import {
 
 const mockAuth = auth as jest.Mock;
 const mockEventFindUnique = prisma.event.findUnique as jest.Mock;
-const mockStaffFindUnique =
-  prisma.eventStaffAssignment.findUnique as jest.Mock;
+const mockStaffFindUnique = prisma.eventStaffAssignment.findUnique as jest.Mock;
 const mockSessionToClaims = sessionToClaims as jest.Mock;
 const mockUpsert = upsertEventStaff as jest.Mock;
 const _mockRemove = removeEventStaff as jest.Mock;
@@ -104,7 +103,12 @@ describe("assignEventRoleAction", () => {
       role: "EVENT_EDITOR",
     });
     expect(result).toEqual({ success: "Staff role assigned." });
-    expect(mockUpsert).toHaveBeenCalledWith("u1", "e1", "EVENT_EDITOR", "admin-1");
+    expect(mockUpsert).toHaveBeenCalledWith(
+      "u1",
+      "e1",
+      "EVENT_EDITOR",
+      "admin-1"
+    );
     expect(mockStaffFindUnique).not.toHaveBeenCalled();
   });
 
@@ -120,6 +124,11 @@ describe("assignEventRoleAction", () => {
       role: "EVENT_EDITOR",
     });
     expect(result).toEqual({ success: "Staff role assigned." });
-    expect(mockUpsert).toHaveBeenCalledWith("u1", "e1", "EVENT_EDITOR", "admin-1");
+    expect(mockUpsert).toHaveBeenCalledWith(
+      "u1",
+      "e1",
+      "EVENT_EDITOR",
+      "admin-1"
+    );
   });
 });

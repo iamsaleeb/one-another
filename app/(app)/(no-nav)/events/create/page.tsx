@@ -2,10 +2,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { EventWizard } from "./_components/event-wizard";
 import { PageHeader } from "@/components/ui/page-header";
-import {
-  getChurches,
-  getChurchesByIds,
-} from "@/domains/churches/actions/data";
+import { getChurches, getChurchesByIds } from "@/domains/churches/actions/data";
 import { getSeriesForEvent } from "@/domains/series/actions/data";
 import { getQuestionLibraryForUser } from "@/domains/events/questions/dal";
 

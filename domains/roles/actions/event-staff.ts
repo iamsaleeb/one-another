@@ -45,7 +45,8 @@ export async function assignEventRoleAction(
       where: { userId_eventId: { userId: session.user.id, eventId } },
       select: { role: true },
     });
-    if (callerStaff?.role !== "EVENT_MANAGER") return { error: "Unauthorised." };
+    if (callerStaff?.role !== "EVENT_MANAGER")
+      return { error: "Unauthorised." };
   }
 
   await upsertEventStaff(userId, eventId, role, session.user.id);
@@ -77,7 +78,8 @@ export async function removeEventStaffAction(
       where: { userId_eventId: { userId: session.user.id, eventId } },
       select: { role: true },
     });
-    if (callerStaff?.role !== "EVENT_MANAGER") return { error: "Unauthorised." };
+    if (callerStaff?.role !== "EVENT_MANAGER")
+      return { error: "Unauthorised." };
   }
 
   await removeEventStaff(userId, eventId);

@@ -2,10 +2,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { CreateSeriesForm } from "./_components/create-series-form";
 import { PageHeader } from "@/components/ui/page-header";
-import {
-  getChurches,
-  getChurchesByIds,
-} from "@/domains/churches/actions/data";
+import { getChurches, getChurchesByIds } from "@/domains/churches/actions/data";
 import { sessionToClaims } from "@/domains/roles/lib/session";
 import { seriesPolicy } from "@/domains/roles/policies/series";
 

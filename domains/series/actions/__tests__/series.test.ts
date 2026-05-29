@@ -333,6 +333,23 @@ describe("updateSeriesAction", () => {
     expect(mockRedirect).toHaveBeenCalledWith("/organiser");
     expect(mockSeriesUpdate).not.toHaveBeenCalled();
   });
+
+  it("redirects to /organiser when user lacks access to new church on church change", async () => {
+    mockSeriesFindUnique.mockResolvedValue({ churchId: "ch-1" });
+    mockCan
+      .mockReturnValueOnce(true) // allowed for original church ch-1
+      .mockReturnValueOnce(false); // not allowed for new church ch-2
+    mockRedirect.mockImplementationOnce(() => {
+      throw new Error("NEXT_REDIRECT");
+    });
+
+    await expect(
+      updateSeriesAction("ser-1", { ...validData, churchId: "ch-2" })
+    ).rejects.toThrow("NEXT_REDIRECT");
+
+    expect(mockRedirect).toHaveBeenCalledWith("/organiser");
+    expect(mockSeriesUpdate).not.toHaveBeenCalled();
+  });
 });
 
 describe("deleteSeriesAction", () => {

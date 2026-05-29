@@ -14,7 +14,7 @@ jest.mock("@/domains/roles/dal/event-staff", () => ({
   removeEventStaff: jest.fn(),
 }));
 
-import { assignEventRoleAction } from "../event-staff";
+import { assignEventRoleAction, removeEventStaffAction } from "../event-staff";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
 import { sessionToClaims } from "@/domains/roles/lib/session";
@@ -28,7 +28,7 @@ const mockEventFindUnique = prisma.event.findUnique as jest.Mock;
 const mockStaffFindUnique = prisma.eventStaffAssignment.findUnique as jest.Mock;
 const mockSessionToClaims = sessionToClaims as jest.Mock;
 const mockUpsert = upsertEventStaff as jest.Mock;
-const _mockRemove = removeEventStaff as jest.Mock;
+const mockRemove = removeEventStaff as jest.Mock;
 
 const validSession = { user: { id: "admin-1" } };
 const churchManagerClaims = {
@@ -39,6 +39,13 @@ const noClaims = { isPlatformAdmin: false, churchMemberships: [] };
 
 describe("assignEventRoleAction", () => {
   beforeEach(() => jest.clearAllMocks());
+
+  it("returns fieldErrors on invalid input", async () => {
+    mockAuth.mockResolvedValue(validSession);
+    mockSessionToClaims.mockReturnValue(churchManagerClaims);
+    const result = await assignEventRoleAction({});
+    expect(result).toHaveProperty("fieldErrors");
+  });
 
   it("returns error when unauthenticated", async () => {
     mockAuth.mockResolvedValue(null);
@@ -130,5 +137,92 @@ describe("assignEventRoleAction", () => {
       "EVENT_EDITOR",
       "admin-1"
     );
+  });
+});
+
+describe("removeEventStaffAction", () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  it("returns fieldErrors on invalid input", async () => {
+    mockAuth.mockResolvedValue(validSession);
+    mockSessionToClaims.mockReturnValue(churchManagerClaims);
+    const result = await removeEventStaffAction({});
+    expect(result).toHaveProperty("fieldErrors");
+  });
+
+  it("returns error when unauthenticated", async () => {
+    mockAuth.mockResolvedValue(null);
+    mockSessionToClaims.mockReturnValue(null);
+    const result = await removeEventStaffAction({
+      userId: "u1",
+      eventId: "e1",
+    });
+    expect(result).toEqual({ error: "Unauthorised." });
+  });
+
+  it("returns error when event not found", async () => {
+    mockAuth.mockResolvedValue(validSession);
+    mockSessionToClaims.mockReturnValue(churchManagerClaims);
+    mockEventFindUnique.mockResolvedValue(null);
+    const result = await removeEventStaffAction({
+      userId: "u1",
+      eventId: "e1",
+    });
+    expect(result).toEqual({ error: "Event not found." });
+    expect(mockRemove).not.toHaveBeenCalled();
+  });
+
+  it("returns error when no church access and no event staff role", async () => {
+    mockAuth.mockResolvedValue(validSession);
+    mockSessionToClaims.mockReturnValue(noClaims);
+    mockEventFindUnique.mockResolvedValue({ churchId: "c1" });
+    mockStaffFindUnique.mockResolvedValue(null);
+    const result = await removeEventStaffAction({
+      userId: "u1",
+      eventId: "e1",
+    });
+    expect(result).toEqual({ error: "Unauthorised." });
+    expect(mockRemove).not.toHaveBeenCalled();
+  });
+
+  it("removes staff when caller has church-level EVENT_MANAGER", async () => {
+    mockAuth.mockResolvedValue(validSession);
+    mockSessionToClaims.mockReturnValue(churchManagerClaims);
+    mockEventFindUnique.mockResolvedValue({ churchId: "c1" });
+    mockRemove.mockResolvedValue({});
+    const result = await removeEventStaffAction({
+      userId: "u1",
+      eventId: "e1",
+    });
+    expect(result).toEqual({ success: "Staff removed." });
+    expect(mockRemove).toHaveBeenCalledWith("u1", "e1");
+    expect(mockStaffFindUnique).not.toHaveBeenCalled();
+  });
+
+  it("removes staff when caller is event-level EVENT_MANAGER", async () => {
+    mockAuth.mockResolvedValue(validSession);
+    mockSessionToClaims.mockReturnValue(noClaims);
+    mockEventFindUnique.mockResolvedValue({ churchId: "c1" });
+    mockStaffFindUnique.mockResolvedValue({ role: "EVENT_MANAGER" });
+    mockRemove.mockResolvedValue({});
+    const result = await removeEventStaffAction({
+      userId: "u1",
+      eventId: "e1",
+    });
+    expect(result).toEqual({ success: "Staff removed." });
+    expect(mockRemove).toHaveBeenCalledWith("u1", "e1");
+  });
+
+  it("returns error when caller is EVENT_EDITOR (not manager)", async () => {
+    mockAuth.mockResolvedValue(validSession);
+    mockSessionToClaims.mockReturnValue(noClaims);
+    mockEventFindUnique.mockResolvedValue({ churchId: "c1" });
+    mockStaffFindUnique.mockResolvedValue({ role: "EVENT_EDITOR" });
+    const result = await removeEventStaffAction({
+      userId: "u1",
+      eventId: "e1",
+    });
+    expect(result).toEqual({ error: "Unauthorised." });
+    expect(mockRemove).not.toHaveBeenCalled();
   });
 });

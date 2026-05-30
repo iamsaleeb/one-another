@@ -30,7 +30,8 @@ import {
   parseEventAttendeeMetadata,
 } from "@/domains/events/validations/event";
 import { sessionToClaims } from "@/domains/roles/lib/session";
-import { churchPolicy } from "@/domains/roles/policies/church";
+import { can } from "@/domains/roles/lib/can";
+import { Capabilities } from "@/domains/roles/lib/capabilities";
 import { getEventStaffForUser } from "@/domains/roles/dal/event-staff";
 import { EventDatetime } from "@/domains/events/components/event-datetime";
 import { formatDateOnly, parseDateOfBirth } from "@/lib/datetime";
@@ -54,7 +55,13 @@ export async function generateMetadata({ params }: Props) {
   if (event.isDraft) {
     const session = await auth();
     const claims = sessionToClaims(session);
-    if (!claims || !churchPolicy.canManageMembers(claims, event.churchId ?? ""))
+    if (
+      !claims ||
+      !can(claims, Capabilities.EVENT_UPDATE, {
+        scope: "CHURCH",
+        churchId: event.churchId ?? "",
+      })
+    )
       return { title: "Event Not Found" };
   }
   const description = event.description.slice(0, 160);
@@ -89,23 +96,37 @@ export default async function EventDetailPage({ params }: Props) {
   const isAttending = myAttendance !== null;
 
   const claims = sessionToClaims(session);
-  const canManage =
-    !!claims && churchPolicy.canManageMembers(claims, event.churchId ?? "");
+  const churchId = event.churchId ?? "";
+
+  const canEditFromChurch =
+    !!claims &&
+    can(claims, Capabilities.EVENT_UPDATE, { scope: "CHURCH", churchId });
+  const canDeleteFromChurch =
+    !!claims &&
+    can(claims, Capabilities.EVENT_DELETE, { scope: "CHURCH", churchId });
+  const canViewAttendeesFromChurch =
+    !!claims &&
+    can(claims, Capabilities.EVENT_VIEW_ATTENDEES, {
+      scope: "CHURCH",
+      churchId,
+    });
 
   const eventStaff =
-    !canManage && session?.user?.id
+    !canEditFromChurch && session?.user?.id
       ? await getEventStaffForUser(session.user.id, id)
       : null;
 
-  const canEdit = canManage || !!eventStaff;
-  const canDelete = canManage;
+  const canEdit = canEditFromChurch || !!eventStaff;
+  const canDelete = canDeleteFromChurch;
+  const canViewAttendees =
+    canViewAttendeesFromChurch || eventStaff?.role === "EVENT_MANAGER";
 
   const questions = await getEventQuestions(id);
 
   if (event.isDraft && !canEdit) notFound();
 
   const [attendees, myResponses] = await Promise.all([
-    canManage ? getEventAttendees(id) : Promise.resolve(undefined),
+    canViewAttendees ? getEventAttendees(id) : Promise.resolve(undefined),
     session?.user?.id && questions.length > 0 && isAttending
       ? getMyResponses(id, session.user.id)
       : Promise.resolve(
@@ -189,7 +210,7 @@ export default async function EventDetailPage({ params }: Props) {
                   )}
                   {canDelete && <DeleteEventButton eventId={id} />}
                 </div>
-                {canManage &&
+                {canViewAttendees &&
                   event.requiresRegistration &&
                   questions.length > 0 && (
                     <Button

@@ -52,4 +52,48 @@ describe("eventPolicy", () => {
       expect(eventPolicy.canDelete(creatorClaims, "c1")).toBe(false);
     });
   });
+
+  describe("canManageStaff (EVENT scope)", () => {
+    it("returns true for EVENT_MANAGER via church inheritance", () => {
+      expect(eventPolicy.canManageStaff(managerClaims, "e1", "c1")).toBe(true);
+    });
+    it("returns false when no matching church", () => {
+      expect(eventPolicy.canManageStaff(managerClaims, "e1", "c2")).toBe(false);
+    });
+    it("returns false with no claims", () => {
+      expect(eventPolicy.canManageStaff(noClaims, "e1", "c1")).toBe(false);
+    });
+  });
+
+  describe("canViewAttendees (EVENT scope)", () => {
+    it("returns true for EVENT_MANAGER via church inheritance", () => {
+      expect(eventPolicy.canViewAttendees(managerClaims, "e1", "c1")).toBe(
+        true
+      );
+    });
+    it("returns false when no matching church", () => {
+      expect(eventPolicy.canViewAttendees(managerClaims, "e1", "c2")).toBe(
+        false
+      );
+    });
+    it("returns false with no claims", () => {
+      expect(eventPolicy.canViewAttendees(noClaims, "e1", "c1")).toBe(false);
+    });
+  });
+
+  describe("canScanAttendees (EVENT scope)", () => {
+    it("returns true for EVENT_MANAGER via church inheritance", () => {
+      expect(eventPolicy.canScanAttendees(managerClaims, "e1", "c1")).toBe(
+        true
+      );
+    });
+    it("returns false when no matching church", () => {
+      expect(eventPolicy.canScanAttendees(managerClaims, "e1", "c2")).toBe(
+        false
+      );
+    });
+    it("returns false with no claims", () => {
+      expect(eventPolicy.canScanAttendees(noClaims, "e1", "c1")).toBe(false);
+    });
+  });
 });

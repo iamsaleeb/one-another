@@ -8,7 +8,10 @@ jest.mock("@/domains/roles/dal/platform-roles", () => ({
   removePlatformRole: jest.fn(),
 }));
 
-import { assignPlatformRoleAction } from "../platform-roles";
+import {
+  assignPlatformRoleAction,
+  removePlatformRoleAction,
+} from "../platform-roles";
 import { auth } from "@/auth";
 import { sessionToClaims } from "@/domains/roles/lib/session";
 import {
@@ -19,7 +22,7 @@ import {
 const mockAuth = auth as jest.Mock;
 const mockSessionToClaims = sessionToClaims as jest.Mock;
 const mockUpsert = upsertPlatformRole as jest.Mock;
-const _mockRemove = removePlatformRole as jest.Mock;
+const mockRemove = removePlatformRole as jest.Mock;
 
 describe("assignPlatformRoleAction", () => {
   beforeEach(() => jest.clearAllMocks());
@@ -61,5 +64,50 @@ describe("assignPlatformRoleAction", () => {
     });
     expect(result).toEqual({ success: "Platform role assigned." });
     expect(mockUpsert).toHaveBeenCalledWith("u1", "PLATFORM_ADMIN", "admin-1");
+  });
+});
+
+describe("removePlatformRoleAction", () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  it("returns fieldErrors on invalid input", async () => {
+    mockAuth.mockResolvedValue({ user: { id: "admin-1" } });
+    mockSessionToClaims.mockReturnValue({
+      isPlatformAdmin: true,
+      churchMemberships: [],
+    });
+    const result = await removePlatformRoleAction({});
+    expect(result).toHaveProperty("fieldErrors");
+    expect(mockRemove).not.toHaveBeenCalled();
+  });
+
+  it("returns error when unauthenticated", async () => {
+    mockAuth.mockResolvedValue(null);
+    mockSessionToClaims.mockReturnValue(null);
+    const result = await removePlatformRoleAction({ userId: "u1" });
+    expect(result).toEqual({ error: "Unauthorised." });
+  });
+
+  it("returns error when caller is not platform admin", async () => {
+    mockAuth.mockResolvedValue({ user: { id: "u2" } });
+    mockSessionToClaims.mockReturnValue({
+      isPlatformAdmin: false,
+      churchMemberships: [],
+    });
+    const result = await removePlatformRoleAction({ userId: "u1" });
+    expect(result).toEqual({ error: "Unauthorised." });
+    expect(mockRemove).not.toHaveBeenCalled();
+  });
+
+  it("removes platform role when caller is platform admin", async () => {
+    mockAuth.mockResolvedValue({ user: { id: "admin-1" } });
+    mockSessionToClaims.mockReturnValue({
+      isPlatformAdmin: true,
+      churchMemberships: [],
+    });
+    mockRemove.mockResolvedValue({});
+    const result = await removePlatformRoleAction({ userId: "u1" });
+    expect(result).toEqual({ success: "Platform role removed." });
+    expect(mockRemove).toHaveBeenCalledWith("u1", "PLATFORM_ADMIN");
   });
 });

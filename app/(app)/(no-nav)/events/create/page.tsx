@@ -4,6 +4,7 @@ import { EventWizard } from "./_components/event-wizard";
 import { PageHeader } from "@/components/ui/page-header";
 import { getChurches, getChurchesByIds } from "@/domains/churches/actions/data";
 import { getSeriesForEvent } from "@/domains/series/actions/data";
+import { getSeriesStaffForUser } from "@/domains/roles/dal/series-staff";
 import { getQuestionLibraryForUser } from "@/domains/events/questions/dal";
 
 interface Props {
@@ -15,11 +16,19 @@ export default async function CreateEventPage({ searchParams }: Props) {
   if (!session) redirect("/");
 
   const churchMemberships = session.user.churchMemberships ?? [];
-  if (!session.user.isPlatformAdmin && churchMemberships.length === 0) {
-    redirect("/");
-  }
-
   const { seriesId } = await searchParams;
+
+  if (!session.user.isPlatformAdmin && churchMemberships.length === 0) {
+    if (!seriesId) {
+      redirect("/");
+    } else {
+      const seriesStaff = await getSeriesStaffForUser(
+        session.user.id,
+        seriesId
+      );
+      if (!seriesStaff) redirect("/");
+    }
+  }
 
   const managedIds = churchMemberships.map((m) => m.churchId);
   const [churches, series, libraryItems] = await Promise.all([

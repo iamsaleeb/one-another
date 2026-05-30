@@ -8,6 +8,9 @@ import {
 } from "@/domains/events/questions/actions";
 import { getQuestionLibraryForUser } from "@/domains/events/questions/dal";
 import { getEventStaffForUser } from "@/domains/roles/dal/event-staff";
+import { sessionToClaims } from "@/domains/roles/lib/session";
+import { can } from "@/domains/roles/lib/can";
+import { Capabilities } from "@/domains/roles/lib/capabilities";
 import { parseEventMetadata } from "@/domains/events/validations/event";
 import { PageHeader } from "@/components/ui/page-header";
 import { EventWizard } from "@/app/(app)/(no-nav)/events/create/_components/event-wizard";
@@ -23,12 +26,23 @@ export default async function EditEventPage({ params }: Props) {
   if (!session) redirect("/");
   if (!event) notFound();
 
+  const claims = sessionToClaims(session);
   const churchMemberships = session.user.churchMemberships ?? [];
-  const managedIds = churchMemberships.map((m) => m.churchId);
+  // Only churches where user has event:update — excludes EVENT_CREATOR
+  const editableChurchIds = churchMemberships
+    .filter(
+      (m) =>
+        claims &&
+        can(claims, Capabilities.EVENT_UPDATE, {
+          scope: "CHURCH",
+          churchId: m.churchId,
+        })
+    )
+    .map((m) => m.churchId);
 
   const [churchesFromMemberships, questions, libraryItems, questionsLocked] =
     await Promise.all([
-      getChurchesByIds(managedIds),
+      getChurchesByIds(editableChurchIds),
       getEventQuestions(id),
       getQuestionLibraryForUser(session.user.id),
       hasEventResponses(id),

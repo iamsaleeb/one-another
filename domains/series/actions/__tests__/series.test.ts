@@ -29,7 +29,7 @@ jest.mock("@/auth", () => ({
 }));
 
 jest.mock("@/domains/roles/lib/can", () => ({
-  can: jest.fn().mockReturnValue(true),
+  can: jest.fn().mockResolvedValue(true),
 }));
 
 import { redirect } from "next/navigation";
@@ -78,7 +78,7 @@ beforeEach(() => {
       isEmailVerified: true,
     },
   });
-  mockCan.mockReturnValue(true);
+  mockCan.mockResolvedValue(true);
   mockSeriesStaffFindUnique.mockResolvedValue(null);
 });
 
@@ -160,7 +160,7 @@ describe("createSeriesAction", () => {
   });
 
   it("returns an error when organiser is not assigned to the church", async () => {
-    mockCan.mockReturnValue(false);
+    mockCan.mockResolvedValue(false);
 
     const result = await createSeriesAction(validData);
 
@@ -321,7 +321,7 @@ describe("updateSeriesAction", () => {
   });
 
   it("redirects to /organiser when organiser is not assigned to the church", async () => {
-    mockCan.mockReturnValue(false);
+    mockCan.mockResolvedValue(false);
     mockRedirect.mockImplementationOnce(() => {
       throw new Error("NEXT_REDIRECT");
     });
@@ -337,8 +337,8 @@ describe("updateSeriesAction", () => {
   it("redirects to /organiser when user lacks access to new church on church change", async () => {
     mockSeriesFindUnique.mockResolvedValue({ churchId: "ch-1" });
     mockCan
-      .mockReturnValueOnce(true) // allowed for original church ch-1
-      .mockReturnValueOnce(false); // not allowed for new church ch-2
+      .mockResolvedValueOnce(true) // allowed for original church ch-1
+      .mockResolvedValueOnce(false); // not allowed for new church ch-2
     mockRedirect.mockImplementationOnce(() => {
       throw new Error("NEXT_REDIRECT");
     });
@@ -392,7 +392,7 @@ describe("deleteSeriesAction", () => {
   });
 
   it("redirects to /organiser when organiser is not assigned to the church", async () => {
-    mockCan.mockReturnValue(false);
+    mockCan.mockResolvedValue(false);
     mockRedirect.mockImplementationOnce(() => {
       throw new Error("NEXT_REDIRECT");
     });

@@ -1,8 +1,7 @@
 "use server";
 
-import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
-import { sessionToClaims } from "@/domains/roles/lib/session";
+import { getActor } from "@/domains/roles/lib/session";
 import { can } from "@/domains/roles/lib/can";
 import { Capabilities } from "@/domains/roles/lib/capabilities";
 import { upsertEventStaff, removeEventStaff } from "../dal/event-staff";
@@ -23,10 +22,8 @@ async function resolveEventChurchId(eventId: string): Promise<string | null> {
 export async function assignEventRoleAction(
   input: unknown
 ): Promise<RoleActionState> {
-  const session = await auth();
-  if (!session) return { error: "Unauthorised." };
-  const claims = sessionToClaims(session);
-  if (!claims) return { error: "Unauthorised." };
+  const actor = await getActor();
+  if (!actor) return { error: "Unauthorised." };
 
   const parsed = AssignEventRoleSchema.safeParse(input);
   if (!parsed.success)
@@ -36,30 +33,21 @@ export async function assignEventRoleAction(
   const churchId = await resolveEventChurchId(eventId);
   if (!churchId) return { error: "Event not found." };
 
-  const hasChurchAccess = can(claims, Capabilities.EVENT_MANAGE_STAFF, {
-    scope: "CHURCH",
+  const allowed = await can(actor, Capabilities.EVENT_MANAGE_STAFF, {
     churchId,
+    eventId,
   });
-  if (!hasChurchAccess) {
-    const callerStaff = await prisma.eventStaffAssignment.findUnique({
-      where: { userId_eventId: { userId: session.user.id, eventId } },
-      select: { role: true },
-    });
-    if (callerStaff?.role !== "EVENT_MANAGER")
-      return { error: "Unauthorised." };
-  }
+  if (!allowed) return { error: "Unauthorised." };
 
-  await upsertEventStaff(userId, eventId, role, session.user.id);
+  await upsertEventStaff(userId, eventId, role, actor.id);
   return { success: "Staff role assigned." };
 }
 
 export async function removeEventStaffAction(
   input: unknown
 ): Promise<RoleActionState> {
-  const session = await auth();
-  if (!session) return { error: "Unauthorised." };
-  const claims = sessionToClaims(session);
-  if (!claims) return { error: "Unauthorised." };
+  const actor = await getActor();
+  if (!actor) return { error: "Unauthorised." };
 
   const parsed = RemoveEventStaffSchema.safeParse(input);
   if (!parsed.success)
@@ -69,18 +57,11 @@ export async function removeEventStaffAction(
   const churchId = await resolveEventChurchId(eventId);
   if (!churchId) return { error: "Event not found." };
 
-  const hasChurchAccess = can(claims, Capabilities.EVENT_MANAGE_STAFF, {
-    scope: "CHURCH",
+  const allowed = await can(actor, Capabilities.EVENT_MANAGE_STAFF, {
     churchId,
+    eventId,
   });
-  if (!hasChurchAccess) {
-    const callerStaff = await prisma.eventStaffAssignment.findUnique({
-      where: { userId_eventId: { userId: session.user.id, eventId } },
-      select: { role: true },
-    });
-    if (callerStaff?.role !== "EVENT_MANAGER")
-      return { error: "Unauthorised." };
-  }
+  if (!allowed) return { error: "Unauthorised." };
 
   await removeEventStaff(userId, eventId);
   return { success: "Staff removed." };

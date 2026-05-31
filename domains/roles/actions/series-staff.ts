@@ -1,9 +1,9 @@
 "use server";
 
-import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
-import { sessionToClaims } from "@/domains/roles/lib/session";
-import { seriesPolicy } from "@/domains/roles/policies/series";
+import { getActor } from "@/domains/roles/lib/session";
+import { can } from "@/domains/roles/lib/can";
+import { Capabilities } from "@/domains/roles/lib/capabilities";
 import { upsertSeriesStaff, removeSeriesStaff } from "../dal/series-staff";
 import {
   AssignSeriesRoleSchema,
@@ -11,55 +11,53 @@ import {
 } from "../validations/roles";
 import type { RoleActionState } from "../lib/types";
 
-async function resolveSeriesChurchId(seriesId: string): Promise<string | null> {
-  const series = await prisma.series.findUnique({
-    where: { id: seriesId },
-    select: { churchId: true },
-  });
-  return series?.churchId ?? null;
-}
-
 export async function assignSeriesRoleAction(
   input: unknown
 ): Promise<RoleActionState> {
-  const session = await auth();
-  if (!session) return { error: "Unauthorised." };
-  const claims = sessionToClaims(session);
-  if (!claims) return { error: "Unauthorised." };
+  const actor = await getActor();
+  if (!actor) return { error: "Unauthorised." };
 
   const parsed = AssignSeriesRoleSchema.safeParse(input);
   if (!parsed.success)
     return { fieldErrors: parsed.error.flatten().fieldErrors };
 
   const { userId, seriesId, role } = parsed.data;
-  const churchId = await resolveSeriesChurchId(seriesId);
-  if (!churchId) return { error: "Series not found." };
+  const series = await prisma.series.findUnique({
+    where: { id: seriesId },
+    select: { churchId: true },
+  });
+  if (!series) return { error: "Series not found." };
 
-  if (!seriesPolicy.canUpdate(claims, churchId))
-    return { error: "Unauthorised." };
+  const allowed = await can(actor, Capabilities.SERIES_UPDATE, {
+    churchId: series.churchId,
+  });
+  if (!allowed) return { error: "Unauthorised." };
 
-  await upsertSeriesStaff(userId, seriesId, role, session.user.id);
+  await upsertSeriesStaff(userId, seriesId, role, actor.id);
   return { success: "Series role assigned." };
 }
 
 export async function removeSeriesStaffAction(
   input: unknown
 ): Promise<RoleActionState> {
-  const session = await auth();
-  if (!session) return { error: "Unauthorised." };
-  const claims = sessionToClaims(session);
-  if (!claims) return { error: "Unauthorised." };
+  const actor = await getActor();
+  if (!actor) return { error: "Unauthorised." };
 
   const parsed = RemoveSeriesStaffSchema.safeParse(input);
   if (!parsed.success)
     return { fieldErrors: parsed.error.flatten().fieldErrors };
 
   const { userId, seriesId } = parsed.data;
-  const churchId = await resolveSeriesChurchId(seriesId);
-  if (!churchId) return { error: "Series not found." };
+  const series = await prisma.series.findUnique({
+    where: { id: seriesId },
+    select: { churchId: true },
+  });
+  if (!series) return { error: "Series not found." };
 
-  if (!seriesPolicy.canUpdate(claims, churchId))
-    return { error: "Unauthorised." };
+  const allowed = await can(actor, Capabilities.SERIES_UPDATE, {
+    churchId: series.churchId,
+  });
+  if (!allowed) return { error: "Unauthorised." };
 
   await removeSeriesStaff(userId, seriesId);
   return { success: "Series staff removed." };

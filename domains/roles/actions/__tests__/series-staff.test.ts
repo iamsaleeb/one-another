@@ -1,10 +1,12 @@
 jest.mock("server-only", () => ({}));
-jest.mock("@/auth", () => ({ auth: jest.fn() }));
 jest.mock("@/lib/db", () => ({
   prisma: { series: { findUnique: jest.fn() } },
 }));
 jest.mock("@/domains/roles/lib/session", () => ({
-  sessionToClaims: jest.fn(),
+  getActor: jest.fn(),
+}));
+jest.mock("@/domains/roles/lib/can", () => ({
+  can: jest.fn().mockResolvedValue(true),
 }));
 jest.mock("@/domains/roles/dal/series-staff", () => ({
   upsertSeriesStaff: jest.fn(),
@@ -15,40 +17,37 @@ import {
   assignSeriesRoleAction,
   removeSeriesStaffAction,
 } from "../series-staff";
-import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
-import { sessionToClaims } from "@/domains/roles/lib/session";
+import { getActor } from "@/domains/roles/lib/session";
+import { can } from "@/domains/roles/lib/can";
 import {
   upsertSeriesStaff,
   removeSeriesStaff,
 } from "@/domains/roles/dal/series-staff";
 
-const mockAuth = auth as jest.Mock;
+const mockGetActor = getActor as jest.Mock;
+const mockCan = can as jest.Mock;
 const mockSeriesFindUnique = prisma.series.findUnique as jest.Mock;
-const mockSessionToClaims = sessionToClaims as jest.Mock;
 const mockUpsert = upsertSeriesStaff as jest.Mock;
 const mockRemove = removeSeriesStaff as jest.Mock;
 
-const validSession = { user: { id: "admin-1" } };
-const churchManagerClaims = {
-  isPlatformAdmin: false,
-  churchMemberships: [{ churchId: "c1", role: "EVENT_MANAGER" as const }],
-};
-const noClaims = { isPlatformAdmin: false, churchMemberships: [] };
+const validActor = { id: "admin-1", isPlatformAdmin: false };
+
+beforeEach(() => {
+  jest.clearAllMocks();
+  mockGetActor.mockResolvedValue(validActor);
+  mockCan.mockResolvedValue(true);
+  mockSeriesFindUnique.mockResolvedValue({ churchId: "c1" });
+});
 
 describe("assignSeriesRoleAction", () => {
-  beforeEach(() => jest.clearAllMocks());
-
   it("returns fieldErrors on invalid input", async () => {
-    mockAuth.mockResolvedValue(validSession);
-    mockSessionToClaims.mockReturnValue(churchManagerClaims);
     const result = await assignSeriesRoleAction({});
     expect(result).toHaveProperty("fieldErrors");
   });
 
   it("returns error when unauthenticated", async () => {
-    mockAuth.mockResolvedValue(null);
-    mockSessionToClaims.mockReturnValue(null);
+    mockGetActor.mockResolvedValue(null);
     const result = await assignSeriesRoleAction({
       userId: "u1",
       seriesId: "s1",
@@ -58,8 +57,6 @@ describe("assignSeriesRoleAction", () => {
   });
 
   it("returns error when series not found", async () => {
-    mockAuth.mockResolvedValue(validSession);
-    mockSessionToClaims.mockReturnValue(churchManagerClaims);
     mockSeriesFindUnique.mockResolvedValue(null);
     const result = await assignSeriesRoleAction({
       userId: "u1",
@@ -71,9 +68,7 @@ describe("assignSeriesRoleAction", () => {
   });
 
   it("returns error when not authorized", async () => {
-    mockAuth.mockResolvedValue(validSession);
-    mockSessionToClaims.mockReturnValue(noClaims);
-    mockSeriesFindUnique.mockResolvedValue({ churchId: "c1" });
+    mockCan.mockResolvedValue(false);
     const result = await assignSeriesRoleAction({
       userId: "u1",
       seriesId: "s1",
@@ -84,9 +79,6 @@ describe("assignSeriesRoleAction", () => {
   });
 
   it("assigns series role when authorized", async () => {
-    mockAuth.mockResolvedValue(validSession);
-    mockSessionToClaims.mockReturnValue(churchManagerClaims);
-    mockSeriesFindUnique.mockResolvedValue({ churchId: "c1" });
     mockUpsert.mockResolvedValue({});
     const result = await assignSeriesRoleAction({
       userId: "u1",
@@ -104,18 +96,13 @@ describe("assignSeriesRoleAction", () => {
 });
 
 describe("removeSeriesStaffAction", () => {
-  beforeEach(() => jest.clearAllMocks());
-
   it("returns fieldErrors on invalid input", async () => {
-    mockAuth.mockResolvedValue(validSession);
-    mockSessionToClaims.mockReturnValue(churchManagerClaims);
     const result = await removeSeriesStaffAction({});
     expect(result).toHaveProperty("fieldErrors");
   });
 
   it("returns error when unauthenticated", async () => {
-    mockAuth.mockResolvedValue(null);
-    mockSessionToClaims.mockReturnValue(null);
+    mockGetActor.mockResolvedValue(null);
     const result = await removeSeriesStaffAction({
       userId: "u1",
       seriesId: "s1",
@@ -124,8 +111,6 @@ describe("removeSeriesStaffAction", () => {
   });
 
   it("returns error when series not found", async () => {
-    mockAuth.mockResolvedValue(validSession);
-    mockSessionToClaims.mockReturnValue(churchManagerClaims);
     mockSeriesFindUnique.mockResolvedValue(null);
     const result = await removeSeriesStaffAction({
       userId: "u1",
@@ -136,9 +121,7 @@ describe("removeSeriesStaffAction", () => {
   });
 
   it("returns error when not authorized", async () => {
-    mockAuth.mockResolvedValue(validSession);
-    mockSessionToClaims.mockReturnValue(noClaims);
-    mockSeriesFindUnique.mockResolvedValue({ churchId: "c1" });
+    mockCan.mockResolvedValue(false);
     const result = await removeSeriesStaffAction({
       userId: "u1",
       seriesId: "s1",
@@ -148,9 +131,6 @@ describe("removeSeriesStaffAction", () => {
   });
 
   it("removes series staff when authorized", async () => {
-    mockAuth.mockResolvedValue(validSession);
-    mockSessionToClaims.mockReturnValue(churchManagerClaims);
-    mockSeriesFindUnique.mockResolvedValue({ churchId: "c1" });
     mockRemove.mockResolvedValue({});
     const result = await removeSeriesStaffAction({
       userId: "u1",

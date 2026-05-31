@@ -62,6 +62,10 @@ describe("event staff", () => {
     mockEvent.mockResolvedValue({ role: "EVENT_MANAGER" });
     expect(await can(user, Capabilities.EVENT_VIEW_ATTENDEES, { eventId: "e1" })).toBe(true);
   });
+  it("true: EVENT_EDITOR staff checks event:update", async () => {
+    mockEvent.mockResolvedValue({ role: "EVENT_EDITOR" });
+    expect(await can(user, Capabilities.EVENT_UPDATE, { eventId: "e1" })).toBe(true);
+  });
   it("false: EVENT_EDITOR staff checks event:manage_staff", async () => {
     mockEvent.mockResolvedValue({ role: "EVENT_EDITOR" });
     expect(await can(user, Capabilities.EVENT_MANAGE_STAFF, { eventId: "e1" })).toBe(false);
@@ -81,6 +85,10 @@ describe("series staff", () => {
     mockSeries.mockResolvedValue({ role: "SERIES_MANAGER" });
     expect(await can(user, Capabilities.EVENT_CREATE, { seriesId: "s1" })).toBe(true);
   });
+  it("true: SERIES_SESSION_CREATOR checks event:create", async () => {
+    mockSeries.mockResolvedValue({ role: "SERIES_SESSION_CREATOR" });
+    expect(await can(user, Capabilities.EVENT_CREATE, { seriesId: "s1" })).toBe(true);
+  });
   it("false: SERIES_SESSION_CREATOR checks series:update", async () => {
     mockSeries.mockResolvedValue({ role: "SERIES_SESSION_CREATOR" });
     expect(await can(user, Capabilities.SERIES_UPDATE, { seriesId: "s1" })).toBe(false);
@@ -95,7 +103,7 @@ describe("combined context", () => {
       await can(user, Capabilities.EVENT_UPDATE, { churchId: "c1", eventId: "e1" })
     ).toBe(true);
   });
-  it("runs all provided context checks in parallel", async () => {
+  it("calls all three DB fetchers when all context fields are provided", async () => {
     mockChurch.mockResolvedValue(null);
     mockEvent.mockResolvedValue(null);
     mockSeries.mockResolvedValue({ role: "SERIES_MANAGER" });

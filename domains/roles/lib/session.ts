@@ -1,11 +1,17 @@
 import "server-only";
 import type { Session } from "next-auth";
-import type { RoleClaims } from "./types";
+import { auth } from "@/auth";
+import type { Actor } from "./can";
 
-export function sessionToClaims(session: Session | null): RoleClaims | null {
+export function sessionToActor(session: Session | null): Actor | null {
   if (!session?.user) return null;
   return {
+    id: session.user.id,
     isPlatformAdmin: session.user.isPlatformAdmin ?? false,
-    churchMemberships: session.user.churchMemberships ?? [],
   };
+}
+
+export async function getActor(): Promise<Actor | null> {
+  const session = await auth();
+  return sessionToActor(session);
 }

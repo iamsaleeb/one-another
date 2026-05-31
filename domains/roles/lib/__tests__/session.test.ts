@@ -1,55 +1,43 @@
-jest.mock("server-only", () => ({}));
+jest.mock("@/auth", () => ({ auth: jest.fn() }));
 
-import type { Session } from "next-auth";
-import { sessionToClaims } from "../session";
+import { sessionToActor, getActor } from "../session";
+import { auth } from "@/auth";
 
-describe("sessionToClaims", () => {
+const mockAuth = auth as jest.Mock;
+
+const makeSession = (overrides: object) => ({
+  user: { id: "u1", isPlatformAdmin: false, churchMemberships: [], ...overrides },
+  expires: "2099-01-01",
+});
+
+describe("sessionToActor", () => {
   it("returns null for null session", () => {
-    expect(sessionToClaims(null)).toBeNull();
+    expect(sessionToActor(null)).toBeNull();
   });
 
-  it("returns null when session has no user", () => {
+  it("returns Actor with id and isPlatformAdmin", () => {
     expect(
-      sessionToClaims({ expires: "2026-12-31" } as unknown as Session)
-    ).toBeNull();
+      sessionToActor(makeSession({ id: "u1", isPlatformAdmin: true }) as any)
+    ).toEqual({ id: "u1", isPlatformAdmin: true });
   });
 
-  it("maps isPlatformAdmin and churchMemberships from session", () => {
-    const session: Session = {
-      expires: "2026-12-31",
-      user: {
-        id: "user-1",
-        name: "Test",
-        email: "test@example.com",
-        image: null,
-        isPlatformAdmin: true,
-        churchMemberships: [{ churchId: "c1", role: "CHURCH_ADMIN" }],
-        onboardingCompleted: true,
-        isEmailVerified: true,
-      },
-    };
-    expect(sessionToClaims(session)).toEqual({
-      isPlatformAdmin: true,
-      churchMemberships: [{ churchId: "c1", role: "CHURCH_ADMIN" }],
-    });
+  it("defaults isPlatformAdmin to false when undefined", () => {
+    expect(
+      sessionToActor(makeSession({ id: "u2", isPlatformAdmin: undefined }) as any)
+    ).toEqual({ id: "u2", isPlatformAdmin: false });
+  });
+});
+
+describe("getActor", () => {
+  it("returns null when no session", async () => {
+    mockAuth.mockResolvedValue(null);
+    expect(await getActor()).toBeNull();
   });
 
-  it("defaults isPlatformAdmin to false when not set", () => {
-    const session: Session = {
-      expires: "2026-12-31",
-      user: {
-        id: "user-1",
-        name: "Test",
-        email: "test@example.com",
-        image: null,
-        isPlatformAdmin: false,
-        churchMemberships: [],
-        onboardingCompleted: true,
-        isEmailVerified: true,
-      },
-    };
-    const result = sessionToClaims(session);
-    expect(result?.isPlatformAdmin).toBe(false);
-    expect(result?.churchMemberships).toEqual([]);
+  it("returns Actor from session", async () => {
+    mockAuth.mockResolvedValue(
+      makeSession({ id: "u3", isPlatformAdmin: true })
+    );
+    expect(await getActor()).toEqual({ id: "u3", isPlatformAdmin: true });
   });
 });

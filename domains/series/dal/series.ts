@@ -3,7 +3,7 @@ import "server-only";
 import { prisma } from "@/lib/db";
 import { can } from "@/domains/roles/lib/can";
 import { Capabilities } from "@/domains/roles/lib/capabilities";
-import type { RoleClaims } from "@/domains/roles/lib/types";
+import type { Actor } from "@/domains/roles/lib/can";
 import type { CreateSeriesInput } from "../validations/series";
 
 type DalError = { error: string } | { fieldErrors: Record<string, string[]> };
@@ -11,7 +11,7 @@ type DalError = { error: string } | { fieldErrors: Record<string, string[]> };
 export async function createSeries(
   data: CreateSeriesInput,
   userId: string,
-  claims: RoleClaims
+  actor: Actor
 ): Promise<DalError | { id: string; churchId: string }> {
   const {
     name,
@@ -24,10 +24,7 @@ export async function createSeries(
     photoUrl,
   } = data;
 
-  const allowed = can(claims, Capabilities.SERIES_CREATE, {
-    scope: "CHURCH",
-    churchId,
-  });
+  const allowed = await can(actor, Capabilities.SERIES_CREATE, { churchId });
   if (!allowed) return { error: "Unauthorised." };
 
   const created = await prisma.series.create({
@@ -51,7 +48,7 @@ export async function updateSeries(
   id: string,
   data: CreateSeriesInput,
   userId: string,
-  claims: RoleClaims
+  actor: Actor
 ): Promise<DalError | { oldChurchId: string; newChurchId: string }> {
   const {
     name,
@@ -70,24 +67,14 @@ export async function updateSeries(
   });
   if (!existing) return { error: "Series not found." };
 
-  let allowedOriginal = can(claims, Capabilities.SERIES_UPDATE, {
-    scope: "CHURCH",
+  const allowedOriginal = await can(actor, Capabilities.SERIES_UPDATE, {
     churchId: existing.churchId,
+    seriesId: id,
   });
-  if (!allowedOriginal) {
-    const seriesStaff = await prisma.seriesStaffAssignment.findUnique({
-      where: { userId_seriesId: { userId, seriesId: id } },
-      select: { role: true },
-    });
-    allowedOriginal = seriesStaff?.role === "SERIES_MANAGER";
-  }
   if (!allowedOriginal) return { error: "Unauthorised." };
 
   if (churchId !== existing.churchId) {
-    const allowedNew = can(claims, Capabilities.SERIES_UPDATE, {
-      scope: "CHURCH",
-      churchId,
-    });
+    const allowedNew = await can(actor, Capabilities.SERIES_UPDATE, { churchId });
     if (!allowedNew) return { error: "Unauthorised." };
   }
 

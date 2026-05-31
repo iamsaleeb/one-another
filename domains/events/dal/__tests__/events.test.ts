@@ -24,7 +24,7 @@ jest.mock("@/domains/notifications/queue", () => ({
 }));
 
 jest.mock("@/domains/roles/lib/can", () => ({
-  can: jest.fn().mockReturnValue(true),
+  can: jest.fn().mockResolvedValue(true),
 }));
 
 jest.mock("@/domains/events/questions/dal", () => ({
@@ -59,11 +59,8 @@ describe("notifySeriesFollowers deduplication", () => {
       { userId: "user-2" },
     ]);
 
-    const claims = {
-      isPlatformAdmin: false,
-      churchMemberships: [{ churchId: "ch-1", role: "EVENT_MANAGER" as const }],
-    };
-    await publishEvent("evt-1", "admin-user", claims);
+    const actor = { id: "admin-user", isPlatformAdmin: false };
+    await publishEvent("evt-1", "admin-user", actor);
 
     expect(mockPrisma.notification.createMany).not.toHaveBeenCalled();
     expect(mockQueue.queueNotification).toHaveBeenCalledWith(
@@ -99,11 +96,8 @@ describe("notifyEventAttendees deduplication", () => {
       { userId: "user-4" },
     ]);
 
-    const claims = {
-      isPlatformAdmin: false,
-      churchMemberships: [{ churchId: "ch-1", role: "EVENT_MANAGER" as const }],
-    };
-    await cancelEvent("evt-2", "Venue unavailable", "admin-user", claims);
+    const actor = { id: "admin-user", isPlatformAdmin: false };
+    await cancelEvent("evt-2", "Venue unavailable", "admin-user", actor);
 
     expect(mockPrisma.notification.createMany).not.toHaveBeenCalled();
     expect(mockQueue.queueNotification).toHaveBeenCalledWith(

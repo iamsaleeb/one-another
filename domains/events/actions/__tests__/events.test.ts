@@ -63,7 +63,7 @@ jest.mock("@/auth", () => ({
 }));
 
 jest.mock("@/domains/roles/lib/can", () => ({
-  can: jest.fn().mockReturnValue(true),
+  can: jest.fn().mockResolvedValue(true),
 }));
 
 jest.mock("@/domains/events/questions/dal", () => ({
@@ -154,7 +154,7 @@ beforeEach(() => {
       isEmailVerified: true,
     },
   });
-  mockCan.mockReturnValue(true);
+  mockCan.mockResolvedValue(true);
   mockSeriesFollowerFindMany.mockResolvedValue([]);
   mockEventAttendeeFindMany.mockResolvedValue([]);
   mockEventAttendeeFindUnique.mockResolvedValue(null); // not already registered by default
@@ -284,7 +284,7 @@ describe("createEventAction", () => {
   });
 
   it("returns an error when organiser is not assigned to the church", async () => {
-    mockCan.mockReturnValue(false);
+    mockCan.mockResolvedValue(false);
 
     const result = await createEventAction(validData);
 
@@ -413,6 +413,9 @@ describe("createEventAction", () => {
         isEmailVerified: true,
       },
     });
+    // First can() call: EVENT_CREATE check → allowed
+    // Second can() call: EVENT_UPDATE check → not allowed → triggers auto-assign
+    mockCan.mockResolvedValueOnce(true).mockResolvedValueOnce(false);
     mockEventCreate.mockResolvedValue({ id: "evt-creator" });
     mockStaffCreate.mockResolvedValue({});
 
@@ -470,7 +473,7 @@ describe("cancelEventAction", () => {
 
   it("redirects away when the user cannot manage the church", async () => {
     mockEventFindUnique.mockResolvedValue({ churchId: "ch-1" });
-    mockCan.mockReturnValue(false);
+    mockCan.mockResolvedValue(false);
     mockRedirect.mockImplementationOnce(() => {
       throw new Error("NEXT_REDIRECT");
     });
@@ -778,7 +781,7 @@ describe("updateEventAction", () => {
 
   it("redirects away when the organiser cannot manage the original church", async () => {
     mockEventFindUnique.mockResolvedValue(existingPublished);
-    mockCan.mockReturnValue(false);
+    mockCan.mockResolvedValue(false);
     mockRedirect.mockImplementationOnce(() => {
       throw new Error("NEXT_REDIRECT");
     });
@@ -875,7 +878,7 @@ describe("updateEventAction", () => {
   it("checks new church permission when church changes", async () => {
     mockEventFindUnique.mockResolvedValue(existingPublished);
     // First canManageFromClaims call (original church) returns true, second (new church) returns false
-    mockCan.mockReturnValueOnce(true).mockReturnValueOnce(false);
+    mockCan.mockResolvedValueOnce(true).mockResolvedValueOnce(false);
     mockRedirect.mockImplementationOnce(() => {
       throw new Error("NEXT_REDIRECT");
     });
@@ -965,7 +968,7 @@ describe("deleteEventAction", () => {
 
   it("redirects away when the organiser cannot manage the church", async () => {
     mockEventFindUnique.mockResolvedValue({ churchId: "ch-1" });
-    mockCan.mockReturnValue(false);
+    mockCan.mockResolvedValue(false);
     mockRedirect.mockImplementationOnce(() => {
       throw new Error("NEXT_REDIRECT");
     });
@@ -1075,7 +1078,7 @@ describe("publishEventAction", () => {
       title: "Test",
       isDraft: true,
     });
-    mockCan.mockReturnValue(false);
+    mockCan.mockResolvedValue(false);
 
     const result = await publishEventAction("evt-1");
 
@@ -1267,7 +1270,7 @@ describe("unpublishEventAction", () => {
 
   it("returns an error when the organiser cannot manage the church", async () => {
     mockEventFindUnique.mockResolvedValue({ churchId: "ch-1" });
-    mockCan.mockReturnValue(false);
+    mockCan.mockResolvedValue(false);
 
     const result = await unpublishEventAction("evt-1");
 

@@ -1,34 +1,46 @@
+jest.mock("server-only", () => ({}));
+jest.mock("react", () => ({ cache: (fn: unknown) => fn }));
+jest.mock("@/lib/db", () => ({
+  prisma: {
+    churchMembership: { findUnique: jest.fn() },
+    eventStaffAssignment: { findUnique: jest.fn() },
+    seriesStaffAssignment: { findUnique: jest.fn() },
+  },
+}));
+
 import { churchPolicy } from "../church";
-import type { RoleClaims } from "../../lib/types";
+import type { Actor } from "../../lib/can";
+import { prisma } from "@/lib/db";
 
-const churchAdminClaims: RoleClaims = {
-  isPlatformAdmin: false,
-  churchMemberships: [{ churchId: "c1", role: "CHURCH_ADMIN" }],
-};
+const mockChurch = prisma.churchMembership.findUnique as jest.Mock;
+const user: Actor = { id: "u1", isPlatformAdmin: false };
 
-const eventManagerClaims: RoleClaims = {
-  isPlatformAdmin: false,
-  churchMemberships: [{ churchId: "c1", role: "EVENT_MANAGER" }],
-};
+beforeEach(() => jest.clearAllMocks());
 
 describe("churchPolicy", () => {
-  describe("canManage", () => {
-    it("returns true for CHURCH_ADMIN", () => {
-      expect(churchPolicy.canManage(churchAdminClaims, "c1")).toBe(true);
+  describe("canManageMembers", () => {
+    it("true for CHURCH_ADMIN", async () => {
+      mockChurch.mockResolvedValue({ role: "CHURCH_ADMIN" });
+      expect(await churchPolicy.canManageMembers(user, "c1")).toBe(true);
     });
-    it("returns false for EVENT_MANAGER", () => {
-      expect(churchPolicy.canManage(eventManagerClaims, "c1")).toBe(false);
+    it("false for EVENT_MANAGER", async () => {
+      mockChurch.mockResolvedValue({ role: "EVENT_MANAGER" });
+      expect(await churchPolicy.canManageMembers(user, "c1")).toBe(false);
+    });
+    it("false with no membership", async () => {
+      mockChurch.mockResolvedValue(null);
+      expect(await churchPolicy.canManageMembers(user, "c1")).toBe(false);
     });
   });
 
-  describe("canManageMembers", () => {
-    it("returns true for CHURCH_ADMIN", () => {
-      expect(churchPolicy.canManageMembers(churchAdminClaims, "c1")).toBe(true);
+  describe("canManage", () => {
+    it("true for CHURCH_ADMIN", async () => {
+      mockChurch.mockResolvedValue({ role: "CHURCH_ADMIN" });
+      expect(await churchPolicy.canManage(user, "c1")).toBe(true);
     });
-    it("returns false for EVENT_MANAGER", () => {
-      expect(churchPolicy.canManageMembers(eventManagerClaims, "c1")).toBe(
-        false
-      );
+    it("false for EVENT_MANAGER", async () => {
+      mockChurch.mockResolvedValue({ role: "EVENT_MANAGER" });
+      expect(await churchPolicy.canManage(user, "c1")).toBe(false);
     });
   });
 });

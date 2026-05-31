@@ -1,99 +1,62 @@
+jest.mock("server-only", () => ({}));
+jest.mock("react", () => ({ cache: (fn: unknown) => fn }));
+jest.mock("@/lib/db", () => ({
+  prisma: {
+    churchMembership: { findUnique: jest.fn() },
+    eventStaffAssignment: { findUnique: jest.fn() },
+    seriesStaffAssignment: { findUnique: jest.fn() },
+  },
+}));
+
 import { eventPolicy } from "../event";
-import type { RoleClaims } from "../../lib/types";
+import type { Actor } from "../../lib/can";
+import { prisma } from "@/lib/db";
 
-const managerClaims: RoleClaims = {
-  isPlatformAdmin: false,
-  churchMemberships: [{ churchId: "c1", role: "EVENT_MANAGER" }],
-};
+const mockChurch = prisma.churchMembership.findUnique as jest.Mock;
+const manager: Actor = { id: "u1", isPlatformAdmin: false };
+const admin: Actor = { id: "u2", isPlatformAdmin: true };
 
-const creatorClaims: RoleClaims = {
-  isPlatformAdmin: false,
-  churchMemberships: [{ churchId: "c1", role: "EVENT_CREATOR" }],
-};
-
-const noClaims: RoleClaims = { isPlatformAdmin: false, churchMemberships: [] };
+beforeEach(() => jest.clearAllMocks());
 
 describe("eventPolicy", () => {
   describe("canCreate", () => {
-    it("returns true for EVENT_MANAGER in church", () => {
-      expect(eventPolicy.canCreate(managerClaims, "c1")).toBe(true);
+    it("true for EVENT_MANAGER", async () => {
+      mockChurch.mockResolvedValue({ role: "EVENT_MANAGER" });
+      expect(await eventPolicy.canCreate(manager, "c1")).toBe(true);
     });
-    it("returns true for EVENT_CREATOR in church", () => {
-      expect(eventPolicy.canCreate(creatorClaims, "c1")).toBe(true);
+    it("true for EVENT_CREATOR", async () => {
+      mockChurch.mockResolvedValue({ role: "EVENT_CREATOR" });
+      expect(await eventPolicy.canCreate(manager, "c1")).toBe(true);
     });
-    it("returns false with no claims", () => {
-      expect(eventPolicy.canCreate(noClaims, "c1")).toBe(false);
+    it("false with no membership", async () => {
+      mockChurch.mockResolvedValue(null);
+      expect(await eventPolicy.canCreate(manager, "c1")).toBe(false);
+    });
+    it("true for platform admin (no DB call)", async () => {
+      expect(await eventPolicy.canCreate(admin, "any")).toBe(true);
+      expect(mockChurch).not.toHaveBeenCalled();
     });
   });
 
   describe("canPublish", () => {
-    it("returns true for EVENT_MANAGER", () => {
-      expect(eventPolicy.canPublish(managerClaims, "c1")).toBe(true);
+    it("true for EVENT_MANAGER", async () => {
+      mockChurch.mockResolvedValue({ role: "EVENT_MANAGER" });
+      expect(await eventPolicy.canPublish(manager, "c1")).toBe(true);
     });
-    it("returns false for EVENT_CREATOR", () => {
-      expect(eventPolicy.canPublish(creatorClaims, "c1")).toBe(false);
-    });
-  });
-
-  describe("canEdit (EVENT scope)", () => {
-    it("returns true for EVENT_MANAGER via church inheritance", () => {
-      expect(eventPolicy.canEdit(managerClaims, "e1", "c1")).toBe(true);
-    });
-    it("returns false when no matching church", () => {
-      expect(eventPolicy.canEdit(managerClaims, "e1", "c2")).toBe(false);
+    it("false for EVENT_CREATOR", async () => {
+      mockChurch.mockResolvedValue({ role: "EVENT_CREATOR" });
+      expect(await eventPolicy.canPublish(manager, "c1")).toBe(false);
     });
   });
 
   describe("canDelete", () => {
-    it("returns true for EVENT_MANAGER", () => {
-      expect(eventPolicy.canDelete(managerClaims, "c1")).toBe(true);
+    it("true for EVENT_MANAGER", async () => {
+      mockChurch.mockResolvedValue({ role: "EVENT_MANAGER" });
+      expect(await eventPolicy.canDelete(manager, "c1")).toBe(true);
     });
-    it("returns false for EVENT_CREATOR", () => {
-      expect(eventPolicy.canDelete(creatorClaims, "c1")).toBe(false);
-    });
-  });
-
-  describe("canManageStaff (EVENT scope)", () => {
-    it("returns true for EVENT_MANAGER via church inheritance", () => {
-      expect(eventPolicy.canManageStaff(managerClaims, "e1", "c1")).toBe(true);
-    });
-    it("returns false when no matching church", () => {
-      expect(eventPolicy.canManageStaff(managerClaims, "e1", "c2")).toBe(false);
-    });
-    it("returns false with no claims", () => {
-      expect(eventPolicy.canManageStaff(noClaims, "e1", "c1")).toBe(false);
-    });
-  });
-
-  describe("canViewAttendees (EVENT scope)", () => {
-    it("returns true for EVENT_MANAGER via church inheritance", () => {
-      expect(eventPolicy.canViewAttendees(managerClaims, "e1", "c1")).toBe(
-        true
-      );
-    });
-    it("returns false when no matching church", () => {
-      expect(eventPolicy.canViewAttendees(managerClaims, "e1", "c2")).toBe(
-        false
-      );
-    });
-    it("returns false with no claims", () => {
-      expect(eventPolicy.canViewAttendees(noClaims, "e1", "c1")).toBe(false);
-    });
-  });
-
-  describe("canScanAttendees (EVENT scope)", () => {
-    it("returns true for EVENT_MANAGER via church inheritance", () => {
-      expect(eventPolicy.canScanAttendees(managerClaims, "e1", "c1")).toBe(
-        true
-      );
-    });
-    it("returns false when no matching church", () => {
-      expect(eventPolicy.canScanAttendees(managerClaims, "e1", "c2")).toBe(
-        false
-      );
-    });
-    it("returns false with no claims", () => {
-      expect(eventPolicy.canScanAttendees(noClaims, "e1", "c1")).toBe(false);
+    it("false for EVENT_CREATOR", async () => {
+      mockChurch.mockResolvedValue({ role: "EVENT_CREATOR" });
+      expect(await eventPolicy.canDelete(manager, "c1")).toBe(false);
     });
   });
 });

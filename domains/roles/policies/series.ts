@@ -1,14 +1,14 @@
 import { can } from "../lib/can";
 import { Capabilities } from "../lib/capabilities";
-import type { RoleClaims } from "../lib/types";
+import type { Actor } from "../lib/can";
 
 export const seriesPolicy = {
-  canCreate: (claims: RoleClaims, churchId: string) =>
-    can(claims, Capabilities.SERIES_CREATE, { scope: "CHURCH", churchId }),
-  canUpdate: (claims: RoleClaims, churchId: string) =>
-    can(claims, Capabilities.SERIES_UPDATE, { scope: "CHURCH", churchId }),
-  canDelete: (claims: RoleClaims, churchId: string) =>
-    can(claims, Capabilities.SERIES_DELETE, { scope: "CHURCH", churchId }),
-  canAddSession: (claims: RoleClaims, churchId: string) =>
-    can(claims, Capabilities.EVENT_CREATE, { scope: "CHURCH", churchId }),
+  canCreate: (actor: Actor, churchId: string) =>
+    can(actor, Capabilities.SERIES_CREATE, { churchId }),
+  canUpdate: (actor: Actor, churchId: string) =>
+    can(actor, Capabilities.SERIES_UPDATE, { churchId }),
+  canDelete: (actor: Actor, churchId: string) =>
+    can(actor, Capabilities.SERIES_DELETE, { churchId }),
+  canAddSession: (actor: Actor, churchId: string) =>
+    can(actor, Capabilities.EVENT_CREATE, { churchId }),
 };

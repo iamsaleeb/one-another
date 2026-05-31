@@ -1,13 +1,10 @@
 import { can } from "../lib/can";
 import { Capabilities } from "../lib/capabilities";
-import type { RoleClaims } from "../lib/types";
+import type { Actor } from "../lib/can";
 
 export const churchPolicy = {
-  canManage: (claims: RoleClaims, churchId: string) =>
-    can(claims, Capabilities.CHURCH_MANAGE, { scope: "CHURCH", churchId }),
-  canManageMembers: (claims: RoleClaims, churchId: string) =>
-    can(claims, Capabilities.CHURCH_MANAGE_MEMBERS, {
-      scope: "CHURCH",
-      churchId,
-    }),
+  canManage: (actor: Actor, churchId: string) =>
+    can(actor, Capabilities.CHURCH_MANAGE, { churchId }),
+  canManageMembers: (actor: Actor, churchId: string) =>
+    can(actor, Capabilities.CHURCH_MANAGE_MEMBERS, { churchId }),
 };

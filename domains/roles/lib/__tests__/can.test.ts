@@ -1,179 +1,113 @@
-import { can } from "../can";
+jest.mock("server-only", () => ({}));
+jest.mock("react", () => ({ cache: (fn: unknown) => fn }));
+jest.mock("@/lib/db", () => ({
+  prisma: {
+    churchMembership: { findUnique: jest.fn() },
+    eventStaffAssignment: { findUnique: jest.fn() },
+    seriesStaffAssignment: { findUnique: jest.fn() },
+  },
+}));
+
+import { can, type Actor } from "../can";
 import { Capabilities } from "../capabilities";
-import type { RoleClaims } from "../types";
+import { prisma } from "@/lib/db";
 
-const platformAdminClaims: RoleClaims = {
-  isPlatformAdmin: true,
-  churchMemberships: [],
-};
+const mockChurch = prisma.churchMembership.findUnique as jest.Mock;
+const mockEvent = prisma.eventStaffAssignment.findUnique as jest.Mock;
+const mockSeries = prisma.seriesStaffAssignment.findUnique as jest.Mock;
 
-const churchAdminClaims: RoleClaims = {
-  isPlatformAdmin: false,
-  churchMemberships: [{ churchId: "church-1", role: "CHURCH_ADMIN" }],
-};
+const admin: Actor = { id: "a1", isPlatformAdmin: true };
+const user: Actor = { id: "u1", isPlatformAdmin: false };
 
-const eventManagerClaims: RoleClaims = {
-  isPlatformAdmin: false,
-  churchMemberships: [{ churchId: "church-1", role: "EVENT_MANAGER" }],
-};
+beforeEach(() => jest.clearAllMocks());
 
-const eventCreatorClaims: RoleClaims = {
-  isPlatformAdmin: false,
-  churchMemberships: [{ churchId: "church-1", role: "EVENT_CREATOR" }],
-};
-
-const noClaims: RoleClaims = {
-  isPlatformAdmin: false,
-  churchMemberships: [],
-};
-
-describe("can", () => {
-  describe("platform admin shortcircuit", () => {
-    it("returns true for any capability in any context", () => {
-      expect(
-        can(platformAdminClaims, Capabilities.CHURCH_MANAGE, {
-          scope: "CHURCH",
-          churchId: "church-1",
-        })
-      ).toBe(true);
-      expect(
-        can(platformAdminClaims, Capabilities.EVENT_CREATE, {
-          scope: "CHURCH",
-          churchId: "any",
-        })
-      ).toBe(true);
-      expect(
-        can(platformAdminClaims, Capabilities.PLATFORM_ADMIN, {
-          scope: "PLATFORM",
-        })
-      ).toBe(true);
-    });
+describe("platform admin", () => {
+  it("returns true for any capability without DB call", async () => {
+    expect(await can(admin, Capabilities.EVENT_CREATE, {})).toBe(true);
+    expect(mockChurch).not.toHaveBeenCalled();
   });
+});
 
-  describe("PLATFORM scope", () => {
-    it("returns false for non-platform-admin", () => {
-      expect(
-        can(churchAdminClaims, Capabilities.PLATFORM_ADMIN, {
-          scope: "PLATFORM",
-        })
-      ).toBe(false);
-      expect(
-        can(noClaims, Capabilities.PLATFORM_ADMIN, { scope: "PLATFORM" })
-      ).toBe(false);
-    });
+describe("empty context", () => {
+  it("returns false when no context fields provided", async () => {
+    expect(await can(user, Capabilities.EVENT_CREATE, {})).toBe(false);
   });
+});
 
-  describe("CHURCH scope", () => {
-    it("returns true when CHURCH_ADMIN has church:manage", () => {
-      expect(
-        can(churchAdminClaims, Capabilities.CHURCH_MANAGE, {
-          scope: "CHURCH",
-          churchId: "church-1",
-        })
-      ).toBe(true);
-    });
-    it("returns true when CHURCH_ADMIN has church:manage_members", () => {
-      expect(
-        can(churchAdminClaims, Capabilities.CHURCH_MANAGE_MEMBERS, {
-          scope: "CHURCH",
-          churchId: "church-1",
-        })
-      ).toBe(true);
-    });
-    it("returns false when checking a different church", () => {
-      expect(
-        can(churchAdminClaims, Capabilities.CHURCH_MANAGE, {
-          scope: "CHURCH",
-          churchId: "church-2",
-        })
-      ).toBe(false);
-    });
-    it("returns false when EVENT_CREATOR checks church:manage", () => {
-      expect(
-        can(eventCreatorClaims, Capabilities.CHURCH_MANAGE, {
-          scope: "CHURCH",
-          churchId: "church-1",
-        })
-      ).toBe(false);
-    });
-    it("returns true when EVENT_MANAGER checks event:create", () => {
-      expect(
-        can(eventManagerClaims, Capabilities.EVENT_CREATE, {
-          scope: "CHURCH",
-          churchId: "church-1",
-        })
-      ).toBe(true);
-    });
-    it("returns true when EVENT_CREATOR checks event:create", () => {
-      expect(
-        can(eventCreatorClaims, Capabilities.EVENT_CREATE, {
-          scope: "CHURCH",
-          churchId: "church-1",
-        })
-      ).toBe(true);
-    });
-    it("returns false when EVENT_CREATOR checks event:publish", () => {
-      expect(
-        can(eventCreatorClaims, Capabilities.EVENT_PUBLISH, {
-          scope: "CHURCH",
-          churchId: "church-1",
-        })
-      ).toBe(false);
-    });
-    it("returns false when EVENT_CREATOR checks event:update at church scope", () => {
-      expect(
-        can(eventCreatorClaims, Capabilities.EVENT_UPDATE, {
-          scope: "CHURCH",
-          churchId: "church-1",
-        })
-      ).toBe(false);
-    });
-    it("returns false with no memberships", () => {
-      expect(
-        can(noClaims, Capabilities.EVENT_CREATE, {
-          scope: "CHURCH",
-          churchId: "church-1",
-        })
-      ).toBe(false);
-    });
+describe("church membership", () => {
+  it("true: CHURCH_ADMIN checks church:manage", async () => {
+    mockChurch.mockResolvedValue({ role: "CHURCH_ADMIN" });
+    expect(await can(user, Capabilities.CHURCH_MANAGE, { churchId: "c1" })).toBe(true);
   });
+  it("true: EVENT_MANAGER checks event:update", async () => {
+    mockChurch.mockResolvedValue({ role: "EVENT_MANAGER" });
+    expect(await can(user, Capabilities.EVENT_UPDATE, { churchId: "c1" })).toBe(true);
+  });
+  it("false: EVENT_CREATOR checks event:update", async () => {
+    mockChurch.mockResolvedValue({ role: "EVENT_CREATOR" });
+    expect(await can(user, Capabilities.EVENT_UPDATE, { churchId: "c1" })).toBe(false);
+  });
+  it("false: no membership", async () => {
+    mockChurch.mockResolvedValue(null);
+    expect(await can(user, Capabilities.EVENT_CREATE, { churchId: "c1" })).toBe(false);
+  });
+});
 
-  describe("EVENT scope", () => {
-    it("returns true via church membership inheritance for CHURCH_ADMIN", () => {
-      expect(
-        can(churchAdminClaims, Capabilities.EVENT_UPDATE, {
-          scope: "EVENT",
-          eventId: "event-1",
-          churchId: "church-1",
-        })
-      ).toBe(true);
-    });
-    it("returns true via church membership inheritance for EVENT_MANAGER", () => {
-      expect(
-        can(eventManagerClaims, Capabilities.EVENT_UPDATE, {
-          scope: "EVENT",
-          eventId: "event-1",
-          churchId: "church-1",
-        })
-      ).toBe(true);
-    });
-    it("returns false when no church membership matches (event staff not in claims)", () => {
-      expect(
-        can(noClaims, Capabilities.EVENT_UPDATE, {
-          scope: "EVENT",
-          eventId: "event-1",
-          churchId: "church-1",
-        })
-      ).toBe(false);
-    });
-    it("returns false when church membership is for a different church", () => {
-      expect(
-        can(churchAdminClaims, Capabilities.EVENT_UPDATE, {
-          scope: "EVENT",
-          eventId: "event-1",
-          churchId: "church-2",
-        })
-      ).toBe(false);
-    });
+describe("event staff", () => {
+  it("true: EVENT_MANAGER staff checks event:update", async () => {
+    mockEvent.mockResolvedValue({ role: "EVENT_MANAGER" });
+    expect(await can(user, Capabilities.EVENT_UPDATE, { eventId: "e1" })).toBe(true);
+  });
+  it("true: EVENT_MANAGER staff checks event:view_attendees", async () => {
+    mockEvent.mockResolvedValue({ role: "EVENT_MANAGER" });
+    expect(await can(user, Capabilities.EVENT_VIEW_ATTENDEES, { eventId: "e1" })).toBe(true);
+  });
+  it("false: EVENT_EDITOR staff checks event:manage_staff", async () => {
+    mockEvent.mockResolvedValue({ role: "EVENT_EDITOR" });
+    expect(await can(user, Capabilities.EVENT_MANAGE_STAFF, { eventId: "e1" })).toBe(false);
+  });
+  it("false: no event staff row", async () => {
+    mockEvent.mockResolvedValue(null);
+    expect(await can(user, Capabilities.EVENT_UPDATE, { eventId: "e1" })).toBe(false);
+  });
+});
+
+describe("series staff", () => {
+  it("true: SERIES_MANAGER checks series:update", async () => {
+    mockSeries.mockResolvedValue({ role: "SERIES_MANAGER" });
+    expect(await can(user, Capabilities.SERIES_UPDATE, { seriesId: "s1" })).toBe(true);
+  });
+  it("true: SERIES_MANAGER checks event:create", async () => {
+    mockSeries.mockResolvedValue({ role: "SERIES_MANAGER" });
+    expect(await can(user, Capabilities.EVENT_CREATE, { seriesId: "s1" })).toBe(true);
+  });
+  it("false: SERIES_SESSION_CREATOR checks series:update", async () => {
+    mockSeries.mockResolvedValue({ role: "SERIES_SESSION_CREATOR" });
+    expect(await can(user, Capabilities.SERIES_UPDATE, { seriesId: "s1" })).toBe(false);
+  });
+});
+
+describe("combined context", () => {
+  it("true via event staff when church membership missing", async () => {
+    mockChurch.mockResolvedValue(null);
+    mockEvent.mockResolvedValue({ role: "EVENT_MANAGER" });
+    expect(
+      await can(user, Capabilities.EVENT_UPDATE, { churchId: "c1", eventId: "e1" })
+    ).toBe(true);
+  });
+  it("runs all provided context checks in parallel", async () => {
+    mockChurch.mockResolvedValue(null);
+    mockEvent.mockResolvedValue(null);
+    mockSeries.mockResolvedValue({ role: "SERIES_MANAGER" });
+    expect(
+      await can(user, Capabilities.EVENT_CREATE, {
+        churchId: "c1",
+        eventId: "e1",
+        seriesId: "s1",
+      })
+    ).toBe(true);
+    expect(mockChurch).toHaveBeenCalledTimes(1);
+    expect(mockEvent).toHaveBeenCalledTimes(1);
+    expect(mockSeries).toHaveBeenCalledTimes(1);
   });
 });

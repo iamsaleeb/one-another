@@ -58,6 +58,7 @@ export async function generateMetadata({ params }: Props) {
       !actor ||
       !(await can(actor, Capabilities.EVENT_UPDATE, {
         churchId: event.churchId ?? "",
+        eventId: id,
       }))
     )
       return { title: "Event Not Found" };

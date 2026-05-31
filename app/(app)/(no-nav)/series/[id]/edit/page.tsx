@@ -28,7 +28,9 @@ export default async function EditSeriesPage({ params }: Props) {
     }));
   if (!canAccess) notFound();
 
-  // UI: church dropdown — filter by role using JWT memberships
+  // UI: church dropdown — filter JWT memberships to roles that have SERIES_UPDATE
+  // (CHURCH_ADMIN and EVENT_MANAGER). Slightly stale is acceptable for UI only;
+  // the actual auth decision above uses the DB via can().
   const churchMemberships = session.user.churchMemberships ?? [];
   const editableChurchIds = churchMemberships
     .filter((m) => m.role === "CHURCH_ADMIN" || m.role === "EVENT_MANAGER")

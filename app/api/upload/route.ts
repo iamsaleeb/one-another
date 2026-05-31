@@ -23,6 +23,10 @@ export async function POST(request: Request): Promise<NextResponse> {
               : "profile";
 
         if (variant === "cover") {
+          // Coarse gate: any church member can upload covers (they need them for
+          // event/series creation). Specific event permission is enforced by the
+          // action that saves the URL. JWT memberships used intentionally here —
+          // this is a UI-level upload gate, not a capability-based auth decision.
           const memberships = session.user.churchMemberships ?? [];
           if (!session.user.isPlatformAdmin && memberships.length === 0) {
             throw new Error("Forbidden");

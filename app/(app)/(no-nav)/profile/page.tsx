@@ -33,6 +33,16 @@ export default async function ProfilePage() {
 
   const dbUser = user?.id ? await getProfileUser(user.id) : null;
 
+  const memberships = user?.churchMemberships ?? [];
+  let badgeRole: RoleBadgeRole | null = null;
+  if (user?.isPlatformAdmin) badgeRole = "PLATFORM_ADMIN";
+  else if (memberships.some((m) => m.role === "CHURCH_ADMIN"))
+    badgeRole = "CHURCH_ADMIN";
+  else if (memberships.some((m) => m.role === "EVENT_MANAGER"))
+    badgeRole = "EVENT_MANAGER";
+  else if (memberships.some((m) => m.role === "EVENT_CREATOR"))
+    badgeRole = "EVENT_CREATOR";
+
   return (
     <div className="bg-background">
       <div className="flex flex-col gap-4 px-4 pt-6 pb-28">
@@ -51,18 +61,7 @@ export default async function ProfilePage() {
             <p className="text-muted-foreground truncate text-sm">
               {user?.email}
             </p>
-            {(() => {
-              const memberships = user?.churchMemberships ?? [];
-              let badgeRole: RoleBadgeRole | null = null;
-              if (user?.isPlatformAdmin) badgeRole = "PLATFORM_ADMIN";
-              else if (memberships.some((m) => m.role === "CHURCH_ADMIN"))
-                badgeRole = "CHURCH_ADMIN";
-              else if (memberships.some((m) => m.role === "EVENT_MANAGER"))
-                badgeRole = "EVENT_MANAGER";
-              else if (memberships.some((m) => m.role === "EVENT_CREATOR"))
-                badgeRole = "EVENT_CREATOR";
-              return badgeRole ? <RoleBadge role={badgeRole} /> : null;
-            })()}
+            {badgeRole && <RoleBadge role={badgeRole} />}
           </div>
         </div>
 

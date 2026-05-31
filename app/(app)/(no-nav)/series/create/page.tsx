@@ -3,18 +3,23 @@ import { auth } from "@/auth";
 import { CreateSeriesForm } from "./_components/create-series-form";
 import { PageHeader } from "@/components/ui/page-header";
 import { getChurches, getChurchesByIds } from "@/domains/churches/actions/data";
-import { sessionToClaims } from "@/domains/roles/lib/session";
+import { sessionToActor } from "@/domains/roles/lib/session";
 import { seriesPolicy } from "@/domains/roles/policies/series";
 
 export default async function CreateSeriesPage() {
   const session = await auth();
   if (!session) redirect("/");
 
-  const claims = sessionToClaims(session);
+  const actor = sessionToActor(session);
   const churchMemberships = session.user.churchMemberships ?? [];
-  const eligibleIds = churchMemberships
-    .filter((m) => claims && seriesPolicy.canCreate(claims, m.churchId))
-    .map((m) => m.churchId);
+  const eligibleIds = (
+    await Promise.all(
+      churchMemberships.map(async (m) => {
+        const allowed = actor && (await seriesPolicy.canCreate(actor, m.churchId));
+        return allowed ? m.churchId : null;
+      })
+    )
+  ).filter((id): id is string => id !== null);
 
   if (!session.user.isPlatformAdmin && eligibleIds.length === 0) redirect("/");
 

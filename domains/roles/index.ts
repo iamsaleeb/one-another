@@ -14,11 +14,8 @@ export { seriesPolicy } from "./policies/series";
 
 // Core permission API
 export { can } from "./lib/can";
-export { sessionToClaims } from "./lib/session";
-export {
-  requireCapability,
-  requireCapabilityAsync,
-} from "./lib/require-capability";
+export { sessionToActor, getActor } from "./lib/session";
 export { Capabilities } from "./lib/capabilities";
 export type { Capability } from "./lib/capabilities";
-export type { ScopeContext, RoleClaims, RoleActionState } from "./lib/types";
+export type { Actor, AuthContext } from "./lib/can";
+export type { RoleActionState } from "./lib/types";

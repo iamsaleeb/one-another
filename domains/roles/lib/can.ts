@@ -54,7 +54,7 @@ export async function can(
       getChurchMembership(actor.id, context.churchId).then(
         (m) =>
           !!m &&
-          CHURCH_ROLE_CAPABILITIES[m.role].includes(capability)
+          (CHURCH_ROLE_CAPABILITIES[m.role] as Capability[]).includes(capability)
       )
     );
   }
@@ -64,7 +64,7 @@ export async function can(
       getEventStaff(actor.id, context.eventId).then(
         (s) =>
           !!s &&
-          EVENT_ROLE_CAPABILITIES[s.role].includes(capability)
+          (EVENT_ROLE_CAPABILITIES[s.role] as Capability[]).includes(capability)
       )
     );
   }
@@ -74,7 +74,7 @@ export async function can(
       getSeriesStaff(actor.id, context.seriesId).then(
         (s) =>
           !!s &&
-          SERIES_ROLE_CAPABILITIES[s.role].includes(capability)
+          (SERIES_ROLE_CAPABILITIES[s.role] as Capability[]).includes(capability)
       )
     );
   }

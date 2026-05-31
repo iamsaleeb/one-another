@@ -7,8 +7,7 @@ import {
   hasEventResponses,
 } from "@/domains/events/questions/actions";
 import { getQuestionLibraryForUser } from "@/domains/events/questions/dal";
-import { getEventStaffForUser } from "@/domains/roles/dal/event-staff";
-import { sessionToClaims } from "@/domains/roles/lib/session";
+import { sessionToActor } from "@/domains/roles/lib/session";
 import { can } from "@/domains/roles/lib/can";
 import { Capabilities } from "@/domains/roles/lib/capabilities";
 import { parseEventMetadata } from "@/domains/events/validations/event";
@@ -26,41 +25,34 @@ export default async function EditEventPage({ params }: Props) {
   if (!session) redirect("/");
   if (!event) notFound();
 
-  const claims = sessionToClaims(session);
+  const actor = sessionToActor(session);
+
+  // Access check — can this user edit this specific event?
+  const canAccess =
+    !!actor &&
+    (await can(actor, Capabilities.EVENT_UPDATE, {
+      churchId: event.churchId ?? "",
+      eventId: id,
+    }));
+  if (!canAccess) notFound();
+
+  // UI: which churches to show in the church-change dropdown
+  // Use JWT memberships (acceptable slight staleness for UI only)
   const churchMemberships = session.user.churchMemberships ?? [];
-  // Only churches where user has event:update — excludes EVENT_CREATOR
   const editableChurchIds = churchMemberships
-    .filter(
-      (m) =>
-        claims &&
-        can(claims, Capabilities.EVENT_UPDATE, {
-          scope: "CHURCH",
-          churchId: m.churchId,
-        })
-    )
+    .filter((m) => m.role === "CHURCH_ADMIN" || m.role === "EVENT_MANAGER")
     .map((m) => m.churchId);
 
-  const [churchesFromMemberships, questions, libraryItems, questionsLocked] =
-    await Promise.all([
-      getChurchesByIds(editableChurchIds),
-      getEventQuestions(id),
-      getQuestionLibraryForUser(session.user.id),
-      hasEventResponses(id),
-    ]);
-
-  let churches = churchesFromMemberships;
-  if (!churches.some((c) => c.id === event.churchId)) {
-    if (!session.user.isPlatformAdmin) {
-      const staff = await getEventStaffForUser(session.user.id, id);
-      if (!staff) notFound();
-    }
-    // Platform admins and event staff are limited to the event's own church
-    if (event.church) {
-      churches = [event.church];
-    } else {
-      notFound();
-    }
-  }
+  const [churches, questions, libraryItems, questionsLocked] = await Promise.all([
+    editableChurchIds.length > 0
+      ? getChurchesByIds(editableChurchIds)
+      : event.church
+        ? Promise.resolve([event.church])
+        : Promise.resolve([]),
+    getEventQuestions(id),
+    getQuestionLibraryForUser(session.user.id),
+    hasEventResponses(id),
+  ]);
 
   const datetimeISO = event.datetime?.toISOString() ?? "";
   const { registration, camp } = parseEventMetadata(event.metadata);

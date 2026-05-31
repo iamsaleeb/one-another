@@ -29,10 +29,9 @@ import {
   parseEventMetadata,
   parseEventAttendeeMetadata,
 } from "@/domains/events/validations/event";
-import { sessionToClaims } from "@/domains/roles/lib/session";
+import { sessionToActor } from "@/domains/roles/lib/session";
 import { can } from "@/domains/roles/lib/can";
 import { Capabilities } from "@/domains/roles/lib/capabilities";
-import { getEventStaffForUser } from "@/domains/roles/dal/event-staff";
 import { EventDatetime } from "@/domains/events/components/event-datetime";
 import { formatDateOnly, parseDateOfBirth } from "@/lib/datetime";
 import { InfoField } from "@/components/ui/info-field";
@@ -54,13 +53,10 @@ export async function generateMetadata({ params }: Props) {
   if (!event) return { title: "Event Not Found" };
   if (event.isDraft) {
     const session = await auth();
-    const claims = sessionToClaims(session);
+    const actor = sessionToActor(session);
     if (
-      !claims ||
-      !can(claims, Capabilities.EVENT_UPDATE, {
-        scope: "CHURCH",
-        churchId: event.churchId ?? "",
-      })
+      !actor ||
+      !(await can(actor, Capabilities.EVENT_UPDATE, { churchId: event.churchId ?? "" }))
     )
       return { title: "Event Not Found" };
   }
@@ -95,31 +91,16 @@ export default async function EventDetailPage({ params }: Props) {
 
   const isAttending = myAttendance !== null;
 
-  const claims = sessionToClaims(session);
+  const actor = sessionToActor(session);
   const churchId = event.churchId ?? "";
 
-  const canEditFromChurch =
-    !!claims &&
-    can(claims, Capabilities.EVENT_UPDATE, { scope: "CHURCH", churchId });
-  const canDeleteFromChurch =
-    !!claims &&
-    can(claims, Capabilities.EVENT_DELETE, { scope: "CHURCH", churchId });
-  const canViewAttendeesFromChurch =
-    !!claims &&
-    can(claims, Capabilities.EVENT_VIEW_ATTENDEES, {
-      scope: "CHURCH",
-      churchId,
-    });
-
-  const eventStaff =
-    !canEditFromChurch && session?.user?.id
-      ? await getEventStaffForUser(session.user.id, id)
-      : null;
-
-  const canEdit = canEditFromChurch || !!eventStaff;
-  const canDelete = canDeleteFromChurch;
-  const canViewAttendees =
-    canViewAttendeesFromChurch || eventStaff?.role === "EVENT_MANAGER";
+  const [canEdit, canDelete, canViewAttendees] = actor
+    ? await Promise.all([
+        can(actor, Capabilities.EVENT_UPDATE, { churchId, eventId: id }),
+        can(actor, Capabilities.EVENT_DELETE, { churchId }),
+        can(actor, Capabilities.EVENT_VIEW_ATTENDEES, { churchId, eventId: id }),
+      ])
+    : [false, false, false];
 
   const questions = await getEventQuestions(id);
 

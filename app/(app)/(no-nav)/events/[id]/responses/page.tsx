@@ -2,10 +2,9 @@ import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { getEventById } from "@/domains/events/actions/data";
 import { getEventResponses } from "@/domains/events/questions/actions";
-import { sessionToClaims } from "@/domains/roles/lib/session";
+import { sessionToActor } from "@/domains/roles/lib/session";
 import { can } from "@/domains/roles/lib/can";
 import { Capabilities } from "@/domains/roles/lib/capabilities";
-import { getEventStaffForUser } from "@/domains/roles/dal/event-staff";
 import { PageHeader } from "@/components/ui/page-header";
 import { ResponsesTable } from "./_components/responses-table";
 
@@ -25,20 +24,13 @@ export default async function EventResponsesPage({ params }: Props) {
   const event = await getEventById(id);
   if (!event) notFound();
 
-  const claims = sessionToClaims(session);
-  const canViewAttendeesFromChurch =
-    !!claims &&
-    can(claims, Capabilities.EVENT_VIEW_ATTENDEES, {
-      scope: "CHURCH",
-      churchId: event.churchId ?? "",
-    });
-
-  // EVENT_MANAGER event staff also have event:view_attendees; EVENT_EDITOR does not
+  const actor = sessionToActor(session);
   const canViewAttendees =
-    canViewAttendeesFromChurch ||
-    (!!session?.user?.id &&
-      (await getEventStaffForUser(session.user.id, id))?.role ===
-        "EVENT_MANAGER");
+    !!actor &&
+    (await can(actor, Capabilities.EVENT_VIEW_ATTENDEES, {
+      churchId: event.churchId ?? "",
+      eventId: id,
+    }));
 
   if (!canViewAttendees) redirect(`/events/${id}`);
 

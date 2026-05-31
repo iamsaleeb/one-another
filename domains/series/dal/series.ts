@@ -98,7 +98,7 @@ export async function updateSeries(
 export async function deleteSeries(
   id: string,
   userId: string,
-  claims: RoleClaims
+  actor: Actor
 ): Promise<{ error: string } | { churchId: string }> {
   const series = await prisma.series.findUnique({
     where: { id },
@@ -106,8 +106,7 @@ export async function deleteSeries(
   });
   if (!series) return { error: "Series not found." };
 
-  const allowed = can(claims, Capabilities.SERIES_DELETE, {
-    scope: "CHURCH",
+  const allowed = await can(actor, Capabilities.SERIES_DELETE, {
     churchId: series.churchId,
   });
   if (!allowed) return { error: "Unauthorised." };

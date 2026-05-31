@@ -306,17 +306,20 @@ git commit -m "refactor(rbac): async can() — DB-backed authorization engine wi
 
 ---
 
-## Task 2: Session helper — `sessionToActor`
+## Task 2: Session helper — `sessionToActor` + `getActor`
 
 **Files:**
 - Rewrite: `domains/roles/lib/session.ts`
 - Rewrite: `domains/roles/lib/__tests__/session.test.ts`
+
+`sessionToActor` converts an existing session object. `getActor` is the convenience helper used in every action and page — it calls `auth()` internally so callers avoid the two-call boilerplate.
 
 - [ ] **Step 1: Rewrite `domains/roles/lib/session.ts`**
 
 ```ts
 import "server-only";
 import type { Session } from "next-auth";
+import { auth } from "@/auth";
 import type { Actor } from "./can";
 
 export function sessionToActor(session: Session | null): Actor | null {
@@ -326,12 +329,22 @@ export function sessionToActor(session: Session | null): Actor | null {
     isPlatformAdmin: session.user.isPlatformAdmin ?? false,
   };
 }
+
+export async function getActor(): Promise<Actor | null> {
+  const session = await auth();
+  return sessionToActor(session);
+}
 ```
 
 - [ ] **Step 2: Rewrite `domains/roles/lib/__tests__/session.test.ts`**
 
 ```ts
-import { sessionToActor } from "../session";
+jest.mock("@/auth", () => ({ auth: jest.fn() }));
+
+import { sessionToActor, getActor } from "../session";
+import { auth } from "@/auth";
+
+const mockAuth = auth as jest.Mock;
 
 const makeSession = (overrides: object) => ({
   user: { id: "u1", isPlatformAdmin: false, churchMemberships: [], ...overrides },
@@ -344,16 +357,29 @@ describe("sessionToActor", () => {
   });
 
   it("returns Actor with id and isPlatformAdmin", () => {
-    expect(sessionToActor(makeSession({ id: "u1", isPlatformAdmin: true }) as any)).toEqual({
-      id: "u1",
-      isPlatformAdmin: true,
-    });
+    expect(
+      sessionToActor(makeSession({ id: "u1", isPlatformAdmin: true }) as any)
+    ).toEqual({ id: "u1", isPlatformAdmin: true });
   });
 
   it("defaults isPlatformAdmin to false when undefined", () => {
     expect(
       sessionToActor(makeSession({ id: "u2", isPlatformAdmin: undefined }) as any)
     ).toEqual({ id: "u2", isPlatformAdmin: false });
+  });
+});
+
+describe("getActor", () => {
+  it("returns null when no session", async () => {
+    mockAuth.mockResolvedValue(null);
+    expect(await getActor()).toBeNull();
+  });
+
+  it("returns Actor from session", async () => {
+    mockAuth.mockResolvedValue(
+      makeSession({ id: "u3", isPlatformAdmin: true })
+    );
+    expect(await getActor()).toEqual({ id: "u3", isPlatformAdmin: true });
   });
 });
 ```
@@ -364,13 +390,13 @@ describe("sessionToActor", () => {
 npx jest domains/roles/lib/__tests__/session.test.ts
 ```
 
-Expected: 3 pass
+Expected: 5 pass
 
 - [ ] **Step 4: Commit**
 
 ```bash
 git add domains/roles/lib/session.ts domains/roles/lib/__tests__/session.test.ts
-git commit -m "refactor(rbac): sessionToActor replaces sessionToClaims"
+git commit -m "refactor(rbac): sessionToActor + getActor replace sessionToClaims"
 ```
 
 ---
@@ -899,35 +925,39 @@ git commit -m "refactor(rbac): series DAL uses Actor + async can()"
 
 - [ ] **Step 1: Update `domains/events/actions/crud.ts`**
 
-Replace `sessionToClaims` with `sessionToActor` throughout. Pass `actor` (not `claims`) to all DAL calls.
+Replace `sessionToClaims` with `getActor` throughout. Remove `auth()` calls — `getActor()` handles them internally. Pass `actor` (not `claims`) to all DAL calls.
 
 Replace import:
 ```ts
-import { sessionToActor } from "@/domains/roles/lib/session";
+import { getActor } from "@/domains/roles/lib/session";
 ```
+
+Remove `auth` and `sessionToClaims` imports.
 
 In each action function, change:
 ```ts
 // Old
+const session = await auth();
+if (!session) return { error: "Unauthorised." };
 const claims = sessionToClaims(session);
 if (!claims) return { error: "Unauthorised." };
-// ...
 const result = await createEvent(parsed.data, session.user.id, claims);
 
 // New
-const actor = sessionToActor(session);
+const actor = await getActor();
 if (!actor) return { error: "Unauthorised." };
-// ...
-const result = await createEvent(parsed.data, session.user.id, actor);
+const result = await createEvent(parsed.data, actor.id, actor);
 ```
 
 Apply to all actions: `createEventAction`, `updateEventAction`, `cancelEventAction`, `uncancelEventAction`, `publishEventAction`, `unpublishEventAction`, `deleteEventAction`.
 
-For actions that use `redirect("/")` on no session (not return), the pattern is:
+For actions that previously used `redirect("/")` on no session:
 ```ts
-const actor = sessionToActor(session);
+const actor = await getActor();
 if (!actor) redirect("/");
 ```
+
+Note: `session.user.id` references become `actor.id`.
 
 - [ ] **Step 2: Update `domains/events/actions/__tests__/events.test.ts`**
 
@@ -990,18 +1020,15 @@ git commit -m "refactor(rbac): event actions use sessionToActor + Actor"
 
 - [ ] **Step 1: Update `domains/roles/actions/event-staff.ts`**
 
-Replace `sessionToClaims` with `sessionToActor`. The church-level check in `assignEventRoleAction` and `removeEventStaffAction` currently does `can(claims, EVENT_MANAGE_STAFF, { scope: "CHURCH", churchId })` then checks event staff if false. With the new `can()`, pass both `churchId` and `eventId`:
+Replace `sessionToClaims` with `getActor`. The church-level check in `assignEventRoleAction` and `removeEventStaffAction` currently does `can(claims, EVENT_MANAGE_STAFF, { scope: "CHURCH", churchId })` then checks event staff if false. With the new `can()`, pass both `churchId` and `eventId`:
 
 ```ts
-import { sessionToActor } from "@/domains/roles/lib/session";
-import type { Actor } from "@/domains/roles/lib/can";
+import { getActor } from "@/domains/roles/lib/session";
 
-// Remove sessionToClaims import
+// Remove auth, sessionToClaims imports
 
 export async function assignEventRoleAction(input: unknown): Promise<RoleActionState> {
-  const session = await auth();
-  if (!session) return { error: "Unauthorised." };
-  const actor = sessionToActor(session);
+  const actor = await getActor();
   if (!actor) return { error: "Unauthorised." };
 
   const parsed = AssignEventRoleSchema.safeParse(input);
@@ -1017,14 +1044,12 @@ export async function assignEventRoleAction(input: unknown): Promise<RoleActionS
   });
   if (!allowed) return { error: "Unauthorised." };
 
-  await upsertEventStaff(userId, eventId, role, session.user.id);
+  await upsertEventStaff(userId, eventId, role, actor.id);
   return { success: "Staff role assigned." };
 }
 
 export async function removeEventStaffAction(input: unknown): Promise<RoleActionState> {
-  const session = await auth();
-  if (!session) return { error: "Unauthorised." };
-  const actor = sessionToActor(session);
+  const actor = await getActor();
   if (!actor) return { error: "Unauthorised." };
 
   const parsed = RemoveEventStaffSchema.safeParse(input);
@@ -1049,13 +1074,13 @@ Remove the `prisma.eventStaffAssignment.findUnique` fallback — the new `can()`
 
 - [ ] **Step 2: Update `domains/roles/actions/series-staff.ts`**
 
-Replace `sessionToClaims` with `sessionToActor`. Replace `can(claims, ...)` with `await can(actor, ...)`:
+Replace `sessionToClaims` with `getActor`. Replace `can(claims, ...)` with `await can(actor, ...)`:
 
 ```ts
-import { sessionToActor } from "@/domains/roles/lib/session";
+import { getActor } from "@/domains/roles/lib/session";
 
 // In assignSeriesRoleAction and removeSeriesStaffAction:
-const actor = sessionToActor(session);
+const actor = await getActor();
 if (!actor) return { error: "Unauthorised." };
 
 // Auth check (series has churchId from DB lookup):
@@ -1066,11 +1091,10 @@ if (!allowed) return { error: "Unauthorised." };
 - [ ] **Step 3: Update `domains/roles/actions/church-memberships.ts`**
 
 ```ts
-import { sessionToActor } from "@/domains/roles/lib/session";
+import { getActor } from "@/domains/roles/lib/session";
 
-// Replace sessionToClaims → sessionToActor
-// churchPolicy.canManageMembers is now async:
-const actor = sessionToActor(session);
+// Remove auth, sessionToClaims imports
+const actor = await getActor();
 if (!actor) return { error: "Unauthorised." };
 
 if (!await churchPolicy.canManageMembers(actor, churchId))
@@ -1080,11 +1104,10 @@ if (!await churchPolicy.canManageMembers(actor, churchId))
 - [ ] **Step 4: Update `domains/roles/actions/platform-roles.ts`**
 
 ```ts
-import { sessionToActor } from "@/domains/roles/lib/session";
+import { getActor } from "@/domains/roles/lib/session";
 
-// Replace sessionToClaims → sessionToActor
-// isPlatformAdmin check stays the same (reads from actor):
-const actor = sessionToActor(session);
+// Remove auth, sessionToClaims imports
+const actor = await getActor();
 if (!actor) return { error: "Unauthorised." };
 if (!actor.isPlatformAdmin) return { error: "Unauthorised." };
 ```
@@ -1191,11 +1214,11 @@ git commit -m "refactor(rbac): roles actions use sessionToActor + async can()"
 - [ ] **Step 1: Update `domains/admin/actions/admin.ts`**
 
 ```ts
-import { sessionToActor } from "@/domains/roles/lib/session";
-// Remove sessionToClaims import
+import { getActor } from "@/domains/roles/lib/session";
+// Remove auth, sessionToClaims imports
 
 // In addOrganiserToChurchAction and removeOrganiserFromChurchAction:
-const actor = sessionToActor(session);
+const actor = await getActor();
 if (!actor) return { error: "Unauthorised." };
 
 if (!await churchPolicy.canManageMembers(actor, churchId))
@@ -1544,7 +1567,7 @@ export { seriesPolicy } from "./policies/series";
 
 // Core permission API
 export { can } from "./lib/can";
-export { sessionToActor } from "./lib/session";
+export { sessionToActor, getActor } from "./lib/session";
 export { Capabilities } from "./lib/capabilities";
 export type { Capability } from "./lib/capabilities";
 export type { Actor, AuthContext } from "./lib/can";

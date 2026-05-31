@@ -1,9 +1,8 @@
 "use server";
 
 import { updateTag } from "next/cache";
-import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
-import { sessionToClaims } from "@/domains/roles/lib/session";
+import { getActor } from "@/domains/roles/lib/session";
 import { churchPolicy } from "@/domains/roles/policies/church";
 import {
   getChurchMembership,
@@ -25,10 +24,8 @@ export async function addOrganiserToChurchAction(
   _prevState: AdminActionState,
   formData: FormData
 ): Promise<AdminActionState> {
-  const session = await auth();
-  if (!session) return { error: "Unauthorised." };
-  const claims = sessionToClaims(session);
-  if (!claims) return { error: "Unauthorised." };
+  const actor = await getActor();
+  if (!actor) return { error: "Unauthorised." };
 
   const parsed = addOrganiserSchema.safeParse({
     churchId: formData.get("churchId"),
@@ -39,7 +36,7 @@ export async function addOrganiserToChurchAction(
 
   const { churchId, email } = parsed.data;
 
-  if (!churchPolicy.canManageMembers(claims, churchId))
+  if (!(await churchPolicy.canManageMembers(actor, churchId)))
     return { error: "Unauthorised." };
 
   const targetUser = await prisma.user.findUnique({
@@ -60,7 +57,7 @@ export async function addOrganiserToChurchAction(
     targetUser.id,
     churchId,
     ChurchRole.EVENT_MANAGER,
-    session.user.id
+    actor.id
   );
 
   updateTag("churches");
@@ -71,10 +68,8 @@ export async function removeOrganiserFromChurchAction(
   _prevState: AdminActionState,
   formData: FormData
 ): Promise<AdminActionState> {
-  const session = await auth();
-  if (!session) return { error: "Unauthorised." };
-  const claims = sessionToClaims(session);
-  if (!claims) return { error: "Unauthorised." };
+  const actor = await getActor();
+  if (!actor) return { error: "Unauthorised." };
 
   const parsed = removeOrganiserSchema.safeParse({
     churchId: formData.get("churchId"),
@@ -84,7 +79,7 @@ export async function removeOrganiserFromChurchAction(
 
   const { churchId, targetUserId } = parsed.data;
 
-  if (!churchPolicy.canManageMembers(claims, churchId))
+  if (!(await churchPolicy.canManageMembers(actor, churchId)))
     return { error: "Unauthorised." };
 
   await removeChurchMembership(targetUserId, churchId);

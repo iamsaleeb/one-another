@@ -12,17 +12,13 @@ jest.mock("@/lib/db", () => ({
   },
 }));
 
-jest.mock("@/auth", () => ({
-  auth: jest.fn(),
-}));
-
 jest.mock("@/domains/roles/lib/session", () => ({
-  sessionToClaims: jest.fn(),
+  getActor: jest.fn(),
 }));
 
 jest.mock("@/domains/roles/policies/church", () => ({
   churchPolicy: {
-    canManageMembers: jest.fn(),
+    canManageMembers: jest.fn().mockResolvedValue(true),
   },
 }));
 
@@ -38,8 +34,7 @@ import {
   removeOrganiserFromChurchAction,
 } from "@/domains/admin/actions/admin";
 import { prisma } from "@/lib/db";
-import { auth } from "@/auth";
-import { sessionToClaims } from "@/domains/roles/lib/session";
+import { getActor } from "@/domains/roles/lib/session";
 import { churchPolicy } from "@/domains/roles/policies/church";
 import {
   getChurchMembership,
@@ -48,25 +43,16 @@ import {
 } from "@/domains/roles/dal/church-memberships";
 
 const mockUpdateTag = updateTag as jest.Mock;
-const mockAuth = auth as jest.Mock;
-const mockSessionToClaims = sessionToClaims as jest.Mock;
+const mockGetActor = getActor as jest.Mock;
 const mockCanManageMembers = churchPolicy.canManageMembers as jest.Mock;
 const mockGetChurchMembership = getChurchMembership as jest.Mock;
 const mockUpsertChurchMembership = upsertChurchMembership as jest.Mock;
 const mockRemoveChurchMembership = removeChurchMembership as jest.Mock;
 const mockUserFindUnique = prisma.user.findUnique as jest.Mock;
 
-const adminSession = {
-  user: {
-    id: "admin-1",
-    isPlatformAdmin: false,
-    churchMemberships: [{ churchId: "ch-1", role: "CHURCH_ADMIN" }],
-  },
-};
-
-const defaultClaims = {
+const defaultActor = {
+  id: "admin-1",
   isPlatformAdmin: false,
-  churchMemberships: [{ churchId: "ch-1", role: "CHURCH_ADMIN" }],
 };
 
 function makeFormData(fields: Record<string, string>): FormData {
@@ -79,14 +65,13 @@ function makeFormData(fields: Record<string, string>): FormData {
 
 beforeEach(() => {
   jest.clearAllMocks();
-  mockAuth.mockResolvedValue(adminSession);
-  mockSessionToClaims.mockReturnValue(defaultClaims);
-  mockCanManageMembers.mockReturnValue(true);
+  mockGetActor.mockResolvedValue(defaultActor);
+  mockCanManageMembers.mockResolvedValue(true);
 });
 
 describe("addOrganiserToChurchAction", () => {
-  it("returns an error when unauthenticated (sessionToClaims returns null)", async () => {
-    mockSessionToClaims.mockReturnValue(null);
+  it("returns an error when unauthenticated (getActor returns null)", async () => {
+    mockGetActor.mockResolvedValue(null);
 
     const result = await addOrganiserToChurchAction(
       {},
@@ -98,7 +83,7 @@ describe("addOrganiserToChurchAction", () => {
   });
 
   it("returns an error when canManageMembers returns false", async () => {
-    mockCanManageMembers.mockReturnValue(false);
+    mockCanManageMembers.mockResolvedValue(false);
     mockUserFindUnique.mockResolvedValue({ id: "user-2" });
     mockGetChurchMembership.mockResolvedValue(null);
 
@@ -186,7 +171,7 @@ describe("addOrganiserToChurchAction", () => {
 
 describe("removeOrganiserFromChurchAction", () => {
   it("returns an error when unauthenticated", async () => {
-    mockSessionToClaims.mockReturnValue(null);
+    mockGetActor.mockResolvedValue(null);
 
     const result = await removeOrganiserFromChurchAction(
       {},
@@ -198,7 +183,7 @@ describe("removeOrganiserFromChurchAction", () => {
   });
 
   it("returns an error when canManageMembers returns false", async () => {
-    mockCanManageMembers.mockReturnValue(false);
+    mockCanManageMembers.mockResolvedValue(false);
 
     const result = await removeOrganiserFromChurchAction(
       {},

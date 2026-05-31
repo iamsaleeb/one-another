@@ -2,13 +2,22 @@ jest.mock("@/auth", () => ({ auth: jest.fn() }));
 
 import { sessionToActor, getActor } from "../session";
 import { auth } from "@/auth";
+import type { Session } from "next-auth";
 
 const mockAuth = auth as jest.Mock;
 
-const makeSession = (overrides: object) => ({
-  user: { id: "u1", isPlatformAdmin: false, churchMemberships: [], ...overrides },
-  expires: "2099-01-01",
-});
+const makeSession = (overrides: object): Session =>
+  ({
+    user: {
+      id: "u1",
+      isPlatformAdmin: false,
+      churchMemberships: [],
+      onboardingCompleted: false,
+      isEmailVerified: false,
+      ...overrides,
+    },
+    expires: "2099-01-01",
+  }) as unknown as Session;
 
 describe("sessionToActor", () => {
   it("returns null for null session", () => {
@@ -17,13 +26,13 @@ describe("sessionToActor", () => {
 
   it("returns Actor with id and isPlatformAdmin", () => {
     expect(
-      sessionToActor(makeSession({ id: "u1", isPlatformAdmin: true }) as any)
+      sessionToActor(makeSession({ id: "u1", isPlatformAdmin: true }))
     ).toEqual({ id: "u1", isPlatformAdmin: true });
   });
 
   it("defaults isPlatformAdmin to false when undefined", () => {
     expect(
-      sessionToActor(makeSession({ id: "u2", isPlatformAdmin: undefined }) as any)
+      sessionToActor(makeSession({ id: "u2", isPlatformAdmin: undefined }))
     ).toEqual({ id: "u2", isPlatformAdmin: false });
   });
 });

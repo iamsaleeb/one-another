@@ -13,11 +13,11 @@ export interface Actor {
   isPlatformAdmin: boolean;
 }
 
-export type AuthContext = {
+export interface AuthContext {
   churchId?: string;
   eventId?: string;
   seriesId?: string;
-};
+}
 
 const getChurchMembership = cache((userId: string, churchId: string) =>
   prisma.churchMembership.findUnique({
@@ -47,14 +47,16 @@ export async function can(
 ): Promise<boolean> {
   if (actor.isPlatformAdmin) return true;
 
-  const checks: Promise<boolean>[] = [];
+  const checks: Array<Promise<boolean>> = [];
 
   if (context.churchId) {
     checks.push(
       getChurchMembership(actor.id, context.churchId).then(
         (m) =>
           !!m &&
-          (CHURCH_ROLE_CAPABILITIES[m.role] as Capability[]).includes(capability)
+          (CHURCH_ROLE_CAPABILITIES[m.role] as Capability[]).includes(
+            capability
+          )
       )
     );
   }
@@ -74,7 +76,9 @@ export async function can(
       getSeriesStaff(actor.id, context.seriesId).then(
         (s) =>
           !!s &&
-          (SERIES_ROLE_CAPABILITIES[s.role] as Capability[]).includes(capability)
+          (SERIES_ROLE_CAPABILITIES[s.role] as Capability[]).includes(
+            capability
+          )
       )
     );
   }

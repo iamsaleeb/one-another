@@ -2,9 +2,8 @@ import "server-only";
 
 import { prisma } from "@/lib/db";
 import { NotificationType } from "@prisma/client";
-import { can } from "@/domains/roles/lib/can";
+import { can, type Actor } from "@/domains/roles/lib/can";
 import { Capabilities } from "@/domains/roles/lib/capabilities";
-import type { Actor } from "@/domains/roles/lib/can";
 import { syncEventQuestions } from "../questions/dal";
 import {
   cancelManyNotifications,
@@ -180,7 +179,9 @@ export async function createEvent(
   // Auto-assign EVENT_EDITOR on the new event for any user who lacks
   // church-level event:update — covers EVENT_CREATOR church role and
   // series staff who created via their series assignment.
-  const hasChurchUpdateAccess = await can(actor, Capabilities.EVENT_UPDATE, { churchId });
+  const hasChurchUpdateAccess = await can(actor, Capabilities.EVENT_UPDATE, {
+    churchId,
+  });
   if (!hasChurchUpdateAccess) {
     await prisma.eventStaffAssignment.create({
       data: {
@@ -280,7 +281,9 @@ export async function updateEvent(
   if (!allowedOriginal) return { error: "Unauthorised." };
 
   if (churchId !== existing.churchId) {
-    const allowedNew = await can(actor, Capabilities.EVENT_UPDATE, { churchId });
+    const allowedNew = await can(actor, Capabilities.EVENT_UPDATE, {
+      churchId,
+    });
     if (!allowedNew) return { error: "Unauthorised." };
   }
 
@@ -445,7 +448,9 @@ export async function publishEvent(
   });
   if (!event) return { error: "Event not found." };
 
-  const allowed = await can(actor, Capabilities.EVENT_PUBLISH, { churchId: event.churchId });
+  const allowed = await can(actor, Capabilities.EVENT_PUBLISH, {
+    churchId: event.churchId,
+  });
   if (!allowed) return { error: "You are not assigned to this church." };
 
   if (!event.isDraft) {
@@ -503,7 +508,9 @@ export async function unpublishEvent(
   });
   if (!event) return { error: "Event not found." };
 
-  const allowed = await can(actor, Capabilities.EVENT_PUBLISH, { churchId: event.churchId });
+  const allowed = await can(actor, Capabilities.EVENT_PUBLISH, {
+    churchId: event.churchId,
+  });
   if (!allowed) return { error: "You are not assigned to this church." };
 
   await prisma.event.update({ where: { id }, data: { isDraft: true } });
@@ -539,7 +546,9 @@ export async function deleteEvent(
   });
   if (!event) return { error: "Event not found." };
 
-  const allowed = await can(actor, Capabilities.EVENT_DELETE, { churchId: event.churchId });
+  const allowed = await can(actor, Capabilities.EVENT_DELETE, {
+    churchId: event.churchId,
+  });
   if (!allowed) return { error: "Unauthorised." };
 
   try {

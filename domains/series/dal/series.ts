@@ -1,9 +1,8 @@
 import "server-only";
 
 import { prisma } from "@/lib/db";
-import { can } from "@/domains/roles/lib/can";
+import { can, type Actor } from "@/domains/roles/lib/can";
 import { Capabilities } from "@/domains/roles/lib/capabilities";
-import type { Actor } from "@/domains/roles/lib/can";
 import type { CreateSeriesInput } from "../validations/series";
 
 type DalError = { error: string } | { fieldErrors: Record<string, string[]> };
@@ -74,7 +73,9 @@ export async function updateSeries(
   if (!allowedOriginal) return { error: "Unauthorised." };
 
   if (churchId !== existing.churchId) {
-    const allowedNew = await can(actor, Capabilities.SERIES_UPDATE, { churchId });
+    const allowedNew = await can(actor, Capabilities.SERIES_UPDATE, {
+      churchId,
+    });
     if (!allowedNew) return { error: "Unauthorised." };
   }
 

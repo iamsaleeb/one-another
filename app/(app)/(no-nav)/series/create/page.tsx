@@ -15,7 +15,8 @@ export default async function CreateSeriesPage() {
   const eligibleIds = (
     await Promise.all(
       churchMemberships.map(async (m) => {
-        const allowed = actor && (await seriesPolicy.canCreate(actor, m.churchId));
+        const allowed =
+          actor && (await seriesPolicy.canCreate(actor, m.churchId));
         return allowed ? m.churchId : null;
       })
     )

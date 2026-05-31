@@ -1,6 +1,5 @@
-import { can } from "../lib/can";
+import { can, type Actor } from "../lib/can";
 import { Capabilities } from "../lib/capabilities";
-import type { Actor } from "../lib/can";
 
 export const eventPolicy = {
   canCreate: (actor: Actor, churchId: string) =>

@@ -87,12 +87,16 @@ describe("assignEventRoleAction", () => {
       role: "EVENT_MANAGER",
     });
     expect(result).toEqual({ success: "Staff role assigned." });
-    expect(mockUpsert).toHaveBeenCalledWith("u1", "e1", "EVENT_MANAGER", "admin-1");
-    expect(mockCan).toHaveBeenCalledWith(
-      validActor,
-      "event:manage_staff",
-      { churchId: "ch-1", eventId: "e1" }
+    expect(mockUpsert).toHaveBeenCalledWith(
+      "u1",
+      "e1",
+      "EVENT_MANAGER",
+      "admin-1"
     );
+    expect(mockCan).toHaveBeenCalledWith(validActor, "event:manage_staff", {
+      churchId: "ch-1",
+      eventId: "e1",
+    });
   });
 });
 
@@ -105,34 +109,45 @@ describe("removeEventStaffAction", () => {
 
   it("returns error when unauthenticated", async () => {
     mockGetActor.mockResolvedValue(null);
-    const result = await removeEventStaffAction({ userId: "u1", eventId: "e1" });
+    const result = await removeEventStaffAction({
+      userId: "u1",
+      eventId: "e1",
+    });
     expect(result).toEqual({ error: "Unauthorised." });
     expect(mockRemove).not.toHaveBeenCalled();
   });
 
   it("returns error when event not found", async () => {
     mockEventFindUnique.mockResolvedValue(null);
-    const result = await removeEventStaffAction({ userId: "u1", eventId: "e1" });
+    const result = await removeEventStaffAction({
+      userId: "u1",
+      eventId: "e1",
+    });
     expect(result).toEqual({ error: "Event not found." });
     expect(mockRemove).not.toHaveBeenCalled();
   });
 
   it("returns error when can() returns false", async () => {
     mockCan.mockResolvedValue(false);
-    const result = await removeEventStaffAction({ userId: "u1", eventId: "e1" });
+    const result = await removeEventStaffAction({
+      userId: "u1",
+      eventId: "e1",
+    });
     expect(result).toEqual({ error: "Unauthorised." });
     expect(mockRemove).not.toHaveBeenCalled();
   });
 
   it("removes staff when authorized", async () => {
     mockRemove.mockResolvedValue({});
-    const result = await removeEventStaffAction({ userId: "u1", eventId: "e1" });
+    const result = await removeEventStaffAction({
+      userId: "u1",
+      eventId: "e1",
+    });
     expect(result).toEqual({ success: "Staff removed." });
     expect(mockRemove).toHaveBeenCalledWith("u1", "e1");
-    expect(mockCan).toHaveBeenCalledWith(
-      validActor,
-      "event:manage_staff",
-      { churchId: "ch-1", eventId: "e1" }
-    );
+    expect(mockCan).toHaveBeenCalledWith(validActor, "event:manage_staff", {
+      churchId: "ch-1",
+      eventId: "e1",
+    });
   });
 });

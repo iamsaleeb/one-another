@@ -43,16 +43,17 @@ export default async function EditEventPage({ params }: Props) {
     .filter((m) => m.role === "CHURCH_ADMIN" || m.role === "EVENT_MANAGER")
     .map((m) => m.churchId);
 
-  const [churches, questions, libraryItems, questionsLocked] = await Promise.all([
-    editableChurchIds.length > 0
-      ? getChurchesByIds(editableChurchIds)
-      : event.church
-        ? Promise.resolve([event.church])
-        : Promise.resolve([]),
-    getEventQuestions(id),
-    getQuestionLibraryForUser(session.user.id),
-    hasEventResponses(id),
-  ]);
+  const [churches, questions, libraryItems, questionsLocked] =
+    await Promise.all([
+      editableChurchIds.length > 0
+        ? getChurchesByIds(editableChurchIds)
+        : event.church
+          ? Promise.resolve([event.church])
+          : Promise.resolve([]),
+      getEventQuestions(id),
+      getQuestionLibraryForUser(session.user.id),
+      hasEventResponses(id),
+    ]);
 
   const datetimeISO = event.datetime?.toISOString() ?? "";
   const { registration, camp } = parseEventMetadata(event.metadata);

@@ -6,10 +6,9 @@ import {
   getSeriesById,
   getMySeriesFollow,
 } from "@/domains/series/actions/data";
-import { sessionToClaims } from "@/domains/roles/lib/session";
-import { seriesPolicy } from "@/domains/roles/policies/series";
-import { eventPolicy } from "@/domains/roles/policies/event";
-import { getSeriesStaffForUser } from "@/domains/roles/dal/series-staff";
+import { sessionToActor } from "@/domains/roles/lib/session";
+import { can } from "@/domains/roles/lib/can";
+import { Capabilities } from "@/domains/roles/lib/capabilities";
 import { InfoField } from "@/components/ui/info-field";
 import { HeroBanner } from "@/components/ui/hero-banner";
 import { EventCard } from "@/domains/events/components/event-card";
@@ -42,20 +41,20 @@ export default async function SeriesDetailPage({ params }: Props) {
 
   if (!series) notFound();
 
-  const claims = sessionToClaims(session);
-  const canEditFromChurch =
-    !!claims && seriesPolicy.canUpdate(claims, series.churchId);
-  const canDelete = !!claims && seriesPolicy.canDelete(claims, series.churchId);
-  const canAddSessionFromChurch =
-    !!claims && eventPolicy.canCreate(claims, series.churchId);
-
-  const seriesStaff =
-    !canEditFromChurch && session?.user?.id
-      ? await getSeriesStaffForUser(session.user.id, series.id)
-      : null;
-
-  const canEdit = canEditFromChurch || seriesStaff?.role === "SERIES_MANAGER";
-  const canAddSession = canAddSessionFromChurch || !!seriesStaff;
+  const actor = sessionToActor(session);
+  const [canEdit, canDelete, canAddSession] = actor
+    ? await Promise.all([
+        can(actor, Capabilities.SERIES_UPDATE, {
+          churchId: series.churchId,
+          seriesId: series.id,
+        }),
+        can(actor, Capabilities.SERIES_DELETE, { churchId: series.churchId }),
+        can(actor, Capabilities.EVENT_CREATE, {
+          churchId: series.churchId,
+          seriesId: series.id,
+        }),
+      ])
+    : [false, false, false];
   const isFollowing = myFollow !== null;
 
   return (

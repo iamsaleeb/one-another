@@ -86,6 +86,11 @@ describe("assignSeriesRoleAction", () => {
       role: "SERIES_MANAGER",
     });
     expect(result).toEqual({ success: "Series role assigned." });
+    expect(mockCan).toHaveBeenCalledWith(
+      validActor,
+      expect.any(String),
+      expect.objectContaining({ churchId: "c1", seriesId: "s1" })
+    );
     expect(mockUpsert).toHaveBeenCalledWith(
       "u1",
       "s1",
@@ -137,6 +142,11 @@ describe("removeSeriesStaffAction", () => {
       seriesId: "s1",
     });
     expect(result).toEqual({ success: "Series staff removed." });
+    expect(mockCan).toHaveBeenCalledWith(
+      validActor,
+      expect.any(String),
+      expect.objectContaining({ churchId: "c1", seriesId: "s1" })
+    );
     expect(mockRemove).toHaveBeenCalledWith("u1", "s1");
   });
 });

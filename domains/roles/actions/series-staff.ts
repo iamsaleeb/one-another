@@ -30,6 +30,7 @@ export async function assignSeriesRoleAction(
 
   const allowed = await can(actor, Capabilities.SERIES_UPDATE, {
     churchId: series.churchId,
+    seriesId,
   });
   if (!allowed) return { error: "Unauthorised." };
 
@@ -56,6 +57,7 @@ export async function removeSeriesStaffAction(
 
   const allowed = await can(actor, Capabilities.SERIES_UPDATE, {
     churchId: series.churchId,
+    seriesId,
   });
   if (!allowed) return { error: "Unauthorised." };
 

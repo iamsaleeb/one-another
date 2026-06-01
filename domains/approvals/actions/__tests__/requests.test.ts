@@ -145,6 +145,7 @@ describe("reviewRequestAction", () => {
   it("approves request and grants role", async () => {
     const result = await reviewRequestAction({ requestId: "req-1", decision: "APPROVED" });
     expect(result).toEqual({ success: "Request approved." });
+    expect(mockDal.resolveApprovalAuthContext).toHaveBeenCalledWith("EVENT", "e1");
     expect(mockDal.updateApprovalRequest).toHaveBeenCalledWith("req-1", {
       status: "APPROVED",
       reviewedBy: "user-1",

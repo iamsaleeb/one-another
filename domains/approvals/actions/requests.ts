@@ -1,4 +1,3 @@
-// domains/approvals/actions/requests.ts
 "use server";
 
 import { revalidatePath, revalidateTag } from "next/cache";
@@ -51,17 +50,20 @@ export async function submitRequestAction(
   });
 
   const approverIds = await getApproverIdsForResource(resourceType, resourceId);
-  await Promise.all(
-    approverIds.map((userId) =>
-      queueNotification({
-        userId,
-        type: NotificationType.ROLE_REQUEST_RECEIVED,
-        title: "New help request",
-        body: `Someone wants to help with this ${resourceType.toLowerCase()}.`,
-        data: { requesterId: actor.id, resourceType, resourceId },
-      })
-    )
-  );
+  const CONCURRENCY = 20;
+  for (let i = 0; i < approverIds.length; i += CONCURRENCY) {
+    await Promise.allSettled(
+      approverIds.slice(i, i + CONCURRENCY).map((userId) =>
+        queueNotification({
+          userId,
+          type: NotificationType.ROLE_REQUEST_RECEIVED,
+          title: "New help request",
+          body: `Someone wants to help with this ${resourceType.toLowerCase()}.`,
+          data: { requesterId: actor.id, resourceType, resourceId },
+        })
+      )
+    );
+  }
 
   revalidateTag(`approval-${resourceType}-${resourceId}-${actor.id}`);
   revalidateTag(`approval-pending-${resourceType}-${resourceId}`);
@@ -89,15 +91,19 @@ export async function reviewRequestAction(
   const allowed = await can(actor, config.approveCapability, authContext);
   if (!allowed) return { error: "Unauthorised." };
 
+  if (decision === "APPROVED") {
+    try {
+      await config.grant(request.requesterId, request.resourceId, actor.id);
+    } catch {
+      return { error: "Failed to grant access. Please try again." };
+    }
+  }
+
   await updateApprovalRequest(requestId, {
     status: decision,
     reviewedBy: actor.id,
     reviewedAt: new Date(),
   });
-
-  if (decision === "APPROVED") {
-    await config.grant(request.requesterId, request.resourceId, actor.id);
-  }
 
   await queueNotification({
     userId: request.requesterId,

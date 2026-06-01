@@ -2,6 +2,7 @@ import {
   SubmitRequestSchema,
   ReviewRequestSchema,
   CancelRequestSchema,
+  RevokeAccessSchema,
 } from "../requests";
 
 describe("SubmitRequestSchema", () => {
@@ -92,6 +93,23 @@ describe("CancelRequestSchema", () => {
 
   it("rejects empty requestId", () => {
     const result = CancelRequestSchema.safeParse({ requestId: "" });
+    expect(result.success).toBe(false);
+  });
+});
+
+describe("RevokeAccessSchema", () => {
+  it("accepts valid requestId", () => {
+    const result = RevokeAccessSchema.safeParse({ requestId: "req-1" });
+    expect(result.success).toBe(true);
+  });
+
+  it("rejects missing requestId", () => {
+    const result = RevokeAccessSchema.safeParse({});
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects empty requestId", () => {
+    const result = RevokeAccessSchema.safeParse({ requestId: "" });
     expect(result.success).toBe(false);
   });
 });

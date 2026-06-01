@@ -1,4 +1,8 @@
-import { SubmitRequestSchema, ReviewRequestSchema } from "../requests";
+import {
+  SubmitRequestSchema,
+  ReviewRequestSchema,
+  CancelRequestSchema,
+} from "../requests";
 
 describe("SubmitRequestSchema", () => {
   it("accepts valid EVENT request with message", () => {
@@ -71,6 +75,23 @@ describe("ReviewRequestSchema", () => {
 
   it("rejects missing requestId", () => {
     const result = ReviewRequestSchema.safeParse({ decision: "APPROVED" });
+    expect(result.success).toBe(false);
+  });
+});
+
+describe("CancelRequestSchema", () => {
+  it("accepts valid requestId", () => {
+    const result = CancelRequestSchema.safeParse({ requestId: "req-1" });
+    expect(result.success).toBe(true);
+  });
+
+  it("rejects missing requestId", () => {
+    const result = CancelRequestSchema.safeParse({});
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects empty requestId", () => {
+    const result = CancelRequestSchema.safeParse({ requestId: "" });
     expect(result.success).toBe(false);
   });
 });

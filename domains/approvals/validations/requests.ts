@@ -12,5 +12,10 @@ export const ReviewRequestSchema = z.object({
   decision: z.enum(["APPROVED", "DENIED"]),
 });
 
+export const CancelRequestSchema = z.object({
+  requestId: z.string().min(1),
+});
+
 export type SubmitRequestInput = z.infer<typeof SubmitRequestSchema>;
 export type ReviewRequestInput = z.infer<typeof ReviewRequestSchema>;
+export type CancelRequestInput = z.infer<typeof CancelRequestSchema>;

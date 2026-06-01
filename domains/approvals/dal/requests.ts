@@ -44,6 +44,10 @@ export function updateApprovalRequest(
   });
 }
 
+export function deleteApprovalRequest(id: string) {
+  return prisma.approvalRequest.delete({ where: { id } });
+}
+
 export function getApprovalRequestById(id: string) {
   return prisma.approvalRequest.findUnique({
     where: { id },

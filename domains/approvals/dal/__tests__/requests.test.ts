@@ -6,6 +6,7 @@ jest.mock("@/lib/db", () => ({
       update: jest.fn(),
       findUnique: jest.fn(),
       findMany: jest.fn(),
+      delete: jest.fn(),
     },
     event: { findUnique: jest.fn() },
     series: { findUnique: jest.fn() },
@@ -22,6 +23,7 @@ import {
   getApproverIdsForResource,
   resolveApprovalAuthContext,
   hasDirectRoleForResource,
+  deleteApprovalRequest,
 } from "../requests";
 import { prisma } from "@/lib/db";
 
@@ -59,6 +61,16 @@ describe("upsertApprovalRequest", () => {
         },
       })
     );
+  });
+});
+
+describe("deleteApprovalRequest", () => {
+  it("deletes by id", async () => {
+    mockApprovalRequest.delete.mockResolvedValue({} as never);
+    await deleteApprovalRequest("req-1");
+    expect(mockApprovalRequest.delete).toHaveBeenCalledWith({
+      where: { id: "req-1" },
+    });
   });
 });
 

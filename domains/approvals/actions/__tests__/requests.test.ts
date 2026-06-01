@@ -20,16 +20,19 @@ jest.mock("@/domains/approvals/lib/resolvers", () => ({
       role: "EVENT_EDITOR",
       approveCapability: "event:manage_staff",
       grant: jest.fn(),
+      revoke: jest.fn(),
     },
     SERIES: {
       role: "SERIES_SESSION_CREATOR",
       approveCapability: "series:update",
       grant: jest.fn(),
+      revoke: jest.fn(),
     },
     CHURCH: {
       role: "EVENT_CREATOR",
       approveCapability: "church:manage_members",
       grant: jest.fn(),
+      revoke: jest.fn(),
     },
   },
 }));
@@ -41,6 +44,7 @@ import {
   submitRequestAction,
   reviewRequestAction,
   cancelRequestAction,
+  revokeAccessAction,
 } from "../requests";
 import { getActor } from "@/domains/roles/lib/session";
 import { can } from "@/domains/roles/lib/can";
@@ -53,6 +57,7 @@ const mockCan = can as jest.Mock;
 const mockDal = dal as jest.Mocked<typeof dal>;
 const mockQueue = queueNotification as jest.Mock;
 const mockGrant = APPROVAL_CONFIG.EVENT.grant as jest.Mock;
+const mockRevoke = APPROVAL_CONFIG.EVENT.revoke as jest.Mock;
 
 const actor = { id: "user-1", isPlatformAdmin: false };
 
@@ -67,6 +72,7 @@ beforeEach(() => {
     eventId: "e1",
     churchId: "ch1",
   });
+  mockRevoke.mockResolvedValue({});
 });
 
 describe("submitRequestAction", () => {
@@ -270,9 +276,79 @@ describe("cancelRequestAction", () => {
     expect(mockDal.deleteApprovalRequest).not.toHaveBeenCalled();
   });
 
-  it("deletes request and revalidates on success", async () => {
+  it("updates status to CANCELLED on success", async () => {
+    mockDal.updateApprovalRequest.mockResolvedValue({} as never);
     const result = await cancelRequestAction({ requestId: "req-1" });
     expect(result).toEqual({ success: "Request cancelled." });
-    expect(mockDal.deleteApprovalRequest).toHaveBeenCalledWith("req-1");
+    expect(mockDal.updateApprovalRequest).toHaveBeenCalledWith("req-1", {
+      status: "CANCELLED",
+      reviewedBy: "user-1",
+      reviewedAt: expect.any(Date),
+    });
+    expect(mockDal.deleteApprovalRequest).not.toHaveBeenCalled();
+  });
+});
+
+describe("revokeAccessAction", () => {
+  const approvedRequest = {
+    id: "req-1",
+    requesterId: "requester-1",
+    resourceType: "EVENT" as const,
+    resourceId: "e1",
+    status: "APPROVED" as const,
+    requestedRole: "EVENT_EDITOR",
+    requester: { id: "requester-1", name: "Alice" },
+  };
+
+  beforeEach(() => {
+    mockDal.getApprovalRequestById.mockResolvedValue(approvedRequest as never);
+    mockDal.updateApprovalRequest.mockResolvedValue({} as never);
+  });
+
+  it("returns error when unauthenticated", async () => {
+    mockGetActor.mockResolvedValue(null);
+    const result = await revokeAccessAction({ requestId: "req-1" });
+    expect(result).toEqual({ error: "Unauthorised." });
+    expect(mockDal.updateApprovalRequest).not.toHaveBeenCalled();
+  });
+
+  it("returns fieldErrors on invalid input", async () => {
+    const result = await revokeAccessAction({ requestId: "" });
+    expect(result).toHaveProperty("fieldErrors");
+  });
+
+  it("returns error when request not found", async () => {
+    mockDal.getApprovalRequestById.mockResolvedValue(null);
+    const result = await revokeAccessAction({ requestId: "missing" });
+    expect(result).toEqual({ error: "Request not found." });
+  });
+
+  it("returns error when status is not APPROVED", async () => {
+    mockDal.getApprovalRequestById.mockResolvedValue({
+      ...approvedRequest,
+      status: "PENDING",
+    } as never);
+    const result = await revokeAccessAction({ requestId: "req-1" });
+    expect(result).toEqual({ error: "Request is not approved." });
+    expect(mockDal.updateApprovalRequest).not.toHaveBeenCalled();
+  });
+
+  it("returns error when not authorized", async () => {
+    mockCan.mockResolvedValue(false);
+    const result = await revokeAccessAction({ requestId: "req-1" });
+    expect(result).toEqual({ error: "Unauthorised." });
+    expect(mockRevoke).not.toHaveBeenCalled();
+  });
+
+  it("revokes access and updates status to REVOKED", async () => {
+    const result = await revokeAccessAction({ requestId: "req-1" });
+    expect(result).toEqual({ success: "Access revoked." });
+    expect(mockRevoke).toHaveBeenCalledWith("requester-1", "e1");
+    expect(mockDal.updateApprovalRequest).toHaveBeenCalledWith("req-1", {
+      status: "REVOKED",
+      reviewedBy: "user-1",
+      reviewedAt: expect.any(Date),
+    });
+    expect(mockQueue).not.toHaveBeenCalled();
   });
 });

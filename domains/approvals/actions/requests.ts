@@ -8,6 +8,7 @@ import {
   SubmitRequestSchema,
   ReviewRequestSchema,
   CancelRequestSchema,
+  RevokeAccessSchema,
 } from "../validations/requests";
 import {
   upsertApprovalRequest,
@@ -16,7 +17,6 @@ import {
   getApproverIdsForResource,
   resolveApprovalAuthContext,
   hasDirectRoleForResource,
-  deleteApprovalRequest,
 } from "../dal/requests";
 import { APPROVAL_CONFIG } from "../lib/resolvers";
 import { queueNotification } from "@/domains/notifications/queue";
@@ -140,6 +140,7 @@ export async function reviewRequestAction(
     `approval-${request.resourceType}-${request.resourceId}-${request.requesterId}`
   );
   updateTag(`approval-pending-${request.resourceType}-${request.resourceId}`);
+  updateTag(`approval-resolved-${request.resourceType}-${request.resourceId}`);
   revalidatePath(
     resourcePath(request.resourceType, request.resourceId),
     "page"
@@ -167,15 +168,64 @@ export async function cancelRequestAction(
   if (request.status !== "PENDING")
     return { error: "Request already reviewed." };
 
-  await deleteApprovalRequest(requestId);
+  await updateApprovalRequest(requestId, {
+    status: "CANCELLED",
+    reviewedBy: actor.id,
+    reviewedAt: new Date(),
+  });
 
   updateTag(
     `approval-${request.resourceType}-${request.resourceId}-${actor.id}`
   );
   updateTag(`approval-pending-${request.resourceType}-${request.resourceId}`);
+  updateTag(`approval-resolved-${request.resourceType}-${request.resourceId}`);
   revalidatePath(
     resourcePath(request.resourceType, request.resourceId),
     "page"
   );
   return { success: "Request cancelled." };
+}
+
+export async function revokeAccessAction(
+  input: unknown
+): Promise<ApprovalActionState> {
+  const actor = await getActor();
+  if (!actor) return { error: "Unauthorised." };
+
+  const parsed = RevokeAccessSchema.safeParse(input);
+  if (!parsed.success)
+    return { fieldErrors: parsed.error.flatten().fieldErrors };
+
+  const { requestId } = parsed.data;
+
+  const request = await getApprovalRequestById(requestId);
+  if (!request) return { error: "Request not found." };
+  if (request.status !== "APPROVED") return { error: "Request is not approved." };
+
+  const authContext = await resolveApprovalAuthContext(
+    request.resourceType,
+    request.resourceId
+  );
+  const config = APPROVAL_CONFIG[request.resourceType];
+  const allowed = await can(actor, config.approveCapability, authContext);
+  if (!allowed) return { error: "Unauthorised." };
+
+  await config.revoke(request.requesterId, request.resourceId);
+
+  await updateApprovalRequest(requestId, {
+    status: "REVOKED",
+    reviewedBy: actor.id,
+    reviewedAt: new Date(),
+  });
+
+  updateTag(
+    `approval-${request.resourceType}-${request.resourceId}-${request.requesterId}`
+  );
+  updateTag(`approval-pending-${request.resourceType}-${request.resourceId}`);
+  updateTag(`approval-resolved-${request.resourceType}-${request.resourceId}`);
+  revalidatePath(
+    resourcePath(request.resourceType, request.resourceId),
+    "page"
+  );
+  return { success: "Access revoked." };
 }

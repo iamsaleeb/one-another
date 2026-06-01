@@ -451,4 +451,6 @@ enum ApprovalStatus {
   PENDING
   APPROVED
   DENIED
+  CANCELLED
+  REVOKED
 }

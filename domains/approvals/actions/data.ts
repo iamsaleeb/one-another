@@ -5,6 +5,7 @@ import type { ResourceType } from "@prisma/client";
 import {
   getMyRequestForResource as dalGetMyRequest,
   getPendingRequestsForResource as dalGetPending,
+  getAllRequestsForResource as dalGetAllResolved,
 } from "../dal/requests";
 
 export async function getMyRequestForResource(
@@ -24,4 +25,13 @@ export async function getPendingRequestsForResource(
   cacheTag(`approval-pending-${resourceType}-${resourceId}`);
   cacheLife("minutes");
   return dalGetPending(resourceType, resourceId);
+}
+
+export async function getAllRequestsForResource(
+  resourceType: ResourceType,
+  resourceId: string
+) {
+  cacheTag(`approval-resolved-${resourceType}-${resourceId}`);
+  cacheLife("minutes");
+  return dalGetAllResolved(resourceType, resourceId);
 }

@@ -8,7 +8,6 @@ import {
   MapPin,
   Pencil,
   Repeat,
-  Share2,
   TableProperties,
   User,
 } from "lucide-react";
@@ -42,6 +41,12 @@ import { UncancelEventButton } from "./_components/uncancel-event-button";
 import { EventActionBar } from "./_components/event-action-bar";
 import { CampAgenda } from "./_components/camp-agenda";
 import { SaveEventButton } from "./_components/save-event-button";
+import {
+  getMyRequestForResource,
+  getPendingRequestsForResource,
+  ApprovalMenuTrigger,
+  PendingRequestsCard,
+} from "@/domains/approvals";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -114,6 +119,19 @@ export default async function EventDetailPage({ params }: Props) {
       ])
     : [false, false, false];
 
+  const canManageStaff = actor
+    ? await can(actor, Capabilities.EVENT_MANAGE_STAFF, { churchId, eventId: id })
+    : false;
+
+  const [myRequest, pendingRequests] = await Promise.all([
+    session?.user?.id
+      ? getMyRequestForResource("EVENT", id, session.user.id)
+      : Promise.resolve(null),
+    canManageStaff
+      ? getPendingRequestsForResource("EVENT", id)
+      : Promise.resolve([]),
+  ]);
+
   const questions = await getEventQuestions(id);
 
   if (event.isDraft && !canEdit) notFound();
@@ -145,14 +163,14 @@ export default async function EventDetailPage({ params }: Props) {
           initialSaved={isSaved}
           isAuthenticated={!!session?.user}
         />
-        <button
-          type="button"
-          disabled
-          aria-label="Share event"
-          className="p-1 opacity-50"
-        >
-          <Share2 className="text-muted-foreground size-5" />
-        </button>
+        <ApprovalMenuTrigger
+          resourceType="EVENT"
+          resourceId={id}
+          resourceName={event.title}
+          isAuthenticated={!!session?.user}
+          requestStatus={myRequest?.status ?? null}
+          hasRole={canEdit}
+        />
       </div>
 
       {/* Content */}
@@ -278,6 +296,14 @@ export default async function EventDetailPage({ params }: Props) {
             {event.description}
           </p>
         </div>
+
+        {canManageStaff && (
+          <PendingRequestsCard
+            requests={pendingRequests}
+            resourceType="EVENT"
+            resourceId={id}
+          />
+        )}
 
         {/* Camp agenda */}
         {camp && camp.agenda.length > 0 && (

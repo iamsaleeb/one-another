@@ -45,7 +45,6 @@ import {
   getMyRequestForResource,
   getPendingRequestsForResource,
   ApprovalMenuTrigger,
-  PendingRequestsCard,
 } from "@/domains/approvals";
 
 interface Props {
@@ -165,8 +164,10 @@ export default async function EventDetailPage({ params }: Props) {
           resourceId={id}
           resourceName={event.title}
           isAuthenticated={!!session?.user}
-          requestStatus={myRequest?.status ?? null}
           hasRole={canEdit}
+          myRequest={myRequest ?? null}
+          pendingRequests={pendingRequests}
+          isApprover={canManageStaff}
         />
       </div>
 
@@ -293,14 +294,6 @@ export default async function EventDetailPage({ params }: Props) {
             {event.description}
           </p>
         </div>
-
-        {canManageStaff && (
-          <PendingRequestsCard
-            requests={pendingRequests}
-            resourceType="EVENT"
-            resourceId={id}
-          />
-        )}
 
         {/* Camp agenda */}
         {camp && camp.agenda.length > 0 && (

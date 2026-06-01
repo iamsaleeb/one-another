@@ -17,6 +17,9 @@ const config = {
     "lib/**/*.{ts,tsx}",
     // Exclude generated shadcn/ui primitives — third-party, not our logic
     "!components/ui/**",
+    // Exclude client UI components — "use client" Drawer/DropdownMenu orchestrators
+    // covered by integration/E2E tests, not Jest unit tests
+    "!domains/approvals/components/**",
     // Exclude infrastructure / config files
     "!lib/db.ts",
     "!lib/actions/upload.ts",

@@ -14,6 +14,8 @@ const enabledPreferences: NotificationPreferenceMap = {
   EVENT_REMINDER: { enabled: true, config: { hoursBeforeEvent: 2 } },
   NEW_SERIES_SESSION: { enabled: true, config: undefined },
   EVENT_CANCELLED: { enabled: true, config: undefined },
+  ROLE_REQUEST_RECEIVED: { enabled: true, config: undefined },
+  ROLE_REQUEST_OUTCOME: { enabled: true, config: undefined },
 };
 
 beforeEach(() => jest.clearAllMocks());

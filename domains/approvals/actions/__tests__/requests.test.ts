@@ -340,6 +340,17 @@ describe("revokeAccessAction", () => {
     expect(mockRevoke).not.toHaveBeenCalled();
   });
 
+  it("still updates to REVOKED if revoke throws (idempotent)", async () => {
+    mockRevoke.mockRejectedValue(new Error("P2025: Record not found"));
+    const result = await revokeAccessAction({ requestId: "req-1" });
+    expect(result).toEqual({ success: "Access revoked." });
+    expect(mockDal.updateApprovalRequest).toHaveBeenCalledWith("req-1", {
+      status: "REVOKED",
+      reviewedBy: "user-1",
+      reviewedAt: expect.any(Date),
+    });
+  });
+
   it("revokes access and updates status to REVOKED", async () => {
     const result = await revokeAccessAction({ requestId: "req-1" });
     expect(result).toEqual({ success: "Access revoked." });

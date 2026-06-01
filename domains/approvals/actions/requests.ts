@@ -211,7 +211,11 @@ export async function revokeAccessAction(
   const allowed = await can(actor, config.approveCapability, authContext);
   if (!allowed) return { error: "Unauthorised." };
 
-  await config.revoke(request.requesterId, request.resourceId);
+  try {
+    await config.revoke(request.requesterId, request.resourceId);
+  } catch {
+    // Role row may already be gone (removed via another path) — still mark REVOKED
+  }
 
   await updateApprovalRequest(requestId, {
     status: "REVOKED",

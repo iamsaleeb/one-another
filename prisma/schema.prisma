@@ -362,18 +362,6 @@ enum SeriesRole {
   SERIES_SESSION_CREATOR
 }
 
-enum ResourceType {
-  EVENT
-  SERIES
-  CHURCH
-}
-
-enum ApprovalStatus {
-  PENDING
-  APPROVED
-  DENIED
-}
-
 model SeriesStaffAssignment {
   userId     String
   seriesId   String
@@ -404,11 +392,10 @@ model ApprovalRequest {
   updatedAt     DateTime       @updatedAt
 
   requester     User           @relation("ApprovalRequests", fields: [requesterId], references: [id], onDelete: Cascade)
-  reviewer      User?          @relation("ApprovalReviews", fields: [reviewedBy], references: [id])
+  reviewer      User?          @relation("ApprovalReviews", fields: [reviewedBy], references: [id], onDelete: SetNull)
 
   @@unique([requesterId, resourceType, resourceId])
   @@index([resourceType, resourceId, status])
-  @@index([requesterId])
   @@map("approval_requests")
 }
 
@@ -452,4 +439,16 @@ enum ServiceTimeType {
   MIDWEEK
   YOUTH
   OTHER
+}
+
+enum ResourceType {
+  EVENT
+  SERIES
+  CHURCH
+}
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  DENIED
 }

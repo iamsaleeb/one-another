@@ -25,11 +25,16 @@ import {
 } from "../requests";
 import { prisma } from "@/lib/db";
 
-const mockApprovalRequest = prisma.approvalRequest as jest.Mocked<typeof prisma.approvalRequest>;
+const mockApprovalRequest = prisma.approvalRequest as jest.Mocked<
+  typeof prisma.approvalRequest
+>;
 const mockEvent = prisma.event as jest.Mocked<typeof prisma.event>;
-const mockSeries = prisma.series as jest.Mocked<typeof prisma.series>;
-const mockEventStaff = prisma.eventStaffAssignment as jest.Mocked<typeof prisma.eventStaffAssignment>;
-const mockChurchMembership = prisma.churchMembership as jest.Mocked<typeof prisma.churchMembership>;
+const mockEventStaff = prisma.eventStaffAssignment as jest.Mocked<
+  typeof prisma.eventStaffAssignment
+>;
+const mockChurchMembership = prisma.churchMembership as jest.Mocked<
+  typeof prisma.churchMembership
+>;
 
 beforeEach(() => jest.clearAllMocks());
 
@@ -89,7 +94,10 @@ describe("getApproverIdsForResource", () => {
   it("returns deduped ids for EVENT type", async () => {
     mockEvent.findUnique.mockResolvedValue({ churchId: "ch1" } as never);
     mockEventStaff.findMany.mockResolvedValue([{ userId: "mgr1" }] as never);
-    mockChurchMembership.findMany.mockResolvedValue([{ userId: "mgr1" }, { userId: "admin1" }] as never);
+    mockChurchMembership.findMany.mockResolvedValue([
+      { userId: "mgr1" },
+      { userId: "admin1" },
+    ] as never);
     const ids = await getApproverIdsForResource("EVENT", "e1");
     expect(ids).toEqual(expect.arrayContaining(["mgr1", "admin1"]));
     expect(ids.length).toBe(2);
@@ -117,7 +125,9 @@ describe("resolveApprovalAuthContext", () => {
 
 describe("hasDirectRoleForResource", () => {
   it("returns true when EventStaffAssignment exists", async () => {
-    mockEventStaff.findUnique.mockResolvedValue({ role: "EVENT_EDITOR" } as never);
+    mockEventStaff.findUnique.mockResolvedValue({
+      role: "EVENT_EDITOR",
+    } as never);
     const result = await hasDirectRoleForResource("u1", "EVENT", "e1");
     expect(result).toBe(true);
   });

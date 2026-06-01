@@ -32,14 +32,22 @@ export function ApprovalMenuTrigger({
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   // Show "Help out" for new requests and after denial (backend upsert resets DENIED → PENDING)
-  const showHelpOut = isAuthenticated && !hasRole && (requestStatus === null || requestStatus === "DENIED");
+  const showHelpOut =
+    isAuthenticated &&
+    !hasRole &&
+    (requestStatus === null || requestStatus === "DENIED");
   const showPending = requestStatus === "PENDING";
 
   return (
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon" className="size-9" aria-label="More options">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-9"
+            aria-label="More options"
+          >
             <MoreHorizontal className="size-5" />
           </Button>
         </DropdownMenuTrigger>
@@ -50,9 +58,7 @@ export function ApprovalMenuTrigger({
             </DropdownMenuItem>
           )}
           {showPending && (
-            <DropdownMenuItem disabled>
-              Request pending…
-            </DropdownMenuItem>
+            <DropdownMenuItem disabled>Request pending…</DropdownMenuItem>
           )}
           <DropdownMenuItem disabled>
             <Share2 className="mr-2 size-4" />

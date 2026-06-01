@@ -96,7 +96,10 @@ export async function getApproverIdsForResource(
         select: { userId: true },
       }),
       prisma.churchMembership.findMany({
-        where: { churchId: event.churchId, role: { in: ["CHURCH_ADMIN", "EVENT_MANAGER"] } },
+        where: {
+          churchId: event.churchId,
+          role: { in: ["CHURCH_ADMIN", "EVENT_MANAGER"] },
+        },
         select: { userId: true },
       }),
     ]);
@@ -120,7 +123,10 @@ export async function getApproverIdsForResource(
         select: { userId: true },
       }),
       prisma.churchMembership.findMany({
-        where: { churchId: series.churchId, role: { in: ["CHURCH_ADMIN", "EVENT_MANAGER"] } },
+        where: {
+          churchId: series.churchId,
+          role: { in: ["CHURCH_ADMIN", "EVENT_MANAGER"] },
+        },
         select: { userId: true },
       }),
     ]);

@@ -47,7 +47,7 @@ const mockGetActor = getActor as jest.Mock;
 const mockCan = can as jest.Mock;
 const mockDal = dal as jest.Mocked<typeof dal>;
 const mockQueue = queueNotification as jest.Mock;
-const mockGrant = (APPROVAL_CONFIG.EVENT.grant as jest.Mock);
+const mockGrant = APPROVAL_CONFIG.EVENT.grant as jest.Mock;
 
 const actor = { id: "user-1", isPlatformAdmin: false };
 
@@ -58,7 +58,10 @@ beforeEach(() => {
   mockDal.hasDirectRoleForResource.mockResolvedValue(false);
   mockDal.getApproverIdsForResource.mockResolvedValue(["approver-1"]);
   mockDal.upsertApprovalRequest.mockResolvedValue({} as never);
-  mockDal.resolveApprovalAuthContext.mockResolvedValue({ eventId: "e1", churchId: "ch1" });
+  mockDal.resolveApprovalAuthContext.mockResolvedValue({
+    eventId: "e1",
+    churchId: "ch1",
+  });
 });
 
 describe("submitRequestAction", () => {
@@ -72,7 +75,10 @@ describe("submitRequestAction", () => {
   });
 
   it("returns fieldErrors on invalid input", async () => {
-    const result = await submitRequestAction({ resourceType: "BAD", resourceId: "" });
+    const result = await submitRequestAction({
+      resourceType: "BAD",
+      resourceId: "",
+    });
     expect(result).toHaveProperty("fieldErrors");
     expect(mockDal.upsertApprovalRequest).not.toHaveBeenCalled();
   });
@@ -85,7 +91,10 @@ describe("submitRequestAction", () => {
   });
 
   it("upserts request and fans out notifications on success", async () => {
-    const result = await submitRequestAction({ ...validInput, message: "I can help" });
+    const result = await submitRequestAction({
+      ...validInput,
+      message: "I can help",
+    });
     expect(result).toEqual({ success: "Request submitted." });
     expect(mockDal.upsertApprovalRequest).toHaveBeenCalledWith({
       requesterId: "user-1",
@@ -95,7 +104,10 @@ describe("submitRequestAction", () => {
       message: "I can help",
     });
     expect(mockQueue).toHaveBeenCalledWith(
-      expect.objectContaining({ userId: "approver-1", type: "ROLE_REQUEST_RECEIVED" })
+      expect.objectContaining({
+        userId: "approver-1",
+        type: "ROLE_REQUEST_RECEIVED",
+      })
     );
   });
 });
@@ -119,33 +131,54 @@ describe("reviewRequestAction", () => {
 
   it("returns error when unauthenticated", async () => {
     mockGetActor.mockResolvedValue(null);
-    const result = await reviewRequestAction({ requestId: "req-1", decision: "APPROVED" });
+    const result = await reviewRequestAction({
+      requestId: "req-1",
+      decision: "APPROVED",
+    });
     expect(result).toEqual({ error: "Unauthorised." });
   });
 
   it("returns error when request not found", async () => {
     mockDal.getApprovalRequestById.mockResolvedValue(null);
-    const result = await reviewRequestAction({ requestId: "missing", decision: "APPROVED" });
+    const result = await reviewRequestAction({
+      requestId: "missing",
+      decision: "APPROVED",
+    });
     expect(result).toEqual({ error: "Request not found." });
   });
 
   it("returns error when already reviewed", async () => {
-    mockDal.getApprovalRequestById.mockResolvedValue({ ...pendingRequest, status: "APPROVED" } as never);
-    const result = await reviewRequestAction({ requestId: "req-1", decision: "DENIED" });
+    mockDal.getApprovalRequestById.mockResolvedValue({
+      ...pendingRequest,
+      status: "APPROVED",
+    } as never);
+    const result = await reviewRequestAction({
+      requestId: "req-1",
+      decision: "DENIED",
+    });
     expect(result).toEqual({ error: "Request already reviewed." });
   });
 
   it("returns error when not authorized to approve", async () => {
     mockCan.mockResolvedValue(false);
-    const result = await reviewRequestAction({ requestId: "req-1", decision: "APPROVED" });
+    const result = await reviewRequestAction({
+      requestId: "req-1",
+      decision: "APPROVED",
+    });
     expect(result).toEqual({ error: "Unauthorised." });
     expect(mockDal.updateApprovalRequest).not.toHaveBeenCalled();
   });
 
   it("approves request and grants role", async () => {
-    const result = await reviewRequestAction({ requestId: "req-1", decision: "APPROVED" });
+    const result = await reviewRequestAction({
+      requestId: "req-1",
+      decision: "APPROVED",
+    });
     expect(result).toEqual({ success: "Request approved." });
-    expect(mockDal.resolveApprovalAuthContext).toHaveBeenCalledWith("EVENT", "e1");
+    expect(mockDal.resolveApprovalAuthContext).toHaveBeenCalledWith(
+      "EVENT",
+      "e1"
+    );
     expect(mockDal.updateApprovalRequest).toHaveBeenCalledWith("req-1", {
       status: "APPROVED",
       reviewedBy: "user-1",
@@ -153,16 +186,25 @@ describe("reviewRequestAction", () => {
     });
     expect(mockGrant).toHaveBeenCalledWith("requester-1", "e1", "user-1");
     expect(mockQueue).toHaveBeenCalledWith(
-      expect.objectContaining({ userId: "requester-1", type: "ROLE_REQUEST_OUTCOME" })
+      expect.objectContaining({
+        userId: "requester-1",
+        type: "ROLE_REQUEST_OUTCOME",
+      })
     );
   });
 
   it("denies request without granting role", async () => {
-    const result = await reviewRequestAction({ requestId: "req-1", decision: "DENIED" });
+    const result = await reviewRequestAction({
+      requestId: "req-1",
+      decision: "DENIED",
+    });
     expect(result).toEqual({ success: "Request denied." });
     expect(mockGrant).not.toHaveBeenCalled();
     expect(mockQueue).toHaveBeenCalledWith(
-      expect.objectContaining({ userId: "requester-1", type: "ROLE_REQUEST_OUTCOME" })
+      expect.objectContaining({
+        userId: "requester-1",
+        type: "ROLE_REQUEST_OUTCOME",
+      })
     );
   });
 });

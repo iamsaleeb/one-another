@@ -4,7 +4,10 @@ import { revalidatePath, updateTag } from "next/cache";
 import { NotificationType, type ResourceType } from "@prisma/client";
 import { getActor } from "@/domains/roles/lib/session";
 import { can } from "@/domains/roles/lib/can";
-import { SubmitRequestSchema, ReviewRequestSchema } from "../validations/requests";
+import {
+  SubmitRequestSchema,
+  ReviewRequestSchema,
+} from "../validations/requests";
 import {
   upsertApprovalRequest,
   updateApprovalRequest,
@@ -33,12 +36,17 @@ export async function submitRequestAction(
   if (!actor) return { error: "Unauthorised." };
 
   const parsed = SubmitRequestSchema.safeParse(input);
-  if (!parsed.success) return { fieldErrors: parsed.error.flatten().fieldErrors };
+  if (!parsed.success)
+    return { fieldErrors: parsed.error.flatten().fieldErrors };
 
   const { resourceType, resourceId, message } = parsed.data;
   const config = APPROVAL_CONFIG[resourceType];
 
-  const alreadyHasAccess = await hasDirectRoleForResource(actor.id, resourceType, resourceId);
+  const alreadyHasAccess = await hasDirectRoleForResource(
+    actor.id,
+    resourceType,
+    resourceId
+  );
   if (alreadyHasAccess) return { error: "You already have access." };
 
   await upsertApprovalRequest({
@@ -78,15 +86,20 @@ export async function reviewRequestAction(
   if (!actor) return { error: "Unauthorised." };
 
   const parsed = ReviewRequestSchema.safeParse(input);
-  if (!parsed.success) return { fieldErrors: parsed.error.flatten().fieldErrors };
+  if (!parsed.success)
+    return { fieldErrors: parsed.error.flatten().fieldErrors };
 
   const { requestId, decision } = parsed.data;
 
   const request = await getApprovalRequestById(requestId);
   if (!request) return { error: "Request not found." };
-  if (request.status !== "PENDING") return { error: "Request already reviewed." };
+  if (request.status !== "PENDING")
+    return { error: "Request already reviewed." };
 
-  const authContext = await resolveApprovalAuthContext(request.resourceType, request.resourceId);
+  const authContext = await resolveApprovalAuthContext(
+    request.resourceType,
+    request.resourceId
+  );
   const config = APPROVAL_CONFIG[request.resourceType];
   const allowed = await can(actor, config.approveCapability, authContext);
   if (!allowed) return { error: "Unauthorised." };
@@ -121,8 +134,15 @@ export async function reviewRequestAction(
     },
   });
 
-  updateTag(`approval-${request.resourceType}-${request.resourceId}-${request.requesterId}`);
+  updateTag(
+    `approval-${request.resourceType}-${request.resourceId}-${request.requesterId}`
+  );
   updateTag(`approval-pending-${request.resourceType}-${request.resourceId}`);
-  revalidatePath(resourcePath(request.resourceType, request.resourceId), "page");
-  return { success: decision === "APPROVED" ? "Request approved." : "Request denied." };
+  revalidatePath(
+    resourcePath(request.resourceType, request.resourceId),
+    "page"
+  );
+  return {
+    success: decision === "APPROVED" ? "Request approved." : "Request denied.",
+  };
 }

@@ -21,7 +21,7 @@ interface Props {
   resourceId: string;
 }
 
-export function PendingRequestsCard({ requests, resourceType, resourceId }: Props) {
+export function PendingRequestsCard({ requests }: Props) {
   if (requests.length === 0) return null;
 
   return (
@@ -32,22 +32,14 @@ export function PendingRequestsCard({ requests, resourceType, resourceId }: Prop
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
         {requests.map((req) => (
-          <RequestRow key={req.id} request={req} resourceType={resourceType} resourceId={resourceId} />
+          <RequestRow key={req.id} request={req} />
         ))}
       </CardContent>
     </Card>
   );
 }
 
-function RequestRow({
-  request,
-  resourceType,
-  resourceId,
-}: {
-  request: PendingRequest;
-  resourceType: ResourceType;
-  resourceId: string;
-}) {
+function RequestRow({ request }: { request: PendingRequest }) {
   const [isPending, startTransition] = useTransition();
   const initials = request.requester.name
     ? request.requester.name.slice(0, 2).toUpperCase()
@@ -63,12 +55,17 @@ function RequestRow({
     <div className="flex items-start gap-3">
       <Avatar className="size-9 shrink-0">
         {request.requester.image && (
-          <AvatarImage src={request.requester.image} alt={request.requester.name ?? ""} />
+          <AvatarImage
+            src={request.requester.image}
+            alt={request.requester.name ?? ""}
+          />
         )}
         <AvatarFallback>{initials}</AvatarFallback>
       </Avatar>
       <div className="flex flex-1 flex-col gap-1.5">
-        <p className="text-sm font-medium leading-none">{request.requester.name ?? "Unknown"}</p>
+        <p className="text-sm leading-none font-medium">
+          {request.requester.name ?? "Unknown"}
+        </p>
         {request.message && (
           <p className="text-muted-foreground text-sm">{request.message}</p>
         )}

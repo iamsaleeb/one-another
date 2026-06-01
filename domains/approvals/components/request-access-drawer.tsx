@@ -102,13 +102,14 @@ export function RequestAccessDrawer({
             </div>
 
             <DrawerFooter>
-              <Button
-                type="submit"
-                disabled={form.formState.isSubmitting}
-              >
+              <Button type="submit" disabled={form.formState.isSubmitting}>
                 {form.formState.isSubmitting ? "Sending…" : "Send request"}
               </Button>
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+              >
                 Cancel
               </Button>
             </DrawerFooter>

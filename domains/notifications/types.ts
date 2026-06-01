@@ -49,12 +49,14 @@ export const NOTIFICATION_TYPES: Record<
   },
   [NotificationType.ROLE_REQUEST_RECEIVED]: {
     label: "Help Requests",
-    description: "Get notified when someone requests to help with your event, series, or church",
+    description:
+      "Get notified when someone requests to help with your event, series, or church",
     defaultEnabled: true,
   },
   [NotificationType.ROLE_REQUEST_OUTCOME]: {
     label: "Help Request Outcomes",
-    description: "Get notified when your request to help has been approved or denied",
+    description:
+      "Get notified when your request to help has been approved or denied",
     defaultEnabled: true,
   },
 };

@@ -4,7 +4,10 @@
 export { submitRequestAction, reviewRequestAction } from "./actions/requests";
 
 // Data fetching — server-only, for use in server components/pages
-export { getMyRequestForResource, getPendingRequestsForResource } from "./actions/data";
+export {
+  getMyRequestForResource,
+  getPendingRequestsForResource,
+} from "./actions/data";
 
 // Components
 export { ApprovalMenuTrigger } from "./components/approval-menu-trigger";

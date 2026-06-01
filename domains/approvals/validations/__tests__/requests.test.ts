@@ -1,7 +1,4 @@
-import {
-  SubmitRequestSchema,
-  ReviewRequestSchema,
-} from "../requests";
+import { SubmitRequestSchema, ReviewRequestSchema } from "../requests";
 
 describe("SubmitRequestSchema", () => {
   it("accepts valid EVENT request with message", () => {

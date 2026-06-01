@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { Globe, MapPin, Share2, Bell } from "lucide-react";
+import { Globe, MapPin, Bell } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -10,6 +10,15 @@ import {
 import { auth } from "@/auth";
 import { ChurchTabs } from "./_components/church-tabs";
 import { FollowButton } from "./_components/follow-button";
+import { sessionToActor } from "@/domains/roles/lib/session";
+import { can } from "@/domains/roles/lib/can";
+import { Capabilities } from "@/domains/roles/lib/capabilities";
+import {
+  getMyRequestForResource,
+  getPendingRequestsForResource,
+  ApprovalMenuTrigger,
+  PendingRequestsCard,
+} from "@/domains/approvals";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -34,6 +43,24 @@ export default async function ChurchDetailPage({ params }: Props) {
   ]);
 
   if (!church) notFound();
+
+  const actor = sessionToActor(session);
+
+  const [canManageMembers, canCreateEvent] = actor
+    ? await Promise.all([
+        can(actor, Capabilities.CHURCH_MANAGE_MEMBERS, { churchId: id }),
+        can(actor, Capabilities.EVENT_CREATE, { churchId: id }),
+      ])
+    : [false, false];
+
+  const [myRequest, pendingRequests] = await Promise.all([
+    session?.user?.id
+      ? getMyRequestForResource("CHURCH", id, session.user.id)
+      : Promise.resolve(null),
+    canManageMembers
+      ? getPendingRequestsForResource("CHURCH", id)
+      : Promise.resolve([]),
+  ]);
 
   const isFollowing = myFollow !== null;
 
@@ -81,9 +108,14 @@ export default async function ChurchDetailPage({ params }: Props) {
                   </div>
                 </a>
               )}
-              <div className="border-border flex h-11 w-11 items-center justify-center rounded-full border-2">
-                <Share2 className="text-foreground h-5 w-5" />
-              </div>
+              <ApprovalMenuTrigger
+                resourceType="CHURCH"
+                resourceId={id}
+                resourceName={church.name}
+                isAuthenticated={!!session?.user}
+                requestStatus={myRequest?.status ?? null}
+                hasRole={canCreateEvent}
+              />
             </div>
 
             {/* Follow Alert */}
@@ -108,6 +140,16 @@ export default async function ChurchDetailPage({ params }: Props) {
 
       {/* Tabbed content */}
       <ChurchTabs church={church} />
+
+      {canManageMembers && (
+        <div className="px-4 pt-4">
+          <PendingRequestsCard
+            requests={pendingRequests}
+            resourceType="CHURCH"
+            resourceId={id}
+          />
+        </div>
+      )}
     </div>
   );
 }

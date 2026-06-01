@@ -34,5 +34,7 @@ export async function getAllRequestsForResource(
 ): Promise<ResolvedRequest[]> {
   cacheTag(`approval-resolved-${resourceType}-${resourceId}`);
   cacheLife("minutes");
-  return dalGetAllResolved(resourceType, resourceId) as Promise<ResolvedRequest[]>;
+  return dalGetAllResolved(resourceType, resourceId) as Promise<
+    ResolvedRequest[]
+  >;
 }

@@ -18,6 +18,8 @@ jest.mock("@/lib/db", () => ({
 
 import {
   upsertApprovalRequest,
+  updateApprovalRequest,
+  getApprovalRequestById,
   getMyRequestForResource,
   getPendingRequestsForResource,
   getApproverIdsForResource,
@@ -32,8 +34,12 @@ const mockApprovalRequest = prisma.approvalRequest as jest.Mocked<
   typeof prisma.approvalRequest
 >;
 const mockEvent = prisma.event as jest.Mocked<typeof prisma.event>;
+const mockSeries = prisma.series as jest.Mocked<typeof prisma.series>;
 const mockEventStaff = prisma.eventStaffAssignment as jest.Mocked<
   typeof prisma.eventStaffAssignment
+>;
+const mockSeriesStaff = prisma.seriesStaffAssignment as jest.Mocked<
+  typeof prisma.seriesStaffAssignment
 >;
 const mockChurchMembership = prisma.churchMembership as jest.Mocked<
   typeof prisma.churchMembership
@@ -62,6 +68,44 @@ describe("upsertApprovalRequest", () => {
         },
       })
     );
+  });
+});
+
+describe("updateApprovalRequest", () => {
+  it("updates by id with provided data", async () => {
+    const data = {
+      status: "APPROVED" as const,
+      reviewedBy: "reviewer-1",
+      reviewedAt: new Date("2025-01-01"),
+    };
+    mockApprovalRequest.update.mockResolvedValue({} as never);
+    await updateApprovalRequest("req-1", data);
+    expect(mockApprovalRequest.update).toHaveBeenCalledWith({
+      where: { id: "req-1" },
+      data,
+    });
+  });
+});
+
+describe("getApprovalRequestById", () => {
+  it("finds by id and includes requester", async () => {
+    const fakeRequest = {
+      id: "req-1",
+      requester: { id: "u1", name: "Alice" },
+    };
+    mockApprovalRequest.findUnique.mockResolvedValue(fakeRequest as never);
+    const result = await getApprovalRequestById("req-1");
+    expect(mockApprovalRequest.findUnique).toHaveBeenCalledWith({
+      where: { id: "req-1" },
+      include: { requester: { select: { id: true, name: true } } },
+    });
+    expect(result).toBe(fakeRequest);
+  });
+
+  it("returns null when not found", async () => {
+    mockApprovalRequest.findUnique.mockResolvedValue(null);
+    const result = await getApprovalRequestById("missing");
+    expect(result).toBeNull();
   });
 });
 
@@ -121,6 +165,42 @@ describe("getApproverIdsForResource", () => {
     const ids = await getApproverIdsForResource("EVENT", "missing");
     expect(ids).toEqual([]);
   });
+
+  it("returns deduped ids for SERIES type", async () => {
+    mockSeries.findUnique.mockResolvedValue({ churchId: "ch1" } as never);
+    mockSeriesStaff.findMany.mockResolvedValue([
+      { userId: "series-mgr1" },
+    ] as never);
+    mockChurchMembership.findMany.mockResolvedValue([
+      { userId: "series-mgr1" },
+      { userId: "church-admin1" },
+    ] as never);
+    const ids = await getApproverIdsForResource("SERIES", "s1");
+    expect(ids).toEqual(
+      expect.arrayContaining(["series-mgr1", "church-admin1"])
+    );
+    expect(ids.length).toBe(2);
+  });
+
+  it("returns empty array when series not found", async () => {
+    mockSeries.findUnique.mockResolvedValue(null);
+    const ids = await getApproverIdsForResource("SERIES", "missing");
+    expect(ids).toEqual([]);
+  });
+
+  it("returns CHURCH_ADMIN ids for CHURCH type", async () => {
+    mockChurchMembership.findMany.mockResolvedValue([
+      { userId: "admin1" },
+      { userId: "admin2" },
+    ] as never);
+    const ids = await getApproverIdsForResource("CHURCH", "ch1");
+    expect(ids).toEqual(["admin1", "admin2"]);
+    expect(mockChurchMembership.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { churchId: "ch1", role: "CHURCH_ADMIN" },
+      })
+    );
+  });
 });
 
 describe("resolveApprovalAuthContext", () => {
@@ -128,6 +208,12 @@ describe("resolveApprovalAuthContext", () => {
     mockEvent.findUnique.mockResolvedValue({ churchId: "ch1" } as never);
     const ctx = await resolveApprovalAuthContext("EVENT", "e1");
     expect(ctx).toEqual({ eventId: "e1", churchId: "ch1" });
+  });
+
+  it("returns seriesId + churchId for SERIES", async () => {
+    mockSeries.findUnique.mockResolvedValue({ churchId: "ch1" } as never);
+    const ctx = await resolveApprovalAuthContext("SERIES", "s1");
+    expect(ctx).toEqual({ seriesId: "s1", churchId: "ch1" });
   });
 
   it("returns churchId only for CHURCH", async () => {
@@ -145,9 +231,37 @@ describe("hasDirectRoleForResource", () => {
     expect(result).toBe(true);
   });
 
-  it("returns false when no assignment", async () => {
+  it("returns false when no event assignment", async () => {
     mockEventStaff.findUnique.mockResolvedValue(null);
     const result = await hasDirectRoleForResource("u1", "EVENT", "e1");
+    expect(result).toBe(false);
+  });
+
+  it("returns true when SeriesStaffAssignment exists", async () => {
+    mockSeriesStaff.findUnique.mockResolvedValue({
+      role: "SERIES_SESSION_CREATOR",
+    } as never);
+    const result = await hasDirectRoleForResource("u1", "SERIES", "s1");
+    expect(result).toBe(true);
+  });
+
+  it("returns false when no series assignment", async () => {
+    mockSeriesStaff.findUnique.mockResolvedValue(null);
+    const result = await hasDirectRoleForResource("u1", "SERIES", "s1");
+    expect(result).toBe(false);
+  });
+
+  it("returns true when ChurchMembership exists", async () => {
+    mockChurchMembership.findUnique.mockResolvedValue({
+      role: "EVENT_CREATOR",
+    } as never);
+    const result = await hasDirectRoleForResource("u1", "CHURCH", "ch1");
+    expect(result).toBe(true);
+  });
+
+  it("returns false when no church membership", async () => {
+    mockChurchMembership.findUnique.mockResolvedValue(null);
+    const result = await hasDirectRoleForResource("u1", "CHURCH", "ch1");
     expect(result).toBe(false);
   });
 });

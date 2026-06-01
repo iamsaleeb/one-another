@@ -42,7 +42,10 @@ function Step({
   return (
     <div className="flex min-w-0 flex-col items-center gap-1">
       <div
-        className={cn("size-3 shrink-0 rounded-full border-2", DOT_CLASS[state])}
+        className={cn(
+          "size-3 shrink-0 rounded-full border-2",
+          DOT_CLASS[state]
+        )}
       />
       <span
         className={cn(
@@ -94,12 +97,13 @@ export function RequestTimeline({ status, createdAt, reviewedAt }: Props) {
     <div className="flex items-start gap-1 py-2">
       <Step state="done" label="Submitted" date={createdAt} />
       <Connector done />
-      <Step
-        state={resolved ? "done" : "active"}
-        label="Under Review"
-      />
+      <Step state={resolved ? "done" : "active"} label="Under Review" />
       <Connector done={resolved} />
-      <Step state={step3.state} label={step3.label} date={resolved ? reviewedAt : null} />
+      <Step
+        state={step3.state}
+        label={step3.label}
+        date={resolved ? reviewedAt : null}
+      />
     </div>
   );
 }

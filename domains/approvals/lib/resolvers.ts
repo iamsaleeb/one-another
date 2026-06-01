@@ -10,9 +10,18 @@ import {
   Capabilities,
   type Capability,
 } from "@/domains/roles/lib/capabilities";
-import { upsertEventStaff, removeEventStaff } from "@/domains/roles/dal/event-staff";
-import { upsertSeriesStaff, removeSeriesStaff } from "@/domains/roles/dal/series-staff";
-import { upsertChurchMembership, removeChurchMembership } from "@/domains/roles/dal/church-memberships";
+import {
+  upsertEventStaff,
+  removeEventStaff,
+} from "@/domains/roles/dal/event-staff";
+import {
+  upsertSeriesStaff,
+  removeSeriesStaff,
+} from "@/domains/roles/dal/series-staff";
+import {
+  upsertChurchMembership,
+  removeChurchMembership,
+} from "@/domains/roles/dal/church-memberships";
 
 interface ApprovalConfig {
   role: string;

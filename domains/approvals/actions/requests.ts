@@ -200,7 +200,8 @@ export async function revokeAccessAction(
 
   const request = await getApprovalRequestById(requestId);
   if (!request) return { error: "Request not found." };
-  if (request.status !== "APPROVED") return { error: "Request is not approved." };
+  if (request.status !== "APPROVED")
+    return { error: "Request is not approved." };
 
   const authContext = await resolveApprovalAuthContext(
     request.resourceType,

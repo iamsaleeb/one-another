@@ -20,7 +20,6 @@ import {
   getMyRequestForResource,
   getPendingRequestsForResource,
   ApprovalMenuTrigger,
-  PendingRequestsCard,
 } from "@/domains/approvals";
 
 interface Props {
@@ -106,8 +105,10 @@ export default async function SeriesDetailPage({ params }: Props) {
                 resourceId={series.id}
                 resourceName={series.name}
                 isAuthenticated={!!session?.user}
-                requestStatus={myRequest?.status ?? null}
                 hasRole={canAddSession}
+                myRequest={myRequest ?? null}
+                pendingRequests={pendingRequests}
+                isApprover={canManageSeries}
               />
             </div>
           </div>
@@ -172,14 +173,6 @@ export default async function SeriesDetailPage({ params }: Props) {
             ))
           )}
         </section>
-
-        {canManageSeries && (
-          <PendingRequestsCard
-            requests={pendingRequests}
-            resourceType="SERIES"
-            resourceId={series.id}
-          />
-        )}
       </div>
 
       {session?.user && (

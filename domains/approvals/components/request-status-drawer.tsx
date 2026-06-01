@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { format } from "date-fns";
 import type { ApprovalStatus } from "@prisma/client";
 import {
   Drawer,
@@ -11,10 +10,10 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from "@/components/ui/drawer";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { cancelRequestAction } from "../actions/requests";
+import { RequestTimeline } from "./request-timeline";
 import type { ApprovalActionState } from "../lib/types";
 
 interface MyRequest {
@@ -32,28 +31,6 @@ interface Props {
   resourceName: string;
 }
 
-const STATUS_CONFIG: Record<
-  ApprovalStatus,
-  { label: string; className: string }
-> = {
-  PENDING: {
-    label: "Pending",
-    className: "bg-amber-100 text-amber-700 hover:bg-amber-100",
-  },
-  APPROVED: {
-    label: "Approved",
-    className: "bg-green-100 text-green-700 hover:bg-green-100",
-  },
-  DENIED: {
-    label: "Denied",
-    className: "bg-red-100 text-red-700 hover:bg-red-100",
-  },
-};
-
-function formatDate(date: Date): string {
-  return format(date, "d MMM yyyy, h:mm a");
-}
-
 export function RequestStatusDrawer({
   open,
   onOpenChange,
@@ -62,8 +39,6 @@ export function RequestStatusDrawer({
 }: Props) {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
-
-  const statusConfig = STATUS_CONFIG[myRequest.status];
 
   function handleCancel() {
     setError(null);
@@ -88,31 +63,11 @@ export function RequestStatusDrawer({
         </DrawerHeader>
 
         <div className="flex flex-col gap-4 px-4">
-          <div className="flex items-center gap-2">
-            <span className="text-muted-foreground text-sm">Status</span>
-            <Badge className={statusConfig.className}>
-              {statusConfig.label}
-            </Badge>
-          </div>
-
-          <Separator />
-
-          <div className="flex flex-col gap-2">
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Requested</span>
-              <span suppressHydrationWarning>
-                {formatDate(myRequest.createdAt)}
-              </span>
-            </div>
-            {myRequest.reviewedAt && (
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Reviewed</span>
-                <span suppressHydrationWarning>
-                  {formatDate(myRequest.reviewedAt)}
-                </span>
-              </div>
-            )}
-          </div>
+          <RequestTimeline
+            status={myRequest.status}
+            createdAt={myRequest.createdAt}
+            reviewedAt={myRequest.reviewedAt}
+          />
 
           {myRequest.message && (
             <>

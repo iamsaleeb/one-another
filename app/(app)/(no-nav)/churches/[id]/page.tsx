@@ -16,6 +16,7 @@ import { Capabilities } from "@/domains/roles/lib/capabilities";
 import {
   getMyRequestForResource,
   getPendingRequestsForResource,
+  getAllRequestsForResource,
   ApprovalMenuTrigger,
 } from "@/domains/approvals";
 
@@ -52,12 +53,15 @@ export default async function ChurchDetailPage({ params }: Props) {
       ])
     : [false, false];
 
-  const [myRequest, pendingRequests] = await Promise.all([
+  const [myRequest, pendingRequests, resolvedRequests] = await Promise.all([
     session?.user?.id
       ? getMyRequestForResource("CHURCH", id, session.user.id)
       : Promise.resolve(null),
     canManageMembers
       ? getPendingRequestsForResource("CHURCH", id)
+      : Promise.resolve([]),
+    canManageMembers
+      ? getAllRequestsForResource("CHURCH", id)
       : Promise.resolve([]),
   ]);
 
@@ -115,6 +119,7 @@ export default async function ChurchDetailPage({ params }: Props) {
                 hasRole={canCreateEvent}
                 myRequest={myRequest ?? null}
                 pendingRequests={pendingRequests}
+                resolvedRequests={resolvedRequests}
                 isApprover={canManageMembers}
               />
             </div>

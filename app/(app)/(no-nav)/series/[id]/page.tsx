@@ -19,6 +19,7 @@ import { CADENCE_LABELS } from "@/lib/types/search";
 import {
   getMyRequestForResource,
   getPendingRequestsForResource,
+  getAllRequestsForResource,
   ApprovalMenuTrigger,
 } from "@/domains/approvals";
 
@@ -63,12 +64,15 @@ export default async function SeriesDetailPage({ params }: Props) {
 
   const canManageSeries = canEdit;
 
-  const [myRequest, pendingRequests] = await Promise.all([
+  const [myRequest, pendingRequests, resolvedRequests] = await Promise.all([
     session?.user?.id
       ? getMyRequestForResource("SERIES", id, session.user.id)
       : Promise.resolve(null),
     canManageSeries
       ? getPendingRequestsForResource("SERIES", id)
+      : Promise.resolve([]),
+    canManageSeries
+      ? getAllRequestsForResource("SERIES", id)
       : Promise.resolve([]),
   ]);
 
@@ -108,6 +112,7 @@ export default async function SeriesDetailPage({ params }: Props) {
                 hasRole={canAddSession}
                 myRequest={myRequest ?? null}
                 pendingRequests={pendingRequests}
+                resolvedRequests={resolvedRequests}
                 isApprover={canManageSeries}
               />
             </div>

@@ -44,6 +44,7 @@ import { SaveEventButton } from "./_components/save-event-button";
 import {
   getMyRequestForResource,
   getPendingRequestsForResource,
+  getAllRequestsForResource,
   ApprovalMenuTrigger,
 } from "@/domains/approvals";
 
@@ -119,12 +120,15 @@ export default async function EventDetailPage({ params }: Props) {
       ])
     : [false, false, false, false];
 
-  const [myRequest, pendingRequests] = await Promise.all([
+  const [myRequest, pendingRequests, resolvedRequests] = await Promise.all([
     session?.user?.id
       ? getMyRequestForResource("EVENT", id, session.user.id)
       : Promise.resolve(null),
     canManageStaff
       ? getPendingRequestsForResource("EVENT", id)
+      : Promise.resolve([]),
+    canManageStaff
+      ? getAllRequestsForResource("EVENT", id)
       : Promise.resolve([]),
   ]);
 
@@ -167,6 +171,7 @@ export default async function EventDetailPage({ params }: Props) {
           hasRole={canEdit}
           myRequest={myRequest ?? null}
           pendingRequests={pendingRequests}
+          resolvedRequests={resolvedRequests}
           isApprover={canManageStaff}
         />
       </div>

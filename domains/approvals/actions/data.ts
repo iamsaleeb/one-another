@@ -7,6 +7,7 @@ import {
   getPendingRequestsForResource as dalGetPending,
   getAllRequestsForResource as dalGetAllResolved,
 } from "../dal/requests";
+import type { ResolvedRequest } from "../lib/types";
 
 export async function getMyRequestForResource(
   resourceType: ResourceType,
@@ -30,8 +31,8 @@ export async function getPendingRequestsForResource(
 export async function getAllRequestsForResource(
   resourceType: ResourceType,
   resourceId: string
-) {
+): Promise<ResolvedRequest[]> {
   cacheTag(`approval-resolved-${resourceType}-${resourceId}`);
   cacheLife("minutes");
-  return dalGetAllResolved(resourceType, resourceId);
+  return dalGetAllResolved(resourceType, resourceId) as Promise<ResolvedRequest[]>;
 }

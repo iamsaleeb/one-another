@@ -1,5 +1,32 @@
 # Changelog
 
+## [0.17.0](https://github.com/iamsaleeb/one-another/compare/one-another-v0.16.2...one-another-v0.17.0) (2026-06-01)
+
+
+### Features
+
+* add passwordless resign system ([#117](https://github.com/iamsaleeb/one-another/issues/117)) ([6cc063c](https://github.com/iamsaleeb/one-another/commit/6cc063ca71e09fdc011da328a16a265922f7d181))
+* add save button ([#123](https://github.com/iamsaleeb/one-another/issues/123)) ([3dc8c15](https://github.com/iamsaleeb/one-another/commit/3dc8c1517322f8ab7673460d5eec1cf3cf010be7))
+* auth recreation as module and rbac ([#125](https://github.com/iamsaleeb/one-another/issues/125)) ([b6b67e6](https://github.com/iamsaleeb/one-another/commit/b6b67e6d7dace5106255dc1f6c2b725fedd763b0))
+* create new church following vs all events ([#116](https://github.com/iamsaleeb/one-another/issues/116)) ([2aeff98](https://github.com/iamsaleeb/one-another/commit/2aeff98bec5634b34ce023c21ffbb6d757f6750b))
+* redesign wizard onboarding ([#119](https://github.com/iamsaleeb/one-another/issues/119)) ([a4e8f46](https://github.com/iamsaleeb/one-another/commit/a4e8f46d85d48babc05f76fbdf2c40d06f1b36d8))
+* refactor into using domain modules ([#124](https://github.com/iamsaleeb/one-another/issues/124)) ([e048b9a](https://github.com/iamsaleeb/one-another/commit/e048b9a0daae43749e1c4cb5c0fe9032429a950a))
+* unauthenticated view ([#118](https://github.com/iamsaleeb/one-another/issues/118)) ([733ee0d](https://github.com/iamsaleeb/one-another/commit/733ee0dba11a2504a863ea206f0c935ac8e900c7))
+* update profile page ([#120](https://github.com/iamsaleeb/one-another/issues/120)) ([795c8b6](https://github.com/iamsaleeb/one-another/commit/795c8b6b4eb128e1734bdcf236594acbff7177c1))
+
+
+### Bug Fixes
+
+* improve color contrast to meet WCAG 2 AA thresholds ([#113](https://github.com/iamsaleeb/one-another/issues/113)) ([c4610d3](https://github.com/iamsaleeb/one-another/commit/c4610d3b82e7d622ac7132283e83620dea7ae227))
+* pre-launch audit ([#111](https://github.com/iamsaleeb/one-another/issues/111)) ([d7474e8](https://github.com/iamsaleeb/one-another/commit/d7474e85f11a2377c25626f0e1bd33ec4bcb731a))
+
+
+### Performance Improvements
+
+* **auth:** embed church memberships in JWT to eliminate per-request DB queries ([#115](https://github.com/iamsaleeb/one-another/issues/115)) ([fcc713a](https://github.com/iamsaleeb/one-another/commit/fcc713ac3d16a9b5fba792b78c14a307e12851d8))
+* fix LCP image priority and events/[id] fetch waterfall ([#114](https://github.com/iamsaleeb/one-another/issues/114)) ([6f6685b](https://github.com/iamsaleeb/one-another/commit/6f6685bf555a0323d540e8f3e09dfc33beca51f2))
+* improve LCP on home page ([#122](https://github.com/iamsaleeb/one-another/issues/122)) ([6132022](https://github.com/iamsaleeb/one-another/commit/6132022bbb372ed06a416e854bc9ac45656a5d3a))
+
 ## [0.16.2](https://github.com/iamsaleeb/one-another/compare/one-another-v0.16.1...one-another-v0.16.2) (2026-05-15)
 
 ### Bug Fixes

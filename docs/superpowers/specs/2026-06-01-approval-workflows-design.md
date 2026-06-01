@@ -79,7 +79,7 @@ domains/approvals/
     requests.ts         # SubmitRequestSchema, ReviewRequestSchema
   components/
     approval-menu-trigger.tsx   # 3-dot DropdownMenu, shown on all detail pages
-    request-access-sheet.tsx    # bottom Sheet with optional message form
+    request-access-drawer.tsx   # bottom Drawer (vaul) with optional message form
     pending-requests-card.tsx   # approver-only card with approve/deny buttons
   index.ts
 ```
@@ -116,8 +116,9 @@ export const APPROVAL_CONFIG = {
 1. Auth check — must be signed in.
 2. Validate input (resourceType, resourceId, optional message ≤ 280 chars).
 3. Check requester does not already hold the target role.
-4. Upsert `ApprovalRequest` (replaces a prior DENIED request cleanly).
+4. Upsert `ApprovalRequest` via `{ requesterId_resourceType_resourceId: { ... } }` composite unique (replaces a prior DENIED request cleanly).
 5. Fan out `ROLE_REQUEST_RECEIVED` notification to all current approvers for that resource.
+6. Call `revalidatePath` on the resource detail route (e.g. `/events/[id]`) so the menu state reflects immediately.
 
 ### `reviewRequestAction`
 
@@ -127,6 +128,7 @@ export const APPROVAL_CONFIG = {
 4. Update `ApprovalRequest` status, `reviewedBy`, `reviewedAt`.
 5. If APPROVED: call `APPROVAL_CONFIG[resourceType].grant(...)`.
 6. Send `ROLE_REQUEST_OUTCOME` notification to requester.
+7. Call `revalidatePath` on the resource detail route so the pending requests card updates immediately.
 
 ---
 
@@ -159,14 +161,14 @@ Fan-out for `ROLE_REQUEST_RECEIVED`: query all users who currently have the appr
 - Share item (disabled, already exists pattern) kept alongside.
 - Replaces the current profile icon area on each detail page.
 
-### `RequestAccessSheet`
+### `RequestAccessDrawer`
 
-- shadcn `Sheet` sliding up from bottom (mobile-first).
+- shadcn `Drawer` (built on `vaul`, swipe-to-dismiss, mobile-native) — correct primitive for a mobile-first bottom drawer. Not `Sheet`.
 - Opened from `ApprovalMenuTrigger` "Help out" item.
 - Displays: "You'll be added as a helper for [resourceName]."
 - RHF + zodResolver form with shadcn `Textarea` (optional, max 280 chars).
 - shadcn `Button` to submit → calls `submitRequestAction`.
-- On success: sheet closes, menu state updates to "PENDING".
+- On success: drawer closes, menu state updates to "PENDING".
 
 ### `PendingRequestsCard`
 

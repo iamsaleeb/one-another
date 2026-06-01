@@ -1,6 +1,6 @@
 "use client";
 
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import { formatDistanceToNow } from "date-fns";
 import type { ResourceType } from "@prisma/client";
 import {
@@ -78,6 +78,7 @@ export function ApproverRequestsDrawer({
 
 function RequestRow({ request }: { request: PendingRequest }) {
   const [isPending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
 
   const initials = request.requester.name
     ? request.requester.name.slice(0, 2).toUpperCase()
@@ -86,9 +87,14 @@ function RequestRow({ request }: { request: PendingRequest }) {
   const roleLabel = ROLE_LABELS[request.requestedRole] ?? request.requestedRole;
 
   function handleReview(decision: "APPROVED" | "DENIED") {
-    startTransition(() =>
-      reviewRequestAction({ requestId: request.id, decision }).then(() => {})
-    );
+    setError(null);
+    startTransition(async () => {
+      const result = await reviewRequestAction({
+        requestId: request.id,
+        decision,
+      });
+      if (result.error) setError(result.error);
+    });
   }
 
   return (
@@ -127,6 +133,8 @@ function RequestRow({ request }: { request: PendingRequest }) {
             </p>
           </div>
         )}
+
+        {error && <p className="text-destructive text-xs">{error}</p>}
 
         <div className="flex gap-2 pt-1">
           <Button

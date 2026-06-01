@@ -9,8 +9,7 @@ jest.mock("@/lib/db", () => ({
     church: { findMany: jest.fn(), findUnique: jest.fn() },
     series: { findMany: jest.fn(), findUnique: jest.fn() },
     user: { findUnique: jest.fn() },
-    churchOrganiser: { findMany: jest.fn() },
-    churchAdmin: { findMany: jest.fn() },
+    churchMembership: { findMany: jest.fn() },
     churchFollower: { findMany: jest.fn(), findUnique: jest.fn() },
     seriesFollower: { findUnique: jest.fn() },
     eventAttendee: { findMany: jest.fn(), findUnique: jest.fn() },
@@ -65,9 +64,8 @@ const mockChurchFindMany = prisma.church.findMany as jest.Mock;
 const mockChurchFindUnique = prisma.church.findUnique as jest.Mock;
 const mockSeriesFindMany = prisma.series.findMany as jest.Mock;
 const mockSeriesFindUnique = prisma.series.findUnique as jest.Mock;
-const mockChurchOrganiserFindMany = prisma.churchOrganiser
+const mockChurchMembershipFindMany = prisma.churchMembership
   .findMany as jest.Mock;
-const _mockChurchAdminFindMany = prisma.churchAdmin.findMany as jest.Mock;
 const mockEventAttendeeFindMany = prisma.eventAttendee.findMany as jest.Mock;
 const mockEventAttendeeFindUnique = prisma.eventAttendee
   .findUnique as jest.Mock;
@@ -185,7 +183,7 @@ describe("getMyEventAttendance", () => {
 
 describe("getOrganisersByChurch", () => {
   it("returns organisers for a church ordered by name", async () => {
-    mockChurchOrganiserFindMany.mockResolvedValue([
+    mockChurchMembershipFindMany.mockResolvedValue([
       { user: { id: "user-1", name: "Alice", email: "alice@example.com" } },
     ]);
 
@@ -194,15 +192,18 @@ describe("getOrganisersByChurch", () => {
     expect(result).toEqual([
       { id: "user-1", name: "Alice", email: "alice@example.com" },
     ]);
-    expect(mockChurchOrganiserFindMany).toHaveBeenCalledWith({
-      where: { churchId: "ch-1" },
+    expect(mockChurchMembershipFindMany).toHaveBeenCalledWith({
+      where: {
+        churchId: "ch-1",
+        role: { in: ["EVENT_MANAGER", "EVENT_CREATOR"] },
+      },
       select: { user: { select: { id: true, name: true, email: true } } },
       orderBy: { user: { name: "asc" } },
     });
   });
 
   it("returns an empty array when the church has no organisers", async () => {
-    mockChurchOrganiserFindMany.mockResolvedValue([]);
+    mockChurchMembershipFindMany.mockResolvedValue([]);
     expect(await getOrganisersByChurch("ch-none")).toEqual([]);
   });
 });

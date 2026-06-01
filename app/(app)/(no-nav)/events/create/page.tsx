@@ -1,10 +1,10 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { EventWizard } from "./_components/event-wizard";
-import { UserRole } from "@prisma/client";
 import { PageHeader } from "@/components/ui/page-header";
-import { getChurchesByIds } from "@/domains/churches/actions/data";
+import { getChurches, getChurchesByIds } from "@/domains/churches/actions/data";
 import { getSeriesForEvent } from "@/domains/series/actions/data";
+import { getSeriesStaffForUser } from "@/domains/roles/dal/series-staff";
 import { getQuestionLibraryForUser } from "@/domains/events/questions/dal";
 
 interface Props {
@@ -13,22 +13,26 @@ interface Props {
 
 export default async function CreateEventPage({ searchParams }: Props) {
   const session = await auth();
+  if (!session) redirect("/");
 
-  if (
-    session?.user?.role !== UserRole.ORGANISER &&
-    session?.user?.role !== UserRole.ADMIN
-  ) {
-    redirect("/");
-  }
-
+  const churchMemberships = session.user.churchMemberships ?? [];
   const { seriesId } = await searchParams;
 
-  const managedIds = [
-    ...(session.user.organiserChurchIds ?? []),
-    ...(session.user.adminChurchIds ?? []),
-  ];
+  if (!session.user.isPlatformAdmin && churchMemberships.length === 0) {
+    if (!seriesId) {
+      redirect("/");
+    } else {
+      const seriesStaff = await getSeriesStaffForUser(
+        session.user.id,
+        seriesId
+      );
+      if (!seriesStaff) redirect("/");
+    }
+  }
+
+  const managedIds = churchMemberships.map((m) => m.churchId);
   const [churches, series, libraryItems] = await Promise.all([
-    getChurchesByIds(managedIds),
+    session.user.isPlatformAdmin ? getChurches() : getChurchesByIds(managedIds),
     seriesId ? getSeriesForEvent(seriesId) : null,
     getQuestionLibraryForUser(session.user.id),
   ]);

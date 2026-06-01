@@ -1,7 +1,6 @@
 import { handleUpload, type HandleUploadBody } from "@vercel/blob/client";
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { UserRole } from "@prisma/client";
 
 export async function POST(request: Request): Promise<NextResponse> {
   try {
@@ -24,10 +23,12 @@ export async function POST(request: Request): Promise<NextResponse> {
               : "profile";
 
         if (variant === "cover") {
-          if (
-            session.user.role !== UserRole.ORGANISER &&
-            session.user.role !== UserRole.ADMIN
-          ) {
+          // Coarse gate: any church member can upload covers (they need them for
+          // event/series creation). Specific event permission is enforced by the
+          // action that saves the URL. JWT memberships used intentionally here —
+          // this is a UI-level upload gate, not a capability-based auth decision.
+          const memberships = session.user.churchMemberships ?? [];
+          if (!session.user.isPlatformAdmin && memberships.length === 0) {
             throw new Error("Forbidden");
           }
         }

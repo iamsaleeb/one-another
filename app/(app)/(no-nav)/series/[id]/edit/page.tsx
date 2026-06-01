@@ -1,8 +1,10 @@
 import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
-import { UserRole } from "@prisma/client";
 import { getSeriesById } from "@/domains/series/actions/data";
 import { getChurchesByIds } from "@/domains/churches/actions/data";
+import { sessionToActor } from "@/domains/roles/lib/session";
+import { can } from "@/domains/roles/lib/can";
+import { Capabilities } from "@/domains/roles/lib/capabilities";
 import { PageHeader } from "@/components/ui/page-header";
 import { EditSeriesForm } from "./_components/edit-series-form";
 
@@ -14,19 +16,31 @@ export default async function EditSeriesPage({ params }: Props) {
   const { id } = await params;
   const [series, session] = await Promise.all([getSeriesById(id), auth()]);
 
-  if (
-    session?.user?.role !== UserRole.ORGANISER &&
-    session?.user?.role !== UserRole.ADMIN
-  )
-    redirect("/");
+  if (!session) redirect("/");
   if (!series) notFound();
 
-  const managedIds = [
-    ...(session.user.organiserChurchIds ?? []),
-    ...(session.user.adminChurchIds ?? []),
-  ];
-  const churches = await getChurchesByIds(managedIds);
-  if (!churches.some((c) => c.id === series.churchId)) notFound();
+  const actor = sessionToActor(session);
+  const canAccess =
+    !!actor &&
+    (await can(actor, Capabilities.SERIES_UPDATE, {
+      churchId: series.churchId,
+      seriesId: series.id,
+    }));
+  if (!canAccess) notFound();
+
+  // UI: church dropdown — filter JWT memberships to roles that have SERIES_UPDATE
+  // (CHURCH_ADMIN and EVENT_MANAGER). Slightly stale is acceptable for UI only;
+  // the actual auth decision above uses the DB via can().
+  const churchMemberships = session.user.churchMemberships ?? [];
+  const editableChurchIds = churchMemberships
+    .filter((m) => m.role === "CHURCH_ADMIN" || m.role === "EVENT_MANAGER")
+    .map((m) => m.churchId);
+
+  let churches = await getChurchesByIds(editableChurchIds);
+  if (!churches.some((c) => c.id === series.churchId)) {
+    if (series.church) churches = [series.church];
+    else notFound();
+  }
 
   return (
     <div className="mx-auto max-w-lg">

@@ -2,7 +2,9 @@ import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { getEventById } from "@/domains/events/actions/data";
 import { getEventResponses } from "@/domains/events/questions/actions";
-import { canManageChurchFromSession } from "@/lib/permissions";
+import { sessionToActor } from "@/domains/roles/lib/session";
+import { can } from "@/domains/roles/lib/can";
+import { Capabilities } from "@/domains/roles/lib/capabilities";
 import { PageHeader } from "@/components/ui/page-header";
 import { ResponsesTable } from "./_components/responses-table";
 
@@ -22,8 +24,15 @@ export default async function EventResponsesPage({ params }: Props) {
   const event = await getEventById(id);
   if (!event) notFound();
 
-  const canManage = canManageChurchFromSession(session, event.churchId ?? "");
-  if (!canManage) redirect(`/events/${id}`);
+  const actor = sessionToActor(session);
+  const canViewAttendees =
+    !!actor &&
+    (await can(actor, Capabilities.EVENT_VIEW_ATTENDEES, {
+      churchId: event.churchId ?? "",
+      eventId: id,
+    }));
+
+  if (!canViewAttendees) redirect(`/events/${id}`);
 
   const { questions, attendees } = await getEventResponses(id);
 

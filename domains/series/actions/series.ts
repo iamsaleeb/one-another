@@ -2,8 +2,8 @@
 
 import { redirect } from "next/navigation";
 import { updateTag } from "next/cache";
-import { auth } from "@/auth";
-import { UserRole, Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
+import { getActor } from "@/domains/roles/lib/session";
 import { prisma } from "@/lib/db";
 import {
   createSeriesSchema,
@@ -20,25 +20,14 @@ import {
 export async function createSeriesAction(
   data: CreateSeriesInput
 ): Promise<ActionResult> {
-  const session = await auth();
-  if (
-    session?.user?.role !== UserRole.ORGANISER &&
-    session?.user?.role !== UserRole.ADMIN
-  ) {
-    return { error: "Unauthorised." };
-  }
+  const actor = await getActor();
+  if (!actor) return { error: "Unauthorised." };
 
   const parsed = createSeriesSchema.safeParse(data);
   if (!parsed.success)
     return { fieldErrors: parsed.error.flatten().fieldErrors };
 
-  const result = await createSeries(
-    parsed.data,
-    session.user.id,
-    session.user.role,
-    session.user.organiserChurchIds ?? [],
-    session.user.adminChurchIds ?? []
-  );
+  const result = await createSeries(parsed.data, actor.id, actor);
   if ("error" in result || "fieldErrors" in result) return result;
 
   broadcastSeriesChange(result.id, result.churchId);
@@ -49,25 +38,14 @@ export async function updateSeriesAction(
   id: string,
   data: CreateSeriesInput
 ): Promise<ActionResult> {
-  const session = await auth();
-  if (
-    session?.user?.role !== UserRole.ORGANISER &&
-    session?.user?.role !== UserRole.ADMIN
-  )
-    redirect("/");
+  const actor = await getActor();
+  if (!actor) redirect("/");
 
   const parsed = createSeriesSchema.safeParse(data);
   if (!parsed.success)
     return { fieldErrors: parsed.error.flatten().fieldErrors };
 
-  const result = await updateSeries(
-    id,
-    parsed.data,
-    session.user.id,
-    session.user.role,
-    session.user.organiserChurchIds ?? [],
-    session.user.adminChurchIds ?? []
-  );
+  const result = await updateSeries(id, parsed.data, actor.id, actor);
   if ("error" in result || "fieldErrors" in result) redirect("/organiser");
 
   invalidateSeriesFields(id, result.oldChurchId);
@@ -83,12 +61,12 @@ export interface FollowSeriesState {
 export async function followSeriesAction(
   seriesId: string
 ): Promise<FollowSeriesState> {
-  const session = await auth();
-  if (!session?.user?.id) return { error: "You must be signed in." };
+  const actor = await getActor();
+  if (!actor) return { error: "You must be signed in." };
 
   try {
     await prisma.seriesFollower.create({
-      data: { seriesId, userId: session.user.id },
+      data: { seriesId, userId: actor.id },
     });
   } catch (err) {
     if (
@@ -100,43 +78,33 @@ export async function followSeriesAction(
     return { error: "Failed to follow series." };
   }
 
-  invalidateSeriesFollowing(seriesId, session.user.id);
+  invalidateSeriesFollowing(seriesId, actor.id);
   return {};
 }
 
 export async function unfollowSeriesAction(
   seriesId: string
 ): Promise<FollowSeriesState> {
-  const session = await auth();
-  if (!session?.user?.id) return { error: "You must be signed in." };
+  const actor = await getActor();
+  if (!actor) return { error: "You must be signed in." };
 
   try {
     await prisma.seriesFollower.delete({
-      where: { seriesId_userId: { seriesId, userId: session.user.id } },
+      where: { seriesId_userId: { seriesId, userId: actor.id } },
     });
   } catch {
     return { error: "Failed to unfollow series." };
   }
 
-  invalidateSeriesFollowing(seriesId, session.user.id);
+  invalidateSeriesFollowing(seriesId, actor.id);
   return {};
 }
 
 export async function deleteSeriesAction(id: string): Promise<void> {
-  const session = await auth();
-  if (
-    session?.user?.role !== UserRole.ORGANISER &&
-    session?.user?.role !== UserRole.ADMIN
-  )
-    redirect("/");
+  const actor = await getActor();
+  if (!actor) redirect("/");
 
-  const result = await deleteSeries(
-    id,
-    session.user.id,
-    session.user.role,
-    session.user.organiserChurchIds ?? [],
-    session.user.adminChurchIds ?? []
-  );
+  const result = await deleteSeries(id, actor.id, actor);
   if ("error" in result) redirect("/organiser");
 
   broadcastSeriesChange(id, result.churchId);

@@ -1,25 +1,32 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
-import { UserRole } from "@prisma/client";
 import { CreateSeriesForm } from "./_components/create-series-form";
 import { PageHeader } from "@/components/ui/page-header";
-import { getChurchesByIds } from "@/domains/churches/actions/data";
+import { getChurches, getChurchesByIds } from "@/domains/churches/actions/data";
+import { sessionToActor } from "@/domains/roles/lib/session";
+import { seriesPolicy } from "@/domains/roles/policies/series";
 
 export default async function CreateSeriesPage() {
   const session = await auth();
+  if (!session) redirect("/");
 
-  if (
-    session?.user?.role !== UserRole.ORGANISER &&
-    session?.user?.role !== UserRole.ADMIN
-  ) {
-    redirect("/");
-  }
+  const actor = sessionToActor(session);
+  const churchMemberships = session.user.churchMemberships ?? [];
+  const eligibleIds = (
+    await Promise.all(
+      churchMemberships.map(async (m) => {
+        const allowed =
+          actor && (await seriesPolicy.canCreate(actor, m.churchId));
+        return allowed ? m.churchId : null;
+      })
+    )
+  ).filter((id): id is string => id !== null);
 
-  const managedIds = [
-    ...(session.user.organiserChurchIds ?? []),
-    ...(session.user.adminChurchIds ?? []),
-  ];
-  const churches = await getChurchesByIds(managedIds);
+  if (!session.user.isPlatformAdmin && eligibleIds.length === 0) redirect("/");
+
+  const churches = session.user.isPlatformAdmin
+    ? await getChurches()
+    : await getChurchesByIds(eligibleIds);
 
   return (
     <div className="mx-auto max-w-lg">

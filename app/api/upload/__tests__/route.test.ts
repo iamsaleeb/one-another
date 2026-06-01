@@ -25,7 +25,9 @@ function makeRequest(body: unknown) {
 
 beforeEach(() => {
   jest.clearAllMocks();
-  mockAuth.mockResolvedValue({ user: { id: "user-1", role: "MEMBER" } });
+  mockAuth.mockResolvedValue({
+    user: { id: "user-1", isPlatformAdmin: false, churchMemberships: [] },
+  });
   mockHandleUpload.mockResolvedValue({
     url: "https://example.public.blob.vercel-storage.com/img.jpg",
   });
@@ -48,7 +50,9 @@ describe("POST /api/upload", () => {
     });
 
     it("returns 403 when a non-organiser requests a cover token", async () => {
-      mockAuth.mockResolvedValue({ user: { id: "user-1", role: "MEMBER" } });
+      mockAuth.mockResolvedValue({
+        user: { id: "user-1", isPlatformAdmin: false, churchMemberships: [] },
+      });
       mockHandleUpload.mockImplementation(async ({ onBeforeGenerateToken }) => {
         await onBeforeGenerateToken("img.jpg", "cover");
       });
@@ -61,7 +65,13 @@ describe("POST /api/upload", () => {
     });
 
     it("allows ORGANISER to request a cover token", async () => {
-      mockAuth.mockResolvedValue({ user: { id: "user-2", role: "ORGANISER" } });
+      mockAuth.mockResolvedValue({
+        user: {
+          id: "user-2",
+          isPlatformAdmin: false,
+          churchMemberships: [{ churchId: "ch-1", role: "EVENT_MANAGER" }],
+        },
+      });
       mockHandleUpload.mockImplementation(async ({ onBeforeGenerateToken }) => {
         const opts = await onBeforeGenerateToken("img.jpg", "cover");
         return { tokenPayload: opts.tokenPayload };
@@ -73,7 +83,9 @@ describe("POST /api/upload", () => {
     });
 
     it("allows ADMIN to request a cover token", async () => {
-      mockAuth.mockResolvedValue({ user: { id: "user-3", role: "ADMIN" } });
+      mockAuth.mockResolvedValue({
+        user: { id: "user-3", isPlatformAdmin: true, churchMemberships: [] },
+      });
       mockHandleUpload.mockImplementation(async ({ onBeforeGenerateToken }) => {
         const opts = await onBeforeGenerateToken("img.jpg", "cover");
         return { tokenPayload: opts.tokenPayload };
@@ -85,7 +97,9 @@ describe("POST /api/upload", () => {
     });
 
     it("allows any authenticated user to request a profile token", async () => {
-      mockAuth.mockResolvedValue({ user: { id: "user-1", role: "MEMBER" } });
+      mockAuth.mockResolvedValue({
+        user: { id: "user-1", isPlatformAdmin: false, churchMemberships: [] },
+      });
       mockHandleUpload.mockImplementation(async ({ onBeforeGenerateToken }) => {
         const opts = await onBeforeGenerateToken("avatar.jpg", "profile");
         return { tokenPayload: opts.tokenPayload };
@@ -99,7 +113,9 @@ describe("POST /api/upload", () => {
 
   describe("token options (via onBeforeGenerateToken)", () => {
     it("returns allowedContentTypes covering common image formats", async () => {
-      mockAuth.mockResolvedValue({ user: { id: "user-1", role: "MEMBER" } });
+      mockAuth.mockResolvedValue({
+        user: { id: "user-1", isPlatformAdmin: false, churchMemberships: [] },
+      });
       let capturedOpts:
         | Awaited<
             ReturnType<
@@ -127,7 +143,9 @@ describe("POST /api/upload", () => {
     });
 
     it("caps upload size at 4MB", async () => {
-      mockAuth.mockResolvedValue({ user: { id: "user-1", role: "MEMBER" } });
+      mockAuth.mockResolvedValue({
+        user: { id: "user-1", isPlatformAdmin: false, churchMemberships: [] },
+      });
       let capturedOpts:
         | Awaited<
             ReturnType<
@@ -148,7 +166,11 @@ describe("POST /api/upload", () => {
 
     it("includes userId and variant in tokenPayload", async () => {
       mockAuth.mockResolvedValue({
-        user: { id: "user-42", role: "ORGANISER" },
+        user: {
+          id: "user-42",
+          isPlatformAdmin: false,
+          churchMemberships: [{ churchId: "ch-1", role: "EVENT_MANAGER" }],
+        },
       });
       let capturedOpts:
         | Awaited<
@@ -192,7 +214,7 @@ describe("POST /api/upload", () => {
     });
 
     it("returns json with error field for all failures", async () => {
-      mockAuth.mockResolvedValue(null);
+      mockAuth.mockResolvedValue(null); // unauthenticated
       mockHandleUpload.mockImplementation(async ({ onBeforeGenerateToken }) => {
         await onBeforeGenerateToken("img.jpg", "profile");
       });

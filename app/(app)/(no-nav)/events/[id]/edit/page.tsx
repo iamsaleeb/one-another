@@ -1,6 +1,5 @@
 import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
-import { UserRole } from "@prisma/client";
 import { getEventById } from "@/domains/events/actions/data";
 import { getChurchesByIds } from "@/domains/churches/actions/data";
 import {
@@ -8,6 +7,9 @@ import {
   hasEventResponses,
 } from "@/domains/events/questions/actions";
 import { getQuestionLibraryForUser } from "@/domains/events/questions/dal";
+import { sessionToActor } from "@/domains/roles/lib/session";
+import { can } from "@/domains/roles/lib/can";
+import { Capabilities } from "@/domains/roles/lib/capabilities";
 import { parseEventMetadata } from "@/domains/events/validations/event";
 import { PageHeader } from "@/components/ui/page-header";
 import { EventWizard } from "@/app/(app)/(no-nav)/events/create/_components/event-wizard";
@@ -20,25 +22,39 @@ export default async function EditEventPage({ params }: Props) {
   const { id } = await params;
   const [event, session] = await Promise.all([getEventById(id), auth()]);
 
-  if (
-    session?.user?.role !== UserRole.ORGANISER &&
-    session?.user?.role !== UserRole.ADMIN
-  )
-    redirect("/");
+  if (!session) redirect("/");
   if (!event) notFound();
 
-  const managedIds = [
-    ...(session.user.organiserChurchIds ?? []),
-    ...(session.user.adminChurchIds ?? []),
-  ];
+  const actor = sessionToActor(session);
+
+  // Access check — can this user edit this specific event?
+  const canAccess =
+    !!actor &&
+    (await can(actor, Capabilities.EVENT_UPDATE, {
+      churchId: event.churchId ?? "",
+      eventId: id,
+      seriesId: event.seriesId ?? undefined,
+    }));
+  if (!canAccess) notFound();
+
+  // UI: which churches to show in the church-change dropdown
+  // Use JWT memberships (acceptable slight staleness for UI only)
+  const churchMemberships = session.user.churchMemberships ?? [];
+  const editableChurchIds = churchMemberships
+    .filter((m) => m.role === "CHURCH_ADMIN" || m.role === "EVENT_MANAGER")
+    .map((m) => m.churchId);
+
   const [churches, questions, libraryItems, questionsLocked] =
     await Promise.all([
-      getChurchesByIds(managedIds),
+      editableChurchIds.length > 0
+        ? getChurchesByIds(editableChurchIds)
+        : event.church
+          ? Promise.resolve([event.church])
+          : Promise.resolve([]),
       getEventQuestions(id),
       getQuestionLibraryForUser(session.user.id),
       hasEventResponses(id),
     ]);
-  if (!churches.some((c) => c.id === event.churchId)) notFound();
 
   const datetimeISO = event.datetime?.toISOString() ?? "";
   const { registration, camp } = parseEventMetadata(event.metadata);

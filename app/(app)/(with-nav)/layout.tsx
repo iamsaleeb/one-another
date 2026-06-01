@@ -3,7 +3,6 @@ import { auth } from "@/auth";
 import { BottomNav } from "@/components/bottom-nav";
 import { CreateEventFAB } from "@/domains/events/components/create-event-fab";
 import { getCachedUnreadCount } from "@/domains/notifications/actions/data";
-import { UserRole } from "@prisma/client";
 
 export default function NavLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -27,8 +26,16 @@ function NavShellFallback() {
 async function NavShell() {
   const session = await auth();
   const isAuthenticated = !!session?.user;
-  const isOrganiser = session?.user?.role === UserRole.ORGANISER;
-  const isAdmin = session?.user?.role === UserRole.ADMIN;
+  const churchMemberships = session?.user?.churchMemberships ?? [];
+  const isOrganiser = churchMemberships.length > 0;
+  const isAdmin =
+    (session?.user?.isPlatformAdmin ?? false) ||
+    churchMemberships.some((m) => m.role === "CHURCH_ADMIN");
+  const canCreateSeries =
+    (session?.user?.isPlatformAdmin ?? false) ||
+    churchMemberships.some(
+      (m) => m.role === "CHURCH_ADMIN" || m.role === "EVENT_MANAGER"
+    );
   const unreadCount = session?.user?.id
     ? await getCachedUnreadCount(session.user.id)
     : 0;
@@ -41,7 +48,10 @@ async function NavShell() {
         isAdmin={isAdmin}
         unreadCount={unreadCount}
       />
-      <CreateEventFAB isOrganiser={isOrganiser || isAdmin} />
+      <CreateEventFAB
+        isOrganiser={isOrganiser || isAdmin}
+        canCreateSeries={canCreateSeries}
+      />
     </>
   );
 }

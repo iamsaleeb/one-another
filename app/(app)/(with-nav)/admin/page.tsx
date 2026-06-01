@@ -1,18 +1,26 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
-import { UserRole } from "@prisma/client";
 import { PageHeader } from "@/components/ui/page-header";
 import { getAdminChurches } from "@/domains/churches/actions/data";
 import { AdminChurchCard } from "./_components/admin-church-card";
 
 export default async function AdminPage() {
   const session = await auth();
+  if (!session) redirect("/");
 
-  if (session?.user?.role !== UserRole.ADMIN) {
+  const churchMemberships = session.user.churchMemberships ?? [];
+  const isChurchAdmin = churchMemberships.some(
+    (m) => m.role === "CHURCH_ADMIN"
+  );
+
+  if (!session.user.isPlatformAdmin && !isChurchAdmin) {
     redirect("/");
   }
 
-  const churchesWithOrganisers = await getAdminChurches(session.user.id);
+  const churchesWithOrganisers = await getAdminChurches(
+    session.user.id,
+    session.user.isPlatformAdmin ?? false
+  );
 
   return (
     <div className="flex flex-col">

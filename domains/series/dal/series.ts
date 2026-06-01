@@ -1,7 +1,8 @@
 import "server-only";
 
 import { prisma } from "@/lib/db";
-import { canManageFromClaims } from "@/lib/permissions";
+import { can, type Actor } from "@/domains/roles/lib/can";
+import { Capabilities } from "@/domains/roles/lib/capabilities";
 import type { CreateSeriesInput } from "../validations/series";
 
 type DalError = { error: string } | { fieldErrors: Record<string, string[]> };
@@ -9,9 +10,7 @@ type DalError = { error: string } | { fieldErrors: Record<string, string[]> };
 export async function createSeries(
   data: CreateSeriesInput,
   userId: string,
-  userRole: string,
-  organiserChurchIds: string[],
-  adminChurchIds: string[]
+  actor: Actor
 ): Promise<DalError | { id: string; churchId: string }> {
   const {
     name,
@@ -24,13 +23,8 @@ export async function createSeries(
     photoUrl,
   } = data;
 
-  const allowed = canManageFromClaims(
-    userRole,
-    organiserChurchIds,
-    adminChurchIds,
-    churchId
-  );
-  if (!allowed) return { error: "You are not assigned to this church." };
+  const allowed = await can(actor, Capabilities.SERIES_CREATE, { churchId });
+  if (!allowed) return { error: "Unauthorised." };
 
   const created = await prisma.series.create({
     data: {
@@ -53,9 +47,7 @@ export async function updateSeries(
   id: string,
   data: CreateSeriesInput,
   userId: string,
-  userRole: string,
-  organiserChurchIds: string[],
-  adminChurchIds: string[]
+  actor: Actor
 ): Promise<DalError | { oldChurchId: string; newChurchId: string }> {
   const {
     name,
@@ -74,21 +66,16 @@ export async function updateSeries(
   });
   if (!existing) return { error: "Series not found." };
 
-  const allowedOriginal = canManageFromClaims(
-    userRole,
-    organiserChurchIds,
-    adminChurchIds,
-    existing.churchId
-  );
+  const allowedOriginal = await can(actor, Capabilities.SERIES_UPDATE, {
+    churchId: existing.churchId,
+    seriesId: id,
+  });
   if (!allowedOriginal) return { error: "Unauthorised." };
 
   if (churchId !== existing.churchId) {
-    const allowedNew = canManageFromClaims(
-      userRole,
-      organiserChurchIds,
-      adminChurchIds,
-      churchId
-    );
+    const allowedNew = await can(actor, Capabilities.SERIES_UPDATE, {
+      churchId,
+    });
     if (!allowedNew) return { error: "Unauthorised." };
   }
 
@@ -112,9 +99,7 @@ export async function updateSeries(
 export async function deleteSeries(
   id: string,
   userId: string,
-  userRole: string,
-  organiserChurchIds: string[],
-  adminChurchIds: string[]
+  actor: Actor
 ): Promise<{ error: string } | { churchId: string }> {
   const series = await prisma.series.findUnique({
     where: { id },
@@ -122,12 +107,9 @@ export async function deleteSeries(
   });
   if (!series) return { error: "Series not found." };
 
-  const allowed = canManageFromClaims(
-    userRole,
-    organiserChurchIds,
-    adminChurchIds,
-    series.churchId
-  );
+  const allowed = await can(actor, Capabilities.SERIES_DELETE, {
+    churchId: series.churchId,
+  });
   if (!allowed) return { error: "Unauthorised." };
 
   await prisma.series.delete({ where: { id } });

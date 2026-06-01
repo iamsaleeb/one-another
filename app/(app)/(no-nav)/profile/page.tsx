@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import { getInitials } from "@/lib/utils";
 import { InfoField } from "@/components/ui/info-field";
-import { RoleBadge } from "./_components/role-badge";
+import { RoleBadge, type RoleBadgeRole } from "./_components/role-badge";
 import { version } from "@/package.json";
 import { formatDateOnly } from "@/lib/datetime";
 
@@ -32,6 +32,16 @@ export default async function ProfilePage() {
   const user = session?.user;
 
   const dbUser = user?.id ? await getProfileUser(user.id) : null;
+
+  const memberships = user?.churchMemberships ?? [];
+  let badgeRole: RoleBadgeRole | null = null;
+  if (user?.isPlatformAdmin) badgeRole = "PLATFORM_ADMIN";
+  else if (memberships.some((m) => m.role === "CHURCH_ADMIN"))
+    badgeRole = "CHURCH_ADMIN";
+  else if (memberships.some((m) => m.role === "EVENT_MANAGER"))
+    badgeRole = "EVENT_MANAGER";
+  else if (memberships.some((m) => m.role === "EVENT_CREATOR"))
+    badgeRole = "EVENT_CREATOR";
 
   return (
     <div className="bg-background">
@@ -51,9 +61,7 @@ export default async function ProfilePage() {
             <p className="text-muted-foreground truncate text-sm">
               {user?.email}
             </p>
-            {(user?.role === "ORGANISER" || user?.role === "ADMIN") && (
-              <RoleBadge role={user.role as "ORGANISER" | "ADMIN"} />
-            )}
+            {badgeRole && <RoleBadge role={badgeRole} />}
           </div>
         </div>
 

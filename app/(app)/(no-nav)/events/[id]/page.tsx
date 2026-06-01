@@ -29,7 +29,9 @@ import {
   parseEventMetadata,
   parseEventAttendeeMetadata,
 } from "@/domains/events/validations/event";
-import { canManageChurchFromSession } from "@/lib/permissions";
+import { sessionToActor } from "@/domains/roles/lib/session";
+import { can } from "@/domains/roles/lib/can";
+import { Capabilities } from "@/domains/roles/lib/capabilities";
 import { EventDatetime } from "@/domains/events/components/event-datetime";
 import { formatDateOnly, parseDateOfBirth } from "@/lib/datetime";
 import { InfoField } from "@/components/ui/info-field";
@@ -51,7 +53,15 @@ export async function generateMetadata({ params }: Props) {
   if (!event) return { title: "Event Not Found" };
   if (event.isDraft) {
     const session = await auth();
-    if (!canManageChurchFromSession(session, event.churchId ?? ""))
+    const actor = sessionToActor(session);
+    if (
+      !actor ||
+      !(await can(actor, Capabilities.EVENT_UPDATE, {
+        churchId: event.churchId ?? "",
+        eventId: id,
+        seriesId: event.seriesId ?? undefined,
+      }))
+    )
       return { title: "Event Not Found" };
   }
   const description = event.description.slice(0, 160);
@@ -85,13 +95,31 @@ export default async function EventDetailPage({ params }: Props) {
 
   const isAttending = myAttendance !== null;
 
-  const canManage = canManageChurchFromSession(session, event.churchId ?? "");
+  const actor = sessionToActor(session);
+  const churchId = event.churchId ?? "";
+
+  const seriesId = event.seriesId ?? undefined;
+  const [canEdit, canDelete, canViewAttendees] = actor
+    ? await Promise.all([
+        can(actor, Capabilities.EVENT_UPDATE, {
+          churchId,
+          eventId: id,
+          seriesId,
+        }),
+        can(actor, Capabilities.EVENT_DELETE, { churchId, seriesId }),
+        can(actor, Capabilities.EVENT_VIEW_ATTENDEES, {
+          churchId,
+          eventId: id,
+        }),
+      ])
+    : [false, false, false];
+
   const questions = await getEventQuestions(id);
 
-  if (event.isDraft && !canManage) notFound();
+  if (event.isDraft && !canEdit) notFound();
 
   const [attendees, myResponses] = await Promise.all([
-    canManage ? getEventAttendees(id) : Promise.resolve(undefined),
+    canViewAttendees ? getEventAttendees(id) : Promise.resolve(undefined),
     session?.user?.id && questions.length > 0 && isAttending
       ? getMyResponses(id, session.user.id)
       : Promise.resolve(
@@ -155,7 +183,7 @@ export default async function EventDetailPage({ params }: Props) {
         <div className="shadow-card flex flex-col gap-4 rounded-2xl bg-white p-5">
           <div className="flex items-start justify-between gap-2">
             <h1 className="text-xl leading-snug font-bold">{event.title}</h1>
-            {canManage && (
+            {canEdit && (
               <div className="flex shrink-0 flex-col items-end gap-2">
                 <div className="flex items-center gap-2">
                   <Button
@@ -173,16 +201,23 @@ export default async function EventDetailPage({ params }: Props) {
                   ) : (
                     <CancelEventButton eventId={id} />
                   )}
-                  <DeleteEventButton eventId={id} />
+                  {canDelete && <DeleteEventButton eventId={id} />}
                 </div>
-                {event.requiresRegistration && questions.length > 0 && (
-                  <Button asChild variant="outline" size="sm" className="mt-2">
-                    <Link href={`/events/${id}/responses`}>
-                      <TableProperties className="mr-1.5 size-4" />
-                      View responses
-                    </Link>
-                  </Button>
-                )}
+                {canViewAttendees &&
+                  event.requiresRegistration &&
+                  questions.length > 0 && (
+                    <Button
+                      asChild
+                      variant="outline"
+                      size="sm"
+                      className="mt-2"
+                    >
+                      <Link href={`/events/${id}/responses`}>
+                        <TableProperties className="mr-1.5 size-4" />
+                        View responses
+                      </Link>
+                    </Button>
+                  )}
               </div>
             )}
           </div>

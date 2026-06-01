@@ -6,7 +6,9 @@ import {
   getSeriesById,
   getMySeriesFollow,
 } from "@/domains/series/actions/data";
-import { canManageChurchFromSession } from "@/lib/permissions";
+import { sessionToActor } from "@/domains/roles/lib/session";
+import { can } from "@/domains/roles/lib/can";
+import { Capabilities } from "@/domains/roles/lib/capabilities";
 import { InfoField } from "@/components/ui/info-field";
 import { HeroBanner } from "@/components/ui/hero-banner";
 import { EventCard } from "@/domains/events/components/event-card";
@@ -39,7 +41,20 @@ export default async function SeriesDetailPage({ params }: Props) {
 
   if (!series) notFound();
 
-  const canManage = canManageChurchFromSession(session, series.churchId);
+  const actor = sessionToActor(session);
+  const [canEdit, canDelete, canAddSession] = actor
+    ? await Promise.all([
+        can(actor, Capabilities.SERIES_UPDATE, {
+          churchId: series.churchId,
+          seriesId: series.id,
+        }),
+        can(actor, Capabilities.SERIES_DELETE, { churchId: series.churchId }),
+        can(actor, Capabilities.EVENT_CREATE, {
+          churchId: series.churchId,
+          seriesId: series.id,
+        }),
+      ])
+    : [false, false, false];
   const isFollowing = myFollow !== null;
 
   return (
@@ -55,21 +70,19 @@ export default async function SeriesDetailPage({ params }: Props) {
               <span className="bg-primary/10 text-primary rounded-full px-2.5 py-1 text-xs font-medium whitespace-nowrap">
                 {CADENCE_LABELS[series.cadence] ?? series.cadence}
               </span>
-              {canManage && (
-                <>
-                  <Button
-                    asChild
-                    variant="outline"
-                    size="icon"
-                    className="size-9"
-                  >
-                    <Link href={`/series/${series.id}/edit`}>
-                      <Pencil className="size-4" />
-                    </Link>
-                  </Button>
-                  <DeleteSeriesButton seriesId={series.id} />
-                </>
+              {canEdit && (
+                <Button
+                  asChild
+                  variant="outline"
+                  size="icon"
+                  className="size-9"
+                >
+                  <Link href={`/series/${series.id}/edit`}>
+                    <Pencil className="size-4" />
+                  </Link>
+                </Button>
               )}
+              {canDelete && <DeleteSeriesButton seriesId={series.id} />}
             </div>
           </div>
 
@@ -107,7 +120,7 @@ export default async function SeriesDetailPage({ params }: Props) {
         <section className="flex flex-col gap-3">
           <div className="flex items-center justify-between">
             <h2 className="text-base font-semibold">Upcoming Sessions</h2>
-            {canManage && (
+            {canAddSession && (
               <Button asChild size="sm" variant="outline" className="gap-1.5">
                 <Link href={`/events/create?seriesId=${series.id}`}>
                   <Plus className="size-3.5" />

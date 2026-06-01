@@ -16,6 +16,12 @@ import { Button } from "@/components/ui/button";
 import { DeleteSeriesButton } from "./_components/delete-series-button";
 import { FollowSeriesButton } from "./_components/follow-series-button";
 import { CADENCE_LABELS } from "@/lib/types/search";
+import {
+  getMyRequestForResource,
+  getPendingRequestsForResource,
+  ApprovalMenuTrigger,
+  PendingRequestsCard,
+} from "@/domains/approvals";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -55,6 +61,18 @@ export default async function SeriesDetailPage({ params }: Props) {
         }),
       ])
     : [false, false, false];
+
+  const canManageSeries = canEdit;
+
+  const [myRequest, pendingRequests] = await Promise.all([
+    session?.user?.id
+      ? getMyRequestForResource("SERIES", id, session.user.id)
+      : Promise.resolve(null),
+    canManageSeries
+      ? getPendingRequestsForResource("SERIES", id)
+      : Promise.resolve([]),
+  ]);
+
   const isFollowing = myFollow !== null;
 
   return (
@@ -83,6 +101,14 @@ export default async function SeriesDetailPage({ params }: Props) {
                 </Button>
               )}
               {canDelete && <DeleteSeriesButton seriesId={series.id} />}
+              <ApprovalMenuTrigger
+                resourceType="SERIES"
+                resourceId={series.id}
+                resourceName={series.name}
+                isAuthenticated={!!session?.user}
+                requestStatus={myRequest?.status ?? null}
+                hasRole={canAddSession}
+              />
             </div>
           </div>
 
@@ -146,6 +172,14 @@ export default async function SeriesDetailPage({ params }: Props) {
             ))
           )}
         </section>
+
+        {canManageSeries && (
+          <PendingRequestsCard
+            requests={pendingRequests}
+            resourceType="SERIES"
+            resourceId={series.id}
+          />
+        )}
       </div>
 
       {session?.user && (

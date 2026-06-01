@@ -7,6 +7,7 @@ import { can } from "@/domains/roles/lib/can";
 import {
   SubmitRequestSchema,
   ReviewRequestSchema,
+  CancelRequestSchema,
 } from "../validations/requests";
 import {
   upsertApprovalRequest,
@@ -15,6 +16,7 @@ import {
   getApproverIdsForResource,
   resolveApprovalAuthContext,
   hasDirectRoleForResource,
+  deleteApprovalRequest,
 } from "../dal/requests";
 import { APPROVAL_CONFIG } from "../lib/resolvers";
 import { queueNotification } from "@/domains/notifications/queue";
@@ -145,4 +147,35 @@ export async function reviewRequestAction(
   return {
     success: decision === "APPROVED" ? "Request approved." : "Request denied.",
   };
+}
+
+export async function cancelRequestAction(
+  input: unknown
+): Promise<ApprovalActionState> {
+  const actor = await getActor();
+  if (!actor) return { error: "Unauthorised." };
+
+  const parsed = CancelRequestSchema.safeParse(input);
+  if (!parsed.success)
+    return { fieldErrors: parsed.error.flatten().fieldErrors };
+
+  const { requestId } = parsed.data;
+
+  const request = await getApprovalRequestById(requestId);
+  if (!request) return { error: "Request not found." };
+  if (request.requesterId !== actor.id) return { error: "Unauthorised." };
+  if (request.status !== "PENDING")
+    return { error: "Request already reviewed." };
+
+  await deleteApprovalRequest(requestId);
+
+  updateTag(
+    `approval-${request.resourceType}-${request.resourceId}-${actor.id}`
+  );
+  updateTag(`approval-pending-${request.resourceType}-${request.resourceId}`);
+  revalidatePath(
+    resourcePath(request.resourceType, request.resourceId),
+    "page"
+  );
+  return { success: "Request cancelled." };
 }

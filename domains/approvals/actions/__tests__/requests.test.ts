@@ -12,6 +12,7 @@ jest.mock("@/domains/approvals/dal/requests", () => ({
   getApproverIdsForResource: jest.fn(),
   resolveApprovalAuthContext: jest.fn(),
   hasDirectRoleForResource: jest.fn(),
+  deleteApprovalRequest: jest.fn(),
 }));
 jest.mock("@/domains/approvals/lib/resolvers", () => ({
   APPROVAL_CONFIG: {
@@ -36,7 +37,7 @@ jest.mock("@/domains/notifications/queue", () => ({
   queueNotification: jest.fn(),
 }));
 
-import { submitRequestAction, reviewRequestAction } from "../requests";
+import { submitRequestAction, reviewRequestAction, cancelRequestAction } from "../requests";
 import { getActor } from "@/domains/roles/lib/session";
 import { can } from "@/domains/roles/lib/can";
 import * as dal from "@/domains/approvals/dal/requests";
@@ -206,5 +207,68 @@ describe("reviewRequestAction", () => {
         type: "ROLE_REQUEST_OUTCOME",
       })
     );
+  });
+});
+
+describe("cancelRequestAction", () => {
+  const myRequest = {
+    id: "req-1",
+    requesterId: "user-1",
+    resourceType: "EVENT" as const,
+    resourceId: "e1",
+    status: "PENDING" as const,
+    requestedRole: "EVENT_EDITOR",
+    requester: { id: "user-1", name: "Alice" },
+  };
+
+  beforeEach(() => {
+    mockDal.getApprovalRequestById.mockResolvedValue(myRequest as never);
+    mockDal.deleteApprovalRequest.mockResolvedValue({} as never);
+  });
+
+  it("returns error when unauthenticated", async () => {
+    mockGetActor.mockResolvedValue(null);
+    const result = await cancelRequestAction({ requestId: "req-1" });
+    expect(result).toEqual({ error: "Unauthorised." });
+    expect(mockDal.deleteApprovalRequest).not.toHaveBeenCalled();
+  });
+
+  it("returns fieldErrors on invalid input", async () => {
+    const result = await cancelRequestAction({ requestId: "" });
+    expect(result).toHaveProperty("fieldErrors");
+    expect(mockDal.deleteApprovalRequest).not.toHaveBeenCalled();
+  });
+
+  it("returns error when request not found", async () => {
+    mockDal.getApprovalRequestById.mockResolvedValue(null);
+    const result = await cancelRequestAction({ requestId: "missing" });
+    expect(result).toEqual({ error: "Request not found." });
+    expect(mockDal.deleteApprovalRequest).not.toHaveBeenCalled();
+  });
+
+  it("returns error when not the requester", async () => {
+    mockDal.getApprovalRequestById.mockResolvedValue({
+      ...myRequest,
+      requesterId: "someone-else",
+    } as never);
+    const result = await cancelRequestAction({ requestId: "req-1" });
+    expect(result).toEqual({ error: "Unauthorised." });
+    expect(mockDal.deleteApprovalRequest).not.toHaveBeenCalled();
+  });
+
+  it("returns error when request already reviewed", async () => {
+    mockDal.getApprovalRequestById.mockResolvedValue({
+      ...myRequest,
+      status: "APPROVED",
+    } as never);
+    const result = await cancelRequestAction({ requestId: "req-1" });
+    expect(result).toEqual({ error: "Request already reviewed." });
+    expect(mockDal.deleteApprovalRequest).not.toHaveBeenCalled();
+  });
+
+  it("deletes request and revalidates on success", async () => {
+    const result = await cancelRequestAction({ requestId: "req-1" });
+    expect(result).toEqual({ success: "Request cancelled." });
+    expect(mockDal.deleteApprovalRequest).toHaveBeenCalledWith("req-1");
   });
 });

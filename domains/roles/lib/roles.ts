@@ -43,5 +43,5 @@ export const EVENT_ROLE_CAPABILITIES = {
 
 export const SERIES_ROLE_CAPABILITIES = {
   SERIES_MANAGER: ["series:update", "event:create", "event:update"],
-  SERIES_SESSION_CREATOR: ["event:create", "event:update"],
+  SERIES_SESSION_CREATOR: ["event:create"],
 } satisfies Record<SeriesRole, Capability[]>;

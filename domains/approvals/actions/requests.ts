@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath, revalidateTag } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { NotificationType, type ResourceType } from "@prisma/client";
 import { getActor } from "@/domains/roles/lib/session";
 import { can } from "@/domains/roles/lib/can";
@@ -65,9 +65,9 @@ export async function submitRequestAction(
     );
   }
 
-  revalidateTag(`approval-${resourceType}-${resourceId}-${actor.id}`);
-  revalidateTag(`approval-pending-${resourceType}-${resourceId}`);
-  revalidatePath(resourcePath(resourceType, resourceId));
+  updateTag(`approval-${resourceType}-${resourceId}-${actor.id}`);
+  updateTag(`approval-pending-${resourceType}-${resourceId}`);
+  revalidatePath(resourcePath(resourceType, resourceId), "page");
   return { success: "Request submitted." };
 }
 
@@ -121,8 +121,8 @@ export async function reviewRequestAction(
     },
   });
 
-  revalidateTag(`approval-${request.resourceType}-${request.resourceId}-${request.requesterId}`);
-  revalidateTag(`approval-pending-${request.resourceType}-${request.resourceId}`);
-  revalidatePath(resourcePath(request.resourceType, request.resourceId));
+  updateTag(`approval-${request.resourceType}-${request.resourceId}-${request.requesterId}`);
+  updateTag(`approval-pending-${request.resourceType}-${request.resourceId}`);
+  revalidatePath(resourcePath(request.resourceType, request.resourceId), "page");
   return { success: decision === "APPROVED" ? "Request approved." : "Request denied." };
 }

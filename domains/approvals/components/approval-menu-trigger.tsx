@@ -15,6 +15,7 @@ import type { ApprovalStatus, ResourceType } from "@prisma/client";
 import { RequestAccessDrawer } from "./request-access-drawer";
 import { RequestStatusDrawer } from "./request-status-drawer";
 import { ApproverRequestsDrawer } from "./approver-requests-drawer";
+import type { ResolvedRequest } from "../lib/types";
 
 interface MyRequest {
   id: string;
@@ -40,6 +41,7 @@ interface Props {
   hasRole: boolean;
   myRequest: MyRequest | null;
   pendingRequests: PendingRequest[];
+  resolvedRequests: ResolvedRequest[];
   isApprover: boolean;
 }
 
@@ -53,6 +55,7 @@ export function ApprovalMenuTrigger({
   hasRole,
   myRequest,
   pendingRequests,
+  resolvedRequests,
   isApprover,
 }: Props) {
   const [drawerOpen, setDrawerOpen] = useState<DrawerState>(null);
@@ -62,9 +65,12 @@ export function ApprovalMenuTrigger({
   const showHelpOut =
     isAuthenticated &&
     !hasRole &&
-    (requestStatus === null || requestStatus === "DENIED");
+    (requestStatus === null ||
+      requestStatus === "DENIED" ||
+      requestStatus === "CANCELLED" ||
+      requestStatus === "REVOKED");
   const showViewRequest = requestStatus === "PENDING";
-  const showApproverItem = isApprover && pendingRequests.length > 0;
+  const showApproverItem = isApprover;
 
   return (
     <>
@@ -92,10 +98,12 @@ export function ApprovalMenuTrigger({
           )}
           {showApproverItem && (
             <DropdownMenuItem onSelect={() => setDrawerOpen("approver")}>
-              Help requests
-              <Badge variant="secondary" className="ml-auto">
-                {pendingRequests.length}
-              </Badge>
+              Manage helpers
+              {pendingRequests.length > 0 && (
+                <Badge variant="secondary" className="ml-auto">
+                  {pendingRequests.length}
+                </Badge>
+              )}
             </DropdownMenuItem>
           )}
           <DropdownMenuItem disabled>
@@ -126,6 +134,7 @@ export function ApprovalMenuTrigger({
         open={drawerOpen === "approver"}
         onOpenChange={(open) => setDrawerOpen(open ? "approver" : null)}
         requests={pendingRequests}
+        resolvedRequests={resolvedRequests}
         resourceType={resourceType}
         resourceId={resourceId}
       />

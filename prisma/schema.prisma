@@ -33,6 +33,8 @@ model User {
   platformRoles           PlatformRoleAssignment[]
   churchMemberships       ChurchMembership[]
   eventStaff              EventStaffAssignment[]
+  approvalRequests        ApprovalRequest[]      @relation("ApprovalRequests")
+  approvalReviews         ApprovalRequest[]      @relation("ApprovalReviews")
 }
 
 model Account {
@@ -360,6 +362,18 @@ enum SeriesRole {
   SERIES_SESSION_CREATOR
 }
 
+enum ResourceType {
+  EVENT
+  SERIES
+  CHURCH
+}
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  DENIED
+}
+
 model SeriesStaffAssignment {
   userId     String
   seriesId   String
@@ -374,6 +388,28 @@ model SeriesStaffAssignment {
   @@index([userId])
   @@index([seriesId])
   @@map("series_staff_assignments")
+}
+
+model ApprovalRequest {
+  id            String         @id @default(cuid())
+  requesterId   String
+  resourceType  ResourceType
+  resourceId    String
+  requestedRole String
+  message       String?
+  status        ApprovalStatus @default(PENDING)
+  reviewedBy    String?
+  reviewedAt    DateTime?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  requester     User           @relation("ApprovalRequests", fields: [requesterId], references: [id], onDelete: Cascade)
+  reviewer      User?          @relation("ApprovalReviews", fields: [reviewedBy], references: [id])
+
+  @@unique([requesterId, resourceType, resourceId])
+  @@index([resourceType, resourceId, status])
+  @@index([requesterId])
+  @@map("approval_requests")
 }
 
 enum Cadence {
@@ -395,6 +431,8 @@ enum NotificationType {
   EVENT_REMINDER
   NEW_SERIES_SESSION
   EVENT_CANCELLED
+  ROLE_REQUEST_RECEIVED
+  ROLE_REQUEST_OUTCOME
 }
 
 enum DayOfWeek {

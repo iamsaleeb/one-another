@@ -59,6 +59,7 @@ export async function generateMetadata({ params }: Props) {
       !(await can(actor, Capabilities.EVENT_UPDATE, {
         churchId: event.churchId ?? "",
         eventId: id,
+        seriesId: event.seriesId ?? undefined,
       }))
     )
       return { title: "Event Not Found" };
@@ -97,10 +98,15 @@ export default async function EventDetailPage({ params }: Props) {
   const actor = sessionToActor(session);
   const churchId = event.churchId ?? "";
 
+  const seriesId = event.seriesId ?? undefined;
   const [canEdit, canDelete, canViewAttendees] = actor
     ? await Promise.all([
-        can(actor, Capabilities.EVENT_UPDATE, { churchId, eventId: id }),
-        can(actor, Capabilities.EVENT_DELETE, { churchId }),
+        can(actor, Capabilities.EVENT_UPDATE, {
+          churchId,
+          eventId: id,
+          seriesId,
+        }),
+        can(actor, Capabilities.EVENT_DELETE, { churchId, seriesId }),
         can(actor, Capabilities.EVENT_VIEW_ATTENDEES, {
           churchId,
           eventId: id,

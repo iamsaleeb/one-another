@@ -33,6 +33,7 @@ export default async function EditEventPage({ params }: Props) {
     (await can(actor, Capabilities.EVENT_UPDATE, {
       churchId: event.churchId ?? "",
       eventId: id,
+      seriesId: event.seriesId ?? undefined,
     }));
   if (!canAccess) notFound();
 

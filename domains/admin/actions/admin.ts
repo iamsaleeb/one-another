@@ -82,6 +82,10 @@ export async function removeOrganiserFromChurchAction(
   if (!(await churchPolicy.canManageMembers(actor, churchId)))
     return { error: "Unauthorised." };
 
+  const existing = await getChurchMembership(targetUserId, churchId);
+  if (existing?.role === ChurchRole.CHURCH_ADMIN)
+    return { error: "Cannot remove a church admin through this action." };
+
   await removeChurchMembership(targetUserId, churchId);
 
   updateTag("churches");

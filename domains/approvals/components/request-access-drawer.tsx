@@ -76,43 +76,44 @@ export function RequestAccessDrawer({
         </DrawerHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="px-4">
-            <FormField
-              control={form.control}
-              name="message"
-              render={({ field }) => (
-                <FormItem>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Add an optional message… (max 280 chars)"
-                      className="resize-none"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
+          <form onSubmit={form.handleSubmit(onSubmit)}>
+            <div className="px-4">
+              <FormField
+                control={form.control}
+                name="message"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Add an optional message… (max 280 chars)"
+                        className="resize-none"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              {form.formState.errors.root && (
+                <p className="text-destructive mt-2 text-sm">
+                  {form.formState.errors.root.message}
+                </p>
               )}
-            />
-            {form.formState.errors.root && (
-              <p className="text-destructive mt-2 text-sm">
-                {form.formState.errors.root.message}
-              </p>
-            )}
+            </div>
+
+            <DrawerFooter>
+              <Button
+                type="submit"
+                disabled={form.formState.isSubmitting}
+              >
+                {form.formState.isSubmitting ? "Sending…" : "Send request"}
+              </Button>
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                Cancel
+              </Button>
+            </DrawerFooter>
           </form>
         </Form>
-
-        <DrawerFooter>
-          <Button
-            type="submit"
-            onClick={form.handleSubmit(onSubmit)}
-            disabled={form.formState.isSubmitting}
-          >
-            {form.formState.isSubmitting ? "Sending…" : "Send request"}
-          </Button>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
-        </DrawerFooter>
       </DrawerContent>
     </Drawer>
   );

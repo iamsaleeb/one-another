@@ -17,7 +17,6 @@ import {
   getMyRequestForResource,
   getPendingRequestsForResource,
   ApprovalMenuTrigger,
-  PendingRequestsCard,
 } from "@/domains/approvals";
 
 interface Props {
@@ -113,8 +112,10 @@ export default async function ChurchDetailPage({ params }: Props) {
                 resourceId={id}
                 resourceName={church.name}
                 isAuthenticated={!!session?.user}
-                requestStatus={myRequest?.status ?? null}
                 hasRole={canCreateEvent}
+                myRequest={myRequest ?? null}
+                pendingRequests={pendingRequests}
+                isApprover={canManageMembers}
               />
             </div>
 
@@ -140,16 +141,6 @@ export default async function ChurchDetailPage({ params }: Props) {
 
       {/* Tabbed content */}
       <ChurchTabs church={church} />
-
-      {canManageMembers && (
-        <div className="px-4 pt-4">
-          <PendingRequestsCard
-            requests={pendingRequests}
-            resourceType="CHURCH"
-            resourceId={id}
-          />
-        </div>
-      )}
     </div>
   );
 }

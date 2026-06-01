@@ -10,9 +10,9 @@ import {
   Capabilities,
   type Capability,
 } from "@/domains/roles/lib/capabilities";
-import { upsertEventStaff } from "@/domains/roles/dal/event-staff";
-import { upsertSeriesStaff } from "@/domains/roles/dal/series-staff";
-import { upsertChurchMembership } from "@/domains/roles/dal/church-memberships";
+import { upsertEventStaff, removeEventStaff } from "@/domains/roles/dal/event-staff";
+import { upsertSeriesStaff, removeSeriesStaff } from "@/domains/roles/dal/series-staff";
+import { upsertChurchMembership, removeChurchMembership } from "@/domains/roles/dal/church-memberships";
 
 interface ApprovalConfig {
   role: string;
@@ -22,6 +22,7 @@ interface ApprovalConfig {
     resourceId: string,
     reviewerId: string
   ) => Promise<unknown>;
+  revoke: (requesterId: string, resourceId: string) => Promise<unknown>;
 }
 
 export const APPROVAL_CONFIG: Record<ResourceType, ApprovalConfig> = {
@@ -30,6 +31,8 @@ export const APPROVAL_CONFIG: Record<ResourceType, ApprovalConfig> = {
     approveCapability: Capabilities.EVENT_MANAGE_STAFF,
     grant: (requesterId, resourceId, reviewerId) =>
       upsertEventStaff(requesterId, resourceId, "EVENT_EDITOR", reviewerId),
+    revoke: (requesterId, resourceId) =>
+      removeEventStaff(requesterId, resourceId),
   },
   SERIES: {
     role: "SERIES_SESSION_CREATOR" as SeriesRole,
@@ -41,6 +44,8 @@ export const APPROVAL_CONFIG: Record<ResourceType, ApprovalConfig> = {
         "SERIES_SESSION_CREATOR",
         reviewerId
       ),
+    revoke: (requesterId, resourceId) =>
+      removeSeriesStaff(requesterId, resourceId),
   },
   CHURCH: {
     role: "EVENT_CREATOR" as ChurchRole,
@@ -52,5 +57,7 @@ export const APPROVAL_CONFIG: Record<ResourceType, ApprovalConfig> = {
         "EVENT_CREATOR",
         reviewerId
       ),
+    revoke: (requesterId, resourceId) =>
+      removeChurchMembership(requesterId, resourceId),
   },
 };

@@ -31,7 +31,8 @@ export function ApprovalMenuTrigger({
 }: Props) {
   const [drawerOpen, setDrawerOpen] = useState(false);
 
-  const showHelpOut = isAuthenticated && !hasRole && requestStatus === null;
+  // Show "Help out" for new requests and after denial (backend upsert resets DENIED → PENDING)
+  const showHelpOut = isAuthenticated && !hasRole && (requestStatus === null || requestStatus === "DENIED");
   const showPending = requestStatus === "PENDING";
 
   return (

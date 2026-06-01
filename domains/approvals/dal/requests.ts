@@ -193,3 +193,17 @@ export async function hasDirectRoleForResource(
   });
   return row !== null;
 }
+
+export function getAllRequestsForResource(
+  resourceType: ResourceType,
+  resourceId: string
+) {
+  return prisma.approvalRequest.findMany({
+    where: { resourceType, resourceId, status: { not: "PENDING" } },
+    include: {
+      requester: { select: { id: true, name: true, image: true } },
+      reviewer: { select: { id: true, name: true } },
+    },
+    orderBy: { updatedAt: "desc" },
+  });
+}

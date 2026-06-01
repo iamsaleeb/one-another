@@ -24,6 +24,7 @@ import {
   resolveApprovalAuthContext,
   hasDirectRoleForResource,
   deleteApprovalRequest,
+  getAllRequestsForResource,
 } from "../requests";
 import { prisma } from "@/lib/db";
 
@@ -148,5 +149,22 @@ describe("hasDirectRoleForResource", () => {
     mockEventStaff.findUnique.mockResolvedValue(null);
     const result = await hasDirectRoleForResource("u1", "EVENT", "e1");
     expect(result).toBe(false);
+  });
+});
+
+describe("getAllRequestsForResource", () => {
+  it("queries non-PENDING requests ordered by updatedAt desc", async () => {
+    mockApprovalRequest.findMany.mockResolvedValue([]);
+    await getAllRequestsForResource("EVENT", "e1");
+    expect(mockApprovalRequest.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          resourceType: "EVENT",
+          resourceId: "e1",
+          status: { not: "PENDING" },
+        },
+        orderBy: { updatedAt: "desc" },
+      })
+    );
   });
 });

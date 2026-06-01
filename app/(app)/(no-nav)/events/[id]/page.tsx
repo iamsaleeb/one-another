@@ -104,7 +104,7 @@ export default async function EventDetailPage({ params }: Props) {
   const churchId = event.churchId ?? "";
 
   const seriesId = event.seriesId ?? undefined;
-  const [canEdit, canDelete, canViewAttendees] = actor
+  const [canEdit, canDelete, canViewAttendees, canManageStaff] = actor
     ? await Promise.all([
         can(actor, Capabilities.EVENT_UPDATE, {
           churchId,
@@ -116,12 +116,9 @@ export default async function EventDetailPage({ params }: Props) {
           churchId,
           eventId: id,
         }),
+        can(actor, Capabilities.EVENT_MANAGE_STAFF, { churchId, eventId: id }),
       ])
-    : [false, false, false];
-
-  const canManageStaff = actor
-    ? await can(actor, Capabilities.EVENT_MANAGE_STAFF, { churchId, eventId: id })
-    : false;
+    : [false, false, false, false];
 
   const [myRequest, pendingRequests] = await Promise.all([
     session?.user?.id

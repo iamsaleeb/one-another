@@ -32,7 +32,7 @@ describe("NotificationSettings", () => {
   it("renders a switch for each notification type", () => {
     render(<NotificationSettings preferences={enabledPreferences} />);
 
-    expect(screen.getAllByRole("switch")).toHaveLength(3);
+    expect(screen.getAllByRole("switch")).toHaveLength(5);
   });
 
   it("renders the timing select when EVENT_REMINDER is enabled", () => {

@@ -16,6 +16,11 @@ import { Button } from "@/components/ui/button";
 import { DeleteSeriesButton } from "./_components/delete-series-button";
 import { FollowSeriesButton } from "./_components/follow-series-button";
 import { CADENCE_LABELS } from "@/lib/types/search";
+import {
+  getMyRequestForResource,
+  getPendingRequestsForResource,
+  ApprovalMenuTrigger,
+} from "@/domains/approvals";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -57,6 +62,15 @@ export default async function SeriesDetailPage({ params }: Props) {
     : [false, false, false];
   const isFollowing = myFollow !== null;
 
+  const [myApprovalRequest, pendingApprovalRequests] = await Promise.all([
+    session?.user?.id
+      ? getMyRequestForResource("SERIES", series.id, session.user.id)
+      : Promise.resolve(null),
+    canEdit
+      ? getPendingRequestsForResource("SERIES", series.id)
+      : Promise.resolve([]),
+  ]);
+
   return (
     <div className="bg-background">
       <HeroBanner size="sm" photoUrl={series.photoUrl ?? undefined} />
@@ -70,6 +84,16 @@ export default async function SeriesDetailPage({ params }: Props) {
               <span className="bg-primary/10 text-primary rounded-full px-2.5 py-1 text-xs font-medium whitespace-nowrap">
                 {CADENCE_LABELS[series.cadence] ?? series.cadence}
               </span>
+              <ApprovalMenuTrigger
+                resourceType="SERIES"
+                resourceId={series.id}
+                resourceName={series.name}
+                isAuthenticated={!!session?.user}
+                hasRole={canAddSession}
+                myRequest={myApprovalRequest ?? null}
+                pendingCount={pendingApprovalRequests.length}
+                isApprover={canEdit}
+              />
               {canEdit && (
                 <Button
                   asChild

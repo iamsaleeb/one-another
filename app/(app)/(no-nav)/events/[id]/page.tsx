@@ -8,7 +8,6 @@ import {
   MapPin,
   Pencil,
   Repeat,
-  Share2,
   TableProperties,
   User,
 } from "lucide-react";
@@ -42,6 +41,11 @@ import { UncancelEventButton } from "./_components/uncancel-event-button";
 import { EventActionBar } from "./_components/event-action-bar";
 import { CampAgenda } from "./_components/camp-agenda";
 import { SaveEventButton } from "./_components/save-event-button";
+import {
+  getMyRequestForResource,
+  getPendingRequestsForResource,
+  ApprovalMenuTrigger,
+} from "@/domains/approvals";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -99,7 +103,7 @@ export default async function EventDetailPage({ params }: Props) {
   const churchId = event.churchId ?? "";
 
   const seriesId = event.seriesId ?? undefined;
-  const [canEdit, canDelete, canViewAttendees] = actor
+  const [canEdit, canDelete, canViewAttendees, canManageStaff] = actor
     ? await Promise.all([
         can(actor, Capabilities.EVENT_UPDATE, {
           churchId,
@@ -111,8 +115,18 @@ export default async function EventDetailPage({ params }: Props) {
           churchId,
           eventId: id,
         }),
+        can(actor, Capabilities.EVENT_MANAGE_STAFF, { churchId, eventId: id }),
       ])
-    : [false, false, false];
+    : [false, false, false, false];
+
+  const [myApprovalRequest, pendingApprovalRequests] = await Promise.all([
+    session?.user?.id
+      ? getMyRequestForResource("EVENT", id, session.user.id)
+      : Promise.resolve(null),
+    canManageStaff
+      ? getPendingRequestsForResource("EVENT", id)
+      : Promise.resolve([]),
+  ]);
 
   const questions = await getEventQuestions(id);
 
@@ -145,14 +159,16 @@ export default async function EventDetailPage({ params }: Props) {
           initialSaved={isSaved}
           isAuthenticated={!!session?.user}
         />
-        <button
-          type="button"
-          disabled
-          aria-label="Share event"
-          className="p-1 opacity-50"
-        >
-          <Share2 className="text-muted-foreground size-5" />
-        </button>
+        <ApprovalMenuTrigger
+          resourceType="EVENT"
+          resourceId={id}
+          resourceName={event.title}
+          isAuthenticated={!!session?.user}
+          hasRole={canEdit}
+          myRequest={myApprovalRequest ?? null}
+          pendingCount={pendingApprovalRequests.length}
+          isApprover={canManageStaff}
+        />
       </div>
 
       {/* Content */}

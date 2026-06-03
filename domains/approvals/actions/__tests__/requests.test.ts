@@ -146,6 +146,16 @@ describe("reviewRequestAction", () => {
     await reviewRequestAction({ requestId: "r1", decision: "DENIED" });
     expect(config.APPROVAL_CONFIG.EVENT.grantFn).not.toHaveBeenCalled();
   });
+
+  it("returns error when reviewer is the requester", async () => {
+    mockAuth.mockResolvedValue({ user: { id: "u1" } });
+    const request = { id: "r1", status: "PENDING", resourceType: "EVENT", resourceId: "e1", requesterId: "u1" }; // same id as actor
+    mockGetById.mockResolvedValue(request);
+    mockCan.mockResolvedValue(true);
+    const result = await reviewRequestAction({ requestId: "r1", decision: "APPROVED" });
+    expect(result.error).toBeDefined();
+    expect(config.APPROVAL_CONFIG.EVENT.grantFn).not.toHaveBeenCalled();
+  });
 });
 
 describe("cancelRequestAction", () => {

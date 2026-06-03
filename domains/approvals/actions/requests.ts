@@ -9,6 +9,12 @@ import type { AuthContext } from "@/domains/roles/lib/can";
 import type { Capability } from "@/domains/roles/lib/capabilities";
 import type { ResourceType } from "@prisma/client";
 import { sessionToActor } from "@/domains/roles/lib/session";
+
+const RESOURCE_PATH: Record<ResourceType, string> = {
+  EVENT: "events",
+  SERIES: "series",
+  CHURCH: "churches",
+};
 import {
   upsertApprovalRequest,
   getApprovalRequestById,
@@ -93,6 +99,7 @@ export async function reviewRequestAction(
   const request = await getApprovalRequestById(requestId);
   if (!request) return { error: "Request not found." };
   if (request.status !== "PENDING") return { error: "Request is no longer pending." };
+  if (request.requesterId === actor.id) return { error: "Unauthorised." };
 
   const { capability, context } = await resolveAuthContext(request.resourceType, request.resourceId);
   const allowed = await can(actor, capability, context);
@@ -116,7 +123,7 @@ export async function reviewRequestAction(
   updateTag(`approval-pending-${request.resourceType}-${request.resourceId}`);
   updateTag(`approval-resolved-${request.resourceType}-${request.resourceId}`);
   updateTag(`approval-request-${requestId}`);
-  revalidatePath(`/${request.resourceType.toLowerCase()}s/${request.resourceId}/helpers`);
+  revalidatePath(`/${RESOURCE_PATH[request.resourceType]}/${request.resourceId}/helpers`);
 
   return {};
 }
@@ -181,7 +188,7 @@ export async function revokeAccessAction(
   updateTag(`approval-${request.resourceType}-${request.resourceId}-${request.requesterId}`);
   updateTag(`approval-resolved-${request.resourceType}-${request.resourceId}`);
   updateTag(`approval-request-${requestId}`);
-  revalidatePath(`/${request.resourceType.toLowerCase()}s/${request.resourceId}/helpers`);
+  revalidatePath(`/${RESOURCE_PATH[request.resourceType]}/${request.resourceId}/helpers`);
 
   return {};
 }

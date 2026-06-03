@@ -1,0 +1,94 @@
+import { notFound } from "next/navigation";
+import Link from "next/link";
+import { ChevronLeft } from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
+import { auth } from "@/auth";
+import { getChurchById } from "@/domains/churches/actions/data";
+import { sessionToActor } from "@/domains/roles/lib/session";
+import { can } from "@/domains/roles/lib/can";
+import { Capabilities } from "@/domains/roles/lib/capabilities";
+import { getApprovalRequestById } from "@/domains/approvals";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { RequestTimeline } from "@/domains/approvals/components/request-timeline";
+import { RequestDetailActions } from "@/domains/approvals/components/request-detail-actions";
+
+const ROLE_LABELS: Record<string, string> = {
+  EVENT_EDITOR: "Event Editor",
+  SERIES_SESSION_CREATOR: "Session Creator",
+  EVENT_CREATOR: "Event Creator",
+};
+
+interface Props {
+  params: Promise<{ id: string; requestId: string }>;
+}
+
+export default async function ChurchHelperDetailPage({ params }: Props) {
+  const [{ id, requestId }, session] = await Promise.all([params, auth()]);
+
+  const [church, request] = await Promise.all([
+    getChurchById(id),
+    getApprovalRequestById(requestId),
+  ]);
+
+  if (!church || !request) notFound();
+  if (request.resourceType !== "CHURCH" || request.resourceId !== id) notFound();
+
+  const actor = sessionToActor(session);
+  const canManageMembers = actor
+    ? await can(actor, Capabilities.CHURCH_MANAGE_MEMBERS, { churchId: id })
+    : false;
+  if (!canManageMembers) notFound();
+
+  const backHref = `/churches/${id}/helpers`;
+  const initials = request.requester.name?.slice(0, 2).toUpperCase() ?? "??";
+  const roleLabel = ROLE_LABELS[request.requestedRole] ?? request.requestedRole;
+
+  return (
+    <div className="bg-background min-h-screen">
+      <div className="flex items-center gap-1 px-4 pt-4 pb-2">
+        <Link href={backHref} className="text-muted-foreground hover:text-foreground" aria-label="Back to helpers">
+          <ChevronLeft className="size-5" />
+        </Link>
+        <h1 className="text-lg font-semibold">Request detail</h1>
+      </div>
+
+      <div className="flex flex-col gap-5 px-4 pt-4">
+        <div className="flex items-center gap-4">
+          <Avatar className="size-16 shrink-0">
+            {request.requester.image && (
+              <AvatarImage src={request.requester.image} alt={request.requester.name ?? ""} />
+            )}
+            <AvatarFallback className="text-lg">{initials}</AvatarFallback>
+          </Avatar>
+          <div className="flex flex-col gap-1">
+            <p className="text-base font-semibold">{request.requester.name ?? "Unknown"}</p>
+            <Badge variant="secondary" className="w-fit text-xs">{roleLabel}</Badge>
+            <span className="text-muted-foreground text-xs" suppressHydrationWarning>
+              {formatDistanceToNow(request.createdAt, { addSuffix: true })}
+            </span>
+          </div>
+        </div>
+
+        <RequestTimeline
+          status={request.status}
+          createdAt={request.createdAt}
+          reviewedAt={request.reviewedAt}
+        />
+
+        {request.message && (
+          <>
+            <Separator />
+            <div className="bg-muted/50 rounded-lg p-3">
+              <p className="text-muted-foreground mb-1 text-xs">Message</p>
+              <p className="text-sm italic">{request.message}</p>
+            </div>
+          </>
+        )}
+
+        <RequestDetailActions requestId={request.id} status={request.status} backHref={backHref} />
+      </div>
+    </div>
+  );
+}

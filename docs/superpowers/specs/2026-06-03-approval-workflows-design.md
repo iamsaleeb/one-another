@@ -154,17 +154,17 @@ File-level `"use cache"` directive. Cache tags:
 
 ```ts
 export const APPROVAL_CONFIG: Record<ResourceType, {
-  role: string;
+  role: EventRole | SeriesRole | ChurchRole;
   grantFn: (resourceId: string, userId: string, assignedBy: string) => Promise<void>;
   revokeFn: (resourceId: string, userId: string) => Promise<void>;
 }> = {
-  EVENT:  { role: "EVENT_EDITOR",           grantFn: assignEventStaff,       revokeFn: removeEventStaff },
-  SERIES: { role: "SERIES_SESSION_CREATOR", grantFn: assignSeriesStaff,      revokeFn: removeSeriesStaff },
-  CHURCH: { role: "EVENT_CREATOR",          grantFn: assignChurchMembership,  revokeFn: removeChurchMembership },
+  EVENT:  { role: "EVENT_EDITOR",           grantFn: upsertEventStaff,       revokeFn: removeEventStaff },
+  SERIES: { role: "SERIES_SESSION_CREATOR", grantFn: upsertSeriesStaff,      revokeFn: removeSeriesStaff },
+  CHURCH: { role: "EVENT_CREATOR",          grantFn: upsertChurchMembership,  revokeFn: removeChurchMembership },
 };
 ```
 
-`grantFn` and `revokeFn` delegate to `domains/roles/actions/*` — the approvals domain does not own role assignment logic.
+`grantFn` and `revokeFn` call the roles DAL directly (`domains/roles/dal/*`) — not the action wrappers, since the approval action has already authenticated and checked permissions. The approvals domain does not own role assignment logic; it delegates.
 
 ---
 

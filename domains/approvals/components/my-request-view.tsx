@@ -46,7 +46,10 @@ export function MyRequestView({
     setError(null);
     startTransition(async () => {
       const result = await cancelRequestAction({ requestId: myRequest.id });
-      if (result.error) { setError(result.error); return; }
+      if (result.error) {
+        setError(result.error);
+        return;
+      }
       router.refresh();
       onClose?.();
     });
@@ -62,27 +65,32 @@ export function MyRequestView({
     );
   }
 
+  // When showForm is false, myRequest is guaranteed non-null (status is APPROVED or PENDING)
+  if (!myRequest) return null;
+
   return (
     <div className="flex flex-col gap-4">
       <RequestTimeline
-        status={myRequest!.status}
-        createdAt={myRequest!.createdAt}
-        reviewedAt={myRequest!.reviewedAt}
+        status={myRequest.status}
+        createdAt={myRequest.createdAt}
+        reviewedAt={myRequest.reviewedAt}
       />
 
-      {myRequest!.message && (
+      {myRequest.message && (
         <>
           <Separator />
           <div className="bg-muted/50 rounded-lg p-3">
             <p className="text-muted-foreground mb-1 text-xs">Your message</p>
-            <p className="text-sm italic">{myRequest!.message}</p>
+            <p className="text-sm italic">{myRequest.message}</p>
           </div>
         </>
       )}
 
       {status === "APPROVED" && (
         <div className="rounded-lg bg-green-50 p-3">
-          <p className="text-sm font-medium text-green-700">You now have access</p>
+          <p className="text-sm font-medium text-green-700">
+            You now have access
+          </p>
         </div>
       )}
 

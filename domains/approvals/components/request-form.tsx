@@ -41,7 +41,10 @@ export function RequestForm({ resourceType, resourceId, resourceName }: Props) {
       message: values.message || undefined,
     });
     if (result.error) {
-      form.setError("root.serverError", { type: "server", message: result.error });
+      form.setError("root.serverError", {
+        type: "server",
+        message: result.error,
+      });
       return;
     }
     router.refresh();
@@ -51,11 +54,14 @@ export function RequestForm({ resourceType, resourceId, resourceName }: Props) {
     <div className="flex flex-col gap-4">
       <p className="text-muted-foreground text-sm">
         Request to help with{" "}
-        <span className="text-foreground font-medium">{resourceName}</span>.
-        The organiser will review your request.
+        <span className="text-foreground font-medium">{resourceName}</span>. The
+        organiser will review your request.
       </p>
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-3">
+        <form
+          onSubmit={form.handleSubmit(onSubmit)}
+          className="flex flex-col gap-3"
+        >
           <FormField
             control={form.control}
             name="message"

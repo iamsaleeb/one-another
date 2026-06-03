@@ -47,6 +47,16 @@ export const NOTIFICATION_TYPES: Record<
     description: "Get notified when an event you're attending is cancelled",
     defaultEnabled: true,
   },
+  [NotificationType.ROLE_REQUEST_RECEIVED]: {
+    label: "Role Requests Received",
+    description: "Get notified when someone requests a role in your group",
+    defaultEnabled: true,
+  },
+  [NotificationType.ROLE_REQUEST_OUTCOME]: {
+    label: "Role Request Outcomes",
+    description: "Get notified when your role request is approved or denied",
+    defaultEnabled: true,
+  },
 };
 
 export type NotificationTypeKey = NotificationType;

@@ -3,10 +3,11 @@
 import { updateTag, revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
-import { can } from "@/domains/roles/lib/can";
-import { Capabilities } from "@/domains/roles/lib/capabilities";
-import type { AuthContext } from "@/domains/roles/lib/can";
-import type { Capability } from "@/domains/roles/lib/capabilities";
+import { can, type AuthContext } from "@/domains/roles/lib/can";
+import {
+  Capabilities,
+  type Capability,
+} from "@/domains/roles/lib/capabilities";
 import type { ResourceType } from "@prisma/client";
 import { sessionToActor } from "@/domains/roles/lib/session";
 
@@ -71,12 +72,22 @@ export async function submitRequestAction(
   const { resourceType, resourceId, message } = parsed.data;
   const userId = session.user.id;
 
-  const alreadyHasRole = await APPROVAL_CONFIG[resourceType].hasRoleFn(resourceId, userId);
-  if (alreadyHasRole) return { error: "You already have access to this resource." };
+  const alreadyHasRole = await APPROVAL_CONFIG[resourceType].hasRoleFn(
+    resourceId,
+    userId
+  );
+  if (alreadyHasRole)
+    return { error: "You already have access to this resource." };
 
   const requestedRole = String(APPROVAL_CONFIG[resourceType].role);
 
-  await upsertApprovalRequest({ requesterId: userId, resourceType, resourceId, requestedRole, message });
+  await upsertApprovalRequest({
+    requesterId: userId,
+    resourceType,
+    resourceId,
+    requestedRole,
+    message,
+  });
 
   updateTag(`approval-${resourceType}-${resourceId}-${userId}`);
   updateTag(`approval-pending-${resourceType}-${resourceId}`);
@@ -98,10 +109,14 @@ export async function reviewRequestAction(
 
   const request = await getApprovalRequestById(requestId);
   if (!request) return { error: "Request not found." };
-  if (request.status !== "PENDING") return { error: "Request is no longer pending." };
+  if (request.status !== "PENDING")
+    return { error: "Request is no longer pending." };
   if (request.requesterId === actor.id) return { error: "Unauthorised." };
 
-  const { capability, context } = await resolveAuthContext(request.resourceType, request.resourceId);
+  const { capability, context } = await resolveAuthContext(
+    request.resourceType,
+    request.resourceId
+  );
   const allowed = await can(actor, capability, context);
   if (!allowed) return { error: "Unauthorised." };
 
@@ -119,11 +134,15 @@ export async function reviewRequestAction(
     );
   }
 
-  updateTag(`approval-${request.resourceType}-${request.resourceId}-${request.requesterId}`);
+  updateTag(
+    `approval-${request.resourceType}-${request.resourceId}-${request.requesterId}`
+  );
   updateTag(`approval-pending-${request.resourceType}-${request.resourceId}`);
   updateTag(`approval-resolved-${request.resourceType}-${request.resourceId}`);
   updateTag(`approval-request-${requestId}`);
-  revalidatePath(`/${RESOURCE_PATH[request.resourceType]}/${request.resourceId}/helpers`);
+  revalidatePath(
+    `/${RESOURCE_PATH[request.resourceType]}/${request.resourceId}/helpers`
+  );
 
   return {};
 }
@@ -168,9 +187,13 @@ export async function revokeAccessAction(
 
   const request = await getApprovalRequestById(requestId);
   if (!request) return { error: "Request not found." };
-  if (request.status !== "APPROVED") return { error: "Access is not currently approved." };
+  if (request.status !== "APPROVED")
+    return { error: "Access is not currently approved." };
 
-  const { capability, context } = await resolveAuthContext(request.resourceType, request.resourceId);
+  const { capability, context } = await resolveAuthContext(
+    request.resourceType,
+    request.resourceId
+  );
   const allowed = await can(actor, capability, context);
   if (!allowed) return { error: "Unauthorised." };
 
@@ -185,10 +208,14 @@ export async function revokeAccessAction(
     // idempotent — role may have already been removed
   }
 
-  updateTag(`approval-${request.resourceType}-${request.resourceId}-${request.requesterId}`);
+  updateTag(
+    `approval-${request.resourceType}-${request.resourceId}-${request.requesterId}`
+  );
   updateTag(`approval-resolved-${request.resourceType}-${request.resourceId}`);
   updateTag(`approval-request-${requestId}`);
-  revalidatePath(`/${RESOURCE_PATH[request.resourceType]}/${request.resourceId}/helpers`);
+  revalidatePath(
+    `/${RESOURCE_PATH[request.resourceType]}/${request.resourceId}/helpers`
+  );
 
   return {};
 }

@@ -4,7 +4,10 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type { ApprovalStatus } from "@prisma/client";
 import { Button } from "@/components/ui/button";
-import { reviewRequestAction, revokeAccessAction } from "@/domains/approvals/actions/requests";
+import {
+  reviewRequestAction,
+  revokeAccessAction,
+} from "@/domains/approvals/actions/requests";
 
 interface Props {
   requestId: string;
@@ -21,7 +24,10 @@ export function RequestDetailActions({ requestId, status, backHref }: Props) {
     setError(null);
     startTransition(async () => {
       const result = await reviewRequestAction({ requestId, decision });
-      if (result.error) { setError(result.error); return; }
+      if (result.error) {
+        setError(result.error);
+        return;
+      }
       router.push(backHref);
     });
   }
@@ -30,7 +36,10 @@ export function RequestDetailActions({ requestId, status, backHref }: Props) {
     setError(null);
     startTransition(async () => {
       const result = await revokeAccessAction({ requestId });
-      if (result.error) { setError(result.error); return; }
+      if (result.error) {
+        setError(result.error);
+        return;
+      }
       router.push(backHref);
     });
   }
@@ -40,10 +49,19 @@ export function RequestDetailActions({ requestId, status, backHref }: Props) {
       <div className="flex flex-col gap-3">
         {error && <p className="text-destructive text-sm">{error}</p>}
         <div className="flex gap-2">
-          <Button className="flex-1" onClick={() => handleReview("APPROVED")} disabled={isPending}>
+          <Button
+            className="flex-1"
+            onClick={() => handleReview("APPROVED")}
+            disabled={isPending}
+          >
             {isPending ? "Saving…" : "Approve"}
           </Button>
-          <Button variant="outline" className="flex-1" onClick={() => handleReview("DENIED")} disabled={isPending}>
+          <Button
+            variant="outline"
+            className="flex-1"
+            onClick={() => handleReview("DENIED")}
+            disabled={isPending}
+          >
             Deny
           </Button>
         </div>

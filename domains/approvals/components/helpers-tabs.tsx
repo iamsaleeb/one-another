@@ -20,7 +20,11 @@ interface Props {
   basePath: string;
 }
 
-export function HelpersTabs({ pendingRequests, resolvedRequests, basePath }: Props) {
+export function HelpersTabs({
+  pendingRequests,
+  resolvedRequests,
+  basePath,
+}: Props) {
   const members = resolvedRequests.filter((r) => r.status === "APPROVED");
   const history = resolvedRequests.filter((r) => r.status !== "APPROVED");
 
@@ -35,14 +39,20 @@ export function HelpersTabs({ pendingRequests, resolvedRequests, basePath }: Pro
             </Badge>
           )}
         </TabsTrigger>
-        <TabsTrigger value="members" className="flex-1">Members</TabsTrigger>
-        <TabsTrigger value="history" className="flex-1">History</TabsTrigger>
+        <TabsTrigger value="members" className="flex-1">
+          Members
+        </TabsTrigger>
+        <TabsTrigger value="history" className="flex-1">
+          History
+        </TabsTrigger>
       </TabsList>
 
       <TabsContent value="requests">
         <div className="py-2">
           {pendingRequests.length === 0 ? (
-            <p className="text-muted-foreground py-10 text-center text-sm">No pending requests</p>
+            <p className="text-muted-foreground py-10 text-center text-sm">
+              No pending requests
+            </p>
           ) : (
             pendingRequests.map((req) => (
               <HelperSummaryRow
@@ -62,7 +72,9 @@ export function HelpersTabs({ pendingRequests, resolvedRequests, basePath }: Pro
       <TabsContent value="members">
         <div className="py-2">
           {members.length === 0 ? (
-            <p className="text-muted-foreground py-10 text-center text-sm">No approved members</p>
+            <p className="text-muted-foreground py-10 text-center text-sm">
+              No approved members
+            </p>
           ) : (
             members.map((req) => (
               <HelperSummaryRow
@@ -82,7 +94,9 @@ export function HelpersTabs({ pendingRequests, resolvedRequests, basePath }: Pro
       <TabsContent value="history">
         <div className="py-2">
           {history.length === 0 ? (
-            <p className="text-muted-foreground py-10 text-center text-sm">No history yet</p>
+            <p className="text-muted-foreground py-10 text-center text-sm">
+              No history yet
+            </p>
           ) : (
             history.map((req) => (
               <HelperSummaryRow

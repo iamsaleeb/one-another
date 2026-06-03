@@ -66,7 +66,12 @@ export function ApprovalMenuTrigger({
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon" className="size-9" aria-label="More options">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-9"
+            aria-label="More options"
+          >
             <MoreHorizontal className="size-5" />
           </Button>
         </DropdownMenuTrigger>
@@ -83,7 +88,10 @@ export function ApprovalMenuTrigger({
           )}
           {isApprover && (
             <DropdownMenuItem asChild>
-              <Link href={`${basePath}/helpers`} className="flex w-full items-center justify-between">
+              <Link
+                href={`${basePath}/helpers`}
+                className="flex w-full items-center justify-between"
+              >
                 Manage helpers
                 {pendingCount > 0 && (
                   <Badge variant="secondary" className="ml-auto text-xs">

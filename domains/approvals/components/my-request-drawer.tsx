@@ -41,7 +41,12 @@ export function MyRequestDrawer({
   myRequest,
 }: Props) {
   return (
-    <Drawer open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
+    <Drawer
+      open={open}
+      onOpenChange={(o) => {
+        if (!o) onClose();
+      }}
+    >
       <DrawerContent>
         <DrawerHeader>
           <DrawerTitle>{drawerTitle(myRequest?.status ?? null)}</DrawerTitle>

@@ -21,7 +21,9 @@ import {
   deleteApprovalRequest,
 } from "../requests";
 
-const mock = db.prisma.approvalRequest as jest.Mocked<typeof db.prisma.approvalRequest>;
+const mock = db.prisma.approvalRequest as jest.Mocked<
+  typeof db.prisma.approvalRequest
+>;
 
 beforeEach(() => jest.clearAllMocks());
 
@@ -36,9 +38,28 @@ describe("upsertApprovalRequest", () => {
       message: "hello",
     });
     expect(mock.upsert).toHaveBeenCalledWith({
-      where: { requesterId_resourceType_resourceId: { requesterId: "u1", resourceType: "EVENT", resourceId: "e1" } },
-      create: { requesterId: "u1", resourceType: "EVENT", resourceId: "e1", requestedRole: "EVENT_EDITOR", message: "hello", status: "PENDING" },
-      update: { status: "PENDING", message: "hello", requestedRole: "EVENT_EDITOR", reviewedBy: null, reviewedAt: null },
+      where: {
+        requesterId_resourceType_resourceId: {
+          requesterId: "u1",
+          resourceType: "EVENT",
+          resourceId: "e1",
+        },
+      },
+      create: {
+        requesterId: "u1",
+        resourceType: "EVENT",
+        resourceId: "e1",
+        requestedRole: "EVENT_EDITOR",
+        message: "hello",
+        status: "PENDING",
+      },
+      update: {
+        status: "PENDING",
+        message: "hello",
+        requestedRole: "EVENT_EDITOR",
+        reviewedBy: null,
+        reviewedAt: null,
+      },
     });
   });
 });
@@ -48,7 +69,13 @@ describe("getMyRequestForResource", () => {
     mock.findUnique.mockResolvedValue(null);
     await getMyRequestForResource("SERIES", "s1", "u1");
     expect(mock.findUnique).toHaveBeenCalledWith({
-      where: { requesterId_resourceType_resourceId: { requesterId: "u1", resourceType: "SERIES", resourceId: "s1" } },
+      where: {
+        requesterId_resourceType_resourceId: {
+          requesterId: "u1",
+          resourceType: "SERIES",
+          resourceId: "s1",
+        },
+      },
     });
   });
 });
@@ -70,7 +97,11 @@ describe("getAllRequestsForResource", () => {
     mock.findMany.mockResolvedValue([]);
     await getAllRequestsForResource("EVENT", "e1");
     expect(mock.findMany).toHaveBeenCalledWith({
-      where: { resourceType: "EVENT", resourceId: "e1", status: { not: "PENDING" } },
+      where: {
+        resourceType: "EVENT",
+        resourceId: "e1",
+        status: { not: "PENDING" },
+      },
       include: {
         requester: { select: { id: true, name: true, image: true } },
         reviewer: { select: { id: true, name: true } },
@@ -97,10 +128,18 @@ describe("getApprovalRequestById", () => {
 describe("updateApprovalRequest", () => {
   it("updates by id with provided data", async () => {
     mock.update.mockResolvedValue({} as never);
-    await updateApprovalRequest("req-1", { status: "APPROVED", reviewedBy: "u2", reviewedAt: new Date("2026-01-01") });
+    await updateApprovalRequest("req-1", {
+      status: "APPROVED",
+      reviewedBy: "u2",
+      reviewedAt: new Date("2026-01-01"),
+    });
     expect(mock.update).toHaveBeenCalledWith({
       where: { id: "req-1" },
-      data: { status: "APPROVED", reviewedBy: "u2", reviewedAt: expect.any(Date) },
+      data: {
+        status: "APPROVED",
+        reviewedBy: "u2",
+        reviewedAt: expect.any(Date),
+      },
     });
   });
 });

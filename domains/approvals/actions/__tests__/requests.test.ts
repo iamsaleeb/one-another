@@ -1,4 +1,7 @@
-jest.mock("next/cache", () => ({ updateTag: jest.fn(), revalidatePath: jest.fn() }));
+jest.mock("next/cache", () => ({
+  updateTag: jest.fn(),
+  revalidatePath: jest.fn(),
+}));
 jest.mock("@/auth", () => ({ auth: jest.fn() }));
 jest.mock("@/domains/roles/lib/can", () => ({ can: jest.fn() }));
 jest.mock("@/domains/roles/lib/session", () => ({ sessionToActor: jest.fn() }));
@@ -68,24 +71,38 @@ beforeEach(() => {
 describe("submitRequestAction", () => {
   it("returns error when not authenticated", async () => {
     mockAuth.mockResolvedValue(null);
-    const result = await submitRequestAction({ resourceType: "EVENT", resourceId: "e1" });
+    const result = await submitRequestAction({
+      resourceType: "EVENT",
+      resourceId: "e1",
+    });
     expect(result.error).toBe("You must be signed in.");
     expect(mockUpsert).not.toHaveBeenCalled();
   });
 
   it("returns error when user already has the role", async () => {
     mockAuth.mockResolvedValue({ user: { id: "u1" } });
-    (config.APPROVAL_CONFIG.EVENT.hasRoleFn as jest.Mock).mockResolvedValue(true);
-    const result = await submitRequestAction({ resourceType: "EVENT", resourceId: "e1" });
+    (config.APPROVAL_CONFIG.EVENT.hasRoleFn as jest.Mock).mockResolvedValue(
+      true
+    );
+    const result = await submitRequestAction({
+      resourceType: "EVENT",
+      resourceId: "e1",
+    });
     expect(result.error).toBe("You already have access to this resource.");
     expect(mockUpsert).not.toHaveBeenCalled();
   });
 
   it("upserts with requestedRole and invalidates cache on success", async () => {
     mockAuth.mockResolvedValue({ user: { id: "u1" } });
-    (config.APPROVAL_CONFIG.EVENT.hasRoleFn as jest.Mock).mockResolvedValue(false);
+    (config.APPROVAL_CONFIG.EVENT.hasRoleFn as jest.Mock).mockResolvedValue(
+      false
+    );
     mockUpsert.mockResolvedValue({});
-    const result = await submitRequestAction({ resourceType: "EVENT", resourceId: "e1", message: "hi" });
+    const result = await submitRequestAction({
+      resourceType: "EVENT",
+      resourceId: "e1",
+      message: "hi",
+    });
     expect(result.error).toBeUndefined();
     expect(mockUpsert).toHaveBeenCalledWith({
       requesterId: "u1",
@@ -103,7 +120,10 @@ describe("reviewRequestAction", () => {
   it("returns error when not authenticated", async () => {
     mockAuth.mockResolvedValue(null);
     mockSessionToActor.mockReturnValue(null);
-    const result = await reviewRequestAction({ requestId: "r1", decision: "APPROVED" });
+    const result = await reviewRequestAction({
+      requestId: "r1",
+      decision: "APPROVED",
+    });
     expect(result.error).toBeDefined();
   });
 
@@ -111,35 +131,69 @@ describe("reviewRequestAction", () => {
     mockAuth.mockResolvedValue({ user: { id: "u1" } });
     mockGetById.mockResolvedValue(null);
     mockCan.mockResolvedValue(true);
-    const result = await reviewRequestAction({ requestId: "r1", decision: "APPROVED" });
+    const result = await reviewRequestAction({
+      requestId: "r1",
+      decision: "APPROVED",
+    });
     expect(result.error).toBeDefined();
   });
 
   it("returns error when request not PENDING", async () => {
     mockAuth.mockResolvedValue({ user: { id: "u1" } });
-    mockGetById.mockResolvedValue({ id: "r1", status: "APPROVED", resourceType: "EVENT", resourceId: "e1", requesterId: "u2" });
+    mockGetById.mockResolvedValue({
+      id: "r1",
+      status: "APPROVED",
+      resourceType: "EVENT",
+      resourceId: "e1",
+      requesterId: "u2",
+    });
     mockCan.mockResolvedValue(true);
-    const result = await reviewRequestAction({ requestId: "r1", decision: "APPROVED" });
+    const result = await reviewRequestAction({
+      requestId: "r1",
+      decision: "APPROVED",
+    });
     expect(result.error).toBeDefined();
   });
 
   it("calls grantFn and uses reviewedBy on APPROVED", async () => {
     mockAuth.mockResolvedValue({ user: { id: "u1" } });
-    const request = { id: "r1", status: "PENDING", resourceType: "EVENT", resourceId: "e1", requesterId: "u2" };
+    const request = {
+      id: "r1",
+      status: "PENDING",
+      resourceType: "EVENT",
+      resourceId: "e1",
+      requesterId: "u2",
+    };
     mockGetById.mockResolvedValue(request);
     mockCan.mockResolvedValue(true);
     mockUpdate.mockResolvedValue({});
-    const result = await reviewRequestAction({ requestId: "r1", decision: "APPROVED" });
+    const result = await reviewRequestAction({
+      requestId: "r1",
+      decision: "APPROVED",
+    });
     expect(result.error).toBeUndefined();
-    expect(mockUpdate).toHaveBeenCalledWith("r1", expect.objectContaining({ status: "APPROVED", reviewedBy: "u1" }));
-    expect(config.APPROVAL_CONFIG.EVENT.grantFn).toHaveBeenCalledWith("e1", "u2", "u1");
+    expect(mockUpdate).toHaveBeenCalledWith(
+      "r1",
+      expect.objectContaining({ status: "APPROVED", reviewedBy: "u1" })
+    );
+    expect(config.APPROVAL_CONFIG.EVENT.grantFn).toHaveBeenCalledWith(
+      "e1",
+      "u2",
+      "u1"
+    );
     expect(mockUpdateTag).toHaveBeenCalledWith("approval-resolved-EVENT-e1");
     expect(mockUpdateTag).toHaveBeenCalledWith("approval-request-r1");
   });
 
   it("does not call grantFn on DENIED", async () => {
     mockAuth.mockResolvedValue({ user: { id: "u1" } });
-    const request = { id: "r1", status: "PENDING", resourceType: "EVENT", resourceId: "e1", requesterId: "u2" };
+    const request = {
+      id: "r1",
+      status: "PENDING",
+      resourceType: "EVENT",
+      resourceId: "e1",
+      requesterId: "u2",
+    };
     mockGetById.mockResolvedValue(request);
     mockCan.mockResolvedValue(true);
     mockUpdate.mockResolvedValue({});
@@ -149,10 +203,19 @@ describe("reviewRequestAction", () => {
 
   it("returns error when reviewer is the requester", async () => {
     mockAuth.mockResolvedValue({ user: { id: "u1" } });
-    const request = { id: "r1", status: "PENDING", resourceType: "EVENT", resourceId: "e1", requesterId: "u1" }; // same id as actor
+    const request = {
+      id: "r1",
+      status: "PENDING",
+      resourceType: "EVENT",
+      resourceId: "e1",
+      requesterId: "u1",
+    }; // same id as actor
     mockGetById.mockResolvedValue(request);
     mockCan.mockResolvedValue(true);
-    const result = await reviewRequestAction({ requestId: "r1", decision: "APPROVED" });
+    const result = await reviewRequestAction({
+      requestId: "r1",
+      decision: "APPROVED",
+    });
     expect(result.error).toBeDefined();
     expect(config.APPROVAL_CONFIG.EVENT.grantFn).not.toHaveBeenCalled();
   });
@@ -174,14 +237,26 @@ describe("cancelRequestAction", () => {
 
   it("returns error when user is not the requester", async () => {
     mockAuth.mockResolvedValue({ user: { id: "u1" } });
-    mockGetById.mockResolvedValue({ id: "r1", status: "PENDING", requesterId: "other", resourceType: "EVENT", resourceId: "e1" });
+    mockGetById.mockResolvedValue({
+      id: "r1",
+      status: "PENDING",
+      requesterId: "other",
+      resourceType: "EVENT",
+      resourceId: "e1",
+    });
     const result = await cancelRequestAction({ requestId: "r1" });
     expect(result.error).toBeDefined();
   });
 
   it("updates status to CANCELLED and invalidates cache", async () => {
     mockAuth.mockResolvedValue({ user: { id: "u1" } });
-    mockGetById.mockResolvedValue({ id: "r1", status: "PENDING", requesterId: "u1", resourceType: "EVENT", resourceId: "e1" });
+    mockGetById.mockResolvedValue({
+      id: "r1",
+      status: "PENDING",
+      requesterId: "u1",
+      resourceType: "EVENT",
+      resourceId: "e1",
+    });
     mockUpdate.mockResolvedValue({});
     const result = await cancelRequestAction({ requestId: "r1" });
     expect(result.error).toBeUndefined();
@@ -202,7 +277,13 @@ describe("revokeAccessAction", () => {
 
   it("returns error when request not APPROVED", async () => {
     mockAuth.mockResolvedValue({ user: { id: "u1" } });
-    mockGetById.mockResolvedValue({ id: "r1", status: "PENDING", resourceType: "EVENT", resourceId: "e1", requesterId: "u2" });
+    mockGetById.mockResolvedValue({
+      id: "r1",
+      status: "PENDING",
+      resourceType: "EVENT",
+      resourceId: "e1",
+      requesterId: "u2",
+    });
     mockCan.mockResolvedValue(true);
     const result = await revokeAccessAction({ requestId: "r1" });
     expect(result.error).toBeDefined();
@@ -210,12 +291,21 @@ describe("revokeAccessAction", () => {
 
   it("calls revokeFn and invalidates cache on success", async () => {
     mockAuth.mockResolvedValue({ user: { id: "u1" } });
-    mockGetById.mockResolvedValue({ id: "r1", status: "APPROVED", resourceType: "EVENT", resourceId: "e1", requesterId: "u2" });
+    mockGetById.mockResolvedValue({
+      id: "r1",
+      status: "APPROVED",
+      resourceType: "EVENT",
+      resourceId: "e1",
+      requesterId: "u2",
+    });
     mockCan.mockResolvedValue(true);
     mockUpdate.mockResolvedValue({});
     const result = await revokeAccessAction({ requestId: "r1" });
     expect(result.error).toBeUndefined();
-    expect(config.APPROVAL_CONFIG.EVENT.revokeFn).toHaveBeenCalledWith("e1", "u2");
+    expect(config.APPROVAL_CONFIG.EVENT.revokeFn).toHaveBeenCalledWith(
+      "e1",
+      "u2"
+    );
     expect(mockUpdateTag).toHaveBeenCalledWith("approval-resolved-EVENT-e1");
     expect(mockUpdateTag).toHaveBeenCalledWith("approval-request-r1");
   });

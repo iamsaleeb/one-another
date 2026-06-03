@@ -33,7 +33,8 @@ export default async function SeriesHelperDetailPage({ params }: Props) {
   ]);
 
   if (!series || !request) notFound();
-  if (request.resourceType !== "SERIES" || request.resourceId !== id) notFound();
+  if (request.resourceType !== "SERIES" || request.resourceId !== id)
+    notFound();
 
   const actor = sessionToActor(session);
   const canManage = actor
@@ -51,7 +52,11 @@ export default async function SeriesHelperDetailPage({ params }: Props) {
   return (
     <div className="bg-background min-h-screen">
       <div className="flex items-center gap-1 px-4 pt-4 pb-2">
-        <Link href={backHref} className="text-muted-foreground hover:text-foreground" aria-label="Back to helpers">
+        <Link
+          href={backHref}
+          className="text-muted-foreground hover:text-foreground"
+          aria-label="Back to helpers"
+        >
           <ChevronLeft className="size-5" />
         </Link>
         <h1 className="text-lg font-semibold">Request detail</h1>
@@ -61,14 +66,24 @@ export default async function SeriesHelperDetailPage({ params }: Props) {
         <div className="flex items-center gap-4">
           <Avatar className="size-16 shrink-0">
             {request.requester.image && (
-              <AvatarImage src={request.requester.image} alt={request.requester.name ?? ""} />
+              <AvatarImage
+                src={request.requester.image}
+                alt={request.requester.name ?? ""}
+              />
             )}
             <AvatarFallback className="text-lg">{initials}</AvatarFallback>
           </Avatar>
           <div className="flex flex-col gap-1">
-            <p className="text-base font-semibold">{request.requester.name ?? "Unknown"}</p>
-            <Badge variant="secondary" className="w-fit text-xs">{roleLabel}</Badge>
-            <span className="text-muted-foreground text-xs" suppressHydrationWarning>
+            <p className="text-base font-semibold">
+              {request.requester.name ?? "Unknown"}
+            </p>
+            <Badge variant="secondary" className="w-fit text-xs">
+              {roleLabel}
+            </Badge>
+            <span
+              className="text-muted-foreground text-xs"
+              suppressHydrationWarning
+            >
               {formatDistanceToNow(request.createdAt, { addSuffix: true })}
             </span>
           </div>
@@ -90,7 +105,11 @@ export default async function SeriesHelperDetailPage({ params }: Props) {
           </>
         )}
 
-        <RequestDetailActions requestId={request.id} status={request.status} backHref={backHref} />
+        <RequestDetailActions
+          requestId={request.id}
+          status={request.status}
+          backHref={backHref}
+        />
       </div>
     </div>
   );

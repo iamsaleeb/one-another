@@ -11,11 +11,31 @@ interface UpsertInput {
 }
 
 export function upsertApprovalRequest(input: UpsertInput) {
-  const { requesterId, resourceType, resourceId, requestedRole, message } = input;
+  const { requesterId, resourceType, resourceId, requestedRole, message } =
+    input;
   return prisma.approvalRequest.upsert({
-    where: { requesterId_resourceType_resourceId: { requesterId, resourceType, resourceId } },
-    create: { requesterId, resourceType, resourceId, requestedRole, message, status: "PENDING" },
-    update: { status: "PENDING", message, requestedRole, reviewedBy: null, reviewedAt: null },
+    where: {
+      requesterId_resourceType_resourceId: {
+        requesterId,
+        resourceType,
+        resourceId,
+      },
+    },
+    create: {
+      requesterId,
+      resourceType,
+      resourceId,
+      requestedRole,
+      message,
+      status: "PENDING",
+    },
+    update: {
+      status: "PENDING",
+      message,
+      requestedRole,
+      reviewedBy: null,
+      reviewedAt: null,
+    },
   });
 }
 
@@ -25,11 +45,20 @@ export function getMyRequestForResource(
   userId: string
 ) {
   return prisma.approvalRequest.findUnique({
-    where: { requesterId_resourceType_resourceId: { requesterId: userId, resourceType, resourceId } },
+    where: {
+      requesterId_resourceType_resourceId: {
+        requesterId: userId,
+        resourceType,
+        resourceId,
+      },
+    },
   });
 }
 
-export function getPendingRequestsForResource(resourceType: ResourceType, resourceId: string) {
+export function getPendingRequestsForResource(
+  resourceType: ResourceType,
+  resourceId: string
+) {
   return prisma.approvalRequest.findMany({
     where: { resourceType, resourceId, status: "PENDING" },
     include: { requester: { select: { id: true, name: true, image: true } } },
@@ -37,7 +66,10 @@ export function getPendingRequestsForResource(resourceType: ResourceType, resour
   });
 }
 
-export function getAllRequestsForResource(resourceType: ResourceType, resourceId: string) {
+export function getAllRequestsForResource(
+  resourceType: ResourceType,
+  resourceId: string
+) {
   return prisma.approvalRequest.findMany({
     where: { resourceType, resourceId, status: { not: "PENDING" } },
     include: {
@@ -60,7 +92,11 @@ export function getApprovalRequestById(id: string) {
 
 export function updateApprovalRequest(
   id: string,
-  data: Partial<{ status: ApprovalStatus; reviewedBy: string; reviewedAt: Date }>
+  data: Partial<{
+    status: ApprovalStatus;
+    reviewedBy: string;
+    reviewedAt: Date;
+  }>
 ) {
   return prisma.approvalRequest.update({ where: { id }, data });
 }

@@ -11,7 +11,10 @@ const ROLE_LABELS: Record<string, string> = {
   EVENT_CREATOR: "Event Creator",
 };
 
-const STATUS_VARIANT: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
+const STATUS_VARIANT: Record<
+  string,
+  "default" | "secondary" | "destructive" | "outline"
+> = {
   APPROVED: "default",
   DENIED: "destructive",
   CANCELLED: "secondary",
@@ -54,11 +57,17 @@ export function HelperSummaryRow({
         <div className="flex items-center justify-between gap-2">
           <p className="text-sm font-medium">{requester.name ?? "Unknown"}</p>
           {status === "PENDING" ? (
-            <span className="text-muted-foreground shrink-0 text-xs" suppressHydrationWarning>
+            <span
+              className="text-muted-foreground shrink-0 text-xs"
+              suppressHydrationWarning
+            >
               {formatDistanceToNow(createdAt, { addSuffix: true })}
             </span>
           ) : (
-            <Badge variant={STATUS_VARIANT[status] ?? "secondary"} className="text-xs">
+            <Badge
+              variant={STATUS_VARIANT[status] ?? "secondary"}
+              className="text-xs"
+            >
               {status.charAt(0) + status.slice(1).toLowerCase()}
             </Badge>
           )}
@@ -68,7 +77,9 @@ export function HelperSummaryRow({
           {message && (
             <>
               <span className="text-muted-foreground text-xs">·</span>
-              <span className="text-muted-foreground truncate text-xs">{message}</span>
+              <span className="text-muted-foreground truncate text-xs">
+                {message}
+              </span>
             </>
           )}
         </div>

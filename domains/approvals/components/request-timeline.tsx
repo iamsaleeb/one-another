@@ -38,7 +38,10 @@ export function RequestTimeline({ status, createdAt, reviewedAt }: Props) {
           <div className="bg-primary flex size-6 items-center justify-center rounded-full">
             <Check className="size-3.5 text-white" />
           </div>
-          <div className="bg-border w-px flex-1 my-1" style={{ minHeight: 24 }} />
+          <div
+            className="bg-border my-1 w-px flex-1"
+            style={{ minHeight: 24 }}
+          />
         </div>
         <div className="pb-4">
           <p className="text-sm font-medium">Requested</p>
@@ -65,13 +68,18 @@ export function RequestTimeline({ status, createdAt, reviewedAt }: Props) {
             )}
           </div>
           {isResolved && (
-            <div className="bg-border w-px flex-1 my-1" style={{ minHeight: 24 }} />
+            <div
+              className="bg-border my-1 w-px flex-1"
+              style={{ minHeight: 24 }}
+            />
           )}
         </div>
         <div className="pb-4">
           <p className="text-sm font-medium">Under review</p>
           {isPending && (
-            <p className="text-muted-foreground text-xs">Waiting for approval</p>
+            <p className="text-muted-foreground text-xs">
+              Waiting for approval
+            </p>
           )}
         </div>
       </div>
@@ -95,9 +103,14 @@ export function RequestTimeline({ status, createdAt, reviewedAt }: Props) {
             </div>
           </div>
           <div>
-            <p className={`text-sm font-medium ${outcomeColor}`}>{outcomeLabel}</p>
+            <p className={`text-sm font-medium ${outcomeColor}`}>
+              {outcomeLabel}
+            </p>
             {reviewedAt && (
-              <p className="text-muted-foreground text-xs" suppressHydrationWarning>
+              <p
+                className="text-muted-foreground text-xs"
+                suppressHydrationWarning
+              >
                 {formatDistanceToNow(reviewedAt, { addSuffix: true })}
               </p>
             )}

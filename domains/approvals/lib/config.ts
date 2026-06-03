@@ -1,5 +1,10 @@
 import "server-only";
-import type { ChurchRole, EventRole, ResourceType, SeriesRole } from "@prisma/client";
+import type {
+  ChurchRole,
+  EventRole,
+  ResourceType,
+  SeriesRole,
+} from "@prisma/client";
 import {
   upsertEventStaff,
   removeEventStaff,
@@ -18,7 +23,11 @@ import {
 
 interface ApprovalConfigEntry {
   role: EventRole | SeriesRole | ChurchRole;
-  grantFn: (resourceId: string, userId: string, assignedBy: string) => Promise<unknown>;
+  grantFn: (
+    resourceId: string,
+    userId: string,
+    assignedBy: string
+  ) => Promise<unknown>;
   revokeFn: (resourceId: string, userId: string) => Promise<unknown>;
   hasRoleFn: (resourceId: string, userId: string) => Promise<boolean>;
 }
@@ -35,7 +44,12 @@ export const APPROVAL_CONFIG: Record<ResourceType, ApprovalConfigEntry> = {
   SERIES: {
     role: "SERIES_SESSION_CREATOR" as SeriesRole,
     grantFn: (resourceId, userId, assignedBy) =>
-      upsertSeriesStaff(userId, resourceId, "SERIES_SESSION_CREATOR", assignedBy),
+      upsertSeriesStaff(
+        userId,
+        resourceId,
+        "SERIES_SESSION_CREATOR",
+        assignedBy
+      ),
     revokeFn: (resourceId, userId) => removeSeriesStaff(userId, resourceId),
     hasRoleFn: (resourceId, userId) =>
       getSeriesStaffForUser(userId, resourceId).then((r) => r !== null),
@@ -44,7 +58,8 @@ export const APPROVAL_CONFIG: Record<ResourceType, ApprovalConfigEntry> = {
     role: "EVENT_CREATOR" as ChurchRole,
     grantFn: (resourceId, userId, assignedBy) =>
       upsertChurchMembership(userId, resourceId, "EVENT_CREATOR", assignedBy),
-    revokeFn: (resourceId, userId) => removeChurchMembership(userId, resourceId),
+    revokeFn: (resourceId, userId) =>
+      removeChurchMembership(userId, resourceId),
     hasRoleFn: (resourceId, userId) =>
       getChurchMembership(userId, resourceId).then((r) => r !== null),
   },

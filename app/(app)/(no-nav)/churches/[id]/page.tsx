@@ -106,16 +106,6 @@ export default async function ChurchDetailPage({ params }: Props) {
                   </div>
                 </a>
               )}
-              <ApprovalMenuTrigger
-                resourceType="CHURCH"
-                resourceId={id}
-                resourceName={church.name}
-                isAuthenticated={!!session?.user}
-                hasRole={canCreateEvent}
-                myRequest={myApprovalRequest ?? null}
-                pendingCount={pendingApprovalRequests.length}
-                isApprover={canManageMembers}
-              />
             </div>
 
             {/* Follow Alert */}
@@ -136,6 +126,19 @@ export default async function ChurchDetailPage({ params }: Props) {
             />
           </CardContent>
         </Card>
+      </div>
+
+      <div className="flex justify-end px-4 py-2">
+        <ApprovalMenuTrigger
+          resourceType="CHURCH"
+          resourceId={id}
+          resourceName={church.name}
+          isAuthenticated={!!session?.user}
+          hasRole={canCreateEvent}
+          myRequest={myApprovalRequest ?? null}
+          pendingCount={pendingApprovalRequests.length}
+          isApprover={canManageMembers}
+        />
       </div>
 
       {/* Tabbed content */}

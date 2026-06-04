@@ -13,5 +13,5 @@ export interface ResolvedRequest {
   createdAt: Date;
   reviewedAt: Date | null;
   requester: { id: string; name: string | null; image: string | null };
-  reviewer: { id: string; name: string } | null;
+  reviewer: { id: string; name: string | null } | null;
 }

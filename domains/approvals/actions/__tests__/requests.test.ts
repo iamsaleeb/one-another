@@ -155,7 +155,7 @@ describe("reviewRequestAction", () => {
     expect(result.error).toBeDefined();
   });
 
-  it("calls grantFn and uses reviewedBy on APPROVED", async () => {
+  it("calls grantFn before status update on APPROVED", async () => {
     mockAuth.mockResolvedValue({ user: { id: "u1" } });
     const request = {
       id: "r1",
@@ -167,11 +167,17 @@ describe("reviewRequestAction", () => {
     mockGetById.mockResolvedValue(request);
     mockCan.mockResolvedValue(true);
     mockUpdate.mockResolvedValue({});
+    const callOrder: string[] = [];
+    (config.APPROVAL_CONFIG.EVENT.grantFn as jest.Mock).mockImplementation(
+      async () => { callOrder.push("grant"); }
+    );
+    mockUpdate.mockImplementation(async () => { callOrder.push("update"); return {}; });
     const result = await reviewRequestAction({
       requestId: "r1",
       decision: "APPROVED",
     });
     expect(result.error).toBeUndefined();
+    expect(callOrder).toEqual(["grant", "update"]);
     expect(mockUpdate).toHaveBeenCalledWith(
       "r1",
       expect.objectContaining({ status: "APPROVED", reviewedBy: "u1" })
@@ -183,6 +189,27 @@ describe("reviewRequestAction", () => {
     );
     expect(mockUpdateTag).toHaveBeenCalledWith("approval-resolved-EVENT-e1");
     expect(mockUpdateTag).toHaveBeenCalledWith("approval-request-r1");
+  });
+
+  it("returns error and does not update status when grantFn throws", async () => {
+    mockAuth.mockResolvedValue({ user: { id: "u1" } });
+    mockGetById.mockResolvedValue({
+      id: "r1",
+      status: "PENDING",
+      resourceType: "EVENT",
+      resourceId: "e1",
+      requesterId: "u2",
+    });
+    mockCan.mockResolvedValue(true);
+    (config.APPROVAL_CONFIG.EVENT.grantFn as jest.Mock).mockRejectedValue(
+      new Error("DB error")
+    );
+    const result = await reviewRequestAction({
+      requestId: "r1",
+      decision: "APPROVED",
+    });
+    expect(result.error).toBeDefined();
+    expect(mockUpdate).not.toHaveBeenCalled();
   });
 
   it("does not call grantFn on DENIED", async () => {
@@ -289,7 +316,7 @@ describe("revokeAccessAction", () => {
     expect(result.error).toBeDefined();
   });
 
-  it("calls revokeFn and invalidates cache on success", async () => {
+  it("calls revokeFn before status update and records reviewedBy on success", async () => {
     mockAuth.mockResolvedValue({ user: { id: "u1" } });
     mockGetById.mockResolvedValue({
       id: "r1",
@@ -300,11 +327,17 @@ describe("revokeAccessAction", () => {
     });
     mockCan.mockResolvedValue(true);
     mockUpdate.mockResolvedValue({});
+    const callOrder: string[] = [];
+    (config.APPROVAL_CONFIG.EVENT.revokeFn as jest.Mock).mockImplementation(
+      async () => { callOrder.push("revoke"); }
+    );
+    mockUpdate.mockImplementation(async () => { callOrder.push("update"); return {}; });
     const result = await revokeAccessAction({ requestId: "r1" });
     expect(result.error).toBeUndefined();
-    expect(config.APPROVAL_CONFIG.EVENT.revokeFn).toHaveBeenCalledWith(
-      "e1",
-      "u2"
+    expect(callOrder).toEqual(["revoke", "update"]);
+    expect(mockUpdate).toHaveBeenCalledWith(
+      "r1",
+      expect.objectContaining({ status: "REVOKED", reviewedBy: "u1" })
     );
     expect(mockUpdateTag).toHaveBeenCalledWith("approval-resolved-EVENT-e1");
     expect(mockUpdateTag).toHaveBeenCalledWith("approval-request-r1");

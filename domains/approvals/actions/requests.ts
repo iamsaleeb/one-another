@@ -123,19 +123,23 @@ export async function reviewRequestAction(
   const allowed = await can(actor, authCtx.capability, authCtx.context);
   if (!allowed) return { error: "Unauthorised." };
 
+  if (decision === "APPROVED") {
+    try {
+      await APPROVAL_CONFIG[request.resourceType].grantFn(
+        request.resourceId,
+        request.requesterId,
+        actor.id
+      );
+    } catch {
+      return { error: "Failed to grant access. Please try again." };
+    }
+  }
+
   await updateApprovalRequest(requestId, {
     status: decision,
     reviewedBy: actor.id,
     reviewedAt: new Date(),
   });
-
-  if (decision === "APPROVED") {
-    await APPROVAL_CONFIG[request.resourceType].grantFn(
-      request.resourceId,
-      request.requesterId,
-      actor.id
-    );
-  }
 
   updateTag(
     `approval-${request.resourceType}-${request.resourceId}-${request.requesterId}`
@@ -201,8 +205,6 @@ export async function revokeAccessAction(
   const allowed = await can(actor, authCtx.capability, authCtx.context);
   if (!allowed) return { error: "Unauthorised." };
 
-  await updateApprovalRequest(requestId, { status: "REVOKED" });
-
   try {
     await APPROVAL_CONFIG[request.resourceType].revokeFn(
       request.resourceId,
@@ -211,6 +213,12 @@ export async function revokeAccessAction(
   } catch {
     // idempotent — role may have already been removed
   }
+
+  await updateApprovalRequest(requestId, {
+    status: "REVOKED",
+    reviewedBy: actor.id,
+    reviewedAt: new Date(),
+  });
 
   updateTag(
     `approval-${request.resourceType}-${request.resourceId}-${request.requesterId}`

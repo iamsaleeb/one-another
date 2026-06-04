@@ -1,4 +1,4 @@
-// Server actions — safe to import from client components
+// Server actions — safe to call from client components (use server)
 export {
   submitRequestAction,
   reviewRequestAction,
@@ -6,7 +6,8 @@ export {
   revokeAccessAction,
 } from "./actions/requests";
 
-// Data fetchers — server-only, for use in server components/pages
+// Data fetchers — SERVER ONLY. Import only from server components/pages.
+// Do not import these into client components or client-side code.
 export {
   getMyRequestForResource,
   getPendingRequestsForResource,

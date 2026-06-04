@@ -86,7 +86,7 @@ enum ApprovalStatus {
 
 Key decisions:
 - `@@unique([requesterId, resourceType, resourceId])` — one request per user per resource; upsert handles re-requests.
-- No `requestedRole` field — role derived from `resourceType` via config map at approval time.
+- `requestedRole` stored on the record (populated from `APPROVAL_CONFIG` at submit time) — preserves historical accuracy if config changes after approval.
 - `reviewedAt` covers both approval and denial timestamps.
 - `User` model gets two new relations: `approvalRequests` and `approvalReviews`.
 

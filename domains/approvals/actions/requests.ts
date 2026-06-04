@@ -1,6 +1,5 @@
 "use server";
 
-import { updateTag, revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
 import { can, type AuthContext } from "@/domains/roles/lib/can";
@@ -23,12 +22,13 @@ import {
   RevokeAccessSchema,
 } from "../validations/requests";
 import type { ApprovalActionState } from "../lib/types";
-
-const RESOURCE_PATH: Record<ResourceType, string> = {
-  EVENT: "events",
-  SERIES: "series",
-  CHURCH: "churches",
-};
+import {
+  invalidateRequesterView,
+  invalidatePendingApprovals,
+  invalidateResolvedApprovals,
+  invalidateApprovalRequestDetail,
+  revalidateHelpersPage,
+} from "../cache";
 
 async function resolveAuthContext(
   resourceType: ResourceType,
@@ -91,8 +91,8 @@ export async function submitRequestAction(
     message,
   });
 
-  updateTag(`approval-${resourceType}-${resourceId}-${userId}`);
-  updateTag(`approval-pending-${resourceType}-${resourceId}`);
+  invalidateRequesterView(resourceType, resourceId, userId);
+  invalidatePendingApprovals(resourceType, resourceId);
 
   return {};
 }
@@ -141,15 +141,15 @@ export async function reviewRequestAction(
     reviewedAt: new Date(),
   });
 
-  updateTag(
-    `approval-${request.resourceType}-${request.resourceId}-${request.requesterId}`
+  invalidateRequesterView(
+    request.resourceType,
+    request.resourceId,
+    request.requesterId
   );
-  updateTag(`approval-pending-${request.resourceType}-${request.resourceId}`);
-  updateTag(`approval-resolved-${request.resourceType}-${request.resourceId}`);
-  updateTag(`approval-request-${requestId}`);
-  revalidatePath(
-    `/${RESOURCE_PATH[request.resourceType]}/${request.resourceId}/helpers`
-  );
+  invalidatePendingApprovals(request.resourceType, request.resourceId);
+  invalidateResolvedApprovals(request.resourceType, request.resourceId);
+  invalidateApprovalRequestDetail(requestId);
+  revalidateHelpersPage(request.resourceType, request.resourceId);
 
   return {};
 }
@@ -173,9 +173,9 @@ export async function cancelRequestAction(
 
   await updateApprovalRequest(requestId, { status: "CANCELLED" });
 
-  updateTag(`approval-${request.resourceType}-${request.resourceId}-${userId}`);
-  updateTag(`approval-pending-${request.resourceType}-${request.resourceId}`);
-  updateTag(`approval-request-${requestId}`);
+  invalidateRequesterView(request.resourceType, request.resourceId, userId);
+  invalidatePendingApprovals(request.resourceType, request.resourceId);
+  invalidateApprovalRequestDetail(requestId);
 
   return {};
 }
@@ -220,14 +220,14 @@ export async function revokeAccessAction(
     reviewedAt: new Date(),
   });
 
-  updateTag(
-    `approval-${request.resourceType}-${request.resourceId}-${request.requesterId}`
+  invalidateRequesterView(
+    request.resourceType,
+    request.resourceId,
+    request.requesterId
   );
-  updateTag(`approval-resolved-${request.resourceType}-${request.resourceId}`);
-  updateTag(`approval-request-${requestId}`);
-  revalidatePath(
-    `/${RESOURCE_PATH[request.resourceType]}/${request.resourceId}/helpers`
-  );
+  invalidateResolvedApprovals(request.resourceType, request.resourceId);
+  invalidateApprovalRequestDetail(requestId);
+  revalidateHelpersPage(request.resourceType, request.resourceId);
 
   return {};
 }

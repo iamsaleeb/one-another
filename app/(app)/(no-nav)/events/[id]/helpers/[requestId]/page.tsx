@@ -8,20 +8,25 @@ import { sessionToActor } from "@/domains/roles/lib/session";
 import { can } from "@/domains/roles/lib/can";
 import { Capabilities } from "@/domains/roles/lib/capabilities";
 import { getApprovalRequestById } from "@/domains/approvals";
+import { ROLE_LABELS } from "@/domains/approvals/lib/labels";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { RequestTimeline } from "@/domains/approvals/components/request-timeline";
 import { RequestDetailActions } from "@/domains/approvals/components/request-detail-actions";
 
-const ROLE_LABELS: Record<string, string> = {
-  EVENT_EDITOR: "Event Editor",
-  SERIES_SESSION_CREATOR: "Session Creator",
-  EVENT_CREATOR: "Event Creator",
-};
-
 interface Props {
   params: Promise<{ id: string; requestId: string }>;
+}
+
+export async function generateMetadata({ params }: Props) {
+  const { requestId } = await params;
+  const request = await getApprovalRequestById(requestId);
+  return {
+    title: request?.requester.name
+      ? `Request — ${request.requester.name}`
+      : "Request detail",
+  };
 }
 
 export default async function EventHelperDetailPage({ params }: Props) {

@@ -66,7 +66,7 @@ export function getPendingRequestsForResource(
   });
 }
 
-export function getAllRequestsForResource(
+export function getResolvedRequestsForResource(
   resourceType: ResourceType,
   resourceId: string
 ) {

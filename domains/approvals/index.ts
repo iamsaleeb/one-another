@@ -10,7 +10,7 @@ export {
 export {
   getMyRequestForResource,
   getPendingRequestsForResource,
-  getAllRequestsForResource,
+  getResolvedRequestsForResource,
   getApprovalRequestById,
 } from "./actions/data";
 

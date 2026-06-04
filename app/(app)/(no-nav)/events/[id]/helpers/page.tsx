@@ -8,7 +8,7 @@ import { can } from "@/domains/roles/lib/can";
 import { Capabilities } from "@/domains/roles/lib/capabilities";
 import {
   getPendingRequestsForResource,
-  getAllRequestsForResource,
+  getResolvedRequestsForResource,
 } from "@/domains/approvals";
 import { HelpersTabs } from "@/domains/approvals/components/helpers-tabs";
 
@@ -38,7 +38,7 @@ export default async function EventHelpersPage({ params }: Props) {
 
   const [pendingRequests, resolvedRequests] = await Promise.all([
     getPendingRequestsForResource("EVENT", id),
-    getAllRequestsForResource("EVENT", id),
+    getResolvedRequestsForResource("EVENT", id),
   ]);
 
   return (

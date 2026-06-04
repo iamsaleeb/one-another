@@ -4,12 +4,7 @@ import { ChevronRight } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import type { ApprovalStatus } from "@prisma/client";
-
-const ROLE_LABELS: Record<string, string> = {
-  EVENT_EDITOR: "Event Editor",
-  SERIES_SESSION_CREATOR: "Session Creator",
-  EVENT_CREATOR: "Event Creator",
-};
+import { ROLE_LABELS } from "@/domains/approvals/lib/labels";
 
 const STATUS_VARIANT: Record<
   string,

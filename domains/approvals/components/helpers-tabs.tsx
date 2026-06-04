@@ -29,7 +29,10 @@ export function HelpersTabs({
   const history = resolvedRequests.filter((r) => r.status !== "APPROVED");
 
   return (
-    <Tabs defaultValue="requests" className="px-4">
+    <Tabs
+      defaultValue={pendingRequests.length > 0 ? "requests" : "members"}
+      className="px-4"
+    >
       <TabsList className="w-full">
         <TabsTrigger value="requests" className="flex-1 gap-1.5">
           Requests

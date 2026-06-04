@@ -5,7 +5,7 @@ import type { ResourceType } from "@prisma/client";
 import {
   getMyRequestForResource as dalGetMy,
   getPendingRequestsForResource as dalGetPending,
-  getAllRequestsForResource as dalGetAll,
+  getResolvedRequestsForResource as dalGetAll,
   getApprovalRequestById as dalGetById,
 } from "../dal/requests";
 
@@ -28,7 +28,7 @@ export async function getPendingRequestsForResource(
   return dalGetPending(resourceType, resourceId);
 }
 
-export async function getAllRequestsForResource(
+export async function getResolvedRequestsForResource(
   resourceType: ResourceType,
   resourceId: string
 ) {

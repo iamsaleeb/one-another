@@ -15,7 +15,7 @@ import {
   upsertApprovalRequest,
   getMyRequestForResource,
   getPendingRequestsForResource,
-  getAllRequestsForResource,
+  getResolvedRequestsForResource,
   getApprovalRequestById,
   updateApprovalRequest,
   deleteApprovalRequest,
@@ -92,10 +92,10 @@ describe("getPendingRequestsForResource", () => {
   });
 });
 
-describe("getAllRequestsForResource", () => {
+describe("getResolvedRequestsForResource", () => {
   it("queries non-PENDING with requester image and reviewer name", async () => {
     mock.findMany.mockResolvedValue([]);
-    await getAllRequestsForResource("EVENT", "e1");
+    await getResolvedRequestsForResource("EVENT", "e1");
     expect(mock.findMany).toHaveBeenCalledWith({
       where: {
         resourceType: "EVENT",

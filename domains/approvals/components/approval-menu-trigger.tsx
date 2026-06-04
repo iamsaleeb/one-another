@@ -108,14 +108,16 @@ export function ApprovalMenuTrigger({
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <MyRequestDrawer
-        open={drawerOpen}
-        onClose={() => setDrawerOpen(false)}
-        resourceType={resourceType}
-        resourceId={resourceId}
-        resourceName={resourceName}
-        myRequest={myRequest}
-      />
+      {(showHelpOut || showViewRequest) && (
+        <MyRequestDrawer
+          open={drawerOpen}
+          onClose={() => setDrawerOpen(false)}
+          resourceType={resourceType}
+          resourceId={resourceId}
+          resourceName={resourceName}
+          myRequest={myRequest}
+        />
+      )}
     </>
   );
 }

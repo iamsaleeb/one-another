@@ -169,9 +169,14 @@ describe("reviewRequestAction", () => {
     mockUpdate.mockResolvedValue({});
     const callOrder: string[] = [];
     (config.APPROVAL_CONFIG.EVENT.grantFn as jest.Mock).mockImplementation(
-      async () => { callOrder.push("grant"); }
+      async () => {
+        callOrder.push("grant");
+      }
     );
-    mockUpdate.mockImplementation(async () => { callOrder.push("update"); return {}; });
+    mockUpdate.mockImplementation(async () => {
+      callOrder.push("update");
+      return {};
+    });
     const result = await reviewRequestAction({
       requestId: "r1",
       decision: "APPROVED",
@@ -329,9 +334,14 @@ describe("revokeAccessAction", () => {
     mockUpdate.mockResolvedValue({});
     const callOrder: string[] = [];
     (config.APPROVAL_CONFIG.EVENT.revokeFn as jest.Mock).mockImplementation(
-      async () => { callOrder.push("revoke"); }
+      async () => {
+        callOrder.push("revoke");
+      }
     );
-    mockUpdate.mockImplementation(async () => { callOrder.push("update"); return {}; });
+    mockUpdate.mockImplementation(async () => {
+      callOrder.push("update");
+      return {};
+    });
     const result = await revokeAccessAction({ requestId: "r1" });
     expect(result.error).toBeUndefined();
     expect(callOrder).toEqual(["revoke", "update"]);

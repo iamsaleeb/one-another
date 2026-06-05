@@ -321,7 +321,7 @@ describe("cancelRequestAction", () => {
     expect(result.error).toBeDefined();
   });
 
-  it("updates status to CANCELLED and invalidates cache", async () => {
+  it("updates status to CANCELLED, sets reviewedAt, and invalidates all relevant cache", async () => {
     mockAuth.mockResolvedValue({ user: { id: "u1" } });
     mockGetById.mockResolvedValue({
       id: "r1",
@@ -333,9 +333,16 @@ describe("cancelRequestAction", () => {
     mockUpdate.mockResolvedValue({});
     const result = await cancelRequestAction({ requestId: "r1" });
     expect(result.error).toBeUndefined();
-    expect(mockUpdate).toHaveBeenCalledWith("r1", { status: "CANCELLED" });
+    expect(mockUpdate).toHaveBeenCalledWith(
+      "r1",
+      expect.objectContaining({
+        status: "CANCELLED",
+        reviewedAt: expect.any(Date),
+      })
+    );
     expect(mockUpdateTag).toHaveBeenCalledWith("approval-EVENT-e1-u1");
     expect(mockUpdateTag).toHaveBeenCalledWith("approval-pending-EVENT-e1");
+    expect(mockUpdateTag).toHaveBeenCalledWith("approval-resolved-EVENT-e1");
     expect(mockUpdateTag).toHaveBeenCalledWith("approval-request-r1");
   });
 });

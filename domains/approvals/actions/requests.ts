@@ -188,11 +188,16 @@ export async function cancelRequestAction(
   if (request.requesterId !== userId) return { error: "Unauthorised." };
   if (request.status !== "PENDING") return { error: "Request is not pending." };
 
-  await updateApprovalRequest(requestId, { status: "CANCELLED" });
+  await updateApprovalRequest(requestId, {
+    status: "CANCELLED",
+    reviewedAt: new Date(),
+  });
 
   invalidateRequesterView(request.resourceType, request.resourceId, userId);
   invalidatePendingApprovals(request.resourceType, request.resourceId);
+  invalidateResolvedApprovals(request.resourceType, request.resourceId);
   invalidateApprovalRequestDetail(requestId);
+  revalidateHelpersPage(request.resourceType, request.resourceId);
 
   return {};
 }

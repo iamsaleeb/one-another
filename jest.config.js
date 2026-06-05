@@ -27,6 +27,10 @@ const config = {
     "!**/*.d.ts",
     // Exclude barrel re-export files — no own logic, only re-exports
     "!**/index.ts",
+    // Exclude approval UI components — rendering-only, covered by e2e tests
+    "!domains/approvals/components/**",
+    // Exclude approval lib — config.ts uses server-only, types.ts has no executable code
+    "!domains/approvals/lib/**",
   ],
   coverageThreshold: {
     global: {

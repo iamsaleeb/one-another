@@ -16,6 +16,11 @@ import { Button } from "@/components/ui/button";
 import { DeleteSeriesButton } from "./_components/delete-series-button";
 import { FollowSeriesButton } from "./_components/follow-series-button";
 import { CADENCE_LABELS } from "@/lib/types/search";
+import {
+  getMyRequestForResource,
+  getPendingRequestsForResource,
+  ApprovalMenuTrigger,
+} from "@/domains/approvals";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -57,9 +62,31 @@ export default async function SeriesDetailPage({ params }: Props) {
     : [false, false, false];
   const isFollowing = myFollow !== null;
 
+  const [myApprovalRequest, pendingApprovalRequests] = await Promise.all([
+    session?.user?.id
+      ? getMyRequestForResource("SERIES", series.id, session.user.id)
+      : Promise.resolve(null),
+    canEdit
+      ? getPendingRequestsForResource("SERIES", series.id)
+      : Promise.resolve([]),
+  ]);
+
   return (
     <div className="bg-background">
       <HeroBanner size="sm" photoUrl={series.photoUrl ?? undefined} />
+
+      <div className="flex justify-end gap-2 px-4 pt-4">
+        <ApprovalMenuTrigger
+          resourceType="SERIES"
+          resourceId={series.id}
+          resourceName={series.name}
+          isAuthenticated={!!session?.user}
+          hasContributorAccess={canAddSession}
+          myRequest={myApprovalRequest ?? null}
+          pendingCount={pendingApprovalRequests.length}
+          isApprover={canEdit}
+        />
+      </div>
 
       <div className="flex flex-col gap-4 px-4 pt-5 pb-28">
         {/* Info card */}

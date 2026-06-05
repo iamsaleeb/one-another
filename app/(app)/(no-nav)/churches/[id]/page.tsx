@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { Globe, MapPin, Share2, Bell } from "lucide-react";
+import { Globe, MapPin, Bell } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -8,6 +8,14 @@ import {
   getMyChurchFollow,
 } from "@/domains/churches/actions/data";
 import { auth } from "@/auth";
+import { sessionToActor } from "@/domains/roles/lib/session";
+import { can } from "@/domains/roles/lib/can";
+import { Capabilities } from "@/domains/roles/lib/capabilities";
+import {
+  getMyRequestForResource,
+  getPendingRequestsForResource,
+  ApprovalMenuTrigger,
+} from "@/domains/approvals";
 import { ChurchTabs } from "./_components/church-tabs";
 import { FollowButton } from "./_components/follow-button";
 
@@ -36,6 +44,23 @@ export default async function ChurchDetailPage({ params }: Props) {
   if (!church) notFound();
 
   const isFollowing = myFollow !== null;
+
+  const actor = sessionToActor(session);
+  const [canManageMembers, canCreateEvent] = actor
+    ? await Promise.all([
+        can(actor, Capabilities.CHURCH_MANAGE_MEMBERS, { churchId: id }),
+        can(actor, Capabilities.EVENT_CREATE, { churchId: id }),
+      ])
+    : [false, false];
+
+  const [myApprovalRequest, pendingApprovalRequests] = await Promise.all([
+    session?.user?.id
+      ? getMyRequestForResource("CHURCH", id, session.user.id)
+      : Promise.resolve(null),
+    canManageMembers
+      ? getPendingRequestsForResource("CHURCH", id)
+      : Promise.resolve([]),
+  ]);
 
   return (
     <div className="bg-muted/20 pb-8">
@@ -81,9 +106,6 @@ export default async function ChurchDetailPage({ params }: Props) {
                   </div>
                 </a>
               )}
-              <div className="border-border flex h-11 w-11 items-center justify-center rounded-full border-2">
-                <Share2 className="text-foreground h-5 w-5" />
-              </div>
             </div>
 
             {/* Follow Alert */}
@@ -104,6 +126,19 @@ export default async function ChurchDetailPage({ params }: Props) {
             />
           </CardContent>
         </Card>
+      </div>
+
+      <div className="flex justify-end px-4 py-2">
+        <ApprovalMenuTrigger
+          resourceType="CHURCH"
+          resourceId={id}
+          resourceName={church.name}
+          isAuthenticated={!!session?.user}
+          hasContributorAccess={canCreateEvent}
+          myRequest={myApprovalRequest ?? null}
+          pendingCount={pendingApprovalRequests.length}
+          isApprover={canManageMembers}
+        />
       </div>
 
       {/* Tabbed content */}

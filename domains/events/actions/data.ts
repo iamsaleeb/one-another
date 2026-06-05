@@ -273,10 +273,25 @@ export async function getOtherChurchEventsPaged(
     cacheTag("events-list");
   }
   cacheLife("minutes");
+
+  // Two-step approach: fetch followed church IDs first (fast index lookup on
+  // ChurchFollower.userId), then exclude with notIn. This avoids the correlated
+  // NOT EXISTS subquery that Prisma generates for `followers: { none: { userId } }`,
+  // which scans the ChurchFollower table for every candidate event row.
+  const excludedChurchIds =
+    userId !== null
+      ? (
+          await prisma.churchFollower.findMany({
+            where: { userId },
+            select: { churchId: true },
+          })
+        ).map((f) => f.churchId)
+      : [];
+
   const rows = await prisma.event.findMany({
     where: {
-      ...(userId !== null
-        ? { church: { followers: { none: { userId } } } }
+      ...(excludedChurchIds.length > 0
+        ? { churchId: { notIn: excludedChurchIds } }
         : {}),
       datetime: { gte: new Date() },
       isDraft: false,

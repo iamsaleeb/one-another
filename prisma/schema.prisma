@@ -229,6 +229,7 @@ model ChurchFollower {
 
   @@unique([churchId, userId])
   @@index([userId])
+  @@index([churchId])
 }
 
 model SeriesFollower {

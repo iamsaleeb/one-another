@@ -5,7 +5,7 @@ jest.mock("@/lib/db", () => ({
       findUnique: jest.fn(),
       findMany: jest.fn(),
       update: jest.fn(),
-      delete: jest.fn(),
+      updateMany: jest.fn(),
     },
   },
 }));
@@ -18,7 +18,7 @@ import {
   getResolvedRequestsForResource,
   getApprovalRequestById,
   updateApprovalRequest,
-  deleteApprovalRequest,
+  updateApprovalRequestIfPending,
 } from "../requests";
 
 const mock = db.prisma.approvalRequest as jest.Mocked<
@@ -144,10 +144,32 @@ describe("updateApprovalRequest", () => {
   });
 });
 
-describe("deleteApprovalRequest", () => {
-  it("deletes by id", async () => {
-    mock.delete.mockResolvedValue({} as never);
-    await deleteApprovalRequest("req-1");
-    expect(mock.delete).toHaveBeenCalledWith({ where: { id: "req-1" } });
+describe("updateApprovalRequestIfPending", () => {
+  it("updates only when status is PENDING and returns count", async () => {
+    (mock.updateMany as jest.Mock).mockResolvedValue({ count: 1 });
+    const count = await updateApprovalRequestIfPending("req-1", {
+      status: "APPROVED",
+      reviewedBy: "u2",
+      reviewedAt: new Date("2026-01-01"),
+    });
+    expect(count).toBe(1);
+    expect(mock.updateMany).toHaveBeenCalledWith({
+      where: { id: "req-1", status: "PENDING" },
+      data: {
+        status: "APPROVED",
+        reviewedBy: "u2",
+        reviewedAt: expect.any(Date),
+      },
+    });
+  });
+
+  it("returns 0 when request is not PENDING", async () => {
+    (mock.updateMany as jest.Mock).mockResolvedValue({ count: 0 });
+    const count = await updateApprovalRequestIfPending("req-1", {
+      status: "APPROVED",
+      reviewedBy: "u2",
+      reviewedAt: new Date("2026-01-01"),
+    });
+    expect(count).toBe(0);
   });
 });

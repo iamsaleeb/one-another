@@ -81,7 +81,7 @@ export default async function SeriesDetailPage({ params }: Props) {
           resourceId={series.id}
           resourceName={series.name}
           isAuthenticated={!!session?.user}
-          hasRole={canAddSession}
+          hasContributorAccess={canAddSession}
           myRequest={myApprovalRequest ?? null}
           pendingCount={pendingApprovalRequests.length}
           isApprover={canEdit}

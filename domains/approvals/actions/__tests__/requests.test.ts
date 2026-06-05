@@ -13,8 +13,10 @@ jest.mock("@/lib/db", () => ({
 }));
 jest.mock("@/domains/approvals/dal/requests", () => ({
   upsertApprovalRequest: jest.fn(),
+  getMyRequestForResource: jest.fn(),
   getApprovalRequestById: jest.fn(),
   updateApprovalRequest: jest.fn(),
+  updateApprovalRequestIfPending: jest.fn(),
 }));
 jest.mock("@/domains/approvals/lib/config", () => ({
   APPROVAL_CONFIG: {
@@ -58,14 +60,18 @@ const mockCan = can as jest.Mock;
 const mockSessionToActor = sessionToActor as jest.Mock;
 const mockUpdateTag = updateTag as jest.Mock;
 const mockUpsert = dal.upsertApprovalRequest as jest.Mock;
+const mockGetMyRequest = dal.getMyRequestForResource as jest.Mock;
 const mockGetById = dal.getApprovalRequestById as jest.Mock;
 const mockUpdate = dal.updateApprovalRequest as jest.Mock;
+const mockUpdateIfPending = dal.updateApprovalRequestIfPending as jest.Mock;
 const mockEventFindUnique = db.prisma.event.findUnique as jest.Mock;
 
 beforeEach(() => {
   jest.clearAllMocks();
   mockEventFindUnique.mockResolvedValue({ churchId: "church-1" });
   mockSessionToActor.mockReturnValue({ id: "u1", isPlatformAdmin: false });
+  mockGetMyRequest.mockResolvedValue(null);
+  mockUpdateIfPending.mockResolvedValue(1);
 });
 
 describe("submitRequestAction", () => {
@@ -89,6 +95,20 @@ describe("submitRequestAction", () => {
       resourceId: "e1",
     });
     expect(result.error).toBe("You already have access to this resource.");
+    expect(mockUpsert).not.toHaveBeenCalled();
+  });
+
+  it("returns error when existing request is PENDING", async () => {
+    mockAuth.mockResolvedValue({ user: { id: "u1" } });
+    (config.APPROVAL_CONFIG.EVENT.hasRoleFn as jest.Mock).mockResolvedValue(
+      false
+    );
+    mockGetMyRequest.mockResolvedValue({ status: "PENDING" });
+    const result = await submitRequestAction({
+      resourceType: "EVENT",
+      resourceId: "e1",
+    });
+    expect(result.error).toBe("You already have a pending request.");
     expect(mockUpsert).not.toHaveBeenCalled();
   });
 
@@ -155,7 +175,26 @@ describe("reviewRequestAction", () => {
     expect(result.error).toBeDefined();
   });
 
-  it("calls grantFn before status update on APPROVED", async () => {
+  it("returns error when request is already processed (race condition)", async () => {
+    mockAuth.mockResolvedValue({ user: { id: "u1" } });
+    mockGetById.mockResolvedValue({
+      id: "r1",
+      status: "PENDING",
+      resourceType: "EVENT",
+      resourceId: "e1",
+      requesterId: "u2",
+    });
+    mockCan.mockResolvedValue(true);
+    mockUpdateIfPending.mockResolvedValue(0);
+    const result = await reviewRequestAction({
+      requestId: "r1",
+      decision: "APPROVED",
+    });
+    expect(result.error).toBe("Request was already processed.");
+    expect(config.APPROVAL_CONFIG.EVENT.grantFn).not.toHaveBeenCalled();
+  });
+
+  it("claims atomically then calls grantFn on APPROVED", async () => {
     mockAuth.mockResolvedValue({ user: { id: "u1" } });
     const request = {
       id: "r1",
@@ -166,24 +205,23 @@ describe("reviewRequestAction", () => {
     };
     mockGetById.mockResolvedValue(request);
     mockCan.mockResolvedValue(true);
-    mockUpdate.mockResolvedValue({});
     const callOrder: string[] = [];
+    mockUpdateIfPending.mockImplementation(async () => {
+      callOrder.push("claim");
+      return 1;
+    });
     (config.APPROVAL_CONFIG.EVENT.grantFn as jest.Mock).mockImplementation(
       async () => {
         callOrder.push("grant");
       }
     );
-    mockUpdate.mockImplementation(async () => {
-      callOrder.push("update");
-      return {};
-    });
     const result = await reviewRequestAction({
       requestId: "r1",
       decision: "APPROVED",
     });
     expect(result.error).toBeUndefined();
-    expect(callOrder).toEqual(["grant", "update"]);
-    expect(mockUpdate).toHaveBeenCalledWith(
+    expect(callOrder).toEqual(["claim", "grant"]);
+    expect(mockUpdateIfPending).toHaveBeenCalledWith(
       "r1",
       expect.objectContaining({ status: "APPROVED", reviewedBy: "u1" })
     );
@@ -196,7 +234,7 @@ describe("reviewRequestAction", () => {
     expect(mockUpdateTag).toHaveBeenCalledWith("approval-request-r1");
   });
 
-  it("returns error and does not update status when grantFn throws", async () => {
+  it("rolls back to PENDING and returns error when grantFn throws", async () => {
     mockAuth.mockResolvedValue({ user: { id: "u1" } });
     mockGetById.mockResolvedValue({
       id: "r1",
@@ -214,7 +252,10 @@ describe("reviewRequestAction", () => {
       decision: "APPROVED",
     });
     expect(result.error).toBeDefined();
-    expect(mockUpdate).not.toHaveBeenCalled();
+    expect(mockUpdate).toHaveBeenCalledWith(
+      "r1",
+      expect.objectContaining({ status: "PENDING", reviewedBy: null })
+    );
   });
 
   it("does not call grantFn on DENIED", async () => {

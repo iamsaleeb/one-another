@@ -1,12 +1,7 @@
 import "server-only";
 import { updateTag, revalidatePath } from "next/cache";
 import type { ResourceType } from "@prisma/client";
-
-const RESOURCE_PATH: Record<ResourceType, string> = {
-  EVENT: "events",
-  SERIES: "series",
-  CHURCH: "churches",
-};
+import { RESOURCE_PATHS } from "./lib/constants";
 
 export function invalidateRequesterView(
   resourceType: ResourceType,
@@ -38,5 +33,5 @@ export function revalidateHelpersPage(
   resourceType: ResourceType,
   resourceId: string
 ) {
-  revalidatePath(`/${RESOURCE_PATH[resourceType]}/${resourceId}/helpers`);
+  revalidatePath(`/${RESOURCE_PATHS[resourceType]}/${resourceId}/helpers`);
 }

@@ -12,13 +12,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { RESOURCE_PATHS } from "@/domains/approvals/lib/constants";
 import { MyRequestDrawer } from "./my-request-drawer";
-
-const RESOURCE_PATHS: Record<ResourceType, string> = {
-  EVENT: "events",
-  SERIES: "series",
-  CHURCH: "churches",
-};
 
 interface MyRequest {
   id: string;
@@ -33,7 +28,7 @@ interface Props {
   resourceId: string;
   resourceName: string;
   isAuthenticated: boolean;
-  hasRole: boolean;
+  hasContributorAccess: boolean;
   myRequest: MyRequest | null;
   pendingCount: number;
   isApprover: boolean;
@@ -44,7 +39,7 @@ export function ApprovalMenuTrigger({
   resourceId,
   resourceName,
   isAuthenticated,
-  hasRole,
+  hasContributorAccess,
   myRequest,
   pendingCount,
   isApprover,
@@ -55,12 +50,13 @@ export function ApprovalMenuTrigger({
 
   const showHelpOut =
     isAuthenticated &&
-    !hasRole &&
+    !hasContributorAccess &&
     (status === null ||
       status === "DENIED" ||
       status === "CANCELLED" ||
       status === "REVOKED");
   const showViewRequest = status === "PENDING";
+  const showViewAccess = status === "APPROVED";
 
   return (
     <>
@@ -86,6 +82,11 @@ export function ApprovalMenuTrigger({
               View my request
             </DropdownMenuItem>
           )}
+          {showViewAccess && (
+            <DropdownMenuItem onSelect={() => setDrawerOpen(true)}>
+              View my access
+            </DropdownMenuItem>
+          )}
           {isApprover && (
             <DropdownMenuItem asChild>
               <Link
@@ -108,7 +109,7 @@ export function ApprovalMenuTrigger({
         </DropdownMenuContent>
       </DropdownMenu>
 
-      {(showHelpOut || showViewRequest) && (
+      {(showHelpOut || showViewRequest || showViewAccess) && (
         <MyRequestDrawer
           open={drawerOpen}
           onClose={() => setDrawerOpen(false)}

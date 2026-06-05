@@ -12,7 +12,9 @@ import { sessionToActor } from "@/domains/roles/lib/session";
 import {
   upsertApprovalRequest,
   getApprovalRequestById,
+  getMyRequestForResource,
   updateApprovalRequest,
+  updateApprovalRequestIfPending,
 } from "../dal/requests";
 import { APPROVAL_CONFIG } from "../lib/config";
 import {
@@ -81,6 +83,14 @@ export async function submitRequestAction(
   if (alreadyHasRole)
     return { error: "You already have access to this resource." };
 
+  const existingRequest = await getMyRequestForResource(
+    resourceType,
+    resourceId,
+    userId
+  );
+  if (existingRequest?.status === "PENDING")
+    return { error: "You already have a pending request." };
+
   const requestedRole = String(APPROVAL_CONFIG[resourceType].role);
 
   await upsertApprovalRequest({
@@ -123,6 +133,14 @@ export async function reviewRequestAction(
   const allowed = await can(actor, authCtx.capability, authCtx.context);
   if (!allowed) return { error: "Unauthorised." };
 
+  const reviewedAt = new Date();
+  const claimed = await updateApprovalRequestIfPending(requestId, {
+    status: decision,
+    reviewedBy: actor.id,
+    reviewedAt,
+  });
+  if (claimed === 0) return { error: "Request was already processed." };
+
   if (decision === "APPROVED") {
     try {
       await APPROVAL_CONFIG[request.resourceType].grantFn(
@@ -131,15 +149,14 @@ export async function reviewRequestAction(
         actor.id
       );
     } catch {
+      await updateApprovalRequest(requestId, {
+        status: "PENDING",
+        reviewedBy: null,
+        reviewedAt: null,
+      });
       return { error: "Failed to grant access. Please try again." };
     }
   }
-
-  await updateApprovalRequest(requestId, {
-    status: decision,
-    reviewedBy: actor.id,
-    reviewedAt: new Date(),
-  });
 
   invalidateRequesterView(
     request.resourceType,

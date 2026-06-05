@@ -94,13 +94,20 @@ export function updateApprovalRequest(
   id: string,
   data: Partial<{
     status: ApprovalStatus;
-    reviewedBy: string;
-    reviewedAt: Date;
+    reviewedBy: string | null;
+    reviewedAt: Date | null;
   }>
 ) {
   return prisma.approvalRequest.update({ where: { id }, data });
 }
 
-export function deleteApprovalRequest(id: string) {
-  return prisma.approvalRequest.delete({ where: { id } });
+export async function updateApprovalRequestIfPending(
+  id: string,
+  data: { status: ApprovalStatus; reviewedBy: string; reviewedAt: Date }
+): Promise<number> {
+  const result = await prisma.approvalRequest.updateMany({
+    where: { id, status: "PENDING" },
+    data,
+  });
+  return result.count;
 }

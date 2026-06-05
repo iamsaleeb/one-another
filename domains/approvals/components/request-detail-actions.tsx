@@ -92,7 +92,7 @@ export function RequestDetailActions({ requestId, status, backHref }: Props) {
               <AlertDialogHeader>
                 <AlertDialogTitle>Deny request?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  The user will be notified that their request was denied.
+                  The user will not be able to contribute to this resource.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>

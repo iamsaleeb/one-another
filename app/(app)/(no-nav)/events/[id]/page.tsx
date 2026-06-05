@@ -164,7 +164,7 @@ export default async function EventDetailPage({ params }: Props) {
           resourceId={id}
           resourceName={event.title}
           isAuthenticated={!!session?.user}
-          hasRole={canEdit}
+          hasContributorAccess={canEdit}
           myRequest={myApprovalRequest ?? null}
           pendingCount={pendingApprovalRequests.length}
           isApprover={canManageStaff}

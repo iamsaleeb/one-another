@@ -134,7 +134,7 @@ export default async function ChurchDetailPage({ params }: Props) {
           resourceId={id}
           resourceName={church.name}
           isAuthenticated={!!session?.user}
-          hasRole={canCreateEvent}
+          hasContributorAccess={canCreateEvent}
           myRequest={myApprovalRequest ?? null}
           pendingCount={pendingApprovalRequests.length}
           isApprover={canManageMembers}

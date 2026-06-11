@@ -46,7 +46,9 @@ export function HomeEventTabs({
       <div className="bg-muted/20 sticky top-0 z-10 pt-2 backdrop-blur-sm">
         <div className="flex w-fit items-center gap-2">
           <Button
+            type="button"
             variant="outline"
+            aria-pressed={active === "followed"}
             onClick={() => setActive("followed")}
             data-state={active === "followed" ? "on" : "off"}
             className="data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
@@ -54,7 +56,9 @@ export function HomeEventTabs({
             Your churches
           </Button>
           <Button
+            type="button"
             variant="outline"
+            aria-pressed={active === "other"}
             onClick={() => setActive("other")}
             data-state={active === "other" ? "on" : "off"}
             className="data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
@@ -62,7 +66,9 @@ export function HomeEventTabs({
             All events
           </Button>
           <Button
+            type="button"
             variant="outline"
+            aria-pressed={active === "saved"}
             onClick={() => setActive("saved")}
             data-state={active === "saved" ? "on" : "off"}
             className="data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"

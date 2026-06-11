@@ -1,6 +1,6 @@
 ---
 name: home-filter-buttons
-description: Replace home page line tabs with separate ToggleGroup buttons; add Saved filter; remove Saved from My Events page
+description: Replace home page line tabs with separate outline Button filters; add Saved filter; remove Saved from My Events page
 metadata:
   type: project
 ---
@@ -9,7 +9,7 @@ metadata:
 
 ## Goal
 
-Replace the line-variant Radix Tabs on the home page with three separate shadcn `ToggleGroup` outline buttons. Add "Saved" events as a third filter. Move "Saved" off the My Events page — it lives only on the home page.
+Replace the line-variant Radix Tabs on the home page with three separate shadcn `Button` outline components. Add "Saved" events as a third filter. Move "Saved" off the My Events page — it lives only on the home page.
 
 ## Behaviour
 
@@ -24,7 +24,7 @@ Three separate, individually-rounded outline buttons with a gap between them:
 ```
 
 - Default active: `"followed"` if `followedPage.items.length > 0`, else `"other"` (same server-side logic as current)
-- Active button fills with accent colour via `data-[state=on]` styles from existing toggle variants
+- Active button fills with primary colour via `data-[state=on]:bg-primary data-[state=on]:text-primary-foreground` on each Button
 - Buttons are sticky at the top of the scroll area with `backdrop-blur-sm`, same as current tabs
 
 ## Data
@@ -48,15 +48,24 @@ savedPage: { items: EventCardItem[]; nextCursor: string | null };
 loadMoreSaved: LoadMoreFn;
 ```
 
+**Props added:**
+```ts
+defaultFilter: "followed" | "other";  // renamed from defaultTab
+savedPage: { items: EventCardItem[]; nextCursor: string | null };
+loadMoreSaved: LoadMoreFn;
+```
+
 **Implementation:**
 - Remove all `Tabs`, `TabsList`, `TabsTrigger`, `TabsContent` imports and usage
-- Add `ToggleGroup`, `ToggleGroupItem` from `@/components/ui/toggle-group`
-- `useState<"followed" | "other" | "saved">` initialised from `defaultTab` prop
-- `ToggleGroup` props: `type="single"`, `variant="outline"`, `spacing={2}`
-- `value` prop is a `string` (not array — `type="single"` uses string, not string[])
-- **Deselection guard (critical):** `onValueChange` fires with `""` when the active item is clicked again. Guard: `onValueChange={(val) => { if (val) setActive(val as ActiveTab) }}` — ensures state never becomes empty
-- Unauthenticated path: render `otherPage` `InfiniteEventList` directly (no change in output)
-- Authenticated path: render toggle group + one `InfiniteEventList` for the active value
+- Add three shadcn `Button` components (`variant="outline"`, `type="button"`, `aria-pressed`)
+- `type ActiveFilter = "followed" | "other" | "saved"` — internal state type
+- `useState<ActiveFilter>` initialised from `defaultFilter` prop
+- Active styling via `data-state` attribute + `data-[state=on]:bg-primary data-[state=on]:text-primary-foreground` className
+- `aria-pressed={active === value}` on each button for accessibility
+- Unauthenticated path: render `otherPage` `InfiniteEventList` directly, no buttons
+- Authenticated path: render 3 buttons + one `InfiniteEventList` for the active value (conditional render)
+
+> **Note:** `ToggleGroup` was considered but renders items as `role="radio"` with `type="single"`, which conflicts with the expected `role="button"` semantics. Plain `Button` components with `aria-pressed` are the correct accessible pattern for a toolbar-style single-select.
 
 ### `app/(app)/(with-nav)/my-events/_components/my-events-tabs.tsx` (modify)
 - Remove `savedItems` / `savedCursor` props
@@ -71,7 +80,7 @@ loadMoreSaved: LoadMoreFn;
 | File | Action |
 |------|--------|
 | `app/(app)/(with-nav)/page.tsx` | Add saved fetch + props |
-| `domains/events/components/home-event-tabs.tsx` | Replace Tabs with ToggleGroup, add Saved |
+| `domains/events/components/home-event-tabs.tsx` | Replace Tabs with Button filters, add Saved |
 | `app/(app)/(with-nav)/my-events/page.tsx` | Remove saved fetch + props |
 | `app/(app)/(with-nav)/my-events/_components/my-events-tabs.tsx` | Remove Saved tab |
 | `app/(app)/(with-nav)/my-events/_components/my-saved-tab.tsx` | Delete |

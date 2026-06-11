@@ -2,11 +2,13 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Replace line tabs on the home page with three separate ToggleGroup outline buttons ("Your churches", "All events", "Saved"), add Saved events to the home feed, and remove Saved from the My Events page.
+**Goal:** Replace line tabs on the home page with three separate outline Button filters ("Your churches", "All events", "Saved"), add Saved events to the home feed, and remove Saved from the My Events page.
 
-**Architecture:** The `HomeEventTabs` client component swaps Radix Tabs for a controlled shadcn `ToggleGroup` (`type="single"`). The home page server component adds a parallel `getMySavedEventsPaged` fetch. The My Events page loses its Saved tab and the `MySavedTab` component is deleted.
+**Architecture:** The `HomeEventTabs` client component swaps Radix Tabs for three shadcn `Button` components with `aria-pressed` and `data-state` active styling. The home page server component adds a parallel `getMySavedEventsPaged` fetch. The My Events page loses its Saved tab and the `MySavedTab` component is deleted.
 
-**Tech Stack:** Next.js App Router (server components, async searchParams), shadcn `ToggleGroup` / `ToggleGroupItem`, React `useState`, Jest + React Testing Library
+> **Implementation note:** `ToggleGroup` was evaluated but renders `type="single"` items as `role="radio"`, which conflicts with toolbar-style button semantics. Plain `Button` + `aria-pressed` is the correct accessible pattern here.
+
+**Tech Stack:** Next.js App Router (server components, async searchParams), shadcn `Button`, React `useState`, Jest + React Testing Library
 
 ---
 
@@ -14,8 +16,8 @@
 
 | File | Change |
 |------|--------|
-| `domains/events/components/__tests__/home-event-tabs.test.tsx` | Rewrite for ToggleGroup |
-| `domains/events/components/home-event-tabs.tsx` | Replace Tabs with ToggleGroup, add Saved |
+| `domains/events/components/__tests__/home-event-tabs.test.tsx` | Rewrite for Button filter behaviour |
+| `domains/events/components/home-event-tabs.tsx` | Replace Tabs with Button filters, add Saved |
 | `app/(app)/(with-nav)/page.tsx` | Add `savedPage` fetch + new props |
 | `app/(app)/(with-nav)/my-events/page.tsx` | Remove saved fetch + props |
 | `app/(app)/(with-nav)/my-events/_components/my-events-tabs.tsx` | Remove Saved tab |

@@ -64,9 +64,17 @@ describe("HomeEventTabs", () => {
   beforeEach(() => jest.clearAllMocks());
 
   describe("unauthenticated", () => {
-    it("renders event list with no buttons", () => {
+    it("renders event list with no filter buttons", () => {
       render(<HomeEventTabs {...guestProps} />);
-      expect(screen.queryByRole("button")).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole("button", { name: "Your churches" })
+      ).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole("button", { name: "All events" })
+      ).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole("button", { name: "Saved" })
+      ).not.toBeInTheDocument();
       expect(screen.getByTestId("event-item")).toHaveTextContent("Event 1");
     });
 

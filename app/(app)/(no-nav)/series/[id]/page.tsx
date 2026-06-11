@@ -171,13 +171,11 @@ export default async function SeriesDetailPage({ params }: Props) {
                   churchName: series.church?.name ?? "",
                 }}
                 saveButton={
-                  session?.user?.id ? (
-                    <SaveEventButton
-                      eventId={event.id}
-                      initialSaved={false}
-                      isAuthenticated={true}
-                    />
-                  ) : undefined
+                  <SaveEventButton
+                    eventId={event.id}
+                    initialSaved={false}
+                    isAuthenticated={!!session?.user?.id}
+                  />
                 }
               />
             ))

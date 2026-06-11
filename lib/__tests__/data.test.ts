@@ -965,6 +965,38 @@ describe("getFollowedChurchEventsPaged", () => {
     expect(result.items).toHaveLength(0);
     expect(result.nextCursor).toBeNull();
   });
+
+  it("maps isSaved=true when event is in savedBy", async () => {
+    mockEventFindMany.mockResolvedValue([
+      { ...sampleEvent, savedBy: [{ id: "save-1" }] },
+    ]);
+
+    const result = await getFollowedChurchEventsPaged("user-1", null);
+
+    expect(result.items[0].isSaved).toBe(true);
+  });
+
+  it("maps isSaved=false when savedBy is empty", async () => {
+    mockEventFindMany.mockResolvedValue([{ ...sampleEvent, savedBy: [] }]);
+
+    const result = await getFollowedChurchEventsPaged("user-1", null);
+
+    expect(result.items[0].isSaved).toBe(false);
+  });
+
+  it("includes savedBy in the query", async () => {
+    mockEventFindMany.mockResolvedValue([sampleEvent]);
+
+    await getFollowedChurchEventsPaged("user-1", null);
+
+    expect(mockEventFindMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        include: expect.objectContaining({
+          savedBy: { where: { userId: "user-1" }, select: { id: true } },
+        }),
+      })
+    );
+  });
 });
 
 describe("getOtherChurchEventsPaged", () => {
@@ -1014,6 +1046,32 @@ describe("getOtherChurchEventsPaged", () => {
 
     expect(result.items).toHaveLength(10);
     expect(result.nextCursor).toBe("evt-9");
+  });
+
+  it("maps isSaved=true for authenticated user when event is saved", async () => {
+    mockEventFindMany.mockResolvedValue([
+      { ...sampleEvent, savedBy: [{ id: "save-1" }] },
+    ]);
+
+    const result = await getOtherChurchEventsPaged("user-1", null);
+
+    expect(result.items[0].isSaved).toBe(true);
+  });
+
+  it("maps isSaved=false for authenticated user when event is not saved", async () => {
+    mockEventFindMany.mockResolvedValue([{ ...sampleEvent, savedBy: [] }]);
+
+    const result = await getOtherChurchEventsPaged("user-1", null);
+
+    expect(result.items[0].isSaved).toBe(false);
+  });
+
+  it("does not include isSaved for unauthenticated user", async () => {
+    mockEventFindMany.mockResolvedValue([sampleEvent]);
+
+    const result = await getOtherChurchEventsPaged(null, null);
+
+    expect(result.items[0].isSaved).toBeUndefined();
   });
 
   it("passes cursor when provided", async () => {

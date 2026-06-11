@@ -53,6 +53,8 @@ loadMoreSaved: LoadMoreFn;
 - Add `ToggleGroup`, `ToggleGroupItem` from `@/components/ui/toggle-group`
 - `useState<"followed" | "other" | "saved">` initialised from `defaultTab` prop
 - `ToggleGroup` props: `type="single"`, `variant="outline"`, `spacing={2}`
+- `value` prop is a `string` (not array — `type="single"` uses string, not string[])
+- **Deselection guard (critical):** `onValueChange` fires with `""` when the active item is clicked again. Guard: `onValueChange={(val) => { if (val) setActive(val as ActiveTab) }}` — ensures state never becomes empty
 - Unauthenticated path: render `otherPage` `InfiniteEventList` directly (no change in output)
 - Authenticated path: render toggle group + one `InfiniteEventList` for the active value
 

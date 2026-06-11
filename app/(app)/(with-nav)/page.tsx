@@ -37,25 +37,27 @@ export default async function Home({
 
   const userId = hasFilters ? null : ((await auth())?.user?.id ?? null);
 
-  const [searchResults, followedPage, otherPage, savedPage] = await Promise.all([
-    hasFilters
-      ? searchEventsAndChurches({
-          query,
-          type,
-          when: when as WhenFilter | undefined,
-          category: category ?? "",
-        })
-      : Promise.resolve(null),
-    !hasFilters && userId
-      ? getFollowedChurchEventsPaged(userId, null)
-      : Promise.resolve({ items: [], nextCursor: null }),
-    !hasFilters
-      ? getOtherChurchEventsPaged(userId, null)
-      : Promise.resolve({ items: [], nextCursor: null }),
-    !hasFilters && userId
-      ? getMySavedEventsPaged(userId, null)
-      : Promise.resolve({ items: [], nextCursor: null }),
-  ]);
+  const [searchResults, followedPage, otherPage, savedPage] = await Promise.all(
+    [
+      hasFilters
+        ? searchEventsAndChurches({
+            query,
+            type,
+            when: when as WhenFilter | undefined,
+            category: category ?? "",
+          })
+        : Promise.resolve(null),
+      !hasFilters && userId
+        ? getFollowedChurchEventsPaged(userId, null)
+        : Promise.resolve({ items: [], nextCursor: null }),
+      !hasFilters
+        ? getOtherChurchEventsPaged(userId, null)
+        : Promise.resolve({ items: [], nextCursor: null }),
+      !hasFilters && userId
+        ? getMySavedEventsPaged(userId, null)
+        : Promise.resolve({ items: [], nextCursor: null }),
+    ]
+  );
 
   const filteredEvents = searchResults?.events ?? null;
   const filteredChurches = searchResults?.churches ?? null;

@@ -79,29 +79,30 @@ describe("HomeEventTabs", () => {
   describe("authenticated", () => {
     it("shows three buttons", () => {
       render(<HomeEventTabs {...authProps} />);
-      expect(screen.getByRole("button", { name: "Your churches" })).toBeInTheDocument();
-      expect(screen.getByRole("button", { name: "All events" })).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: "Your churches" })
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: "All events" })
+      ).toBeInTheDocument();
       expect(screen.getByRole("button", { name: "Saved" })).toBeInTheDocument();
     });
 
     it("activates defaultTab button on mount", () => {
       render(<HomeEventTabs {...authProps} />);
-      expect(screen.getByRole("button", { name: "Your churches" })).toHaveAttribute(
-        "data-state",
-        "on"
-      );
-      expect(screen.getByRole("button", { name: "All events" })).toHaveAttribute(
-        "data-state",
-        "off"
-      );
+      expect(
+        screen.getByRole("button", { name: "Your churches" })
+      ).toHaveAttribute("data-state", "on");
+      expect(
+        screen.getByRole("button", { name: "All events" })
+      ).toHaveAttribute("data-state", "off");
     });
 
     it("defaults to All events when defaultTab is 'other'", () => {
       render(<HomeEventTabs {...authProps} defaultTab="other" />);
-      expect(screen.getByRole("button", { name: "All events" })).toHaveAttribute(
-        "data-state",
-        "on"
-      );
+      expect(
+        screen.getByRole("button", { name: "All events" })
+      ).toHaveAttribute("data-state", "on");
     });
 
     it("shows followed events when Your churches is active", () => {

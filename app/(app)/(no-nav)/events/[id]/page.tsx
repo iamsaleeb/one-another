@@ -40,7 +40,7 @@ import { CancelEventButton } from "./_components/cancel-event-button";
 import { UncancelEventButton } from "./_components/uncancel-event-button";
 import { EventActionBar } from "./_components/event-action-bar";
 import { CampAgenda } from "./_components/camp-agenda";
-import { SaveEventButton } from "./_components/save-event-button";
+import { SaveEventButton } from "@/domains/events/components/save-event-button";
 import {
   getMyRequestForResource,
   getPendingRequestsForResource,

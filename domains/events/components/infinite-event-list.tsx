@@ -5,6 +5,7 @@ import { CalendarDays } from "lucide-react";
 import { EventCard } from "./event-card";
 import { EmptyState } from "@/components/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
+import { SaveEventButton } from "./save-event-button";
 import type { EventCardItem, LoadMoreFn } from "@/lib/types/pagination";
 
 interface InfiniteEventListProps {
@@ -13,6 +14,7 @@ interface InfiniteEventListProps {
   loadMore: LoadMoreFn;
   title?: string;
   emptyMessage?: string;
+  isAuthenticated?: boolean;
 }
 
 export function InfiniteEventList({
@@ -21,6 +23,7 @@ export function InfiniteEventList({
   loadMore,
   title,
   emptyMessage = "No events",
+  isAuthenticated = false,
 }: InfiniteEventListProps) {
   const [extraItems, setExtraItems] = useState<EventCardItem[]>([]);
   const [cursor, setCursor] = useState(initialCursor);
@@ -86,6 +89,13 @@ export function InfiniteEventList({
             badge: item.tag,
             churchName: item.church?.name ?? "",
           }}
+          saveButton={
+            <SaveEventButton
+              eventId={item.id}
+              initialSaved={item.isSaved ?? false}
+              isAuthenticated={isAuthenticated}
+            />
+          }
         />
       ))}
       {cursor && (

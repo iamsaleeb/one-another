@@ -23,6 +23,7 @@ export function CommunityTab({ items, cursor, series }: CommunityTabProps) {
         loadMore={loadMoreCommunityEventsAction}
         title="Events"
         emptyMessage="No events from others"
+        isAuthenticated={true}
       />
 
       <section className="flex flex-col gap-3">

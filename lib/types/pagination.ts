@@ -8,6 +8,7 @@ export interface EventCardItem {
   isDraft?: boolean;
   photoUrl?: string | null;
   church: { name: string } | null;
+  isSaved?: boolean;
 }
 
 export type LoadMoreFn = (

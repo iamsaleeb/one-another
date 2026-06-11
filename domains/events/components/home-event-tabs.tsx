@@ -37,6 +37,7 @@ export function HomeEventTabs({
         initialCursor={otherPage.nextCursor}
         loadMore={loadMoreOther}
         emptyMessage="No upcoming events"
+        isAuthenticated={false}
       />
     );
   }
@@ -84,6 +85,7 @@ export function HomeEventTabs({
           initialCursor={followedPage.nextCursor}
           loadMore={loadMoreFollowed}
           emptyMessage="No upcoming events from churches you follow"
+          isAuthenticated={isAuthenticated}
         />
       )}
       {active === "other" && (
@@ -92,6 +94,7 @@ export function HomeEventTabs({
           initialCursor={otherPage.nextCursor}
           loadMore={loadMoreOther}
           emptyMessage="No upcoming events"
+          isAuthenticated={isAuthenticated}
         />
       )}
       {active === "saved" && (
@@ -100,6 +103,7 @@ export function HomeEventTabs({
           initialCursor={savedPage.nextCursor}
           loadMore={loadMoreSaved}
           emptyMessage="No saved events"
+          isAuthenticated={isAuthenticated}
         />
       )}
     </div>

@@ -142,7 +142,7 @@ export default async function ChurchDetailPage({ params }: Props) {
       </div>
 
       {/* Tabbed content */}
-      <ChurchTabs church={church} />
+      <ChurchTabs church={church} isAuthenticated={!!session?.user} />
     </div>
   );
 }

@@ -12,6 +12,7 @@ import { Capabilities } from "@/domains/roles/lib/capabilities";
 import { InfoField } from "@/components/ui/info-field";
 import { HeroBanner } from "@/components/ui/hero-banner";
 import { EventCard } from "@/domains/events/components/event-card";
+import { SaveEventButton } from "@/domains/events/components/save-event-button";
 import { Button } from "@/components/ui/button";
 import { DeleteSeriesButton } from "./_components/delete-series-button";
 import { FollowSeriesButton } from "./_components/follow-series-button";
@@ -169,6 +170,13 @@ export default async function SeriesDetailPage({ params }: Props) {
                   badge: event.tag,
                   churchName: series.church?.name ?? "",
                 }}
+                saveButton={
+                  <SaveEventButton
+                    eventId={event.id}
+                    initialSaved={false}
+                    isAuthenticated={!!session?.user?.id}
+                  />
+                }
               />
             ))
           )}

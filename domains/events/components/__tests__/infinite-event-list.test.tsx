@@ -9,6 +9,10 @@ jest.mock("@/domains/events/components/event-card", () => ({
   ),
 }));
 
+jest.mock("@/domains/events/components/save-event-button", () => ({
+  SaveEventButton: () => null,
+}));
+
 // Mock EmptyState
 jest.mock("@/components/empty-state", () => ({
   EmptyState: ({ label }: { label: string }) => (

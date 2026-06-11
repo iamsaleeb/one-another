@@ -23,6 +23,7 @@ export function MyContentTab({ items, cursor, series }: MyContentTabProps) {
         loadMore={loadMoreMyCreatedEventsAction}
         title="My Events"
         emptyMessage="No upcoming events"
+        isAuthenticated={true}
       />
 
       <section className="flex flex-col gap-3">

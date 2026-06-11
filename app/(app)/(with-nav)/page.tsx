@@ -14,6 +14,7 @@ import {
   loadMoreMySavedEventsAction,
 } from "@/domains/events/actions/pagination";
 import { PageHeader } from "@/components/ui/page-header";
+import { SaveEventButton } from "@/domains/events/components/save-event-button";
 import { WHEN_LABELS, TYPE_LABELS, type WhenFilter } from "@/lib/types/search";
 import { searchParamsSchema } from "@/lib/validations/search";
 import { HomeEventTabs } from "@/domains/events/components/home-event-tabs";
@@ -35,7 +36,7 @@ export default async function Home({
   const query = q?.trim() ?? "";
   const hasFilters = !!(query || type !== "all" || when || category);
 
-  const userId = hasFilters ? null : ((await auth())?.user?.id ?? null);
+  const userId = (await auth())?.user?.id ?? null;
 
   const [searchResults, followedPage, otherPage, savedPage] = await Promise.all(
     [
@@ -112,6 +113,15 @@ export default async function Home({
                         badge: event.tag,
                         churchName: event.church?.name ?? "",
                       }}
+                      saveButton={
+                        userId ? (
+                          <SaveEventButton
+                            eventId={event.id}
+                            initialSaved={false}
+                            isAuthenticated={true}
+                          />
+                        ) : undefined
+                      }
                     />
                   ))}
                 </section>

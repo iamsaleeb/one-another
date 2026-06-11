@@ -86,6 +86,7 @@ const sampleEvent = {
   host: "Pastor John",
   tag: "Youth Meeting",
   createdAt: new Date(),
+  savedBy: [],
 };
 
 const sampleChurch = {

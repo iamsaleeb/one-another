@@ -26,6 +26,7 @@ export function MyEventsTab({
         loadMore={loadMoreMyUpcomingEventsAction}
         title="Upcoming"
         emptyMessage="No upcoming events"
+        isAuthenticated={true}
       />
       <InfiniteEventList
         initialItems={pastItems}
@@ -33,6 +34,7 @@ export function MyEventsTab({
         loadMore={loadMoreMyPastEventsAction}
         title="Past"
         emptyMessage="No past events"
+        isAuthenticated={true}
       />
     </div>
   );

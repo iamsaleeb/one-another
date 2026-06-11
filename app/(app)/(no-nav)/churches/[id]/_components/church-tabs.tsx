@@ -11,9 +11,10 @@ type ChurchWithDetails = NonNullable<Awaited<ReturnType<typeof getChurchById>>>;
 
 interface ChurchTabsProps {
   church: ChurchWithDetails;
+  isAuthenticated: boolean;
 }
 
-export function ChurchTabs({ church }: ChurchTabsProps) {
+export function ChurchTabs({ church, isAuthenticated }: ChurchTabsProps) {
   return (
     <Tabs defaultValue="about">
       <div className="bg-muted/20 sticky top-0 z-10 px-4 pt-2 backdrop-blur-sm">
@@ -35,7 +36,11 @@ export function ChurchTabs({ church }: ChurchTabsProps) {
         </TabsContent>
 
         <TabsContent value="events">
-          <EventsTab events={church.events} churchName={church.name} />
+          <EventsTab
+            events={church.events}
+            churchName={church.name}
+            isAuthenticated={isAuthenticated}
+          />
         </TabsContent>
 
         <TabsContent value="series">

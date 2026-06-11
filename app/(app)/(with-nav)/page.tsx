@@ -6,10 +6,12 @@ import { searchEventsAndChurches } from "@/domains/profile/actions/data";
 import {
   getFollowedChurchEventsPaged,
   getOtherChurchEventsPaged,
+  getMySavedEventsPaged,
 } from "@/domains/events/actions/data";
 import {
   loadMoreFollowedEventsAction,
   loadMoreOtherEventsAction,
+  loadMoreMySavedEventsAction,
 } from "@/domains/events/actions/pagination";
 import { PageHeader } from "@/components/ui/page-header";
 import { WHEN_LABELS, TYPE_LABELS, type WhenFilter } from "@/lib/types/search";
@@ -35,7 +37,7 @@ export default async function Home({
 
   const userId = hasFilters ? null : ((await auth())?.user?.id ?? null);
 
-  const [searchResults, followedPage, otherPage] = await Promise.all([
+  const [searchResults, followedPage, otherPage, savedPage] = await Promise.all([
     hasFilters
       ? searchEventsAndChurches({
           query,
@@ -49,6 +51,9 @@ export default async function Home({
       : Promise.resolve({ items: [], nextCursor: null }),
     !hasFilters
       ? getOtherChurchEventsPaged(userId, null)
+      : Promise.resolve({ items: [], nextCursor: null }),
+    !hasFilters && userId
+      ? getMySavedEventsPaged(userId, null)
       : Promise.resolve({ items: [], nextCursor: null }),
   ]);
 
@@ -142,9 +147,11 @@ export default async function Home({
             defaultTab={defaultTab}
             followedPage={followedPage}
             otherPage={otherPage}
+            savedPage={savedPage}
             isAuthenticated={!!userId}
             loadMoreFollowed={loadMoreFollowedEventsAction}
             loadMoreOther={loadMoreOtherEventsAction}
+            loadMoreSaved={loadMoreMySavedEventsAction}
           />
         )}
       </div>

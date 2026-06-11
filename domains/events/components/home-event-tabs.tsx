@@ -41,10 +41,6 @@ export function HomeEventTabs({
     );
   }
 
-  const handleTabChange = (tab: ActiveTab) => {
-    setActive(tab);
-  };
-
   return (
     <div className="flex flex-col gap-5">
       <div className="bg-muted/20 sticky top-0 z-10 pt-2 backdrop-blur-sm">
@@ -52,7 +48,7 @@ export function HomeEventTabs({
           <Button
             variant="outline"
             size="default"
-            onClick={() => handleTabChange("followed")}
+            onClick={() => setActive("followed")}
             data-state={active === "followed" ? "on" : "off"}
             className="data-[state=on]:bg-accent data-[state=on]:text-accent-foreground"
           >
@@ -61,7 +57,7 @@ export function HomeEventTabs({
           <Button
             variant="outline"
             size="default"
-            onClick={() => handleTabChange("other")}
+            onClick={() => setActive("other")}
             data-state={active === "other" ? "on" : "off"}
             className="data-[state=on]:bg-accent data-[state=on]:text-accent-foreground"
           >
@@ -70,7 +66,7 @@ export function HomeEventTabs({
           <Button
             variant="outline"
             size="default"
-            onClick={() => handleTabChange("saved")}
+            onClick={() => setActive("saved")}
             data-state={active === "saved" ? "on" : "off"}
             className="data-[state=on]:bg-accent data-[state=on]:text-accent-foreground"
           >

@@ -52,6 +52,7 @@ export function SaveEventButton({
       onClick={handleClick}
       disabled={isPending}
       aria-label={saved ? "Unsave event" : "Save event"}
+      aria-pressed={saved}
       className="p-1 disabled:opacity-50"
       type="button"
     >

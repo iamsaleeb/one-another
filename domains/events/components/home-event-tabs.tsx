@@ -47,7 +47,6 @@ export function HomeEventTabs({
         <div className="flex w-fit items-center gap-2">
           <Button
             variant="outline"
-
             onClick={() => setActive("followed")}
             data-state={active === "followed" ? "on" : "off"}
             className="data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
@@ -56,7 +55,6 @@ export function HomeEventTabs({
           </Button>
           <Button
             variant="outline"
-
             onClick={() => setActive("other")}
             data-state={active === "other" ? "on" : "off"}
             className="data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
@@ -65,7 +63,6 @@ export function HomeEventTabs({
           </Button>
           <Button
             variant="outline"
-
             onClick={() => setActive("saved")}
             data-state={active === "saved" ? "on" : "off"}
             className="data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"

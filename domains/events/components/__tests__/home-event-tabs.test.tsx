@@ -39,7 +39,7 @@ const emptyPage = { items: [], nextCursor: null };
 const loadMore = jest.fn();
 
 const guestProps = {
-  defaultTab: "other" as const,
+  defaultFilter: "other" as const,
   followedPage: emptyPage,
   otherPage: { items: [makeItem("1")], nextCursor: null },
   savedPage: emptyPage,
@@ -50,7 +50,7 @@ const guestProps = {
 };
 
 const authProps = {
-  defaultTab: "followed" as const,
+  defaultFilter: "followed" as const,
   followedPage: { items: [makeItem("f1")], nextCursor: null },
   otherPage: { items: [makeItem("o1")], nextCursor: null },
   savedPage: { items: [makeItem("s1")], nextCursor: null },
@@ -88,7 +88,7 @@ describe("HomeEventTabs", () => {
       expect(screen.getByRole("button", { name: "Saved" })).toBeInTheDocument();
     });
 
-    it("activates defaultTab button on mount", () => {
+    it("activates defaultFilter button on mount", () => {
       render(<HomeEventTabs {...authProps} />);
       expect(
         screen.getByRole("button", { name: "Your churches" })
@@ -98,8 +98,8 @@ describe("HomeEventTabs", () => {
       ).toHaveAttribute("data-state", "off");
     });
 
-    it("defaults to All events when defaultTab is 'other'", () => {
-      render(<HomeEventTabs {...authProps} defaultTab="other" />);
+    it("defaults to All events when defaultFilter is 'other'", () => {
+      render(<HomeEventTabs {...authProps} defaultFilter="other" />);
       expect(
         screen.getByRole("button", { name: "All events" })
       ).toHaveAttribute("data-state", "on");
@@ -139,7 +139,7 @@ describe("HomeEventTabs", () => {
         <HomeEventTabs
           {...authProps}
           followedPage={emptyPage}
-          defaultTab="other"
+          defaultFilter="other"
         />
       );
       await user.click(screen.getByRole("button", { name: "Your churches" }));

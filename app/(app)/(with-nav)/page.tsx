@@ -72,7 +72,7 @@ export default async function Home({
     type && type !== "all" ? TYPE_LABELS[type] : null,
   ].filter(Boolean);
 
-  const defaultTab = followedPage.items.length > 0 ? "followed" : "other";
+  const defaultFilter = followedPage.items.length > 0 ? "followed" : "other";
 
   return (
     <div className="flex flex-col">
@@ -146,7 +146,7 @@ export default async function Home({
           )
         ) : (
           <HomeEventTabs
-            defaultTab={defaultTab}
+            defaultFilter={defaultFilter}
             followedPage={followedPage}
             otherPage={otherPage}
             savedPage={savedPage}

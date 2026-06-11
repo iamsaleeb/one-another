@@ -5,10 +5,10 @@ import { Button } from "@/components/ui/button";
 import { InfiniteEventList } from "./infinite-event-list";
 import type { EventCardItem, LoadMoreFn } from "@/lib/types/pagination";
 
-type ActiveTab = "followed" | "other" | "saved";
+type ActiveFilter = "followed" | "other" | "saved";
 
 interface HomeEventTabsProps {
-  defaultTab: "followed" | "other";
+  defaultFilter: "followed" | "other";
   followedPage: { items: EventCardItem[]; nextCursor: string | null };
   otherPage: { items: EventCardItem[]; nextCursor: string | null };
   savedPage: { items: EventCardItem[]; nextCursor: string | null };
@@ -19,7 +19,7 @@ interface HomeEventTabsProps {
 }
 
 export function HomeEventTabs({
-  defaultTab,
+  defaultFilter,
   followedPage,
   otherPage,
   savedPage,
@@ -28,7 +28,7 @@ export function HomeEventTabs({
   loadMoreOther,
   loadMoreSaved,
 }: HomeEventTabsProps) {
-  const [active, setActive] = useState<ActiveTab>(defaultTab);
+  const [active, setActive] = useState<ActiveFilter>(defaultFilter);
 
   if (!isAuthenticated) {
     return (
@@ -44,10 +44,10 @@ export function HomeEventTabs({
   return (
     <div className="flex flex-col gap-5">
       <div className="bg-muted/20 sticky top-0 z-10 pt-2 backdrop-blur-sm">
-        <div className="group/toggle-group flex w-fit items-center gap-2 rounded-md">
+        <div className="flex w-fit items-center gap-2">
           <Button
             variant="outline"
-            size="default"
+
             onClick={() => setActive("followed")}
             data-state={active === "followed" ? "on" : "off"}
             className="data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
@@ -56,7 +56,7 @@ export function HomeEventTabs({
           </Button>
           <Button
             variant="outline"
-            size="default"
+
             onClick={() => setActive("other")}
             data-state={active === "other" ? "on" : "off"}
             className="data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
@@ -65,7 +65,7 @@ export function HomeEventTabs({
           </Button>
           <Button
             variant="outline"
-            size="default"
+
             onClick={() => setActive("saved")}
             data-state={active === "saved" ? "on" : "off"}
             className="data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"

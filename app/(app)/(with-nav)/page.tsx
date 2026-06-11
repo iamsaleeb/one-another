@@ -6,10 +6,12 @@ import { searchEventsAndChurches } from "@/domains/profile/actions/data";
 import {
   getFollowedChurchEventsPaged,
   getOtherChurchEventsPaged,
+  getMySavedEventsPaged,
 } from "@/domains/events/actions/data";
 import {
   loadMoreFollowedEventsAction,
   loadMoreOtherEventsAction,
+  loadMoreMySavedEventsAction,
 } from "@/domains/events/actions/pagination";
 import { PageHeader } from "@/components/ui/page-header";
 import { WHEN_LABELS, TYPE_LABELS, type WhenFilter } from "@/lib/types/search";
@@ -35,22 +37,27 @@ export default async function Home({
 
   const userId = hasFilters ? null : ((await auth())?.user?.id ?? null);
 
-  const [searchResults, followedPage, otherPage] = await Promise.all([
-    hasFilters
-      ? searchEventsAndChurches({
-          query,
-          type,
-          when: when as WhenFilter | undefined,
-          category: category ?? "",
-        })
-      : Promise.resolve(null),
-    !hasFilters && userId
-      ? getFollowedChurchEventsPaged(userId, null)
-      : Promise.resolve({ items: [], nextCursor: null }),
-    !hasFilters
-      ? getOtherChurchEventsPaged(userId, null)
-      : Promise.resolve({ items: [], nextCursor: null }),
-  ]);
+  const [searchResults, followedPage, otherPage, savedPage] = await Promise.all(
+    [
+      hasFilters
+        ? searchEventsAndChurches({
+            query,
+            type,
+            when: when as WhenFilter | undefined,
+            category: category ?? "",
+          })
+        : Promise.resolve(null),
+      !hasFilters && userId
+        ? getFollowedChurchEventsPaged(userId, null)
+        : Promise.resolve({ items: [], nextCursor: null }),
+      !hasFilters
+        ? getOtherChurchEventsPaged(userId, null)
+        : Promise.resolve({ items: [], nextCursor: null }),
+      !hasFilters && userId
+        ? getMySavedEventsPaged(userId, null)
+        : Promise.resolve({ items: [], nextCursor: null }),
+    ]
+  );
 
   const filteredEvents = searchResults?.events ?? null;
   const filteredChurches = searchResults?.churches ?? null;
@@ -65,7 +72,7 @@ export default async function Home({
     type && type !== "all" ? TYPE_LABELS[type] : null,
   ].filter(Boolean);
 
-  const defaultTab = followedPage.items.length > 0 ? "followed" : "other";
+  const defaultFilter = followedPage.items.length > 0 ? "followed" : "other";
 
   return (
     <div className="flex flex-col">
@@ -139,12 +146,14 @@ export default async function Home({
           )
         ) : (
           <HomeEventTabs
-            defaultTab={defaultTab}
+            defaultFilter={defaultFilter}
             followedPage={followedPage}
             otherPage={otherPage}
+            savedPage={savedPage}
             isAuthenticated={!!userId}
             loadMoreFollowed={loadMoreFollowedEventsAction}
             loadMoreOther={loadMoreOtherEventsAction}
+            loadMoreSaved={loadMoreMySavedEventsAction}
           />
         )}
       </div>

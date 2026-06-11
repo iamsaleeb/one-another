@@ -5,16 +5,13 @@ import type { EventCardItem } from "@/lib/types/pagination";
 
 jest.mock("@/domains/events/components/infinite-event-list", () => ({
   InfiniteEventList: ({
-    title,
     emptyMessage,
     initialItems,
   }: {
-    title?: string;
     emptyMessage?: string;
     initialItems: EventCardItem[];
   }) => (
     <div data-testid="infinite-list">
-      {title && <span data-testid="list-title">{title}</span>}
       {initialItems.length === 0 && emptyMessage && (
         <span data-testid="empty-msg">{emptyMessage}</span>
       )}
@@ -27,9 +24,7 @@ jest.mock("@/domains/events/components/infinite-event-list", () => ({
   ),
 }));
 
-jest.mock("lucide-react", () => ({
-  CalendarDays: () => null,
-}));
+jest.mock("lucide-react", () => ({ CalendarDays: () => null }));
 
 const makeItem = (id: string): EventCardItem => ({
   id,
@@ -43,90 +38,122 @@ const makeItem = (id: string): EventCardItem => ({
 const emptyPage = { items: [], nextCursor: null };
 const loadMore = jest.fn();
 
+const guestProps = {
+  defaultFilter: "other" as const,
+  followedPage: emptyPage,
+  otherPage: { items: [makeItem("1")], nextCursor: null },
+  savedPage: emptyPage,
+  isAuthenticated: false,
+  loadMoreFollowed: loadMore,
+  loadMoreOther: loadMore,
+  loadMoreSaved: loadMore,
+};
+
+const authProps = {
+  defaultFilter: "followed" as const,
+  followedPage: { items: [makeItem("f1")], nextCursor: null },
+  otherPage: { items: [makeItem("o1")], nextCursor: null },
+  savedPage: { items: [makeItem("s1")], nextCursor: null },
+  isAuthenticated: true,
+  loadMoreFollowed: loadMore,
+  loadMoreOther: loadMore,
+  loadMoreSaved: loadMore,
+};
+
 describe("HomeEventTabs", () => {
   beforeEach(() => jest.clearAllMocks());
 
-  it("shows single event list (no tabs) for guests", () => {
-    render(
-      <HomeEventTabs
-        defaultTab="other"
-        followedPage={emptyPage}
-        otherPage={{ items: [makeItem("1")], nextCursor: null }}
-        isAuthenticated={false}
-        loadMoreFollowed={loadMore}
-        loadMoreOther={loadMore}
-      />
-    );
-    expect(screen.queryByRole("tab")).not.toBeInTheDocument();
-    expect(screen.getByTestId("infinite-list")).toBeInTheDocument();
-    expect(screen.getByTestId("event-item")).toHaveTextContent("Event 1");
+  describe("unauthenticated", () => {
+    it("renders event list with no filter buttons", () => {
+      render(<HomeEventTabs {...guestProps} />);
+      expect(
+        screen.queryByRole("button", { name: "Your churches" })
+      ).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole("button", { name: "All events" })
+      ).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole("button", { name: "Saved" })
+      ).not.toBeInTheDocument();
+      expect(screen.getByTestId("event-item")).toHaveTextContent("Event 1");
+    });
+
+    it("does not show Saved button", () => {
+      render(<HomeEventTabs {...guestProps} />);
+      expect(screen.queryByText("Saved")).not.toBeInTheDocument();
+    });
   });
 
-  it("defaults to 'followed' tab when defaultTab is 'followed'", () => {
-    render(
-      <HomeEventTabs
-        defaultTab="followed"
-        followedPage={{ items: [makeItem("1")], nextCursor: null }}
-        otherPage={emptyPage}
-        isAuthenticated={true}
-        loadMoreFollowed={loadMore}
-        loadMoreOther={loadMore}
-      />
-    );
-    expect(screen.getByRole("tab", { name: "Your churches" })).toHaveAttribute(
-      "data-state",
-      "active"
-    );
-  });
+  describe("authenticated", () => {
+    it("shows three buttons", () => {
+      render(<HomeEventTabs {...authProps} />);
+      expect(
+        screen.getByRole("button", { name: "Your churches" })
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: "All events" })
+      ).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Saved" })).toBeInTheDocument();
+    });
 
-  it("shows other events feed for guests without tabs or sign-in prompt", () => {
-    render(
-      <HomeEventTabs
-        defaultTab="followed"
-        followedPage={emptyPage}
-        otherPage={{ items: [makeItem("g1")], nextCursor: null }}
-        isAuthenticated={false}
-        loadMoreFollowed={loadMore}
-        loadMoreOther={loadMore}
-      />
-    );
-    expect(screen.queryByRole("tab")).not.toBeInTheDocument();
-    expect(screen.getByTestId("event-item")).toHaveTextContent("Event g1");
-  });
+    it("activates defaultFilter button on mount", () => {
+      render(<HomeEventTabs {...authProps} />);
+      expect(
+        screen.getByRole("button", { name: "Your churches" })
+      ).toHaveAttribute("data-state", "on");
+      expect(
+        screen.getByRole("button", { name: "All events" })
+      ).toHaveAttribute("data-state", "off");
+    });
 
-  it("shows empty state on 'Your churches' tab when authenticated with no events", async () => {
-    render(
-      <HomeEventTabs
-        defaultTab="other"
-        followedPage={emptyPage}
-        otherPage={emptyPage}
-        isAuthenticated={true}
-        loadMoreFollowed={loadMore}
-        loadMoreOther={loadMore}
-      />
-    );
-    // Switch to the followed tab
-    const user = userEvent.setup();
-    await user.click(screen.getByRole("tab", { name: "Your churches" }));
-    expect(
-      screen.getByText(/no upcoming events from churches you follow/i)
-    ).toBeInTheDocument();
-  });
+    it("defaults to All events when defaultFilter is 'other'", () => {
+      render(<HomeEventTabs {...authProps} defaultFilter="other" />);
+      expect(
+        screen.getByRole("button", { name: "All events" })
+      ).toHaveAttribute("data-state", "on");
+    });
 
-  it("renders followed events when present", () => {
-    render(
-      <HomeEventTabs
-        defaultTab="followed"
-        followedPage={{
-          items: [makeItem("a"), makeItem("b")],
-          nextCursor: null,
-        }}
-        otherPage={emptyPage}
-        isAuthenticated={true}
-        loadMoreFollowed={loadMore}
-        loadMoreOther={loadMore}
-      />
-    );
-    expect(screen.getAllByTestId("event-item")).toHaveLength(2);
+    it("shows followed events when Your churches is active", () => {
+      render(<HomeEventTabs {...authProps} />);
+      expect(screen.getByTestId("event-item")).toHaveTextContent("Event f1");
+    });
+
+    it("switches to All events list on click", async () => {
+      const user = userEvent.setup();
+      render(<HomeEventTabs {...authProps} />);
+      await user.click(screen.getByRole("button", { name: "All events" }));
+      expect(screen.getByTestId("event-item")).toHaveTextContent("Event o1");
+    });
+
+    it("switches to Saved list on click", async () => {
+      const user = userEvent.setup();
+      render(<HomeEventTabs {...authProps} />);
+      await user.click(screen.getByRole("button", { name: "Saved" }));
+      expect(screen.getByTestId("event-item")).toHaveTextContent("Event s1");
+    });
+
+    it("deselection guard: clicking active button keeps same list visible", async () => {
+      const user = userEvent.setup();
+      render(<HomeEventTabs {...authProps} />);
+      // Your churches is active, click it again
+      await user.click(screen.getByRole("button", { name: "Your churches" }));
+      // Should still show followed events, not empty
+      expect(screen.getByTestId("event-item")).toHaveTextContent("Event f1");
+    });
+
+    it("shows empty state message when followed page has no events", async () => {
+      const user = userEvent.setup();
+      render(
+        <HomeEventTabs
+          {...authProps}
+          followedPage={emptyPage}
+          defaultFilter="other"
+        />
+      );
+      await user.click(screen.getByRole("button", { name: "Your churches" }));
+      expect(
+        screen.getByText(/no upcoming events from churches you follow/i)
+      ).toBeInTheDocument();
+    });
   });
 });

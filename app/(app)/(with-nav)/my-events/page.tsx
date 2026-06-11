@@ -4,7 +4,6 @@ import { PageHeader } from "@/components/ui/page-header";
 import {
   getUserAttendedEventsPaged,
   getUserAttendedPastEventsPaged,
-  getMySavedEventsPaged,
 } from "@/domains/events/actions/data";
 import { getUserFollowedSeries } from "@/domains/series/actions/data";
 import { MyEventsTabs } from "./_components/my-events-tabs";
@@ -14,14 +13,11 @@ export default async function MyEventsPage() {
   if (!session?.user?.id) redirect("/");
   const userId = session.user.id;
 
-  const [upcomingPage, pastPage, followedSeries, savedPage] = await Promise.all(
-    [
-      getUserAttendedEventsPaged(userId, null),
-      getUserAttendedPastEventsPaged(userId, null),
-      getUserFollowedSeries(userId),
-      getMySavedEventsPaged(userId, null),
-    ]
-  );
+  const [upcomingPage, pastPage, followedSeries] = await Promise.all([
+    getUserAttendedEventsPaged(userId, null),
+    getUserAttendedPastEventsPaged(userId, null),
+    getUserFollowedSeries(userId),
+  ]);
 
   return (
     <div className="flex flex-col">
@@ -35,8 +31,6 @@ export default async function MyEventsPage() {
         pastItems={pastPage.items}
         pastCursor={pastPage.nextCursor}
         followedSeries={followedSeries}
-        savedItems={savedPage.items}
-        savedCursor={savedPage.nextCursor}
       />
     </div>
   );

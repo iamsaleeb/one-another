@@ -50,7 +50,7 @@ export function HomeEventTabs({
             size="default"
             onClick={() => setActive("followed")}
             data-state={active === "followed" ? "on" : "off"}
-            className="data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+            className="data-[state=on]:bg-primary/15 data-[state=on]:text-primary"
           >
             Your churches
           </Button>
@@ -59,7 +59,7 @@ export function HomeEventTabs({
             size="default"
             onClick={() => setActive("other")}
             data-state={active === "other" ? "on" : "off"}
-            className="data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+            className="data-[state=on]:bg-primary/15 data-[state=on]:text-primary"
           >
             All events
           </Button>
@@ -68,7 +68,7 @@ export function HomeEventTabs({
             size="default"
             onClick={() => setActive("saved")}
             data-state={active === "saved" ? "on" : "off"}
-            className="data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+            className="data-[state=on]:bg-primary/15 data-[state=on]:text-primary"
           >
             Saved
           </Button>

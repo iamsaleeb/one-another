@@ -1,10 +1,7 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { PageHeader } from "@/components/ui/page-header";
-import {
-  getUserAttendedEventsPaged,
-  getUserAttendedPastEventsPaged,
-} from "@/domains/events/actions/data";
+import { getUserAttendedEventsPaged } from "@/domains/events/actions/data";
 import { getUserFollowedSeries } from "@/domains/series/actions/data";
 import { MyEventsTabs } from "./_components/my-events-tabs";
 
@@ -13,9 +10,8 @@ export default async function MyEventsPage() {
   if (!session?.user?.id) redirect("/");
   const userId = session.user.id;
 
-  const [upcomingPage, pastPage, followedSeries] = await Promise.all([
+  const [upcomingPage, followedSeries] = await Promise.all([
     getUserAttendedEventsPaged(userId, null),
-    getUserAttendedPastEventsPaged(userId, null),
     getUserFollowedSeries(userId),
   ]);
 
@@ -28,8 +24,6 @@ export default async function MyEventsPage() {
       <MyEventsTabs
         upcomingItems={upcomingPage.items}
         upcomingCursor={upcomingPage.nextCursor}
-        pastItems={pastPage.items}
-        pastCursor={pastPage.nextCursor}
         followedSeries={followedSeries}
       />
     </div>

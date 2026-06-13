@@ -1,47 +1,65 @@
 "use client";
 
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useState } from "react";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { InfiniteEventList } from "@/domains/events/components/infinite-event-list";
+import { loadMoreMyUpcomingEventsAction } from "@/domains/events/actions/pagination";
 import type { getUserFollowedSeries } from "@/domains/series/actions/data";
 import type { EventCardItem } from "@/lib/types/pagination";
-import { MyEventsTab } from "./my-events-tab";
 import { MySeriesTab } from "./my-series-tab";
+
+type ActiveFilter = "events" | "series";
 
 interface MyEventsTabsProps {
   upcomingItems: EventCardItem[];
   upcomingCursor: string | null;
-  pastItems: EventCardItem[];
-  pastCursor: string | null;
   followedSeries: Awaited<ReturnType<typeof getUserFollowedSeries>>;
 }
 
 export function MyEventsTabs({
   upcomingItems,
   upcomingCursor,
-  pastItems,
-  pastCursor,
   followedSeries,
 }: MyEventsTabsProps) {
+  const [active, setActive] = useState<ActiveFilter>("events");
+
   return (
-    <Tabs defaultValue="events">
-      <div className="bg-muted/20 sticky top-0 z-10 px-4 pt-2 backdrop-blur-sm">
-        <TabsList variant="line" className="w-full">
-          <TabsTrigger value="events">Events</TabsTrigger>
-          <TabsTrigger value="series">Series</TabsTrigger>
-        </TabsList>
+    <div className="flex flex-col gap-5 px-4 pt-2">
+      <div className="bg-muted/20 sticky top-0 z-10 pt-2 backdrop-blur-sm">
+        <ToggleGroup
+          type="single"
+          variant="outline"
+          spacing={2}
+          value={active}
+          onValueChange={(value) => {
+            if (value) setActive(value as ActiveFilter);
+          }}
+        >
+          <ToggleGroupItem
+            value="events"
+            className="data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+          >
+            Events
+          </ToggleGroupItem>
+          <ToggleGroupItem
+            value="series"
+            className="data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+          >
+            Series
+          </ToggleGroupItem>
+        </ToggleGroup>
       </div>
-      <div className="px-4 pt-5">
-        <TabsContent value="events">
-          <MyEventsTab
-            upcomingItems={upcomingItems}
-            upcomingCursor={upcomingCursor}
-            pastItems={pastItems}
-            pastCursor={pastCursor}
-          />
-        </TabsContent>
-        <TabsContent value="series">
-          <MySeriesTab series={followedSeries} />
-        </TabsContent>
-      </div>
-    </Tabs>
+
+      {active === "events" && (
+        <InfiniteEventList
+          initialItems={upcomingItems}
+          initialCursor={upcomingCursor}
+          loadMore={loadMoreMyUpcomingEventsAction}
+          emptyMessage="No upcoming events"
+          isAuthenticated={true}
+        />
+      )}
+      {active === "series" && <MySeriesTab series={followedSeries} />}
+    </div>
   );
 }

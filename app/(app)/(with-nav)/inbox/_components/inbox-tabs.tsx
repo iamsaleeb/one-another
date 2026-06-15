@@ -4,11 +4,7 @@ import { useState } from "react";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { NotificationList } from "./notification-list";
 import type { InboxNotification } from "@/domains/notifications/inbox";
-
-type InboxFilter = "all" | "unread" | "requests";
-
-const isInboxFilter = (v: string): v is InboxFilter =>
-  v === "all" || v === "unread" || v === "requests";
+import { isInboxFilter, type InboxFilter } from "./types";
 
 export function InboxTabs({
   initialNotifications,

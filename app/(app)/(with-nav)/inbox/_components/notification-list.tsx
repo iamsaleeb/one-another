@@ -10,8 +10,7 @@ import {
 } from "@/domains/notifications/actions/notifications";
 import { Button } from "@/components/ui/button";
 import type { InboxNotification } from "@/domains/notifications/inbox";
-
-type InboxFilter = "all" | "unread" | "requests";
+import type { InboxFilter } from "./types";
 
 export function NotificationList({
   initialNotifications,
@@ -72,12 +71,12 @@ export function NotificationList({
       <div className="flex flex-col items-center gap-3 py-16 text-center">
         <Bell className="text-muted-foreground/40 size-10" />
         <p className="text-base font-semibold">
-          {filter === "unread" ? "No unread notifications" : "No notifications yet"}
+          {filter === "unread"
+            ? "No unread notifications"
+            : "No notifications yet"}
         </p>
         <p className="text-muted-foreground text-sm">
-          {filter === "unread"
-            ? "You're all caught up"
-            : "You're all caught up"}
+          You&apos;re all caught up
         </p>
       </div>
     );

@@ -72,11 +72,11 @@ export function NotificationList({
       <div className="flex flex-col items-center gap-3 py-16 text-center">
         <Bell className="text-muted-foreground/40 size-10" />
         <p className="text-base font-semibold">
-          {filter === "unread" ? "You're all caught up" : "No notifications yet"}
+          {filter === "unread" ? "No unread notifications" : "No notifications yet"}
         </p>
         <p className="text-muted-foreground text-sm">
           {filter === "unread"
-            ? "No unread notifications"
+            ? "You're all caught up"
             : "You're all caught up"}
         </p>
       </div>
@@ -90,6 +90,7 @@ export function NotificationList({
           <NotificationItem key={n.id} notification={n} />
         ))}
       </div>
+      {/* "Load more" only on "all" — unread pagination not supported (client-side filter only) */}
       {filter === "all" && hasMore && (
         <Button
           variant="outline"

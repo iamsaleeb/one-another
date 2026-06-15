@@ -28,6 +28,7 @@ export function InboxTabs({
           spacing={2}
           value={active}
           onValueChange={(value) => {
+            // Empty string means clicking the active item (deselect attempt); keep current tab
             if (isInboxFilter(value)) setActive(value);
           }}
         >

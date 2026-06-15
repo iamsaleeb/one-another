@@ -10,6 +10,9 @@ import { MySeriesTab } from "./my-series-tab";
 
 type ActiveFilter = "events" | "series";
 
+const isActiveFilter = (v: string): v is ActiveFilter =>
+  v === "events" || v === "series";
+
 interface MyEventsTabsProps {
   upcomingItems: EventCardItem[];
   upcomingCursor: string | null;
@@ -32,7 +35,7 @@ export function MyEventsTabs({
           spacing={2}
           value={active}
           onValueChange={(value) => {
-            if (value) setActive(value as ActiveFilter);
+            if (isActiveFilter(value)) setActive(value);
           }}
         >
           <ToggleGroupItem

@@ -7,6 +7,9 @@ import type { EventCardItem, LoadMoreFn } from "@/lib/types/pagination";
 
 type ActiveFilter = "followed" | "other" | "saved";
 
+const isActiveFilter = (v: string): v is ActiveFilter =>
+  v === "followed" || v === "other" || v === "saved";
+
 interface HomeEventTabsProps {
   defaultFilter: "followed" | "other";
   followedPage: { items: EventCardItem[]; nextCursor: string | null };
@@ -51,7 +54,7 @@ export function HomeEventTabs({
           spacing={2}
           value={active}
           onValueChange={(value) => {
-            if (value) setActive(value as ActiveFilter);
+            if (isActiveFilter(value)) setActive(value);
           }}
         >
           <ToggleGroupItem

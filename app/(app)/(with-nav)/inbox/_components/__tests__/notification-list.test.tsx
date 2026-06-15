@@ -1,5 +1,6 @@
 import { render, screen, act, waitFor } from "@testing-library/react";
 import { NotificationList } from "../notification-list";
+import { markReadAction } from "@/domains/notifications/actions/notifications";
 
 const mockRefresh = jest.fn();
 jest.mock("next/navigation", () => ({
@@ -11,8 +12,6 @@ jest.mock("@/domains/notifications/actions/notifications", () => ({
   loadMoreNotificationsAction: jest.fn(),
 }));
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const { markReadAction } = require("@/domains/notifications/actions/notifications");
 const mockMarkReadAction = jest.mocked(markReadAction);
 
 jest.mock("@/domains/notifications/components/notification-item", () => ({

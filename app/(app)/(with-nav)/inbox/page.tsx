@@ -6,10 +6,10 @@ import { getInboxNotifications } from "@/domains/notifications/inbox";
 import { NotificationList } from "./_components/notification-list";
 
 export const metadata: Metadata = {
-  title: "Notifications — One Another",
+  title: "Inbox — One Another",
 };
 
-export default async function NotificationsPage() {
+export default async function InboxPage() {
   const session = await auth();
   if (!session?.user?.id) redirect("/");
 
@@ -22,7 +22,7 @@ export default async function NotificationsPage() {
 
   return (
     <div className="flex flex-col">
-      <PageHeader title="Notifications" />
+      <PageHeader title="Inbox" />
       <NotificationList
         initialNotifications={notifications}
         hasMore={notifications.length === PAGE_SIZE}

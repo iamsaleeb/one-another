@@ -14,10 +14,10 @@ function NotificationRowSkeleton() {
   );
 }
 
-export default function NotificationsLoading() {
+export default function InboxLoading() {
   return (
     <div className="flex flex-col">
-      <PageHeader title="Notifications" />
+      <PageHeader title="Inbox" />
       <div className="px-4">
         <div className="shadow-card divide-border divide-y overflow-hidden rounded-2xl bg-white">
           <NotificationRowSkeleton />

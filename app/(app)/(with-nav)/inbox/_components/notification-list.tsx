@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Bell, Loader2 } from "lucide-react";
+import { Bell, Inbox, Loader2 } from "lucide-react";
 import { NotificationItem } from "@/domains/notifications/components/notification-item";
 import {
   markReadAction,
@@ -11,12 +11,16 @@ import {
 import { Button } from "@/components/ui/button";
 import type { InboxNotification } from "@/domains/notifications/inbox";
 
+type InboxFilter = "all" | "unread" | "requests";
+
 export function NotificationList({
   initialNotifications,
   hasMore: initialHasMore,
+  filter = "all",
 }: {
   initialNotifications: InboxNotification[];
   hasMore: boolean;
+  filter?: InboxFilter;
 }) {
   const [notifications, setNotifications] = useState(initialNotifications);
   const [hasMore, setHasMore] = useState(initialHasMore);
@@ -26,7 +30,7 @@ export function NotificationList({
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
-    if (hasUnread) {
+    if (hasUnread && filter === "all") {
       startTransition(async () => {
         await markReadAction().catch((err) =>
           console.error("[NotificationList] markReadAction failed:", err)
@@ -34,7 +38,7 @@ export function NotificationList({
         router.refresh();
       });
     }
-  }, [hasUnread, router]);
+  }, [hasUnread, filter, router]);
 
   function handleLoadMore() {
     const nextPage = page + 1;
@@ -46,13 +50,34 @@ export function NotificationList({
     });
   }
 
-  if (notifications.length === 0) {
+  if (filter === "requests") {
+    return (
+      <div className="flex flex-col items-center gap-3 py-16 text-center">
+        <Inbox className="text-muted-foreground/40 size-10" />
+        <p className="text-base font-semibold">No requests yet</p>
+        <p className="text-muted-foreground text-sm">
+          Workflow approvals and other requests will appear here
+        </p>
+      </div>
+    );
+  }
+
+  const displayed =
+    filter === "unread"
+      ? notifications.filter((n) => n.readAt === null)
+      : notifications;
+
+  if (displayed.length === 0) {
     return (
       <div className="flex flex-col items-center gap-3 py-16 text-center">
         <Bell className="text-muted-foreground/40 size-10" />
-        <p className="text-base font-semibold">No notifications yet</p>
+        <p className="text-base font-semibold">
+          {filter === "unread" ? "You're all caught up" : "No notifications yet"}
+        </p>
         <p className="text-muted-foreground text-sm">
-          You&apos;re all caught up
+          {filter === "unread"
+            ? "No unread notifications"
+            : "You're all caught up"}
         </p>
       </div>
     );
@@ -61,11 +86,11 @@ export function NotificationList({
   return (
     <div className="flex flex-col gap-4 px-4 pb-6">
       <div className="shadow-card divide-border divide-y overflow-hidden rounded-2xl bg-white">
-        {notifications.map((n) => (
+        {displayed.map((n) => (
           <NotificationItem key={n.id} notification={n} />
         ))}
       </div>
-      {hasMore && (
+      {filter === "all" && hasMore && (
         <Button
           variant="outline"
           className="w-full"

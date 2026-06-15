@@ -1,11 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { InfiniteEventList } from "./infinite-event-list";
 import type { EventCardItem, LoadMoreFn } from "@/lib/types/pagination";
 
 type ActiveFilter = "followed" | "other" | "saved";
+
+const isActiveFilter = (v: string): v is ActiveFilter =>
+  v === "followed" || v === "other" || v === "saved";
 
 interface HomeEventTabsProps {
   defaultFilter: "followed" | "other";
@@ -45,38 +48,34 @@ export function HomeEventTabs({
   return (
     <div className="flex flex-col gap-5">
       <div className="bg-muted/20 sticky top-0 z-10 pt-2 backdrop-blur-sm">
-        <div className="flex w-fit items-center gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            aria-pressed={active === "followed"}
-            onClick={() => setActive("followed")}
-            data-state={active === "followed" ? "on" : "off"}
+        <ToggleGroup
+          type="single"
+          variant="outline"
+          spacing={2}
+          value={active}
+          onValueChange={(value) => {
+            if (isActiveFilter(value)) setActive(value);
+          }}
+        >
+          <ToggleGroupItem
+            value="followed"
             className="data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
           >
             Your churches
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            aria-pressed={active === "other"}
-            onClick={() => setActive("other")}
-            data-state={active === "other" ? "on" : "off"}
+          </ToggleGroupItem>
+          <ToggleGroupItem
+            value="other"
             className="data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
           >
             All events
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            aria-pressed={active === "saved"}
-            onClick={() => setActive("saved")}
-            data-state={active === "saved" ? "on" : "off"}
+          </ToggleGroupItem>
+          <ToggleGroupItem
+            value="saved"
             className="data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
           >
             Saved
-          </Button>
-        </div>
+          </ToggleGroupItem>
+        </ToggleGroup>
       </div>
 
       {active === "followed" && (

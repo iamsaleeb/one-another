@@ -67,13 +67,13 @@ describe("HomeEventTabs", () => {
     it("renders event list with no filter buttons", () => {
       render(<HomeEventTabs {...guestProps} />);
       expect(
-        screen.queryByRole("button", { name: "Your churches" })
+        screen.queryByRole("radio", { name: "Your churches" })
       ).not.toBeInTheDocument();
       expect(
-        screen.queryByRole("button", { name: "All events" })
+        screen.queryByRole("radio", { name: "All events" })
       ).not.toBeInTheDocument();
       expect(
-        screen.queryByRole("button", { name: "Saved" })
+        screen.queryByRole("radio", { name: "Saved" })
       ).not.toBeInTheDocument();
       expect(screen.getByTestId("event-item")).toHaveTextContent("Event 1");
     });
@@ -85,32 +85,34 @@ describe("HomeEventTabs", () => {
   });
 
   describe("authenticated", () => {
-    it("shows three buttons", () => {
+    it("shows three filter options", () => {
       render(<HomeEventTabs {...authProps} />);
       expect(
-        screen.getByRole("button", { name: "Your churches" })
+        screen.getByRole("radio", { name: "Your churches" })
       ).toBeInTheDocument();
       expect(
-        screen.getByRole("button", { name: "All events" })
+        screen.getByRole("radio", { name: "All events" })
       ).toBeInTheDocument();
-      expect(screen.getByRole("button", { name: "Saved" })).toBeInTheDocument();
+      expect(screen.getByRole("radio", { name: "Saved" })).toBeInTheDocument();
     });
 
-    it("activates defaultFilter button on mount", () => {
+    it("activates defaultFilter on mount", () => {
       render(<HomeEventTabs {...authProps} />);
       expect(
-        screen.getByRole("button", { name: "Your churches" })
+        screen.getByRole("radio", { name: "Your churches" })
       ).toHaveAttribute("data-state", "on");
-      expect(
-        screen.getByRole("button", { name: "All events" })
-      ).toHaveAttribute("data-state", "off");
+      expect(screen.getByRole("radio", { name: "All events" })).toHaveAttribute(
+        "data-state",
+        "off"
+      );
     });
 
     it("defaults to All events when defaultFilter is 'other'", () => {
       render(<HomeEventTabs {...authProps} defaultFilter="other" />);
-      expect(
-        screen.getByRole("button", { name: "All events" })
-      ).toHaveAttribute("data-state", "on");
+      expect(screen.getByRole("radio", { name: "All events" })).toHaveAttribute(
+        "data-state",
+        "on"
+      );
     });
 
     it("shows followed events when Your churches is active", () => {
@@ -121,22 +123,22 @@ describe("HomeEventTabs", () => {
     it("switches to All events list on click", async () => {
       const user = userEvent.setup();
       render(<HomeEventTabs {...authProps} />);
-      await user.click(screen.getByRole("button", { name: "All events" }));
+      await user.click(screen.getByRole("radio", { name: "All events" }));
       expect(screen.getByTestId("event-item")).toHaveTextContent("Event o1");
     });
 
     it("switches to Saved list on click", async () => {
       const user = userEvent.setup();
       render(<HomeEventTabs {...authProps} />);
-      await user.click(screen.getByRole("button", { name: "Saved" }));
+      await user.click(screen.getByRole("radio", { name: "Saved" }));
       expect(screen.getByTestId("event-item")).toHaveTextContent("Event s1");
     });
 
-    it("deselection guard: clicking active button keeps same list visible", async () => {
+    it("deselection guard: clicking active option keeps same list visible", async () => {
       const user = userEvent.setup();
       render(<HomeEventTabs {...authProps} />);
       // Your churches is active, click it again
-      await user.click(screen.getByRole("button", { name: "Your churches" }));
+      await user.click(screen.getByRole("radio", { name: "Your churches" }));
       // Should still show followed events, not empty
       expect(screen.getByTestId("event-item")).toHaveTextContent("Event f1");
     });
@@ -150,7 +152,7 @@ describe("HomeEventTabs", () => {
           defaultFilter="other"
         />
       );
-      await user.click(screen.getByRole("button", { name: "Your churches" }));
+      await user.click(screen.getByRole("radio", { name: "Your churches" }));
       expect(
         screen.getByText(/no upcoming events from churches you follow/i)
       ).toBeInTheDocument();

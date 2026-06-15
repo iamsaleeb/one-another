@@ -89,8 +89,7 @@ export function NotificationList({
           <NotificationItem key={n.id} notification={n} />
         ))}
       </div>
-      {/* "Load more" only on "all" — unread pagination not supported (client-side filter only) */}
-      {filter === "all" && hasMore && (
+      {hasMore && filter !== "requests" && (
         <Button
           variant="outline"
           className="w-full"

@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { PageHeader } from "@/components/ui/page-header";
 import { getInboxNotifications } from "@/domains/notifications/inbox";
-import { NotificationList } from "./_components/notification-list";
+import { InboxTabs } from "./_components/inbox-tabs";
 
 export const metadata: Metadata = {
   title: "Inbox — One Another",
@@ -23,7 +23,7 @@ export default async function InboxPage() {
   return (
     <div className="flex flex-col">
       <PageHeader title="Inbox" />
-      <NotificationList
+      <InboxTabs
         initialNotifications={notifications}
         hasMore={notifications.length === PAGE_SIZE}
       />

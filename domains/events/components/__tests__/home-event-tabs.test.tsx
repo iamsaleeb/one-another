@@ -101,16 +101,18 @@ describe("HomeEventTabs", () => {
       expect(
         screen.getByRole("radio", { name: "Your churches" })
       ).toHaveAttribute("data-state", "on");
-      expect(
-        screen.getByRole("radio", { name: "All events" })
-      ).toHaveAttribute("data-state", "off");
+      expect(screen.getByRole("radio", { name: "All events" })).toHaveAttribute(
+        "data-state",
+        "off"
+      );
     });
 
     it("defaults to All events when defaultFilter is 'other'", () => {
       render(<HomeEventTabs {...authProps} defaultFilter="other" />);
-      expect(
-        screen.getByRole("radio", { name: "All events" })
-      ).toHaveAttribute("data-state", "on");
+      expect(screen.getByRole("radio", { name: "All events" })).toHaveAttribute(
+        "data-state",
+        "on"
+      );
     });
 
     it("shows followed events when Your churches is active", () => {

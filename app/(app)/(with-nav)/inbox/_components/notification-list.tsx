@@ -89,7 +89,7 @@ export function NotificationList({
           <NotificationItem key={n.id} notification={n} />
         ))}
       </div>
-      {hasMore && filter !== "requests" && (
+      {hasMore && (
         <Button
           variant="outline"
           className="w-full"

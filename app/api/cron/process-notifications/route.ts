@@ -2,19 +2,11 @@ import { type NextRequest, NextResponse } from "next/server";
 import { processNotifications } from "@/domains/notifications/process";
 
 export async function GET(request: NextRequest) {
-  const authHeader = request.headers.get("authorization");
-  const expectedToken = process.env.CRON_SECRET;
-
-  if (!expectedToken) {
-    console.error("CRON_SECRET environment variable is not set");
-    return NextResponse.json(
-      { error: "Server misconfiguration" },
-      { status: 500 }
-    );
-  }
-
-  if (authHeader !== `Bearer ${expectedToken}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (process.env.VERCEL) {
+    const authHeader = request.headers.get("authorization");
+    if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
   }
 
   try {

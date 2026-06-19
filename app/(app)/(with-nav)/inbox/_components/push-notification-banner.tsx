@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Capacitor } from "@capacitor/core";
+import { Capacitor, type PluginListenerHandle } from "@capacitor/core";
+import { App } from "@capacitor/app";
 import { PushNotifications } from "@capacitor/push-notifications";
 import { BellOff, X } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -9,12 +10,19 @@ import { Button } from "@/components/ui/button";
 
 type BannerState = "hidden" | "prompt" | "denied";
 
+const DISMISS_KEY = "push-banner-dismissed";
+
 export function PushNotificationBanner() {
   const [state, setState] = useState<BannerState>("hidden");
-  const [dismissed, setDismissed] = useState(false);
+  const [dismissed, setDismissed] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return sessionStorage.getItem(DISMISS_KEY) === "1";
+  });
 
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;
+
+    let handle: PluginListenerHandle | undefined;
 
     async function check() {
       const status = await PushNotifications.checkPermissions();
@@ -27,31 +35,30 @@ export function PushNotificationBanner() {
 
     check();
 
-    // Re-check when app resumes (user may have toggled in device settings)
-    const onResume = () => check();
-    document.addEventListener("resume", onResume);
-    return () => document.removeEventListener("resume", onResume);
+    App.addListener("resume", () => check()).then((h) => {
+      handle = h;
+    });
+
+    return () => {
+      handle?.remove();
+    };
   }, []);
 
   const handleEnable = useCallback(async () => {
-    if (state === "prompt") {
-      const result = await PushNotifications.requestPermissions();
-      if (result.receive === "granted") {
-        await PushNotifications.register();
-        setState("hidden");
-      } else if (result.receive === "denied") {
-        setState("denied");
-      }
-    } else if (state === "denied") {
-      // Once denied at OS level, re-request on Android 13+ may re-prompt.
-      // If it stays denied, the user must manually enable in device settings.
-      const result = await PushNotifications.requestPermissions();
-      if (result.receive === "granted") {
-        await PushNotifications.register();
-        setState("hidden");
-      }
+    const result = await PushNotifications.requestPermissions();
+    if (result.receive === "granted") {
+      // Reload so PushNotificationProvider re-inits with full listener
+      // setup and token registration — avoids duplicating that logic here.
+      window.location.reload();
+    } else if (result.receive === "denied") {
+      setState("denied");
     }
-  }, [state]);
+  }, []);
+
+  const handleDismiss = useCallback(() => {
+    sessionStorage.setItem(DISMISS_KEY, "1");
+    setDismissed(true);
+  }, []);
 
   if (state === "hidden" || dismissed) return null;
 
@@ -77,7 +84,7 @@ export function PushNotificationBanner() {
         </AlertDescription>
         <button
           className="absolute top-2 right-2 rounded-sm p-0.5 text-amber-400 hover:text-amber-600"
-          onClick={() => setDismissed(true)}
+          onClick={handleDismiss}
           aria-label="Dismiss"
         >
           <X className="size-4" />

@@ -157,21 +157,12 @@ Push notifications are delivered via [Firebase Cloud Messaging (FCM)](https://fi
 
 ### Cron job setup
 
-Notification delivery is triggered by an external cron service calling the API endpoint once per minute. Set up a job on [cron-job.org](https://cron-job.org) (or any equivalent service) with:
+Notification delivery runs via a [Vercel Cron Job](https://vercel.com/docs/cron-jobs) configured in `vercel.json`. Vercel automatically generates and injects `CRON_SECRET` — no manual setup required.
 
-| Setting  | Value                                              |
-| -------- | -------------------------------------------------- |
-| URL      | `https://your-domain.com/api/cron/event-reminders` |
-| Method   | `GET`                                              |
-| Header   | `Authorization: Bearer <CRON_SECRET>`              |
-| Schedule | Every 1 minute (`*/1 * * * *`)                     |
-
-Add `CRON_SECRET` (a long random string) to your environment variables, then use the same value in the cron-job.org request header.
-
-To trigger the endpoint manually during local development:
+The cron runs once per day on Hobby plans, or up to once per minute on Pro. To trigger the endpoint manually during local development:
 
 ```powershell
-Invoke-RestMethod -Uri "http://localhost:3000/api/cron/event-reminders" -Headers @{ Authorization = "Bearer <CRON_SECRET>" }
+Invoke-RestMethod -Uri "http://localhost:3000/api/cron/process-notifications"
 ```
 
 ### User preferences

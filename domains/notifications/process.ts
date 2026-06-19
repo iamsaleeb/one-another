@@ -1,5 +1,5 @@
 import "server-only";
-import { updateTag } from "next/cache";
+import { revalidateTag } from "next/cache";
 import { prisma } from "@/lib/db";
 import { getFirebaseAdmin } from "@/lib/firebase-admin";
 
@@ -126,7 +126,7 @@ export async function processNotifications(): Promise<{ processed: number }> {
   ]);
 
   for (const userId of userIds) {
-    updateTag(`user-notifications-${userId}`);
+    revalidateTag(`user-notifications-${userId}`, {});
   }
 
   return { processed: sentIds.length };

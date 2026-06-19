@@ -1,4 +1,4 @@
-jest.mock("next/cache", () => ({ updateTag: jest.fn() }));
+jest.mock("next/cache", () => ({ revalidateTag: jest.fn() }));
 
 jest.mock("@/lib/db", () => ({
   prisma: {

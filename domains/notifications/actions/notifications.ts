@@ -136,10 +136,13 @@ export async function loadMoreNotificationsAction(
 ): Promise<{ items: InboxNotification[]; hasMore: boolean }> {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
-  const items = await getInboxNotifications({
+  const rows = await getInboxNotifications({
     userId: session.user.id,
     page,
-    pageSize: NOTIFICATIONS_PAGE_SIZE,
+    pageSize: NOTIFICATIONS_PAGE_SIZE + 1,
   });
-  return { items, hasMore: items.length === NOTIFICATIONS_PAGE_SIZE };
+  return {
+    items: rows.slice(0, NOTIFICATIONS_PAGE_SIZE),
+    hasMore: rows.length > NOTIFICATIONS_PAGE_SIZE,
+  };
 }

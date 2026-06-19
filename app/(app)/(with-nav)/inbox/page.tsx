@@ -3,13 +3,13 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { PageHeader } from "@/components/ui/page-header";
 import { getInboxNotifications } from "@/domains/notifications/inbox";
-import { NotificationList } from "./_components/notification-list";
+import { InboxTabs } from "./_components/inbox-tabs";
 
 export const metadata: Metadata = {
-  title: "Notifications — One Another",
+  title: "Inbox — One Another",
 };
 
-export default async function NotificationsPage() {
+export default async function InboxPage() {
   const session = await auth();
   if (!session?.user?.id) redirect("/");
 
@@ -17,15 +17,15 @@ export default async function NotificationsPage() {
   const notifications = await getInboxNotifications({
     userId: session.user.id,
     page: 1,
-    pageSize: PAGE_SIZE,
+    pageSize: PAGE_SIZE + 1,
   });
 
   return (
     <div className="flex flex-col">
-      <PageHeader title="Notifications" />
-      <NotificationList
-        initialNotifications={notifications}
-        hasMore={notifications.length === PAGE_SIZE}
+      <PageHeader title="Inbox" />
+      <InboxTabs
+        initialNotifications={notifications.slice(0, PAGE_SIZE)}
+        hasMore={notifications.length > PAGE_SIZE}
       />
     </div>
   );

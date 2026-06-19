@@ -19,7 +19,7 @@ const publicTabs = [
 
 const authTabs = [
   { label: "My Events", href: "/my-events", icon: CalendarDays },
-  { label: "Notifications", href: "/notifications", icon: Bell },
+  { label: "Inbox", href: "/inbox", icon: Bell },
 ];
 
 const organiserTab = { label: "Tools", href: "/organiser", icon: Wrench };
@@ -53,7 +53,7 @@ export function BottomNav({
       <div className="flex h-16 items-center justify-around px-2">
         {tabs.map(({ label, href, icon: Icon }) => {
           const isActive = pathname === href;
-          const showDot = href === "/notifications" && unreadCount > 0;
+          const showDot = href === "/inbox" && unreadCount > 0;
           return (
             <Link
               key={href}

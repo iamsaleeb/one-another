@@ -17,15 +17,15 @@ export default async function InboxPage() {
   const notifications = await getInboxNotifications({
     userId: session.user.id,
     page: 1,
-    pageSize: PAGE_SIZE,
+    pageSize: PAGE_SIZE + 1,
   });
 
   return (
     <div className="flex flex-col">
       <PageHeader title="Inbox" />
       <InboxTabs
-        initialNotifications={notifications}
-        hasMore={notifications.length === PAGE_SIZE}
+        initialNotifications={notifications.slice(0, PAGE_SIZE)}
+        hasMore={notifications.length > PAGE_SIZE}
       />
     </div>
   );

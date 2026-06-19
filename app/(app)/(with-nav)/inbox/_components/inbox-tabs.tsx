@@ -15,6 +15,11 @@ export function InboxTabs({
 }) {
   const [active, setActive] = useState<InboxFilter>("all");
 
+  // Key resets NotificationList state when the server delivers refreshed data
+  // (e.g. after markReadAction + router.refresh() changes readAt values).
+  // Changes on item count changes or when the first item's readAt flips.
+  const listKey = `${initialNotifications.length}-${initialNotifications[0]?.readAt ?? "unread"}`;
+
   return (
     <div className="flex flex-col gap-5 pt-2">
       <div className="bg-muted/20 sticky top-0 z-10 px-4 pt-2 backdrop-blur-sm">
@@ -49,6 +54,7 @@ export function InboxTabs({
         </ToggleGroup>
       </div>
       <NotificationList
+        key={listKey}
         initialNotifications={initialNotifications}
         hasMore={hasMore}
         filter={active}

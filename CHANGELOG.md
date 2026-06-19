@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.18.0](https://github.com/iamsaleeb/one-another/compare/one-another-v0.17.0...one-another-v0.18.0) (2026-06-19)
+
+
+### Features
+
+* add bookmark button to all event cards ([#131](https://github.com/iamsaleeb/one-another/issues/131)) ([555c0ec](https://github.com/iamsaleeb/one-another/commit/555c0ec5cf76b275745efb3f146c261423460c89))
+* create approval workflow ([#127](https://github.com/iamsaleeb/one-another/issues/127)) ([b1161fe](https://github.com/iamsaleeb/one-another/commit/b1161fee83fe026043d484db69d58e9683a9941d))
+* re-design home screen ([#130](https://github.com/iamsaleeb/one-another/issues/130)) ([45aedc0](https://github.com/iamsaleeb/one-another/commit/45aedc0d7c49d74ea62a20e30c378020f0eda9fc))
+* rename notifications to inbox with All/Unread/Requests tabs ([#133](https://github.com/iamsaleeb/one-another/issues/133)) ([989ee61](https://github.com/iamsaleeb/one-another/commit/989ee61860c5a120c9f5d540e420b6653582f095))
+
 ## [0.17.0](https://github.com/iamsaleeb/one-another/compare/one-another-v0.16.2...one-another-v0.17.0) (2026-06-01)
 
 ### Features

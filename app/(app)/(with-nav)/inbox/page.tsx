@@ -4,6 +4,7 @@ import { auth } from "@/auth";
 import { PageHeader } from "@/components/ui/page-header";
 import { getInboxNotifications } from "@/domains/notifications/inbox";
 import { InboxTabs } from "./_components/inbox-tabs";
+import { PushNotificationBanner } from "./_components/push-notification-banner";
 
 export const metadata: Metadata = {
   title: "Inbox — One Another",
@@ -23,6 +24,7 @@ export default async function InboxPage() {
   return (
     <div className="flex flex-col">
       <PageHeader title="Inbox" />
+      <PushNotificationBanner />
       <InboxTabs
         initialNotifications={notifications.slice(0, PAGE_SIZE)}
         hasMore={notifications.length > PAGE_SIZE}

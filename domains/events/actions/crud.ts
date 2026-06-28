@@ -24,7 +24,7 @@ export async function createEventAction(
   data: CreateEventInput
 ): Promise<ActionResult> {
   const actor = await getActor();
-  if (!actor) return { error: "Unauthorised." };
+  if (!actor.isAuthenticated) return { error: "Unauthorised." };
 
   const parsed = createEventSchema.safeParse(data);
   if (!parsed.success)
@@ -50,7 +50,7 @@ export async function updateEventAction(
   data: CreateEventInput
 ): Promise<ActionResult> {
   const actor = await getActor();
-  if (!actor) redirect("/");
+  if (!actor.isAuthenticated) redirect("/");
 
   const parsed = createEventSchema.safeParse(data);
   if (!parsed.success)
@@ -69,7 +69,7 @@ export async function cancelEventAction(
   reason: string
 ): Promise<void> {
   const actor = await getActor();
-  if (!actor) redirect("/");
+  if (!actor.isAuthenticated) redirect("/");
 
   const result = await cancelEvent(id, reason, actor.id, actor);
   if ("error" in result) redirect("/organiser");
@@ -80,7 +80,7 @@ export async function cancelEventAction(
 
 export async function uncancelEventAction(id: string): Promise<void> {
   const actor = await getActor();
-  if (!actor) redirect("/");
+  if (!actor.isAuthenticated) redirect("/");
 
   const result = await uncancelEvent(id, actor.id, actor);
   if ("error" in result) redirect("/organiser");
@@ -91,7 +91,7 @@ export async function uncancelEventAction(id: string): Promise<void> {
 
 export async function publishEventAction(id: string): Promise<ActionResult> {
   const actor = await getActor();
-  if (!actor) return { error: "Unauthorised." };
+  if (!actor.isAuthenticated) return { error: "Unauthorised." };
 
   const result = await publishEvent(id, actor.id, actor);
   if ("error" in result) return result;
@@ -104,7 +104,7 @@ export async function publishEventAction(id: string): Promise<ActionResult> {
 
 export async function unpublishEventAction(id: string): Promise<ActionResult> {
   const actor = await getActor();
-  if (!actor) return { error: "Unauthorised." };
+  if (!actor.isAuthenticated) return { error: "Unauthorised." };
 
   const result = await unpublishEvent(id, actor.id, actor);
   if ("error" in result) return result;
@@ -120,7 +120,7 @@ export async function saveDraftAction(
   data: SaveDraftInput
 ): Promise<{ eventId: string } | ActionResult> {
   const actor = await getActor();
-  if (!actor) return { error: "Unauthorised." };
+  if (!actor.isAuthenticated) return { error: "Unauthorised." };
 
   const parsed = saveDraftSchema.safeParse(data);
   if (!parsed.success)
@@ -158,7 +158,7 @@ export async function saveEventAction(
   data: CreateEventInput
 ): Promise<{ success: true } | ActionResult> {
   const actor = await getActor();
-  if (!actor) return { error: "Unauthorised." };
+  if (!actor.isAuthenticated) return { error: "Unauthorised." };
 
   const parsed = createEventSchema.safeParse(data);
   if (!parsed.success)
@@ -174,7 +174,7 @@ export async function saveEventAction(
 
 export async function deleteEventAction(id: string): Promise<void> {
   const actor = await getActor();
-  if (!actor) redirect("/");
+  if (!actor.isAuthenticated) redirect("/");
 
   const result = await deleteEvent(id, actor.id, actor);
   if ("error" in result) redirect("/organiser");

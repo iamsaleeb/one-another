@@ -6,8 +6,7 @@ import {
   getSeriesById,
   getMySeriesFollow,
 } from "@/domains/series/actions/data";
-import { sessionToActor } from "@/domains/roles/lib/session";
-import { can } from "@/domains/roles/lib/can";
+import { getActor } from "@/domains/roles/lib/session";
 import { Capabilities } from "@/domains/roles/lib/capabilities";
 import { InfoField } from "@/components/ui/info-field";
 import { HeroBanner } from "@/components/ui/hero-banner";
@@ -36,36 +35,34 @@ export async function generateMetadata({ params }: Props) {
 }
 
 export default async function SeriesDetailPage({ params }: Props) {
-  const [{ id }, session] = await Promise.all([params, auth()]);
+  const [{ id }, actor, session] = await Promise.all([
+    params,
+    getActor(),
+    auth(),
+  ]);
+
+  const userId = actor.isAuthenticated ? actor.id : null;
 
   const [series, myFollow] = await Promise.all([
     getSeriesById(id),
-    session?.user?.id
-      ? getMySeriesFollow(id, session.user.id)
-      : Promise.resolve(null),
+    userId ? getMySeriesFollow(id, userId) : Promise.resolve(null),
   ]);
 
   if (!series) notFound();
 
-  const actor = sessionToActor(session);
-  const [canEdit, canDelete, canAddSession] = actor
-    ? await Promise.all([
-        can(actor, Capabilities.SERIES_UPDATE, {
-          churchId: series.churchId,
-          seriesId: series.id,
-        }),
-        can(actor, Capabilities.SERIES_DELETE, { churchId: series.churchId }),
-        can(actor, Capabilities.EVENT_CREATE, {
-          churchId: series.churchId,
-          seriesId: series.id,
-        }),
-      ])
-    : [false, false, false];
+  const access = await actor.loadContext({
+    churchId: series.churchId,
+    seriesId: series.id,
+  });
+
+  const canEdit = access.can(Capabilities.SERIES_UPDATE);
+  const canDelete = access.can(Capabilities.SERIES_DELETE);
+  const canAddSession = access.can(Capabilities.EVENT_CREATE);
   const isFollowing = myFollow !== null;
 
   const [myApprovalRequest, pendingApprovalRequests] = await Promise.all([
-    session?.user?.id
-      ? getMyRequestForResource("SERIES", series.id, session.user.id)
+    userId
+      ? getMyRequestForResource("SERIES", series.id, userId)
       : Promise.resolve(null),
     canEdit
       ? getPendingRequestsForResource("SERIES", series.id)
@@ -81,7 +78,7 @@ export default async function SeriesDetailPage({ params }: Props) {
           resourceType="SERIES"
           resourceId={series.id}
           resourceName={series.name}
-          isAuthenticated={!!session?.user}
+          isAuthenticated={!!userId}
           hasContributorAccess={canAddSession}
           myRequest={myApprovalRequest ?? null}
           pendingCount={pendingApprovalRequests.length}
@@ -174,7 +171,7 @@ export default async function SeriesDetailPage({ params }: Props) {
                   <SaveEventButton
                     eventId={event.id}
                     initialSaved={false}
-                    isAuthenticated={!!session?.user?.id}
+                    isAuthenticated={!!userId}
                   />
                 }
               />

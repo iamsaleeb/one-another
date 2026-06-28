@@ -2,10 +2,8 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
-import { auth } from "@/auth";
 import { getChurchById } from "@/domains/churches/actions/data";
-import { sessionToActor } from "@/domains/roles/lib/session";
-import { can } from "@/domains/roles/lib/can";
+import { getActor } from "@/domains/roles/lib/session";
 import { Capabilities } from "@/domains/roles/lib/capabilities";
 import { getApprovalRequestById } from "@/domains/approvals";
 import { ROLE_LABELS } from "@/domains/approvals/lib/labels";
@@ -30,7 +28,7 @@ export async function generateMetadata({ params }: Props) {
 }
 
 export default async function ChurchHelperDetailPage({ params }: Props) {
-  const [{ id, requestId }, session] = await Promise.all([params, auth()]);
+  const [{ id, requestId }, actor] = await Promise.all([params, getActor()]);
 
   const [church, request] = await Promise.all([
     getChurchById(id),
@@ -41,11 +39,8 @@ export default async function ChurchHelperDetailPage({ params }: Props) {
   if (request.resourceType !== "CHURCH" || request.resourceId !== id)
     notFound();
 
-  const actor = sessionToActor(session);
-  const canManageMembers = actor
-    ? await can(actor, Capabilities.CHURCH_MANAGE_MEMBERS, { churchId: id })
-    : false;
-  if (!canManageMembers) notFound();
+  const access = await actor.loadContext({ churchId: id });
+  if (!access.can(Capabilities.CHURCH_MANAGE_MEMBERS)) notFound();
 
   const backHref = `/churches/${id}/helpers`;
   const initials = request.requester.name?.slice(0, 2).toUpperCase() ?? "??";

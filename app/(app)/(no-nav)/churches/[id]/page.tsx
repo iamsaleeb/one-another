@@ -8,8 +8,7 @@ import {
   getMyChurchFollow,
 } from "@/domains/churches/actions/data";
 import { auth } from "@/auth";
-import { sessionToActor } from "@/domains/roles/lib/session";
-import { can } from "@/domains/roles/lib/can";
+import { getActor } from "@/domains/roles/lib/session";
 import { Capabilities } from "@/domains/roles/lib/capabilities";
 import {
   getMyRequestForResource,
@@ -32,30 +31,30 @@ export async function generateMetadata({ params }: Props) {
 }
 
 export default async function ChurchDetailPage({ params }: Props) {
-  const [{ id }, session] = await Promise.all([params, auth()]);
+  const [{ id }, actor, session] = await Promise.all([
+    params,
+    getActor(),
+    auth(),
+  ]);
+
+  const userId = actor.isAuthenticated ? actor.id : null;
 
   const [church, myFollow] = await Promise.all([
     getChurchById(id),
-    session?.user?.id
-      ? getMyChurchFollow(id, session.user.id)
-      : Promise.resolve(null),
+    userId ? getMyChurchFollow(id, userId) : Promise.resolve(null),
   ]);
 
   if (!church) notFound();
 
   const isFollowing = myFollow !== null;
 
-  const actor = sessionToActor(session);
-  const [canManageMembers, canCreateEvent] = actor
-    ? await Promise.all([
-        can(actor, Capabilities.CHURCH_MANAGE_MEMBERS, { churchId: id }),
-        can(actor, Capabilities.EVENT_CREATE, { churchId: id }),
-      ])
-    : [false, false];
+  const access = await actor.loadContext({ churchId: id });
+  const canManageMembers = access.can(Capabilities.CHURCH_MANAGE_MEMBERS);
+  const canCreateEvent = access.can(Capabilities.EVENT_CREATE);
 
   const [myApprovalRequest, pendingApprovalRequests] = await Promise.all([
-    session?.user?.id
-      ? getMyRequestForResource("CHURCH", id, session.user.id)
+    userId
+      ? getMyRequestForResource("CHURCH", id, userId)
       : Promise.resolve(null),
     canManageMembers
       ? getPendingRequestsForResource("CHURCH", id)
@@ -121,7 +120,7 @@ export default async function ChurchDetailPage({ params }: Props) {
             <FollowButton
               churchId={church.id}
               isFollowing={isFollowing}
-              isAuthenticated={!!session?.user}
+              isAuthenticated={!!userId}
               loginUrl={`/login?callbackUrl=/churches/${id}&intent=follow&label=${encodeURIComponent(church.name)}`}
             />
           </CardContent>
@@ -133,7 +132,7 @@ export default async function ChurchDetailPage({ params }: Props) {
           resourceType="CHURCH"
           resourceId={id}
           resourceName={church.name}
-          isAuthenticated={!!session?.user}
+          isAuthenticated={!!userId}
           hasContributorAccess={canCreateEvent}
           myRequest={myApprovalRequest ?? null}
           pendingCount={pendingApprovalRequests.length}

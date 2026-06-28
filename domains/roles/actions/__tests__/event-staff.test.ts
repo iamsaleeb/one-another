@@ -7,9 +7,6 @@ jest.mock("@/lib/db", () => ({
 jest.mock("@/domains/roles/lib/session", () => ({
   getActor: jest.fn(),
 }));
-jest.mock("@/domains/roles/lib/can", () => ({
-  can: jest.fn().mockResolvedValue(true),
-}));
 jest.mock("@/domains/roles/dal/event-staff", () => ({
   upsertEventStaff: jest.fn(),
   removeEventStaff: jest.fn(),
@@ -18,24 +15,35 @@ jest.mock("@/domains/roles/dal/event-staff", () => ({
 import { assignEventRoleAction, removeEventStaffAction } from "../event-staff";
 import { prisma } from "@/lib/db";
 import { getActor } from "@/domains/roles/lib/session";
-import { can } from "@/domains/roles/lib/can";
 import {
   upsertEventStaff,
   removeEventStaff,
 } from "@/domains/roles/dal/event-staff";
 
 const mockGetActor = getActor as jest.Mock;
-const mockCan = can as jest.Mock;
 const mockEventFindUnique = prisma.event.findUnique as jest.Mock;
 const mockUpsert = upsertEventStaff as jest.Mock;
 const mockRemove = removeEventStaff as jest.Mock;
 
-const validActor = { id: "admin-1", isPlatformAdmin: false };
+function makeActor(opts?: { id?: string; canResult?: boolean }) {
+  return {
+    isAuthenticated: true as const,
+    id: opts?.id ?? "admin-1",
+    isPlatformAdmin: false,
+    can: jest.fn().mockResolvedValue(opts?.canResult ?? true),
+    loadContext: jest.fn(),
+  };
+}
+
+const guestActor = {
+  isAuthenticated: false as const,
+  can: jest.fn().mockResolvedValue(false),
+  loadContext: jest.fn(),
+};
 
 beforeEach(() => {
   jest.clearAllMocks();
-  mockGetActor.mockResolvedValue(validActor);
-  mockCan.mockResolvedValue(true);
+  mockGetActor.mockResolvedValue(makeActor());
   mockEventFindUnique.mockResolvedValue({ churchId: "ch-1" });
 });
 
@@ -47,7 +55,7 @@ describe("assignEventRoleAction", () => {
   });
 
   it("returns error when unauthenticated", async () => {
-    mockGetActor.mockResolvedValue(null);
+    mockGetActor.mockResolvedValue(guestActor);
     const result = await assignEventRoleAction({
       userId: "u1",
       eventId: "e1",
@@ -68,8 +76,8 @@ describe("assignEventRoleAction", () => {
     expect(mockUpsert).not.toHaveBeenCalled();
   });
 
-  it("returns error when can() returns false", async () => {
-    mockCan.mockResolvedValue(false);
+  it("returns error when not authorized", async () => {
+    mockGetActor.mockResolvedValue(makeActor({ canResult: false }));
     const result = await assignEventRoleAction({
       userId: "u1",
       eventId: "e1",
@@ -80,6 +88,8 @@ describe("assignEventRoleAction", () => {
   });
 
   it("assigns role when authorized", async () => {
+    const actor = makeActor();
+    mockGetActor.mockResolvedValue(actor);
     mockUpsert.mockResolvedValue({});
     const result = await assignEventRoleAction({
       userId: "u1",
@@ -93,7 +103,7 @@ describe("assignEventRoleAction", () => {
       "EVENT_MANAGER",
       "admin-1"
     );
-    expect(mockCan).toHaveBeenCalledWith(validActor, "event:manage_staff", {
+    expect(actor.can).toHaveBeenCalledWith("event:manage_staff", {
       churchId: "ch-1",
       eventId: "e1",
     });
@@ -108,7 +118,7 @@ describe("removeEventStaffAction", () => {
   });
 
   it("returns error when unauthenticated", async () => {
-    mockGetActor.mockResolvedValue(null);
+    mockGetActor.mockResolvedValue(guestActor);
     const result = await removeEventStaffAction({
       userId: "u1",
       eventId: "e1",
@@ -127,8 +137,8 @@ describe("removeEventStaffAction", () => {
     expect(mockRemove).not.toHaveBeenCalled();
   });
 
-  it("returns error when can() returns false", async () => {
-    mockCan.mockResolvedValue(false);
+  it("returns error when not authorized", async () => {
+    mockGetActor.mockResolvedValue(makeActor({ canResult: false }));
     const result = await removeEventStaffAction({
       userId: "u1",
       eventId: "e1",
@@ -138,6 +148,8 @@ describe("removeEventStaffAction", () => {
   });
 
   it("removes staff when authorized", async () => {
+    const actor = makeActor();
+    mockGetActor.mockResolvedValue(actor);
     mockRemove.mockResolvedValue({});
     const result = await removeEventStaffAction({
       userId: "u1",
@@ -145,7 +157,7 @@ describe("removeEventStaffAction", () => {
     });
     expect(result).toEqual({ success: "Staff removed." });
     expect(mockRemove).toHaveBeenCalledWith("u1", "e1");
-    expect(mockCan).toHaveBeenCalledWith(validActor, "event:manage_staff", {
+    expect(actor.can).toHaveBeenCalledWith("event:manage_staff", {
       churchId: "ch-1",
       eventId: "e1",
     });

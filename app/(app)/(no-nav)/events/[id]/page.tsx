@@ -28,8 +28,7 @@ import {
   parseEventMetadata,
   parseEventAttendeeMetadata,
 } from "@/domains/events/validations/event";
-import { sessionToActor } from "@/domains/roles/lib/session";
-import { can } from "@/domains/roles/lib/can";
+import { getActor } from "@/domains/roles/lib/session";
 import { Capabilities } from "@/domains/roles/lib/capabilities";
 import { EventDatetime } from "@/domains/events/components/event-datetime";
 import { formatDateOnly, parseDateOfBirth } from "@/lib/datetime";
@@ -56,16 +55,13 @@ export async function generateMetadata({ params }: Props) {
   const event = await getEventById(id);
   if (!event) return { title: "Event Not Found" };
   if (event.isDraft) {
-    const session = await auth();
-    const actor = sessionToActor(session);
-    if (
-      !actor ||
-      !(await can(actor, Capabilities.EVENT_UPDATE, {
-        churchId: event.churchId ?? "",
-        eventId: id,
-        seriesId: event.seriesId ?? undefined,
-      }))
-    )
+    const actor = await getActor();
+    const access = await actor.loadContext({
+      churchId: event.churchId,
+      eventId: id,
+      seriesId: event.seriesId ?? undefined,
+    });
+    if (!access.can(Capabilities.EVENT_UPDATE))
       return { title: "Event Not Found" };
   }
   const description = event.description.slice(0, 160);
@@ -83,45 +79,38 @@ export async function generateMetadata({ params }: Props) {
 }
 
 export default async function EventDetailPage({ params }: Props) {
-  const [{ id }, session] = await Promise.all([params, auth()]);
+  const [{ id }, actor, session] = await Promise.all([
+    params,
+    getActor(),
+    auth(),
+  ]);
+
+  const userId = actor.isAuthenticated ? actor.id : null;
 
   const [event, myAttendance, isSaved] = await Promise.all([
     getEventById(id),
-    session?.user?.id
-      ? getMyEventAttendance(id, session.user.id)
-      : Promise.resolve(null),
-    session?.user?.id
-      ? getIsEventSaved(id, session.user.id)
-      : Promise.resolve(false),
+    userId ? getMyEventAttendance(id, userId) : Promise.resolve(null),
+    userId ? getIsEventSaved(id, userId) : Promise.resolve(false),
   ]);
 
   if (!event) notFound();
 
   const isAttending = myAttendance !== null;
 
-  const actor = sessionToActor(session);
-  const churchId = event.churchId ?? "";
+  const access = await actor.loadContext({
+    churchId: event.churchId,
+    eventId: id,
+    seriesId: event.seriesId ?? undefined,
+  });
 
-  const seriesId = event.seriesId ?? undefined;
-  const [canEdit, canDelete, canViewAttendees, canManageStaff] = actor
-    ? await Promise.all([
-        can(actor, Capabilities.EVENT_UPDATE, {
-          churchId,
-          eventId: id,
-          seriesId,
-        }),
-        can(actor, Capabilities.EVENT_DELETE, { churchId, seriesId }),
-        can(actor, Capabilities.EVENT_VIEW_ATTENDEES, {
-          churchId,
-          eventId: id,
-        }),
-        can(actor, Capabilities.EVENT_MANAGE_STAFF, { churchId, eventId: id }),
-      ])
-    : [false, false, false, false];
+  const canEdit = access.can(Capabilities.EVENT_UPDATE);
+  const canDelete = access.can(Capabilities.EVENT_DELETE);
+  const canViewAttendees = access.can(Capabilities.EVENT_VIEW_ATTENDEES);
+  const canManageStaff = access.can(Capabilities.EVENT_MANAGE_STAFF);
 
   const [myApprovalRequest, pendingApprovalRequests] = await Promise.all([
-    session?.user?.id
-      ? getMyRequestForResource("EVENT", id, session.user.id)
+    userId
+      ? getMyRequestForResource("EVENT", id, userId)
       : Promise.resolve(null),
     canManageStaff
       ? getPendingRequestsForResource("EVENT", id)
@@ -134,8 +123,8 @@ export default async function EventDetailPage({ params }: Props) {
 
   const [attendees, myResponses] = await Promise.all([
     canViewAttendees ? getEventAttendees(id) : Promise.resolve(undefined),
-    session?.user?.id && questions.length > 0 && isAttending
-      ? getMyResponses(id, session.user.id)
+    userId && questions.length > 0 && isAttending
+      ? getMyResponses(id, userId)
       : Promise.resolve(
           {} as Record<
             string,
@@ -157,13 +146,13 @@ export default async function EventDetailPage({ params }: Props) {
         <SaveEventButton
           eventId={id}
           initialSaved={isSaved}
-          isAuthenticated={!!session?.user}
+          isAuthenticated={!!userId}
         />
         <ApprovalMenuTrigger
           resourceType="EVENT"
           resourceId={id}
           resourceName={event.title}
-          isAuthenticated={!!session?.user}
+          isAuthenticated={!!userId}
           hasContributorAccess={canEdit}
           myRequest={myApprovalRequest ?? null}
           pendingCount={pendingApprovalRequests.length}
@@ -310,7 +299,7 @@ export default async function EventDetailPage({ params }: Props) {
         eventTitle={event.title}
         requiresRegistration={event.requiresRegistration}
         isAttending={isAttending}
-        isAuthenticated={!!session?.user}
+        isAuthenticated={!!userId}
         userName={session?.user?.name ?? ""}
         capacity={registration.capacity}
         spotsUsed={event._count.attendees}

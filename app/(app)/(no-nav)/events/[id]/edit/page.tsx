@@ -7,8 +7,7 @@ import {
   hasEventResponses,
 } from "@/domains/events/questions/actions";
 import { getQuestionLibraryForUser } from "@/domains/events/questions/dal";
-import { sessionToActor } from "@/domains/roles/lib/session";
-import { can } from "@/domains/roles/lib/can";
+import { getActor } from "@/domains/roles/lib/session";
 import { Capabilities } from "@/domains/roles/lib/capabilities";
 import { parseEventMetadata } from "@/domains/events/validations/event";
 import { PageHeader } from "@/components/ui/page-header";
@@ -20,22 +19,21 @@ interface Props {
 
 export default async function EditEventPage({ params }: Props) {
   const { id } = await params;
-  const [event, session] = await Promise.all([getEventById(id), auth()]);
+  const [event, session, actor] = await Promise.all([
+    getEventById(id),
+    auth(),
+    getActor(),
+  ]);
 
   if (!session) redirect("/");
   if (!event) notFound();
 
-  const actor = sessionToActor(session);
-
-  // Access check — can this user edit this specific event?
-  const canAccess =
-    !!actor &&
-    (await can(actor, Capabilities.EVENT_UPDATE, {
-      churchId: event.churchId ?? "",
-      eventId: id,
-      seriesId: event.seriesId ?? undefined,
-    }));
-  if (!canAccess) notFound();
+  const access = await actor.loadContext({
+    churchId: event.churchId,
+    eventId: id,
+    seriesId: event.seriesId ?? undefined,
+  });
+  if (!access.can(Capabilities.EVENT_UPDATE)) notFound();
 
   // UI: which churches to show in the church-change dropdown
   // Use JWT memberships (acceptable slight staleness for UI only)

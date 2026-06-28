@@ -1,13 +1,13 @@
-import { can, type Actor } from "../lib/can";
+import type { Actor } from "../lib/actor";
 import { Capabilities } from "../lib/capabilities";
 
 export const seriesPolicy = {
   canCreate: (actor: Actor, churchId: string) =>
-    can(actor, Capabilities.SERIES_CREATE, { churchId }),
+    actor.can(Capabilities.SERIES_CREATE, { churchId }),
   canUpdate: (actor: Actor, churchId: string) =>
-    can(actor, Capabilities.SERIES_UPDATE, { churchId }),
+    actor.can(Capabilities.SERIES_UPDATE, { churchId }),
   canDelete: (actor: Actor, churchId: string) =>
-    can(actor, Capabilities.SERIES_DELETE, { churchId }),
+    actor.can(Capabilities.SERIES_DELETE, { churchId }),
   canAddSession: (actor: Actor, churchId: string) =>
-    can(actor, Capabilities.EVENT_CREATE, { churchId }),
+    actor.can(Capabilities.EVENT_CREATE, { churchId }),
 };

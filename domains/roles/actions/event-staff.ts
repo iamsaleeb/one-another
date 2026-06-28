@@ -2,7 +2,6 @@
 
 import { prisma } from "@/lib/db";
 import { getActor } from "@/domains/roles/lib/session";
-import { can } from "@/domains/roles/lib/can";
 import { Capabilities } from "@/domains/roles/lib/capabilities";
 import { upsertEventStaff, removeEventStaff } from "../dal/event-staff";
 import {
@@ -23,7 +22,7 @@ export async function assignEventRoleAction(
   input: unknown
 ): Promise<RoleActionState> {
   const actor = await getActor();
-  if (!actor) return { error: "Unauthorised." };
+  if (!actor.isAuthenticated) return { error: "Unauthorised." };
 
   const parsed = AssignEventRoleSchema.safeParse(input);
   if (!parsed.success)
@@ -33,7 +32,7 @@ export async function assignEventRoleAction(
   const churchId = await resolveEventChurchId(eventId);
   if (!churchId) return { error: "Event not found." };
 
-  const allowed = await can(actor, Capabilities.EVENT_MANAGE_STAFF, {
+  const allowed = await actor.can(Capabilities.EVENT_MANAGE_STAFF, {
     churchId,
     eventId,
   });
@@ -47,7 +46,7 @@ export async function removeEventStaffAction(
   input: unknown
 ): Promise<RoleActionState> {
   const actor = await getActor();
-  if (!actor) return { error: "Unauthorised." };
+  if (!actor.isAuthenticated) return { error: "Unauthorised." };
 
   const parsed = RemoveEventStaffSchema.safeParse(input);
   if (!parsed.success)
@@ -57,7 +56,7 @@ export async function removeEventStaffAction(
   const churchId = await resolveEventChurchId(eventId);
   if (!churchId) return { error: "Event not found." };
 
-  const allowed = await can(actor, Capabilities.EVENT_MANAGE_STAFF, {
+  const allowed = await actor.can(Capabilities.EVENT_MANAGE_STAFF, {
     churchId,
     eventId,
   });

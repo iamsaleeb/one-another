@@ -9,11 +9,11 @@ jest.mock("@/lib/db", () => ({
 }));
 
 import { churchPolicy } from "../church";
-import type { Actor } from "../../lib/can";
+import { createActor } from "../../lib/actor";
 import { prisma } from "@/lib/db";
 
 const mockChurch = prisma.churchMembership.findUnique as jest.Mock;
-const user: Actor = { id: "u1", isPlatformAdmin: false };
+const user = createActor("u1", false);
 
 beforeEach(() => jest.clearAllMocks());
 

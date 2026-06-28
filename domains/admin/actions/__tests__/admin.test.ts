@@ -51,8 +51,17 @@ const mockRemoveChurchMembership = removeChurchMembership as jest.Mock;
 const mockUserFindUnique = prisma.user.findUnique as jest.Mock;
 
 const defaultActor = {
+  isAuthenticated: true as const,
   id: "admin-1",
   isPlatformAdmin: false,
+  can: jest.fn().mockResolvedValue(true),
+  loadContext: jest.fn(),
+};
+
+const guestActor = {
+  isAuthenticated: false as const,
+  can: jest.fn().mockResolvedValue(false),
+  loadContext: jest.fn(),
 };
 
 function makeFormData(fields: Record<string, string>): FormData {
@@ -70,8 +79,8 @@ beforeEach(() => {
 });
 
 describe("addOrganiserToChurchAction", () => {
-  it("returns an error when unauthenticated (getActor returns null)", async () => {
-    mockGetActor.mockResolvedValue(null);
+  it("returns an error when unauthenticated", async () => {
+    mockGetActor.mockResolvedValue(guestActor);
 
     const result = await addOrganiserToChurchAction(
       {},
@@ -171,7 +180,7 @@ describe("addOrganiserToChurchAction", () => {
 
 describe("removeOrganiserFromChurchAction", () => {
   it("returns an error when unauthenticated", async () => {
-    mockGetActor.mockResolvedValue(null);
+    mockGetActor.mockResolvedValue(guestActor);
 
     const result = await removeOrganiserFromChurchAction(
       {},

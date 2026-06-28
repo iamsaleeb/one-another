@@ -1,9 +1,7 @@
 import { notFound, redirect } from "next/navigation";
-import { auth } from "@/auth";
 import { getEventById } from "@/domains/events/actions/data";
 import { getEventResponses } from "@/domains/events/questions/actions";
-import { sessionToActor } from "@/domains/roles/lib/session";
-import { can } from "@/domains/roles/lib/can";
+import { getActor } from "@/domains/roles/lib/session";
 import { Capabilities } from "@/domains/roles/lib/capabilities";
 import { PageHeader } from "@/components/ui/page-header";
 import { ResponsesTable } from "./_components/responses-table";
@@ -19,20 +17,16 @@ export async function generateMetadata({ params }: Props) {
 }
 
 export default async function EventResponsesPage({ params }: Props) {
-  const [{ id }, session] = await Promise.all([params, auth()]);
+  const [{ id }, actor] = await Promise.all([params, getActor()]);
 
   const event = await getEventById(id);
   if (!event) notFound();
 
-  const actor = sessionToActor(session);
-  const canViewAttendees =
-    !!actor &&
-    (await can(actor, Capabilities.EVENT_VIEW_ATTENDEES, {
-      churchId: event.churchId ?? "",
-      eventId: id,
-    }));
-
-  if (!canViewAttendees) redirect(`/events/${id}`);
+  const access = await actor.loadContext({
+    churchId: event.churchId,
+    eventId: id,
+  });
+  if (!access.can(Capabilities.EVENT_VIEW_ATTENDEES)) redirect(`/events/${id}`);
 
   const { questions, attendees } = await getEventResponses(id);
 

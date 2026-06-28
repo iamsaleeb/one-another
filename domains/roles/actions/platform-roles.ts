@@ -10,7 +10,7 @@ export async function assignPlatformRoleAction(
   input: unknown
 ): Promise<RoleActionState> {
   const actor = await getActor();
-  if (!actor) return { error: "Unauthorised." };
+  if (!actor.isAuthenticated) return { error: "Unauthorised." };
   if (!actor.isPlatformAdmin) return { error: "Unauthorised." };
 
   const parsed = AssignPlatformRoleSchema.safeParse(input);
@@ -26,7 +26,7 @@ export async function removePlatformRoleAction(
   input: unknown
 ): Promise<RoleActionState> {
   const actor = await getActor();
-  if (!actor) return { error: "Unauthorised." };
+  if (!actor.isAuthenticated) return { error: "Unauthorised." };
   if (!actor.isPlatformAdmin) return { error: "Unauthorised." };
 
   const parsed = z.object({ userId: z.string().min(1) }).safeParse(input);

@@ -18,7 +18,7 @@ export async function assignChurchRoleAction(
   input: unknown
 ): Promise<RoleActionState> {
   const actor = await getActor();
-  if (!actor) return { error: "Unauthorised." };
+  if (!actor.isAuthenticated) return { error: "Unauthorised." };
 
   const parsed = AssignChurchRoleSchema.safeParse(input);
   if (!parsed.success)
@@ -36,7 +36,7 @@ export async function removeChurchMembershipAction(
   input: unknown
 ): Promise<RoleActionState> {
   const actor = await getActor();
-  if (!actor) return { error: "Unauthorised." };
+  if (!actor.isAuthenticated) return { error: "Unauthorised." };
 
   const parsed = RemoveChurchMembershipSchema.safeParse(input);
   if (!parsed.success)

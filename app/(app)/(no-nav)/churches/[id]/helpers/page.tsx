@@ -1,10 +1,8 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
-import { auth } from "@/auth";
 import { getChurchById } from "@/domains/churches/actions/data";
-import { sessionToActor } from "@/domains/roles/lib/session";
-import { can } from "@/domains/roles/lib/can";
+import { getActor } from "@/domains/roles/lib/session";
 import { Capabilities } from "@/domains/roles/lib/capabilities";
 import {
   getPendingRequestsForResource,
@@ -23,15 +21,12 @@ export async function generateMetadata({ params }: Props) {
 }
 
 export default async function ChurchHelpersPage({ params }: Props) {
-  const [{ id }, session] = await Promise.all([params, auth()]);
+  const [{ id }, actor] = await Promise.all([params, getActor()]);
   const church = await getChurchById(id);
   if (!church) notFound();
 
-  const actor = sessionToActor(session);
-  const canManageMembers = actor
-    ? await can(actor, Capabilities.CHURCH_MANAGE_MEMBERS, { churchId: id })
-    : false;
-  if (!canManageMembers) notFound();
+  const access = await actor.loadContext({ churchId: id });
+  if (!access.can(Capabilities.CHURCH_MANAGE_MEMBERS)) notFound();
 
   const [pendingRequests, resolvedRequests] = await Promise.all([
     getPendingRequestsForResource("CHURCH", id),

@@ -21,16 +21,30 @@ const mockGetActor = getActor as jest.Mock;
 const mockUpsert = upsertPlatformRole as jest.Mock;
 const mockRemove = removePlatformRole as jest.Mock;
 
-const validActor = { id: "admin-1", isPlatformAdmin: true };
+function makeActor(opts: { id?: string; isPlatformAdmin?: boolean } = {}) {
+  return {
+    isAuthenticated: true as const,
+    id: opts.id ?? "admin-1",
+    isPlatformAdmin: opts.isPlatformAdmin ?? true,
+    can: jest.fn().mockResolvedValue(true),
+    loadContext: jest.fn(),
+  };
+}
+
+const guestActor = {
+  isAuthenticated: false as const,
+  can: jest.fn().mockResolvedValue(false),
+  loadContext: jest.fn(),
+};
 
 beforeEach(() => {
   jest.clearAllMocks();
-  mockGetActor.mockResolvedValue(validActor);
+  mockGetActor.mockResolvedValue(makeActor());
 });
 
 describe("assignPlatformRoleAction", () => {
   it("returns error when unauthenticated", async () => {
-    mockGetActor.mockResolvedValue(null);
+    mockGetActor.mockResolvedValue(guestActor);
     const result = await assignPlatformRoleAction({
       userId: "u1",
       role: "PLATFORM_ADMIN",
@@ -39,7 +53,7 @@ describe("assignPlatformRoleAction", () => {
   });
 
   it("returns error when caller is not platform admin", async () => {
-    mockGetActor.mockResolvedValue({ id: "u2", isPlatformAdmin: false });
+    mockGetActor.mockResolvedValue(makeActor({ isPlatformAdmin: false }));
     const result = await assignPlatformRoleAction({
       userId: "u1",
       role: "PLATFORM_ADMIN",
@@ -49,6 +63,7 @@ describe("assignPlatformRoleAction", () => {
   });
 
   it("assigns platform role when caller is platform admin", async () => {
+    mockGetActor.mockResolvedValue(makeActor({ id: "admin-1" }));
     mockUpsert.mockResolvedValue({});
     const result = await assignPlatformRoleAction({
       userId: "u1",
@@ -67,13 +82,13 @@ describe("removePlatformRoleAction", () => {
   });
 
   it("returns error when unauthenticated", async () => {
-    mockGetActor.mockResolvedValue(null);
+    mockGetActor.mockResolvedValue(guestActor);
     const result = await removePlatformRoleAction({ userId: "u1" });
     expect(result).toEqual({ error: "Unauthorised." });
   });
 
   it("returns error when caller is not platform admin", async () => {
-    mockGetActor.mockResolvedValue({ id: "u2", isPlatformAdmin: false });
+    mockGetActor.mockResolvedValue(makeActor({ isPlatformAdmin: false }));
     const result = await removePlatformRoleAction({ userId: "u1" });
     expect(result).toEqual({ error: "Unauthorised." });
     expect(mockRemove).not.toHaveBeenCalled();

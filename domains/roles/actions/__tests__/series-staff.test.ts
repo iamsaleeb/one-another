@@ -5,9 +5,6 @@ jest.mock("@/lib/db", () => ({
 jest.mock("@/domains/roles/lib/session", () => ({
   getActor: jest.fn(),
 }));
-jest.mock("@/domains/roles/lib/can", () => ({
-  can: jest.fn().mockResolvedValue(true),
-}));
 jest.mock("@/domains/roles/dal/series-staff", () => ({
   upsertSeriesStaff: jest.fn(),
   removeSeriesStaff: jest.fn(),
@@ -19,24 +16,35 @@ import {
 } from "../series-staff";
 import { prisma } from "@/lib/db";
 import { getActor } from "@/domains/roles/lib/session";
-import { can } from "@/domains/roles/lib/can";
 import {
   upsertSeriesStaff,
   removeSeriesStaff,
 } from "@/domains/roles/dal/series-staff";
 
 const mockGetActor = getActor as jest.Mock;
-const mockCan = can as jest.Mock;
 const mockSeriesFindUnique = prisma.series.findUnique as jest.Mock;
 const mockUpsert = upsertSeriesStaff as jest.Mock;
 const mockRemove = removeSeriesStaff as jest.Mock;
 
-const validActor = { id: "admin-1", isPlatformAdmin: false };
+function makeActor(opts?: { id?: string; canResult?: boolean }) {
+  return {
+    isAuthenticated: true as const,
+    id: opts?.id ?? "admin-1",
+    isPlatformAdmin: false,
+    can: jest.fn().mockResolvedValue(opts?.canResult ?? true),
+    loadContext: jest.fn(),
+  };
+}
+
+const guestActor = {
+  isAuthenticated: false as const,
+  can: jest.fn().mockResolvedValue(false),
+  loadContext: jest.fn(),
+};
 
 beforeEach(() => {
   jest.clearAllMocks();
-  mockGetActor.mockResolvedValue(validActor);
-  mockCan.mockResolvedValue(true);
+  mockGetActor.mockResolvedValue(makeActor());
   mockSeriesFindUnique.mockResolvedValue({ churchId: "c1" });
 });
 
@@ -47,7 +55,7 @@ describe("assignSeriesRoleAction", () => {
   });
 
   it("returns error when unauthenticated", async () => {
-    mockGetActor.mockResolvedValue(null);
+    mockGetActor.mockResolvedValue(guestActor);
     const result = await assignSeriesRoleAction({
       userId: "u1",
       seriesId: "s1",
@@ -68,7 +76,7 @@ describe("assignSeriesRoleAction", () => {
   });
 
   it("returns error when not authorized", async () => {
-    mockCan.mockResolvedValue(false);
+    mockGetActor.mockResolvedValue(makeActor({ canResult: false }));
     const result = await assignSeriesRoleAction({
       userId: "u1",
       seriesId: "s1",
@@ -79,6 +87,8 @@ describe("assignSeriesRoleAction", () => {
   });
 
   it("assigns series role when authorized", async () => {
+    const actor = makeActor();
+    mockGetActor.mockResolvedValue(actor);
     mockUpsert.mockResolvedValue({});
     const result = await assignSeriesRoleAction({
       userId: "u1",
@@ -86,8 +96,7 @@ describe("assignSeriesRoleAction", () => {
       role: "SERIES_MANAGER",
     });
     expect(result).toEqual({ success: "Series role assigned." });
-    expect(mockCan).toHaveBeenCalledWith(
-      validActor,
+    expect(actor.can).toHaveBeenCalledWith(
       expect.any(String),
       expect.objectContaining({ churchId: "c1", seriesId: "s1" })
     );
@@ -107,7 +116,7 @@ describe("removeSeriesStaffAction", () => {
   });
 
   it("returns error when unauthenticated", async () => {
-    mockGetActor.mockResolvedValue(null);
+    mockGetActor.mockResolvedValue(guestActor);
     const result = await removeSeriesStaffAction({
       userId: "u1",
       seriesId: "s1",
@@ -126,7 +135,7 @@ describe("removeSeriesStaffAction", () => {
   });
 
   it("returns error when not authorized", async () => {
-    mockCan.mockResolvedValue(false);
+    mockGetActor.mockResolvedValue(makeActor({ canResult: false }));
     const result = await removeSeriesStaffAction({
       userId: "u1",
       seriesId: "s1",
@@ -136,14 +145,15 @@ describe("removeSeriesStaffAction", () => {
   });
 
   it("removes series staff when authorized", async () => {
+    const actor = makeActor();
+    mockGetActor.mockResolvedValue(actor);
     mockRemove.mockResolvedValue({});
     const result = await removeSeriesStaffAction({
       userId: "u1",
       seriesId: "s1",
     });
     expect(result).toEqual({ success: "Series staff removed." });
-    expect(mockCan).toHaveBeenCalledWith(
-      validActor,
+    expect(actor.can).toHaveBeenCalledWith(
       expect.any(String),
       expect.objectContaining({ churchId: "c1", seriesId: "s1" })
     );

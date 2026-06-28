@@ -1,6 +1,14 @@
+jest.mock("server-only", () => ({}));
+jest.mock("react", () => ({ cache: (fn: unknown) => fn }));
 jest.mock("@/auth", () => ({ auth: jest.fn() }));
+jest.mock("@/lib/db", () => ({ prisma: {} }));
+jest.mock("../roles", () => ({
+  CHURCH_ROLE_CAPABILITIES: {},
+  EVENT_ROLE_CAPABILITIES: {},
+  SERIES_ROLE_CAPABILITIES: {},
+}));
 
-import { sessionToActor, getActor } from "../session";
+import { getActor } from "../session";
 import { auth } from "@/auth";
 import type { Session } from "next-auth";
 
@@ -19,34 +27,34 @@ const makeSession = (overrides: object): Session =>
     expires: "2099-01-01",
   }) as unknown as Session;
 
-describe("sessionToActor", () => {
-  it("returns null for null session", () => {
-    expect(sessionToActor(null)).toBeNull();
-  });
-
-  it("returns Actor with id and isPlatformAdmin", () => {
-    expect(
-      sessionToActor(makeSession({ id: "u1", isPlatformAdmin: true }))
-    ).toEqual({ id: "u1", isPlatformAdmin: true });
-  });
-
-  it("defaults isPlatformAdmin to false when undefined", () => {
-    expect(
-      sessionToActor(makeSession({ id: "u2", isPlatformAdmin: undefined }))
-    ).toEqual({ id: "u2", isPlatformAdmin: false });
-  });
-});
-
 describe("getActor", () => {
-  it("returns null when no session", async () => {
+  it("returns guest actor when no session", async () => {
     mockAuth.mockResolvedValue(null);
-    expect(await getActor()).toBeNull();
+    const actor = await getActor();
+    expect(actor.isAuthenticated).toBe(false);
+    expect(await actor.can("event:create", {})).toBe(false);
   });
 
-  it("returns Actor from session", async () => {
+  it("returns authenticated actor from session", async () => {
     mockAuth.mockResolvedValue(
-      makeSession({ id: "u3", isPlatformAdmin: true })
+      makeSession({ id: "u3", isPlatformAdmin: false })
     );
-    expect(await getActor()).toEqual({ id: "u3", isPlatformAdmin: true });
+    const actor = await getActor();
+    expect(actor.isAuthenticated).toBe(true);
+    if (actor.isAuthenticated) {
+      expect(actor.id).toBe("u3");
+      expect(actor.isPlatformAdmin).toBe(false);
+    }
+  });
+
+  it("platform admin actor has isAuthenticated true and isPlatformAdmin true", async () => {
+    mockAuth.mockResolvedValue(
+      makeSession({ id: "admin", isPlatformAdmin: true })
+    );
+    const actor = await getActor();
+    expect(actor.isAuthenticated).toBe(true);
+    if (actor.isAuthenticated) {
+      expect(actor.isPlatformAdmin).toBe(true);
+    }
   });
 });

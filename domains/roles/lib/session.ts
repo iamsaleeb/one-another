@@ -1,17 +1,10 @@
 import "server-only";
-import type { Session } from "next-auth";
+import { cache } from "react";
 import { auth } from "@/auth";
-import type { Actor } from "./can";
+import { createActor, createGuestActor, type Actor } from "./actor";
 
-export function sessionToActor(session: Session | null): Actor | null {
-  if (!session?.user) return null;
-  return {
-    id: session.user.id,
-    isPlatformAdmin: session.user.isPlatformAdmin ?? false,
-  };
-}
-
-export async function getActor(): Promise<Actor | null> {
+export const getActor = cache(async (): Promise<Actor> => {
   const session = await auth();
-  return sessionToActor(session);
-}
+  if (!session?.user?.id) return createGuestActor();
+  return createActor(session.user.id, session.user.isPlatformAdmin ?? false);
+});

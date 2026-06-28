@@ -34,14 +34,22 @@ export const CHURCH_ROLE_CAPABILITIES = {
 export const EVENT_ROLE_CAPABILITIES = {
   EVENT_MANAGER: [
     "event:update",
+    "event:publish",
+    "event:delete",
     "event:manage_staff",
     "event:view_attendees",
     "event:scan_attendees",
   ],
-  EVENT_EDITOR: ["event:update"],
+  EVENT_EDITOR: ["event:update", "event:publish", "event:delete"],
 } satisfies Record<EventRole, Capability[]>;
 
 export const SERIES_ROLE_CAPABILITIES = {
-  SERIES_MANAGER: ["series:update", "event:create", "event:update"],
+  SERIES_MANAGER: [
+    "series:update",
+    "event:create",
+    "event:update",
+    "event:publish",
+    "event:delete",
+  ],
   SERIES_SESSION_CREATOR: ["event:create"],
 } satisfies Record<SeriesRole, Capability[]>;

@@ -450,6 +450,8 @@ export async function publishEvent(
 
   const allowed = await actor.can(Capabilities.EVENT_PUBLISH, {
     churchId: event.churchId,
+    eventId: id,
+    seriesId: event.seriesId ?? undefined,
   });
   if (!allowed) return { error: "You are not assigned to this church." };
 
@@ -510,6 +512,8 @@ export async function unpublishEvent(
 
   const allowed = await actor.can(Capabilities.EVENT_PUBLISH, {
     churchId: event.churchId,
+    eventId: id,
+    seriesId: event.seriesId ?? undefined,
   });
   if (!allowed) return { error: "You are not assigned to this church." };
 
@@ -548,6 +552,8 @@ export async function deleteEvent(
 
   const allowed = await actor.can(Capabilities.EVENT_DELETE, {
     churchId: event.churchId,
+    eventId: id,
+    seriesId: event.seriesId ?? undefined,
   });
   if (!allowed) return { error: "Unauthorised." };
 

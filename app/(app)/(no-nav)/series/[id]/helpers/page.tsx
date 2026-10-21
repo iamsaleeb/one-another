@@ -1,10 +1,8 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
-import { auth } from "@/auth";
 import { getSeriesById } from "@/domains/series/actions/data";
-import { sessionToActor } from "@/domains/roles/lib/session";
-import { can } from "@/domains/roles/lib/can";
+import { getActor } from "@/domains/roles/lib/session";
 import { Capabilities } from "@/domains/roles/lib/capabilities";
 import {
   getPendingRequestsForResource,
@@ -23,18 +21,15 @@ export async function generateMetadata({ params }: Props) {
 }
 
 export default async function SeriesHelpersPage({ params }: Props) {
-  const [{ id }, session] = await Promise.all([params, auth()]);
+  const [{ id }, actor] = await Promise.all([params, getActor()]);
   const series = await getSeriesById(id);
   if (!series) notFound();
 
-  const actor = sessionToActor(session);
-  const canManage = actor
-    ? await can(actor, Capabilities.SERIES_UPDATE, {
-        churchId: series.churchId,
-        seriesId: id,
-      })
-    : false;
-  if (!canManage) notFound();
+  const access = await actor.loadContext({
+    churchId: series.churchId,
+    seriesId: id,
+  });
+  if (!access.can(Capabilities.SERIES_UPDATE)) notFound();
 
   const [pendingRequests, resolvedRequests] = await Promise.all([
     getPendingRequestsForResource("SERIES", id),

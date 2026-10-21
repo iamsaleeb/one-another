@@ -25,7 +25,7 @@ export async function addOrganiserToChurchAction(
   formData: FormData
 ): Promise<AdminActionState> {
   const actor = await getActor();
-  if (!actor) return { error: "Unauthorised." };
+  if (!actor.isAuthenticated) return { error: "Unauthorised." };
 
   const parsed = addOrganiserSchema.safeParse({
     churchId: formData.get("churchId"),
@@ -69,7 +69,7 @@ export async function removeOrganiserFromChurchAction(
   formData: FormData
 ): Promise<AdminActionState> {
   const actor = await getActor();
-  if (!actor) return { error: "Unauthorised." };
+  if (!actor.isAuthenticated) return { error: "Unauthorised." };
 
   const parsed = removeOrganiserSchema.safeParse({
     churchId: formData.get("churchId"),

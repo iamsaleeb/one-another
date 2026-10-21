@@ -3,20 +3,20 @@ import { auth } from "@/auth";
 import { CreateSeriesForm } from "./_components/create-series-form";
 import { PageHeader } from "@/components/ui/page-header";
 import { getChurches, getChurchesByIds } from "@/domains/churches/actions/data";
-import { sessionToActor } from "@/domains/roles/lib/session";
-import { seriesPolicy } from "@/domains/roles/policies/series";
+import { getActor } from "@/domains/roles/lib/session";
+import { Capabilities } from "@/domains/roles/lib/capabilities";
 
 export default async function CreateSeriesPage() {
-  const session = await auth();
+  const [session, actor] = await Promise.all([auth(), getActor()]);
   if (!session) redirect("/");
 
-  const actor = sessionToActor(session);
   const churchMemberships = session.user.churchMemberships ?? [];
   const eligibleIds = (
     await Promise.all(
       churchMemberships.map(async (m) => {
-        const allowed =
-          actor && (await seriesPolicy.canCreate(actor, m.churchId));
+        const allowed = await actor.can(Capabilities.SERIES_CREATE, {
+          churchId: m.churchId,
+        });
         return allowed ? m.churchId : null;
       })
     )

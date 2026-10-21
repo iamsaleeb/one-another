@@ -26,7 +26,19 @@ const mockCanManageMembers = churchPolicy.canManageMembers as jest.Mock;
 const mockUpsert = upsertChurchMembership as jest.Mock;
 const mockRemove = removeChurchMembership as jest.Mock;
 
-const validActor = { id: "admin-1", isPlatformAdmin: false };
+const validActor = {
+  isAuthenticated: true as const,
+  id: "admin-1",
+  isPlatformAdmin: false,
+  can: jest.fn().mockResolvedValue(true),
+  loadContext: jest.fn(),
+};
+
+const guestActor = {
+  isAuthenticated: false as const,
+  can: jest.fn().mockResolvedValue(false),
+  loadContext: jest.fn(),
+};
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -36,7 +48,7 @@ beforeEach(() => {
 
 describe("assignChurchRoleAction", () => {
   it("returns error when unauthenticated", async () => {
-    mockGetActor.mockResolvedValue(null);
+    mockGetActor.mockResolvedValue(guestActor);
     const result = await assignChurchRoleAction({
       userId: "u1",
       churchId: "c1",
@@ -86,7 +98,7 @@ describe("assignChurchRoleAction", () => {
 
 describe("removeChurchMembershipAction", () => {
   it("returns error when unauthenticated", async () => {
-    mockGetActor.mockResolvedValue(null);
+    mockGetActor.mockResolvedValue(guestActor);
     const result = await removeChurchMembershipAction({
       userId: "u1",
       churchId: "c1",

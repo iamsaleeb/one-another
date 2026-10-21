@@ -2,7 +2,6 @@
 
 import { prisma } from "@/lib/db";
 import { getActor } from "@/domains/roles/lib/session";
-import { can } from "@/domains/roles/lib/can";
 import { Capabilities } from "@/domains/roles/lib/capabilities";
 import { upsertSeriesStaff, removeSeriesStaff } from "../dal/series-staff";
 import {
@@ -15,7 +14,7 @@ export async function assignSeriesRoleAction(
   input: unknown
 ): Promise<RoleActionState> {
   const actor = await getActor();
-  if (!actor) return { error: "Unauthorised." };
+  if (!actor.isAuthenticated) return { error: "Unauthorised." };
 
   const parsed = AssignSeriesRoleSchema.safeParse(input);
   if (!parsed.success)
@@ -28,7 +27,7 @@ export async function assignSeriesRoleAction(
   });
   if (!series) return { error: "Series not found." };
 
-  const allowed = await can(actor, Capabilities.SERIES_UPDATE, {
+  const allowed = await actor.can(Capabilities.SERIES_UPDATE, {
     churchId: series.churchId,
     seriesId,
   });
@@ -42,7 +41,7 @@ export async function removeSeriesStaffAction(
   input: unknown
 ): Promise<RoleActionState> {
   const actor = await getActor();
-  if (!actor) return { error: "Unauthorised." };
+  if (!actor.isAuthenticated) return { error: "Unauthorised." };
 
   const parsed = RemoveSeriesStaffSchema.safeParse(input);
   if (!parsed.success)
@@ -55,7 +54,7 @@ export async function removeSeriesStaffAction(
   });
   if (!series) return { error: "Series not found." };
 
-  const allowed = await can(actor, Capabilities.SERIES_UPDATE, {
+  const allowed = await actor.can(Capabilities.SERIES_UPDATE, {
     churchId: series.churchId,
     seriesId,
   });

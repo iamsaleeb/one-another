@@ -1,14 +1,13 @@
 "use server";
 
-import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
-import { can, type AuthContext } from "@/domains/roles/lib/can";
+import { getActor } from "@/domains/roles/lib/session";
+import type { AuthContext } from "@/domains/roles/lib/actor";
 import {
   Capabilities,
   type Capability,
 } from "@/domains/roles/lib/capabilities";
 import type { ResourceType } from "@prisma/client";
-import { sessionToActor } from "@/domains/roles/lib/session";
 import {
   upsertApprovalRequest,
   getApprovalRequestById,
@@ -67,14 +66,14 @@ async function resolveAuthContext(
 export async function submitRequestAction(
   input: unknown
 ): Promise<ApprovalActionState> {
-  const session = await auth();
-  if (!session?.user?.id) return { error: "You must be signed in." };
+  const actor = await getActor();
+  if (!actor.isAuthenticated) return { error: "You must be signed in." };
 
   const parsed = SubmitRequestSchema.safeParse(input);
   if (!parsed.success) return { error: "Invalid input." };
 
   const { resourceType, resourceId, message } = parsed.data;
-  const userId = session.user.id;
+  const userId = actor.id;
 
   const alreadyHasRole = await APPROVAL_CONFIG[resourceType].hasRoleFn(
     resourceId,
@@ -110,9 +109,8 @@ export async function submitRequestAction(
 export async function reviewRequestAction(
   input: unknown
 ): Promise<ApprovalActionState> {
-  const session = await auth();
-  const actor = sessionToActor(session);
-  if (!actor) return { error: "Unauthorised." };
+  const actor = await getActor();
+  if (!actor.isAuthenticated) return { error: "Unauthorised." };
 
   const parsed = ReviewRequestSchema.safeParse(input);
   if (!parsed.success) return { error: "Invalid input." };
@@ -130,7 +128,7 @@ export async function reviewRequestAction(
     request.resourceId
   );
   if (!authCtx) return { error: "Resource not found." };
-  const allowed = await can(actor, authCtx.capability, authCtx.context);
+  const allowed = await actor.can(authCtx.capability, authCtx.context);
   if (!allowed) return { error: "Unauthorised." };
 
   const reviewedAt = new Date();
@@ -174,14 +172,14 @@ export async function reviewRequestAction(
 export async function cancelRequestAction(
   input: unknown
 ): Promise<ApprovalActionState> {
-  const session = await auth();
-  if (!session?.user?.id) return { error: "You must be signed in." };
+  const actor = await getActor();
+  if (!actor.isAuthenticated) return { error: "You must be signed in." };
 
   const parsed = CancelRequestSchema.safeParse(input);
   if (!parsed.success) return { error: "Invalid input." };
 
   const { requestId } = parsed.data;
-  const userId = session.user.id;
+  const userId = actor.id;
 
   const request = await getApprovalRequestById(requestId);
   if (!request) return { error: "Request not found." };
@@ -205,9 +203,8 @@ export async function cancelRequestAction(
 export async function revokeAccessAction(
   input: unknown
 ): Promise<ApprovalActionState> {
-  const session = await auth();
-  const actor = sessionToActor(session);
-  if (!actor) return { error: "Unauthorised." };
+  const actor = await getActor();
+  if (!actor.isAuthenticated) return { error: "Unauthorised." };
 
   const parsed = RevokeAccessSchema.safeParse(input);
   if (!parsed.success) return { error: "Invalid input." };
@@ -224,7 +221,7 @@ export async function revokeAccessAction(
     request.resourceId
   );
   if (!authCtx) return { error: "Resource not found." };
-  const allowed = await can(actor, authCtx.capability, authCtx.context);
+  const allowed = await actor.can(authCtx.capability, authCtx.context);
   if (!allowed) return { error: "Unauthorised." };
 
   try {

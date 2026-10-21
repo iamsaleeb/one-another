@@ -2,9 +2,7 @@ jest.mock("next/cache", () => ({
   updateTag: jest.fn(),
   revalidatePath: jest.fn(),
 }));
-jest.mock("@/auth", () => ({ auth: jest.fn() }));
-jest.mock("@/domains/roles/lib/can", () => ({ can: jest.fn() }));
-jest.mock("@/domains/roles/lib/session", () => ({ sessionToActor: jest.fn() }));
+jest.mock("@/domains/roles/lib/session", () => ({ getActor: jest.fn() }));
 jest.mock("@/lib/db", () => ({
   prisma: {
     event: { findUnique: jest.fn() },
@@ -41,9 +39,7 @@ jest.mock("@/domains/approvals/lib/config", () => ({
   },
 }));
 
-import { auth } from "@/auth";
-import { can } from "@/domains/roles/lib/can";
-import { sessionToActor } from "@/domains/roles/lib/session";
+import { getActor } from "@/domains/roles/lib/session";
 import { updateTag } from "next/cache";
 import * as dal from "@/domains/approvals/dal/requests";
 import * as db from "@/lib/db";
@@ -55,9 +51,7 @@ import {
   revokeAccessAction,
 } from "../requests";
 
-const mockAuth = auth as jest.Mock;
-const mockCan = can as jest.Mock;
-const mockSessionToActor = sessionToActor as jest.Mock;
+const mockGetActor = getActor as jest.Mock;
 const mockUpdateTag = updateTag as jest.Mock;
 const mockUpsert = dal.upsertApprovalRequest as jest.Mock;
 const mockGetMyRequest = dal.getMyRequestForResource as jest.Mock;
@@ -66,17 +60,33 @@ const mockUpdate = dal.updateApprovalRequest as jest.Mock;
 const mockUpdateIfPending = dal.updateApprovalRequestIfPending as jest.Mock;
 const mockEventFindUnique = db.prisma.event.findUnique as jest.Mock;
 
+function makeActor(id = "u1", canResult = true) {
+  return {
+    isAuthenticated: true as const,
+    id,
+    isPlatformAdmin: false,
+    can: jest.fn().mockResolvedValue(canResult),
+    loadContext: jest.fn(),
+  };
+}
+
+const guestActor = {
+  isAuthenticated: false as const,
+  can: jest.fn().mockResolvedValue(false),
+  loadContext: jest.fn(),
+};
+
 beforeEach(() => {
   jest.clearAllMocks();
   mockEventFindUnique.mockResolvedValue({ churchId: "church-1" });
-  mockSessionToActor.mockReturnValue({ id: "u1", isPlatformAdmin: false });
+  mockGetActor.mockResolvedValue(makeActor());
   mockGetMyRequest.mockResolvedValue(null);
   mockUpdateIfPending.mockResolvedValue(1);
 });
 
 describe("submitRequestAction", () => {
   it("returns error when not authenticated", async () => {
-    mockAuth.mockResolvedValue(null);
+    mockGetActor.mockResolvedValue(guestActor);
     const result = await submitRequestAction({
       resourceType: "EVENT",
       resourceId: "e1",
@@ -86,7 +96,6 @@ describe("submitRequestAction", () => {
   });
 
   it("returns error when user already has the role", async () => {
-    mockAuth.mockResolvedValue({ user: { id: "u1" } });
     (config.APPROVAL_CONFIG.EVENT.hasRoleFn as jest.Mock).mockResolvedValue(
       true
     );
@@ -99,7 +108,6 @@ describe("submitRequestAction", () => {
   });
 
   it("returns error when existing request is PENDING", async () => {
-    mockAuth.mockResolvedValue({ user: { id: "u1" } });
     (config.APPROVAL_CONFIG.EVENT.hasRoleFn as jest.Mock).mockResolvedValue(
       false
     );
@@ -113,7 +121,6 @@ describe("submitRequestAction", () => {
   });
 
   it("upserts with requestedRole and invalidates cache on success", async () => {
-    mockAuth.mockResolvedValue({ user: { id: "u1" } });
     (config.APPROVAL_CONFIG.EVENT.hasRoleFn as jest.Mock).mockResolvedValue(
       false
     );
@@ -138,8 +145,7 @@ describe("submitRequestAction", () => {
 
 describe("reviewRequestAction", () => {
   it("returns error when not authenticated", async () => {
-    mockAuth.mockResolvedValue(null);
-    mockSessionToActor.mockReturnValue(null);
+    mockGetActor.mockResolvedValue(guestActor);
     const result = await reviewRequestAction({
       requestId: "r1",
       decision: "APPROVED",
@@ -148,9 +154,7 @@ describe("reviewRequestAction", () => {
   });
 
   it("returns error when request not found", async () => {
-    mockAuth.mockResolvedValue({ user: { id: "u1" } });
     mockGetById.mockResolvedValue(null);
-    mockCan.mockResolvedValue(true);
     const result = await reviewRequestAction({
       requestId: "r1",
       decision: "APPROVED",
@@ -159,7 +163,6 @@ describe("reviewRequestAction", () => {
   });
 
   it("returns error when request not PENDING", async () => {
-    mockAuth.mockResolvedValue({ user: { id: "u1" } });
     mockGetById.mockResolvedValue({
       id: "r1",
       status: "APPROVED",
@@ -167,7 +170,6 @@ describe("reviewRequestAction", () => {
       resourceId: "e1",
       requesterId: "u2",
     });
-    mockCan.mockResolvedValue(true);
     const result = await reviewRequestAction({
       requestId: "r1",
       decision: "APPROVED",
@@ -176,7 +178,6 @@ describe("reviewRequestAction", () => {
   });
 
   it("returns error when request is already processed (race condition)", async () => {
-    mockAuth.mockResolvedValue({ user: { id: "u1" } });
     mockGetById.mockResolvedValue({
       id: "r1",
       status: "PENDING",
@@ -184,7 +185,6 @@ describe("reviewRequestAction", () => {
       resourceId: "e1",
       requesterId: "u2",
     });
-    mockCan.mockResolvedValue(true);
     mockUpdateIfPending.mockResolvedValue(0);
     const result = await reviewRequestAction({
       requestId: "r1",
@@ -195,7 +195,8 @@ describe("reviewRequestAction", () => {
   });
 
   it("claims atomically then calls grantFn on APPROVED", async () => {
-    mockAuth.mockResolvedValue({ user: { id: "u1" } });
+    const actor = makeActor("u1");
+    mockGetActor.mockResolvedValue(actor);
     const request = {
       id: "r1",
       status: "PENDING",
@@ -204,7 +205,6 @@ describe("reviewRequestAction", () => {
       requesterId: "u2",
     };
     mockGetById.mockResolvedValue(request);
-    mockCan.mockResolvedValue(true);
     const callOrder: string[] = [];
     mockUpdateIfPending.mockImplementation(async () => {
       callOrder.push("claim");
@@ -235,7 +235,6 @@ describe("reviewRequestAction", () => {
   });
 
   it("rolls back to PENDING and returns error when grantFn throws", async () => {
-    mockAuth.mockResolvedValue({ user: { id: "u1" } });
     mockGetById.mockResolvedValue({
       id: "r1",
       status: "PENDING",
@@ -243,7 +242,6 @@ describe("reviewRequestAction", () => {
       resourceId: "e1",
       requesterId: "u2",
     });
-    mockCan.mockResolvedValue(true);
     (config.APPROVAL_CONFIG.EVENT.grantFn as jest.Mock).mockRejectedValue(
       new Error("DB error")
     );
@@ -259,7 +257,6 @@ describe("reviewRequestAction", () => {
   });
 
   it("does not call grantFn on DENIED", async () => {
-    mockAuth.mockResolvedValue({ user: { id: "u1" } });
     const request = {
       id: "r1",
       status: "PENDING",
@@ -268,23 +265,20 @@ describe("reviewRequestAction", () => {
       requesterId: "u2",
     };
     mockGetById.mockResolvedValue(request);
-    mockCan.mockResolvedValue(true);
     mockUpdate.mockResolvedValue({});
     await reviewRequestAction({ requestId: "r1", decision: "DENIED" });
     expect(config.APPROVAL_CONFIG.EVENT.grantFn).not.toHaveBeenCalled();
   });
 
   it("returns error when reviewer is the requester", async () => {
-    mockAuth.mockResolvedValue({ user: { id: "u1" } });
     const request = {
       id: "r1",
       status: "PENDING",
       resourceType: "EVENT",
       resourceId: "e1",
       requesterId: "u1",
-    }; // same id as actor
+    };
     mockGetById.mockResolvedValue(request);
-    mockCan.mockResolvedValue(true);
     const result = await reviewRequestAction({
       requestId: "r1",
       decision: "APPROVED",
@@ -296,20 +290,18 @@ describe("reviewRequestAction", () => {
 
 describe("cancelRequestAction", () => {
   it("returns error when not authenticated", async () => {
-    mockAuth.mockResolvedValue(null);
+    mockGetActor.mockResolvedValue(guestActor);
     const result = await cancelRequestAction({ requestId: "r1" });
     expect(result.error).toBeDefined();
   });
 
   it("returns error when request not found", async () => {
-    mockAuth.mockResolvedValue({ user: { id: "u1" } });
     mockGetById.mockResolvedValue(null);
     const result = await cancelRequestAction({ requestId: "r1" });
     expect(result.error).toBeDefined();
   });
 
   it("returns error when user is not the requester", async () => {
-    mockAuth.mockResolvedValue({ user: { id: "u1" } });
     mockGetById.mockResolvedValue({
       id: "r1",
       status: "PENDING",
@@ -322,7 +314,6 @@ describe("cancelRequestAction", () => {
   });
 
   it("updates status to CANCELLED, sets reviewedAt, and invalidates all relevant cache", async () => {
-    mockAuth.mockResolvedValue({ user: { id: "u1" } });
     mockGetById.mockResolvedValue({
       id: "r1",
       status: "PENDING",
@@ -349,14 +340,12 @@ describe("cancelRequestAction", () => {
 
 describe("revokeAccessAction", () => {
   it("returns error when not authenticated", async () => {
-    mockAuth.mockResolvedValue(null);
-    mockSessionToActor.mockReturnValue(null);
+    mockGetActor.mockResolvedValue(guestActor);
     const result = await revokeAccessAction({ requestId: "r1" });
     expect(result.error).toBeDefined();
   });
 
   it("returns error when request not APPROVED", async () => {
-    mockAuth.mockResolvedValue({ user: { id: "u1" } });
     mockGetById.mockResolvedValue({
       id: "r1",
       status: "PENDING",
@@ -364,13 +353,13 @@ describe("revokeAccessAction", () => {
       resourceId: "e1",
       requesterId: "u2",
     });
-    mockCan.mockResolvedValue(true);
     const result = await revokeAccessAction({ requestId: "r1" });
     expect(result.error).toBeDefined();
   });
 
   it("calls revokeFn before status update and records reviewedBy on success", async () => {
-    mockAuth.mockResolvedValue({ user: { id: "u1" } });
+    const actor = makeActor("u1");
+    mockGetActor.mockResolvedValue(actor);
     mockGetById.mockResolvedValue({
       id: "r1",
       status: "APPROVED",
@@ -378,7 +367,6 @@ describe("revokeAccessAction", () => {
       resourceId: "e1",
       requesterId: "u2",
     });
-    mockCan.mockResolvedValue(true);
     mockUpdate.mockResolvedValue({});
     const callOrder: string[] = [];
     (config.APPROVAL_CONFIG.EVENT.revokeFn as jest.Mock).mockImplementation(

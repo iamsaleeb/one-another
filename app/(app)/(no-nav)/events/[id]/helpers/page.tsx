@@ -1,10 +1,8 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
-import { auth } from "@/auth";
 import { getEventById } from "@/domains/events/actions/data";
-import { sessionToActor } from "@/domains/roles/lib/session";
-import { can } from "@/domains/roles/lib/can";
+import { getActor } from "@/domains/roles/lib/session";
 import { Capabilities } from "@/domains/roles/lib/capabilities";
 import {
   getPendingRequestsForResource,
@@ -23,18 +21,15 @@ export async function generateMetadata({ params }: Props) {
 }
 
 export default async function EventHelpersPage({ params }: Props) {
-  const [{ id }, session] = await Promise.all([params, auth()]);
+  const [{ id }, actor] = await Promise.all([params, getActor()]);
   const event = await getEventById(id);
   if (!event) notFound();
 
-  const actor = sessionToActor(session);
-  const canManageStaff = actor
-    ? await can(actor, Capabilities.EVENT_MANAGE_STAFF, {
-        churchId: event.churchId ?? "",
-        eventId: id,
-      })
-    : false;
-  if (!canManageStaff) notFound();
+  const access = await actor.loadContext({
+    churchId: event.churchId,
+    eventId: id,
+  });
+  if (!access.can(Capabilities.EVENT_MANAGE_STAFF)) notFound();
 
   const [pendingRequests, resolvedRequests] = await Promise.all([
     getPendingRequestsForResource("EVENT", id),

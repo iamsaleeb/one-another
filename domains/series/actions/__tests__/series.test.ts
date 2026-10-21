@@ -24,16 +24,8 @@ jest.mock("@/lib/db", () => ({
   },
 }));
 
-jest.mock("@/auth", () => ({
-  auth: jest.fn(),
-}));
-
 jest.mock("@/domains/roles/lib/session", () => ({
   getActor: jest.fn(),
-}));
-
-jest.mock("@/domains/roles/lib/can", () => ({
-  can: jest.fn().mockResolvedValue(true),
 }));
 
 import { redirect } from "next/navigation";
@@ -46,7 +38,6 @@ import {
   unfollowSeriesAction,
 } from "@/domains/series/actions/series";
 import { prisma } from "@/lib/db";
-import { auth } from "@/auth";
 import { getActor } from "@/domains/roles/lib/session";
 
 const mockRedirect = redirect as unknown as jest.Mock;
@@ -57,11 +48,23 @@ const mockSeriesDelete = prisma.series.delete as jest.Mock;
 const mockSeriesFindUnique = prisma.series.findUnique as jest.Mock;
 const mockSeriesFollowerCreate = prisma.seriesFollower.create as jest.Mock;
 const mockSeriesFollowerDelete = prisma.seriesFollower.delete as jest.Mock;
-const mockSeriesStaffFindUnique = prisma.seriesStaffAssignment
-  .findUnique as jest.Mock;
-const mockAuth = auth as jest.Mock;
 const mockGetActor = getActor as jest.Mock;
-const mockCan = jest.requireMock("@/domains/roles/lib/can").can as jest.Mock;
+
+function makeActor(opts: { id?: string; canResult?: boolean } = {}) {
+  return {
+    isAuthenticated: true as const,
+    id: opts.id ?? "user-1",
+    isPlatformAdmin: false,
+    can: jest.fn().mockResolvedValue(opts.canResult ?? true),
+    loadContext: jest.fn(),
+  };
+}
+
+const guestActor = {
+  isAuthenticated: false as const,
+  can: jest.fn().mockResolvedValue(false),
+  loadContext: jest.fn(),
+};
 
 const validData = {
   name: "Weekly Bible Study",
@@ -75,21 +78,7 @@ const validData = {
 
 beforeEach(() => {
   jest.clearAllMocks();
-  mockAuth.mockResolvedValue({
-    user: {
-      id: "user-1",
-      isPlatformAdmin: false,
-      churchMemberships: [{ churchId: "ch-1", role: "EVENT_MANAGER" as const }],
-      onboardingCompleted: true,
-      isEmailVerified: true,
-    },
-  });
-  mockGetActor.mockResolvedValue({
-    id: "user-1",
-    isPlatformAdmin: false,
-  });
-  mockCan.mockResolvedValue(true);
-  mockSeriesStaffFindUnique.mockResolvedValue(null);
+  mockGetActor.mockResolvedValue(makeActor());
 });
 
 describe("createSeriesAction", () => {
@@ -152,8 +141,7 @@ describe("createSeriesAction", () => {
   });
 
   it("returns an unauthorized error when there is no session", async () => {
-    mockAuth.mockResolvedValue(null);
-    mockGetActor.mockResolvedValue(null);
+    mockGetActor.mockResolvedValue(guestActor);
 
     const result = await createSeriesAction(validData);
 
@@ -162,8 +150,7 @@ describe("createSeriesAction", () => {
   });
 
   it("returns an unauthorized error when the user is not an organiser", async () => {
-    mockAuth.mockResolvedValue(null);
-    mockGetActor.mockResolvedValue(null);
+    mockGetActor.mockResolvedValue(guestActor);
 
     const result = await createSeriesAction(validData);
 
@@ -172,7 +159,7 @@ describe("createSeriesAction", () => {
   });
 
   it("returns an error when organiser is not assigned to the church", async () => {
-    mockCan.mockResolvedValue(false);
+    mockGetActor.mockResolvedValue(makeActor({ canResult: false }));
 
     const result = await createSeriesAction(validData);
 
@@ -219,8 +206,7 @@ describe("followSeriesAction", () => {
   });
 
   it("does nothing when there is no session", async () => {
-    mockAuth.mockResolvedValue(null);
-    mockGetActor.mockResolvedValue(null);
+    mockGetActor.mockResolvedValue(guestActor);
 
     await followSeriesAction("ser-1");
 
@@ -241,8 +227,7 @@ describe("unfollowSeriesAction", () => {
   });
 
   it("does nothing when there is no session", async () => {
-    mockAuth.mockResolvedValue(null);
-    mockGetActor.mockResolvedValue(null);
+    mockGetActor.mockResolvedValue(guestActor);
 
     await unfollowSeriesAction("ser-1");
 
@@ -307,8 +292,7 @@ describe("updateSeriesAction", () => {
   });
 
   it("redirects to / when user is not an organiser", async () => {
-    mockAuth.mockResolvedValue(null);
-    mockGetActor.mockResolvedValue(null);
+    mockGetActor.mockResolvedValue(guestActor);
     mockRedirect.mockImplementationOnce(() => {
       throw new Error("NEXT_REDIRECT");
     });
@@ -336,7 +320,7 @@ describe("updateSeriesAction", () => {
   });
 
   it("redirects to /organiser when organiser is not assigned to the church", async () => {
-    mockCan.mockResolvedValue(false);
+    mockGetActor.mockResolvedValue(makeActor({ canResult: false }));
     mockRedirect.mockImplementationOnce(() => {
       throw new Error("NEXT_REDIRECT");
     });
@@ -351,9 +335,9 @@ describe("updateSeriesAction", () => {
 
   it("redirects to /organiser when user lacks access to new church on church change", async () => {
     mockSeriesFindUnique.mockResolvedValue({ churchId: "ch-1" });
-    mockCan
-      .mockResolvedValueOnce(true) // allowed for original church ch-1
-      .mockResolvedValueOnce(false); // not allowed for new church ch-2
+    const actor = makeActor();
+    actor.can.mockResolvedValueOnce(true).mockResolvedValueOnce(false);
+    mockGetActor.mockResolvedValue(actor);
     mockRedirect.mockImplementationOnce(() => {
       throw new Error("NEXT_REDIRECT");
     });
@@ -383,8 +367,7 @@ describe("deleteSeriesAction", () => {
   });
 
   it("redirects to / when user is not an organiser", async () => {
-    mockAuth.mockResolvedValue(null);
-    mockGetActor.mockResolvedValue(null);
+    mockGetActor.mockResolvedValue(guestActor);
     mockRedirect.mockImplementationOnce(() => {
       throw new Error("NEXT_REDIRECT");
     });
@@ -408,7 +391,7 @@ describe("deleteSeriesAction", () => {
   });
 
   it("redirects to /organiser when organiser is not assigned to the church", async () => {
-    mockCan.mockResolvedValue(false);
+    mockGetActor.mockResolvedValue(makeActor({ canResult: false }));
     mockRedirect.mockImplementationOnce(() => {
       throw new Error("NEXT_REDIRECT");
     });

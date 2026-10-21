@@ -21,7 +21,7 @@ export async function createSeriesAction(
   data: CreateSeriesInput
 ): Promise<ActionResult> {
   const actor = await getActor();
-  if (!actor) return { error: "Unauthorised." };
+  if (!actor.isAuthenticated) return { error: "Unauthorised." };
 
   const parsed = createSeriesSchema.safeParse(data);
   if (!parsed.success)
@@ -39,7 +39,7 @@ export async function updateSeriesAction(
   data: CreateSeriesInput
 ): Promise<ActionResult> {
   const actor = await getActor();
-  if (!actor) redirect("/");
+  if (!actor.isAuthenticated) redirect("/");
 
   const parsed = createSeriesSchema.safeParse(data);
   if (!parsed.success)
@@ -62,7 +62,7 @@ export async function followSeriesAction(
   seriesId: string
 ): Promise<FollowSeriesState> {
   const actor = await getActor();
-  if (!actor) return { error: "You must be signed in." };
+  if (!actor.isAuthenticated) return { error: "You must be signed in." };
 
   try {
     await prisma.seriesFollower.create({
@@ -86,7 +86,7 @@ export async function unfollowSeriesAction(
   seriesId: string
 ): Promise<FollowSeriesState> {
   const actor = await getActor();
-  if (!actor) return { error: "You must be signed in." };
+  if (!actor.isAuthenticated) return { error: "You must be signed in." };
 
   try {
     await prisma.seriesFollower.delete({
@@ -102,7 +102,7 @@ export async function unfollowSeriesAction(
 
 export async function deleteSeriesAction(id: string): Promise<void> {
   const actor = await getActor();
-  if (!actor) redirect("/");
+  if (!actor.isAuthenticated) redirect("/");
 
   const result = await deleteSeries(id, actor.id, actor);
   if ("error" in result) redirect("/organiser");

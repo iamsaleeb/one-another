@@ -8,14 +8,17 @@ export * from "./actions/platform-roles";
 export * from "./validations/roles";
 
 // Policies
-export { eventPolicy } from "./policies/event";
 export { churchPolicy } from "./policies/church";
-export { seriesPolicy } from "./policies/series";
 
 // Core permission API
-export { can } from "./lib/can";
-export { sessionToActor, getActor } from "./lib/session";
+export { getActor } from "./lib/session";
 export { Capabilities } from "./lib/capabilities";
 export type { Capability } from "./lib/capabilities";
-export type { Actor, AuthContext } from "./lib/can";
+export type {
+  Actor,
+  AuthenticatedActor,
+  GuestActor,
+  AuthContext,
+  Access,
+} from "./lib/actor";
 export type { RoleActionState } from "./lib/types";

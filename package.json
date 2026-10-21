@@ -22,6 +22,8 @@
     "@capacitor/core": "^8.3.0",
     "@capacitor/ios": "^8.3.0",
     "@capacitor/push-notifications": "^8.0.3",
+    "@casl/ability": "^7.0.2",
+    "@casl/prisma": "^2.0.2",
     "@hookform/resolvers": "^5.2.2",
     "@prisma/adapter-pg": "^7.6.0",
     "@prisma/client": "^7.6.0",

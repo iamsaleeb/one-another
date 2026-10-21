@@ -1,7 +1,7 @@
-"use server";
+﻿"use server";
 
-import { getActor } from "@/domains/roles/lib/session";
-import { churchPolicy } from "@/domains/roles/policies/church";
+import { churchSubject } from "../lib/ability";
+import { getAbility, getSessionUserId } from "../lib/get-ability";
 import {
   upsertChurchMembership,
   removeChurchMembership,
@@ -17,33 +17,34 @@ export type { RoleActionState };
 export async function assignChurchRoleAction(
   input: unknown
 ): Promise<RoleActionState> {
-  const actor = await getActor();
-  if (!actor.isAuthenticated) return { error: "Unauthorised." };
+  const actorId = await getSessionUserId();
+  if (!actorId) return { error: "Unauthorised." };
 
   const parsed = AssignChurchRoleSchema.safeParse(input);
   if (!parsed.success)
     return { fieldErrors: parsed.error.flatten().fieldErrors };
 
   const { userId, churchId, role } = parsed.data;
-  if (!(await churchPolicy.canManageMembers(actor, churchId)))
+  const ability = await getAbility();
+  if (!ability.can("manage_members", churchSubject({ id: churchId })))
     return { error: "Unauthorised." };
 
-  await upsertChurchMembership(userId, churchId, role, actor.id);
+  await upsertChurchMembership(userId, churchId, role, actorId);
   return { success: "Role assigned." };
 }
 
 export async function removeChurchMembershipAction(
   input: unknown
 ): Promise<RoleActionState> {
-  const actor = await getActor();
-  if (!actor.isAuthenticated) return { error: "Unauthorised." };
+  if (!(await getSessionUserId())) return { error: "Unauthorised." };
 
   const parsed = RemoveChurchMembershipSchema.safeParse(input);
   if (!parsed.success)
     return { fieldErrors: parsed.error.flatten().fieldErrors };
 
   const { userId, churchId } = parsed.data;
-  if (!(await churchPolicy.canManageMembers(actor, churchId)))
+  const ability = await getAbility();
+  if (!ability.can("manage_members", churchSubject({ id: churchId })))
     return { error: "Unauthorised." };
 
   await removeChurchMembership(userId, churchId);

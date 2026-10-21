@@ -1,4 +1,4 @@
-jest.mock("server-only", () => ({}));
+﻿jest.mock("server-only", () => ({}));
 
 jest.mock("next/cache", () => ({
   updateTag: jest.fn(),
@@ -12,14 +12,9 @@ jest.mock("@/lib/db", () => ({
   },
 }));
 
-jest.mock("@/domains/roles/lib/session", () => ({
-  getActor: jest.fn(),
-}));
-
-jest.mock("@/domains/roles/policies/church", () => ({
-  churchPolicy: {
-    canManageMembers: jest.fn().mockResolvedValue(true),
-  },
+jest.mock("@/domains/roles/lib/get-ability", () => ({
+  getAbility: jest.fn(),
+  getSessionUserId: jest.fn(),
 }));
 
 jest.mock("@/domains/roles/dal/church-memberships", () => ({
@@ -34,8 +29,7 @@ import {
   removeOrganiserFromChurchAction,
 } from "@/domains/admin/actions/admin";
 import { prisma } from "@/lib/db";
-import { getActor } from "@/domains/roles/lib/session";
-import { churchPolicy } from "@/domains/roles/policies/church";
+import { grants, signInAs } from "@/domains/roles/testing";
 import {
   getChurchMembership,
   upsertChurchMembership,
@@ -43,26 +37,14 @@ import {
 } from "@/domains/roles/dal/church-memberships";
 
 const mockUpdateTag = updateTag as jest.Mock;
-const mockGetActor = getActor as jest.Mock;
-const mockCanManageMembers = churchPolicy.canManageMembers as jest.Mock;
 const mockGetChurchMembership = getChurchMembership as jest.Mock;
 const mockUpsertChurchMembership = upsertChurchMembership as jest.Mock;
 const mockRemoveChurchMembership = removeChurchMembership as jest.Mock;
 const mockUserFindUnique = prisma.user.findUnique as jest.Mock;
 
-const defaultActor = {
-  isAuthenticated: true as const,
-  id: "admin-1",
-  isPlatformAdmin: false,
-  can: jest.fn().mockResolvedValue(true),
-  loadContext: jest.fn(),
-};
-
-const guestActor = {
-  isAuthenticated: false as const,
-  can: jest.fn().mockResolvedValue(false),
-  loadContext: jest.fn(),
-};
+const churchAdminOfCh1 = grants({
+  church: [{ churchId: "ch-1", role: "CHURCH_ADMIN" }],
+});
 
 function makeFormData(fields: Record<string, string>): FormData {
   const fd = new FormData();
@@ -74,13 +56,12 @@ function makeFormData(fields: Record<string, string>): FormData {
 
 beforeEach(() => {
   jest.clearAllMocks();
-  mockGetActor.mockResolvedValue(defaultActor);
-  mockCanManageMembers.mockResolvedValue(true);
+  signInAs("admin-1", churchAdminOfCh1);
 });
 
 describe("addOrganiserToChurchAction", () => {
   it("returns an error when unauthenticated", async () => {
-    mockGetActor.mockResolvedValue(guestActor);
+    signInAs(null);
 
     const result = await addOrganiserToChurchAction(
       {},
@@ -91,8 +72,12 @@ describe("addOrganiserToChurchAction", () => {
     expect(mockUpsertChurchMembership).not.toHaveBeenCalled();
   });
 
-  it("returns an error when canManageMembers returns false", async () => {
-    mockCanManageMembers.mockResolvedValue(false);
+  it("returns an error when the user cannot manage members", async () => {
+    // Manages Events in ch-1 but not its members.
+    signInAs(
+      "manager-1",
+      grants({ church: [{ churchId: "ch-1", role: "EVENT_MANAGER" }] })
+    );
     mockUserFindUnique.mockResolvedValue({ id: "user-2" });
     mockGetChurchMembership.mockResolvedValue(null);
 
@@ -180,7 +165,7 @@ describe("addOrganiserToChurchAction", () => {
 
 describe("removeOrganiserFromChurchAction", () => {
   it("returns an error when unauthenticated", async () => {
-    mockGetActor.mockResolvedValue(guestActor);
+    signInAs(null);
 
     const result = await removeOrganiserFromChurchAction(
       {},
@@ -191,8 +176,12 @@ describe("removeOrganiserFromChurchAction", () => {
     expect(mockRemoveChurchMembership).not.toHaveBeenCalled();
   });
 
-  it("returns an error when canManageMembers returns false", async () => {
-    mockCanManageMembers.mockResolvedValue(false);
+  it("returns an error when the user cannot manage members", async () => {
+    // Manages Events in ch-1 but not its members.
+    signInAs(
+      "manager-1",
+      grants({ church: [{ churchId: "ch-1", role: "EVENT_MANAGER" }] })
+    );
 
     const result = await removeOrganiserFromChurchAction(
       {},

@@ -1,12 +1,12 @@
-"use server";
+﻿"use server";
 
 import { prisma } from "@/lib/db";
-import { getActor } from "@/domains/roles/lib/session";
-import type { AuthContext } from "@/domains/roles/lib/actor";
 import {
-  Capabilities,
-  type Capability,
-} from "@/domains/roles/lib/capabilities";
+  churchSubject,
+  eventSubject,
+  seriesSubject,
+} from "@/domains/roles/lib/ability";
+import { getAbility, getSessionUserId } from "@/domains/roles/lib/get-ability";
 import type { ResourceType } from "@prisma/client";
 import {
   upsertApprovalRequest,
@@ -31,49 +31,43 @@ import {
   revalidateHelpersPage,
 } from "../cache";
 
-async function resolveAuthContext(
+// Who may approve or revoke Helpers on a resource: Event staff managers,
+// Series editors, Church member managers. `null` when the resource is gone.
+async function canApprove(
   resourceType: ResourceType,
   resourceId: string
-): Promise<{ capability: Capability; context: AuthContext } | null> {
+): Promise<boolean | null> {
+  const ability = await getAbility();
   if (resourceType === "EVENT") {
     const event = await prisma.event.findUnique({
       where: { id: resourceId },
-      select: { churchId: true },
+      select: { id: true, churchId: true, seriesId: true },
     });
     if (!event) return null;
-    return {
-      capability: Capabilities.EVENT_MANAGE_STAFF,
-      context: { churchId: event.churchId, eventId: resourceId },
-    };
+    return ability.can("manage_staff", eventSubject(event));
   }
   if (resourceType === "SERIES") {
     const series = await prisma.series.findUnique({
       where: { id: resourceId },
-      select: { churchId: true },
+      select: { id: true, churchId: true },
     });
     if (!series) return null;
-    return {
-      capability: Capabilities.SERIES_UPDATE,
-      context: { churchId: series.churchId, seriesId: resourceId },
-    };
+    return ability.can("update", seriesSubject(series));
   }
-  return {
-    capability: Capabilities.CHURCH_MANAGE_MEMBERS,
-    context: { churchId: resourceId },
-  };
+  return ability.can("manage_members", churchSubject({ id: resourceId }));
 }
 
 export async function submitRequestAction(
   input: unknown
 ): Promise<ApprovalActionState> {
-  const actor = await getActor();
-  if (!actor.isAuthenticated) return { error: "You must be signed in." };
+  const actorId = await getSessionUserId();
+  if (!actorId) return { error: "You must be signed in." };
 
   const parsed = SubmitRequestSchema.safeParse(input);
   if (!parsed.success) return { error: "Invalid input." };
 
   const { resourceType, resourceId, message } = parsed.data;
-  const userId = actor.id;
+  const userId = actorId;
 
   const alreadyHasRole = await APPROVAL_CONFIG[resourceType].hasRoleFn(
     resourceId,
@@ -109,8 +103,8 @@ export async function submitRequestAction(
 export async function reviewRequestAction(
   input: unknown
 ): Promise<ApprovalActionState> {
-  const actor = await getActor();
-  if (!actor.isAuthenticated) return { error: "Unauthorised." };
+  const actorId = await getSessionUserId();
+  if (!actorId) return { error: "Unauthorised." };
 
   const parsed = ReviewRequestSchema.safeParse(input);
   if (!parsed.success) return { error: "Invalid input." };
@@ -121,20 +115,16 @@ export async function reviewRequestAction(
   if (!request) return { error: "Request not found." };
   if (request.status !== "PENDING")
     return { error: "Request is no longer pending." };
-  if (request.requesterId === actor.id) return { error: "Unauthorised." };
+  if (request.requesterId === actorId) return { error: "Unauthorised." };
 
-  const authCtx = await resolveAuthContext(
-    request.resourceType,
-    request.resourceId
-  );
-  if (!authCtx) return { error: "Resource not found." };
-  const allowed = await actor.can(authCtx.capability, authCtx.context);
+  const allowed = await canApprove(request.resourceType, request.resourceId);
+  if (allowed === null) return { error: "Resource not found." };
   if (!allowed) return { error: "Unauthorised." };
 
   const reviewedAt = new Date();
   const claimed = await updateApprovalRequestIfPending(requestId, {
     status: decision,
-    reviewedBy: actor.id,
+    reviewedBy: actorId,
     reviewedAt,
   });
   if (claimed === 0) return { error: "Request was already processed." };
@@ -144,7 +134,7 @@ export async function reviewRequestAction(
       await APPROVAL_CONFIG[request.resourceType].grantFn(
         request.resourceId,
         request.requesterId,
-        actor.id
+        actorId
       );
     } catch {
       await updateApprovalRequest(requestId, {
@@ -172,14 +162,14 @@ export async function reviewRequestAction(
 export async function cancelRequestAction(
   input: unknown
 ): Promise<ApprovalActionState> {
-  const actor = await getActor();
-  if (!actor.isAuthenticated) return { error: "You must be signed in." };
+  const actorId = await getSessionUserId();
+  if (!actorId) return { error: "You must be signed in." };
 
   const parsed = CancelRequestSchema.safeParse(input);
   if (!parsed.success) return { error: "Invalid input." };
 
   const { requestId } = parsed.data;
-  const userId = actor.id;
+  const userId = actorId;
 
   const request = await getApprovalRequestById(requestId);
   if (!request) return { error: "Request not found." };
@@ -203,8 +193,8 @@ export async function cancelRequestAction(
 export async function revokeAccessAction(
   input: unknown
 ): Promise<ApprovalActionState> {
-  const actor = await getActor();
-  if (!actor.isAuthenticated) return { error: "Unauthorised." };
+  const actorId = await getSessionUserId();
+  if (!actorId) return { error: "Unauthorised." };
 
   const parsed = RevokeAccessSchema.safeParse(input);
   if (!parsed.success) return { error: "Invalid input." };
@@ -216,12 +206,8 @@ export async function revokeAccessAction(
   if (request.status !== "APPROVED")
     return { error: "Access is not currently approved." };
 
-  const authCtx = await resolveAuthContext(
-    request.resourceType,
-    request.resourceId
-  );
-  if (!authCtx) return { error: "Resource not found." };
-  const allowed = await actor.can(authCtx.capability, authCtx.context);
+  const allowed = await canApprove(request.resourceType, request.resourceId);
+  if (allowed === null) return { error: "Resource not found." };
   if (!allowed) return { error: "Unauthorised." };
 
   try {
@@ -230,12 +216,12 @@ export async function revokeAccessAction(
       request.requesterId
     );
   } catch {
-    // idempotent — role may have already been removed
+    // idempotent â€” role may have already been removed
   }
 
   await updateApprovalRequest(requestId, {
     status: "REVOKED",
-    reviewedBy: actor.id,
+    reviewedBy: actorId,
     reviewedAt: new Date(),
   });
 

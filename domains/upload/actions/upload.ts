@@ -1,19 +1,14 @@
 "use server";
 
 import { del } from "@vercel/blob";
-import { auth } from "@/auth";
+import { hasAnyGrant } from "@/domains/roles/lib/ability";
+import { getAbility } from "@/domains/roles/lib/get-ability";
 
 const ALLOWED_HOST_PATTERN = /^[a-z0-9-]+\.public\.blob\.vercel-storage\.com$/;
 
+// Organisers (anyone holding a Grant) may delete cover uploads.
 export async function deleteUploadedFileAction(url: string): Promise<void> {
-  const session = await auth();
-  if (
-    !session?.user ||
-    (!session.user.isPlatformAdmin &&
-      (session.user.churchMemberships ?? []).length === 0)
-  ) {
-    return;
-  }
+  if (!hasAnyGrant(await getAbility())) return;
 
   let parsed: URL;
   try {

@@ -4,8 +4,9 @@ jest.mock("@/lib/db", () => ({
     event: { findUnique: jest.fn() },
   },
 }));
-jest.mock("@/domains/roles/lib/session", () => ({
-  getActor: jest.fn(),
+jest.mock("@/domains/roles/lib/get-ability", () => ({
+  getAbility: jest.fn(),
+  getSessionUserId: jest.fn(),
 }));
 jest.mock("@/domains/roles/dal/event-staff", () => ({
   upsertEventStaff: jest.fn(),
@@ -14,37 +15,28 @@ jest.mock("@/domains/roles/dal/event-staff", () => ({
 
 import { assignEventRoleAction, removeEventStaffAction } from "../event-staff";
 import { prisma } from "@/lib/db";
-import { getActor } from "@/domains/roles/lib/session";
 import {
   upsertEventStaff,
   removeEventStaff,
 } from "@/domains/roles/dal/event-staff";
+import { grants, signInAs } from "@/domains/roles/testing";
 
-const mockGetActor = getActor as jest.Mock;
 const mockEventFindUnique = prisma.event.findUnique as jest.Mock;
 const mockUpsert = upsertEventStaff as jest.Mock;
 const mockRemove = removeEventStaff as jest.Mock;
 
-function makeActor(opts?: { id?: string; canResult?: boolean }) {
-  return {
-    isAuthenticated: true as const,
-    id: opts?.id ?? "admin-1",
-    isPlatformAdmin: false,
-    can: jest.fn().mockResolvedValue(opts?.canResult ?? true),
-    loadContext: jest.fn(),
-  };
-}
-
-const guestActor = {
-  isAuthenticated: false as const,
-  can: jest.fn().mockResolvedValue(false),
-  loadContext: jest.fn(),
-};
+const eventManagerOfE1 = grants({
+  event: [{ eventId: "e1", role: "EVENT_MANAGER" }],
+});
 
 beforeEach(() => {
   jest.clearAllMocks();
-  mockGetActor.mockResolvedValue(makeActor());
-  mockEventFindUnique.mockResolvedValue({ churchId: "ch-1" });
+  signInAs("admin-1", eventManagerOfE1);
+  mockEventFindUnique.mockResolvedValue({
+    id: "e1",
+    churchId: "ch-1",
+    seriesId: null,
+  });
 });
 
 describe("assignEventRoleAction", () => {
@@ -55,7 +47,7 @@ describe("assignEventRoleAction", () => {
   });
 
   it("returns error when unauthenticated", async () => {
-    mockGetActor.mockResolvedValue(guestActor);
+    signInAs(null);
     const result = await assignEventRoleAction({
       userId: "u1",
       eventId: "e1",
@@ -76,8 +68,11 @@ describe("assignEventRoleAction", () => {
     expect(mockUpsert).not.toHaveBeenCalled();
   });
 
-  it("returns error when not authorized", async () => {
-    mockGetActor.mockResolvedValue(makeActor({ canResult: false }));
+  it("returns error for an Event editor (no manage_staff)", async () => {
+    signInAs(
+      "editor-1",
+      grants({ event: [{ eventId: "e1", role: "EVENT_EDITOR" }] })
+    );
     const result = await assignEventRoleAction({
       userId: "u1",
       eventId: "e1",
@@ -87,9 +82,7 @@ describe("assignEventRoleAction", () => {
     expect(mockUpsert).not.toHaveBeenCalled();
   });
 
-  it("assigns role when authorized", async () => {
-    const actor = makeActor();
-    mockGetActor.mockResolvedValue(actor);
+  it("assigns role for an Event manager", async () => {
     mockUpsert.mockResolvedValue({});
     const result = await assignEventRoleAction({
       userId: "u1",
@@ -103,10 +96,20 @@ describe("assignEventRoleAction", () => {
       "EVENT_MANAGER",
       "admin-1"
     );
-    expect(actor.can).toHaveBeenCalledWith("event:manage_staff", {
-      churchId: "ch-1",
+  });
+
+  it("assigns role for a Church manager via the role cascade", async () => {
+    signInAs(
+      "cm-1",
+      grants({ church: [{ churchId: "ch-1", role: "EVENT_MANAGER" }] })
+    );
+    mockUpsert.mockResolvedValue({});
+    const result = await assignEventRoleAction({
+      userId: "u1",
       eventId: "e1",
+      role: "EVENT_EDITOR",
     });
+    expect(result).toEqual({ success: "Staff role assigned." });
   });
 });
 
@@ -118,7 +121,7 @@ describe("removeEventStaffAction", () => {
   });
 
   it("returns error when unauthenticated", async () => {
-    mockGetActor.mockResolvedValue(guestActor);
+    signInAs(null);
     const result = await removeEventStaffAction({
       userId: "u1",
       eventId: "e1",
@@ -138,7 +141,7 @@ describe("removeEventStaffAction", () => {
   });
 
   it("returns error when not authorized", async () => {
-    mockGetActor.mockResolvedValue(makeActor({ canResult: false }));
+    signInAs("u9", grants());
     const result = await removeEventStaffAction({
       userId: "u1",
       eventId: "e1",
@@ -148,8 +151,6 @@ describe("removeEventStaffAction", () => {
   });
 
   it("removes staff when authorized", async () => {
-    const actor = makeActor();
-    mockGetActor.mockResolvedValue(actor);
     mockRemove.mockResolvedValue({});
     const result = await removeEventStaffAction({
       userId: "u1",
@@ -157,9 +158,5 @@ describe("removeEventStaffAction", () => {
     });
     expect(result).toEqual({ success: "Staff removed." });
     expect(mockRemove).toHaveBeenCalledWith("u1", "e1");
-    expect(actor.can).toHaveBeenCalledWith("event:manage_staff", {
-      churchId: "ch-1",
-      eventId: "e1",
-    });
   });
 });

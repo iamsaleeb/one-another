@@ -1,9 +1,7 @@
 jest.mock("server-only", () => ({}));
-jest.mock("@/domains/roles/lib/session", () => ({
-  getActor: jest.fn(),
-}));
-jest.mock("@/domains/roles/policies/church", () => ({
-  churchPolicy: { canManageMembers: jest.fn().mockResolvedValue(true) },
+jest.mock("@/domains/roles/lib/get-ability", () => ({
+  getAbility: jest.fn(),
+  getSessionUserId: jest.fn(),
 }));
 jest.mock("@/domains/roles/dal/church-memberships", () => ({
   upsertChurchMembership: jest.fn(),
@@ -14,41 +12,27 @@ import {
   assignChurchRoleAction,
   removeChurchMembershipAction,
 } from "../church-memberships";
-import { getActor } from "@/domains/roles/lib/session";
-import { churchPolicy } from "@/domains/roles/policies/church";
 import {
   upsertChurchMembership,
   removeChurchMembership,
 } from "@/domains/roles/dal/church-memberships";
+import { grants, signInAs } from "@/domains/roles/testing";
 
-const mockGetActor = getActor as jest.Mock;
-const mockCanManageMembers = churchPolicy.canManageMembers as jest.Mock;
 const mockUpsert = upsertChurchMembership as jest.Mock;
 const mockRemove = removeChurchMembership as jest.Mock;
 
-const validActor = {
-  isAuthenticated: true as const,
-  id: "admin-1",
-  isPlatformAdmin: false,
-  can: jest.fn().mockResolvedValue(true),
-  loadContext: jest.fn(),
-};
-
-const guestActor = {
-  isAuthenticated: false as const,
-  can: jest.fn().mockResolvedValue(false),
-  loadContext: jest.fn(),
-};
+const churchAdminOfC1 = grants({
+  church: [{ churchId: "c1", role: "CHURCH_ADMIN" }],
+});
 
 beforeEach(() => {
   jest.clearAllMocks();
-  mockGetActor.mockResolvedValue(validActor);
-  mockCanManageMembers.mockResolvedValue(true);
+  signInAs("admin-1", churchAdminOfC1);
 });
 
 describe("assignChurchRoleAction", () => {
   it("returns error when unauthenticated", async () => {
-    mockGetActor.mockResolvedValue(guestActor);
+    signInAs(null);
     const result = await assignChurchRoleAction({
       userId: "u1",
       churchId: "c1",
@@ -58,8 +42,11 @@ describe("assignChurchRoleAction", () => {
     expect(mockUpsert).not.toHaveBeenCalled();
   });
 
-  it("returns error when not authorized", async () => {
-    mockCanManageMembers.mockResolvedValue(false);
+  it("returns error when the user cannot manage the Church's members", async () => {
+    signInAs(
+      "manager-1",
+      grants({ church: [{ churchId: "c1", role: "EVENT_MANAGER" }] })
+    );
     const result = await assignChurchRoleAction({
       userId: "u1",
       churchId: "c1",
@@ -67,6 +54,15 @@ describe("assignChurchRoleAction", () => {
     });
     expect(result).toEqual({ error: "Unauthorised." });
     expect(mockUpsert).not.toHaveBeenCalled();
+  });
+
+  it("returns error for a Church the admin does not run", async () => {
+    const result = await assignChurchRoleAction({
+      userId: "u1",
+      churchId: "c2",
+      role: "EVENT_MANAGER",
+    });
+    expect(result).toEqual({ error: "Unauthorised." });
   });
 
   it("assigns role and returns success when authorized", async () => {
@@ -98,12 +94,22 @@ describe("assignChurchRoleAction", () => {
 
 describe("removeChurchMembershipAction", () => {
   it("returns error when unauthenticated", async () => {
-    mockGetActor.mockResolvedValue(guestActor);
+    signInAs(null);
     const result = await removeChurchMembershipAction({
       userId: "u1",
       churchId: "c1",
     });
     expect(result).toEqual({ error: "Unauthorised." });
+  });
+
+  it("returns error when the user cannot manage the Church's members", async () => {
+    signInAs("u9", grants());
+    const result = await removeChurchMembershipAction({
+      userId: "u1",
+      churchId: "c1",
+    });
+    expect(result).toEqual({ error: "Unauthorised." });
+    expect(mockRemove).not.toHaveBeenCalled();
   });
 
   it("removes membership when authorized", async () => {

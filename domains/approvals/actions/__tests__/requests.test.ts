@@ -1,8 +1,11 @@
-jest.mock("next/cache", () => ({
+﻿jest.mock("next/cache", () => ({
   updateTag: jest.fn(),
   revalidatePath: jest.fn(),
 }));
-jest.mock("@/domains/roles/lib/session", () => ({ getActor: jest.fn() }));
+jest.mock("@/domains/roles/lib/get-ability", () => ({
+  getAbility: jest.fn(),
+  getSessionUserId: jest.fn(),
+}));
 jest.mock("@/lib/db", () => ({
   prisma: {
     event: { findUnique: jest.fn() },
@@ -39,7 +42,7 @@ jest.mock("@/domains/approvals/lib/config", () => ({
   },
 }));
 
-import { getActor } from "@/domains/roles/lib/session";
+import { grants, platformAdmin, signInAs } from "@/domains/roles/testing";
 import { updateTag } from "next/cache";
 import * as dal from "@/domains/approvals/dal/requests";
 import * as db from "@/lib/db";
@@ -51,7 +54,6 @@ import {
   revokeAccessAction,
 } from "../requests";
 
-const mockGetActor = getActor as jest.Mock;
 const mockUpdateTag = updateTag as jest.Mock;
 const mockUpsert = dal.upsertApprovalRequest as jest.Mock;
 const mockGetMyRequest = dal.getMyRequestForResource as jest.Mock;
@@ -60,33 +62,17 @@ const mockUpdate = dal.updateApprovalRequest as jest.Mock;
 const mockUpdateIfPending = dal.updateApprovalRequestIfPending as jest.Mock;
 const mockEventFindUnique = db.prisma.event.findUnique as jest.Mock;
 
-function makeActor(id = "u1", canResult = true) {
-  return {
-    isAuthenticated: true as const,
-    id,
-    isPlatformAdmin: false,
-    can: jest.fn().mockResolvedValue(canResult),
-    loadContext: jest.fn(),
-  };
-}
-
-const guestActor = {
-  isAuthenticated: false as const,
-  can: jest.fn().mockResolvedValue(false),
-  loadContext: jest.fn(),
-};
-
 beforeEach(() => {
   jest.clearAllMocks();
   mockEventFindUnique.mockResolvedValue({ churchId: "church-1" });
-  mockGetActor.mockResolvedValue(makeActor());
+  signInAs("u1", platformAdmin());
   mockGetMyRequest.mockResolvedValue(null);
   mockUpdateIfPending.mockResolvedValue(1);
 });
 
 describe("submitRequestAction", () => {
   it("returns error when not authenticated", async () => {
-    mockGetActor.mockResolvedValue(guestActor);
+    signInAs(null);
     const result = await submitRequestAction({
       resourceType: "EVENT",
       resourceId: "e1",
@@ -145,7 +131,7 @@ describe("submitRequestAction", () => {
 
 describe("reviewRequestAction", () => {
   it("returns error when not authenticated", async () => {
-    mockGetActor.mockResolvedValue(guestActor);
+    signInAs(null);
     const result = await reviewRequestAction({
       requestId: "r1",
       decision: "APPROVED",
@@ -195,8 +181,6 @@ describe("reviewRequestAction", () => {
   });
 
   it("claims atomically then calls grantFn on APPROVED", async () => {
-    const actor = makeActor("u1");
-    mockGetActor.mockResolvedValue(actor);
     const request = {
       id: "r1",
       status: "PENDING",
@@ -290,7 +274,7 @@ describe("reviewRequestAction", () => {
 
 describe("cancelRequestAction", () => {
   it("returns error when not authenticated", async () => {
-    mockGetActor.mockResolvedValue(guestActor);
+    signInAs(null);
     const result = await cancelRequestAction({ requestId: "r1" });
     expect(result.error).toBeDefined();
   });
@@ -340,7 +324,7 @@ describe("cancelRequestAction", () => {
 
 describe("revokeAccessAction", () => {
   it("returns error when not authenticated", async () => {
-    mockGetActor.mockResolvedValue(guestActor);
+    signInAs(null);
     const result = await revokeAccessAction({ requestId: "r1" });
     expect(result.error).toBeDefined();
   });
@@ -358,8 +342,6 @@ describe("revokeAccessAction", () => {
   });
 
   it("calls revokeFn before status update and records reviewedBy on success", async () => {
-    const actor = makeActor("u1");
-    mockGetActor.mockResolvedValue(actor);
     mockGetById.mockResolvedValue({
       id: "r1",
       status: "APPROVED",
@@ -387,5 +369,76 @@ describe("revokeAccessAction", () => {
     );
     expect(mockUpdateTag).toHaveBeenCalledWith("approval-resolved-EVENT-e1");
     expect(mockUpdateTag).toHaveBeenCalledWith("approval-request-r1");
+  });
+});
+
+describe("who may approve Helpers", () => {
+  const pendingEventRequest = {
+    id: "r1",
+    status: "PENDING",
+    resourceType: "EVENT",
+    resourceId: "e1",
+    requesterId: "u2",
+  };
+
+  beforeEach(() => {
+    mockEventFindUnique.mockResolvedValue({
+      id: "e1",
+      churchId: "church-1",
+      seriesId: null,
+    });
+    mockGetById.mockResolvedValue(pendingEventRequest);
+    (config.APPROVAL_CONFIG.EVENT.grantFn as jest.Mock).mockResolvedValue(
+      undefined
+    );
+  });
+
+  it("an Event manager may approve", async () => {
+    signInAs(
+      "u1",
+      grants({ event: [{ eventId: "e1", role: "EVENT_MANAGER" }] })
+    );
+    const result = await reviewRequestAction({
+      requestId: "r1",
+      decision: "APPROVED",
+    });
+    expect(result.error).toBeUndefined();
+  });
+
+  it("a Church manager may approve via the role cascade", async () => {
+    signInAs(
+      "u1",
+      grants({ church: [{ churchId: "church-1", role: "EVENT_MANAGER" }] })
+    );
+    const result = await reviewRequestAction({
+      requestId: "r1",
+      decision: "APPROVED",
+    });
+    expect(result.error).toBeUndefined();
+  });
+
+  it("an Event editor may not approve", async () => {
+    signInAs(
+      "u1",
+      grants({ event: [{ eventId: "e1", role: "EVENT_EDITOR" }] })
+    );
+    const result = await reviewRequestAction({
+      requestId: "r1",
+      decision: "APPROVED",
+    });
+    expect(result.error).toBe("Unauthorised.");
+    expect(mockUpdateIfPending).not.toHaveBeenCalled();
+  });
+
+  it("a Church manager of another Church may not approve", async () => {
+    signInAs(
+      "u1",
+      grants({ church: [{ churchId: "church-2", role: "CHURCH_ADMIN" }] })
+    );
+    const result = await reviewRequestAction({
+      requestId: "r1",
+      decision: "APPROVED",
+    });
+    expect(result.error).toBe("Unauthorised.");
   });
 });

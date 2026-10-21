@@ -1,6 +1,7 @@
 // Test-only helpers for running the real permission rules in unit tests.
 // Not exported from the domain barrel; import from "@/domains/roles/testing".
 import { prismaQuery } from "@casl/prisma";
+import { buildAbility } from "./lib/ability";
 import type { Grants } from "./lib/grants";
 
 export function grants(partial: Partial<Grants> = {}): Grants {
@@ -11,6 +12,20 @@ export function grants(partial: Partial<Grants> = {}): Grants {
     event: [],
     ...partial,
   };
+}
+
+export const platformAdmin = (): Grants => grants({ isPlatformAdmin: true });
+
+// Signs in as `userId` with real Grants (null = guest). The test file must
+// mock "@/domains/roles/lib/get-ability" with jest.fn() getAbility and
+// getSessionUserId.
+export function signInAs(userId: string | null, userGrants: Grants = grants()) {
+  const m = jest.requireMock("@/domains/roles/lib/get-ability") as {
+    getAbility: jest.Mock;
+    getSessionUserId: jest.Mock;
+  };
+  m.getSessionUserId.mockResolvedValue(userId);
+  m.getAbility.mockResolvedValue(buildAbility(userId ? userGrants : null));
 }
 
 // Evaluates a Prisma `where` (including CASL accessibleBy output) in JS.

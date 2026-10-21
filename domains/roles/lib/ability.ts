@@ -1,4 +1,4 @@
-import { AbilityBuilder } from "@casl/ability";
+import { AbilityBuilder, subject } from "@casl/ability";
 import {
   createPrismaAbility,
   type PrismaAbility,
@@ -110,6 +110,25 @@ export function buildAbility(grants: Grants | null): AppAbility {
   for (const g of grants?.series ?? []) SERIES_RULES[g.role](can, g.seriesId);
   for (const g of grants?.event ?? []) EVENT_RULES[g.role](can, g.eventId);
   return build();
+}
+
+// Typed subjects. Each requires every field the rules read, so a record loaded
+// with a too-narrow `select` fails to compile instead of silently denying.
+// An Event without `id` is a placement target ("could an Event go here?").
+export function eventSubject(
+  event: Pick<Event, "churchId" | "seriesId"> & { id?: string }
+) {
+  return subject("Event", event as Event);
+}
+
+export function seriesSubject(
+  series: Pick<Series, "churchId"> & { id?: string }
+) {
+  return subject("Series", series as Series);
+}
+
+export function churchSubject(church: Pick<Church, "id">) {
+  return subject("Church", church as Church);
 }
 
 // True when the user holds any Grant at all (organiser gate).

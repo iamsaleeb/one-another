@@ -1,7 +1,7 @@
-"use server";
+﻿"use server";
 
 import { redirect } from "next/navigation";
-import { getActor } from "@/domains/roles/lib/session";
+import { getSessionUserId } from "@/domains/roles/lib/get-ability";
 import {
   createEventSchema,
   saveDraftSchema,
@@ -23,14 +23,13 @@ import { invalidateEventCaches, invalidateEventUpdate } from "../cache";
 export async function createEventAction(
   data: CreateEventInput
 ): Promise<ActionResult> {
-  const actor = await getActor();
-  if (!actor.isAuthenticated) return { error: "Unauthorised." };
+  if (!(await getSessionUserId())) return { error: "Unauthorised." };
 
   const parsed = createEventSchema.safeParse(data);
   if (!parsed.success)
     return { fieldErrors: parsed.error.flatten().fieldErrors };
 
-  const result = await createEvent(parsed.data, actor.id, actor);
+  const result = await createEvent(parsed.data);
   if ("error" in result || "fieldErrors" in result) return result;
 
   invalidateEventCaches(result.id, result.churchId, result.seriesId, {
@@ -49,14 +48,13 @@ export async function updateEventAction(
   id: string,
   data: CreateEventInput
 ): Promise<ActionResult> {
-  const actor = await getActor();
-  if (!actor.isAuthenticated) redirect("/");
+  if (!(await getSessionUserId())) redirect("/");
 
   const parsed = createEventSchema.safeParse(data);
   if (!parsed.success)
     return { fieldErrors: parsed.error.flatten().fieldErrors };
 
-  const result = await updateEvent(id, parsed.data, actor.id, actor);
+  const result = await updateEvent(id, parsed.data);
   if ("error" in result) redirect("/organiser");
   if ("fieldErrors" in result) return result;
 
@@ -68,10 +66,9 @@ export async function cancelEventAction(
   id: string,
   reason: string
 ): Promise<void> {
-  const actor = await getActor();
-  if (!actor.isAuthenticated) redirect("/");
+  if (!(await getSessionUserId())) redirect("/");
 
-  const result = await cancelEvent(id, reason, actor.id, actor);
+  const result = await cancelEvent(id, reason);
   if ("error" in result) redirect("/organiser");
 
   invalidateEventCaches(id, result.churchId, result.seriesId);
@@ -79,10 +76,9 @@ export async function cancelEventAction(
 }
 
 export async function uncancelEventAction(id: string): Promise<void> {
-  const actor = await getActor();
-  if (!actor.isAuthenticated) redirect("/");
+  if (!(await getSessionUserId())) redirect("/");
 
-  const result = await uncancelEvent(id, actor.id, actor);
+  const result = await uncancelEvent(id);
   if ("error" in result) redirect("/organiser");
 
   invalidateEventCaches(id, result.churchId, result.seriesId);
@@ -90,10 +86,9 @@ export async function uncancelEventAction(id: string): Promise<void> {
 }
 
 export async function publishEventAction(id: string): Promise<ActionResult> {
-  const actor = await getActor();
-  if (!actor.isAuthenticated) return { error: "Unauthorised." };
+  if (!(await getSessionUserId())) return { error: "Unauthorised." };
 
-  const result = await publishEvent(id, actor.id, actor);
+  const result = await publishEvent(id);
   if ("error" in result) return result;
 
   invalidateEventCaches(id, result.churchId, result.seriesId, {
@@ -103,10 +98,9 @@ export async function publishEventAction(id: string): Promise<ActionResult> {
 }
 
 export async function unpublishEventAction(id: string): Promise<ActionResult> {
-  const actor = await getActor();
-  if (!actor.isAuthenticated) return { error: "Unauthorised." };
+  if (!(await getSessionUserId())) return { error: "Unauthorised." };
 
-  const result = await unpublishEvent(id, actor.id, actor);
+  const result = await unpublishEvent(id);
   if ("error" in result) return result;
 
   invalidateEventCaches(id, result.churchId, result.seriesId, {
@@ -119,8 +113,7 @@ export async function saveDraftAction(
   id: string | undefined,
   data: SaveDraftInput
 ): Promise<{ eventId: string } | ActionResult> {
-  const actor = await getActor();
-  if (!actor.isAuthenticated) return { error: "Unauthorised." };
+  if (!(await getSessionUserId())) return { error: "Unauthorised." };
 
   const parsed = saveDraftSchema.safeParse(data);
   if (!parsed.success)
@@ -132,21 +125,15 @@ export async function saveDraftAction(
   };
 
   if (!id) {
-    const result = await createEvent(
-      { ...dataWithDefaults, isDraft: true },
-      actor.id,
-      actor
-    );
+    const result = await createEvent({ ...dataWithDefaults, isDraft: true });
     if ("error" in result || "fieldErrors" in result) return result;
     invalidateEventCaches(result.id, result.churchId, result.seriesId ?? null);
     return { eventId: result.id };
   } else {
-    const result = await updateEvent(
-      id,
-      { ...dataWithDefaults, isDraft: dataWithDefaults.isDraft ?? true },
-      actor.id,
-      actor
-    );
+    const result = await updateEvent(id, {
+      ...dataWithDefaults,
+      isDraft: dataWithDefaults.isDraft ?? true,
+    });
     if ("error" in result || "fieldErrors" in result) return result;
     invalidateEventUpdate(id, result);
     return { eventId: id };
@@ -157,14 +144,13 @@ export async function saveEventAction(
   id: string,
   data: CreateEventInput
 ): Promise<{ success: true } | ActionResult> {
-  const actor = await getActor();
-  if (!actor.isAuthenticated) return { error: "Unauthorised." };
+  if (!(await getSessionUserId())) return { error: "Unauthorised." };
 
   const parsed = createEventSchema.safeParse(data);
   if (!parsed.success)
     return { fieldErrors: parsed.error.flatten().fieldErrors };
 
-  const result = await updateEvent(id, parsed.data, actor.id, actor);
+  const result = await updateEvent(id, parsed.data);
   if ("error" in result || "fieldErrors" in result) return result;
 
   invalidateEventUpdate(id, result);
@@ -173,10 +159,9 @@ export async function saveEventAction(
 }
 
 export async function deleteEventAction(id: string): Promise<void> {
-  const actor = await getActor();
-  if (!actor.isAuthenticated) redirect("/");
+  if (!(await getSessionUserId())) redirect("/");
 
-  const result = await deleteEvent(id, actor.id, actor);
+  const result = await deleteEvent(id);
   if ("error" in result) redirect("/organiser");
 
   invalidateEventCaches(id, result.churchId, result.seriesId, {

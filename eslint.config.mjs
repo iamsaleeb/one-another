@@ -97,7 +97,10 @@ const eslintConfig = defineConfig([
         {
           patterns: [
             {
-              group: ["**/system-ability", "@/domains/roles/lib/system-ability"],
+              group: [
+                "**/system-ability",
+                "@/domains/roles/lib/system-ability",
+              ],
               message:
                 "systemAbility() is only for cron, workers and seed. Use getAbility() for requests.",
             },
@@ -111,6 +114,7 @@ const eslintConfig = defineConfig([
       "app/api/cron/**",
       "domains/notifications/**",
       "domains/roles/lib/**",
+      "**/__tests__/**",
       "prisma/seed.ts",
       "scripts/**",
     ],

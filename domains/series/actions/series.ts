@@ -1,9 +1,9 @@
-"use server";
+﻿"use server";
 
 import { redirect } from "next/navigation";
 import { updateTag } from "next/cache";
 import { Prisma } from "@prisma/client";
-import { getActor } from "@/domains/roles/lib/session";
+import { getSessionUserId } from "@/domains/roles/lib/get-ability";
 import { prisma } from "@/lib/db";
 import {
   createSeriesSchema,
@@ -20,14 +20,13 @@ import {
 export async function createSeriesAction(
   data: CreateSeriesInput
 ): Promise<ActionResult> {
-  const actor = await getActor();
-  if (!actor.isAuthenticated) return { error: "Unauthorised." };
+  if (!(await getSessionUserId())) return { error: "Unauthorised." };
 
   const parsed = createSeriesSchema.safeParse(data);
   if (!parsed.success)
     return { fieldErrors: parsed.error.flatten().fieldErrors };
 
-  const result = await createSeries(parsed.data, actor.id, actor);
+  const result = await createSeries(parsed.data);
   if ("error" in result || "fieldErrors" in result) return result;
 
   broadcastSeriesChange(result.id, result.churchId);
@@ -38,14 +37,13 @@ export async function updateSeriesAction(
   id: string,
   data: CreateSeriesInput
 ): Promise<ActionResult> {
-  const actor = await getActor();
-  if (!actor.isAuthenticated) redirect("/");
+  if (!(await getSessionUserId())) redirect("/");
 
   const parsed = createSeriesSchema.safeParse(data);
   if (!parsed.success)
     return { fieldErrors: parsed.error.flatten().fieldErrors };
 
-  const result = await updateSeries(id, parsed.data, actor.id, actor);
+  const result = await updateSeries(id, parsed.data);
   if ("error" in result || "fieldErrors" in result) redirect("/organiser");
 
   invalidateSeriesFields(id, result.oldChurchId);
@@ -61,12 +59,12 @@ export interface FollowSeriesState {
 export async function followSeriesAction(
   seriesId: string
 ): Promise<FollowSeriesState> {
-  const actor = await getActor();
-  if (!actor.isAuthenticated) return { error: "You must be signed in." };
+  const userId = await getSessionUserId();
+  if (!userId) return { error: "You must be signed in." };
 
   try {
     await prisma.seriesFollower.create({
-      data: { seriesId, userId: actor.id },
+      data: { seriesId, userId },
     });
   } catch (err) {
     if (
@@ -78,33 +76,32 @@ export async function followSeriesAction(
     return { error: "Failed to follow series." };
   }
 
-  invalidateSeriesFollowing(seriesId, actor.id);
+  invalidateSeriesFollowing(seriesId, userId);
   return {};
 }
 
 export async function unfollowSeriesAction(
   seriesId: string
 ): Promise<FollowSeriesState> {
-  const actor = await getActor();
-  if (!actor.isAuthenticated) return { error: "You must be signed in." };
+  const userId = await getSessionUserId();
+  if (!userId) return { error: "You must be signed in." };
 
   try {
     await prisma.seriesFollower.delete({
-      where: { seriesId_userId: { seriesId, userId: actor.id } },
+      where: { seriesId_userId: { seriesId, userId } },
     });
   } catch {
     return { error: "Failed to unfollow series." };
   }
 
-  invalidateSeriesFollowing(seriesId, actor.id);
+  invalidateSeriesFollowing(seriesId, userId);
   return {};
 }
 
 export async function deleteSeriesAction(id: string): Promise<void> {
-  const actor = await getActor();
-  if (!actor.isAuthenticated) redirect("/");
+  if (!(await getSessionUserId())) redirect("/");
 
-  const result = await deleteSeries(id, actor.id, actor);
+  const result = await deleteSeries(id);
   if ("error" in result) redirect("/organiser");
 
   broadcastSeriesChange(id, result.churchId);

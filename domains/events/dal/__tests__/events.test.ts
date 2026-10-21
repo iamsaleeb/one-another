@@ -1,23 +1,25 @@
 import { NotificationType } from "@prisma/client";
 
-jest.mock("@/lib/db", () => ({
-  prisma: {
-    event: { findUnique: jest.fn(), update: jest.fn() },
-    eventAttendee: { findMany: jest.fn() },
-    seriesFollower: { findMany: jest.fn() },
-    notification: {
-      upsert: jest.fn(),
-      createMany: jest.fn(),
-      updateMany: jest.fn(),
-      create: jest.fn(),
+jest.mock("@/lib/db", () => {
+  const { fakeTable } = jest.requireActual("@/domains/roles/testing");
+  return {
+    prisma: {
+      event: fakeTable([]),
+      series: { findUnique: jest.fn() },
+      eventStaffAssignment: { create: jest.fn() },
+      eventAttendee: { findMany: jest.fn() },
+      seriesFollower: { findMany: jest.fn() },
     },
-    notificationPreference: { findMany: jest.fn() },
-  },
+  };
+});
+
+jest.mock("@/domains/roles/lib/get-ability", () => ({
+  getAbility: jest.fn(),
+  getSessionUserId: jest.fn(),
 }));
 
 jest.mock("@/domains/notifications/queue", () => ({
   scheduleEventReminderNotifications: jest.fn().mockResolvedValue(undefined),
-  scheduleEventReminderNotification: jest.fn().mockResolvedValue(undefined),
   rescheduleEventReminderNotifications: jest.fn().mockResolvedValue(undefined),
   cancelManyNotifications: jest.fn().mockResolvedValue(undefined),
   queueNotification: jest.fn().mockResolvedValue(undefined),
@@ -28,86 +30,125 @@ jest.mock("@/domains/events/questions/dal", () => ({
 }));
 
 import { prisma } from "@/lib/db";
-import { publishEvent, cancelEvent } from "../events";
+import { buildAbility } from "@/domains/roles/lib/ability";
+import { getAbility, getSessionUserId } from "@/domains/roles/lib/get-ability";
+import { systemAbility } from "@/domains/roles/lib/system-ability";
+import { grants, type fakeTable } from "@/domains/roles/testing";
+import type { Grants } from "@/domains/roles/lib/grants";
+import type { CreateEventInput } from "../../validations/event";
+import {
+  cancelEvent,
+  createEvent,
+  deleteEvent,
+  publishEvent,
+  updateEvent,
+} from "../events";
 
-const mockPrisma = prisma as jest.Mocked<typeof prisma>;
+type FakeTable = ReturnType<
+  typeof fakeTable<{
+    id: string;
+    churchId: string;
+    seriesId: string | null;
+    title: string;
+    isDraft: boolean;
+    datetime: Date | null;
+  }>
+>;
+
+const events = prisma.event as unknown as FakeTable;
+const mockSeriesFind = prisma.series.findUnique as jest.Mock;
+const mockStaffCreate = prisma.eventStaffAssignment.create as jest.Mock;
+const mockAttendees = prisma.eventAttendee.findMany as jest.Mock;
+const mockFollowers = prisma.seriesFollower.findMany as jest.Mock;
 const mockQueue = jest.requireMock("@/domains/notifications/queue") as {
   queueNotification: jest.Mock;
   cancelManyNotifications: jest.Mock;
 };
 
-describe("notifySeriesFollowers deduplication", () => {
-  beforeEach(() => jest.clearAllMocks());
+function signIn(userGrants: Grants, userId = "u1") {
+  (getSessionUserId as jest.Mock).mockResolvedValue(userId);
+  (getAbility as jest.Mock).mockResolvedValue(buildAbility(userGrants));
+}
 
-  it("upserts NEW_SERIES_SESSION rather than creating duplicates", async () => {
-    (mockPrisma.event.findUnique as jest.Mock).mockResolvedValue({
+// c1 ── s1 ── evt-1 (draft)     c1 ── evt-2     c2 ── s3 ── evt-3
+const SERIES = {
+  s1: { churchId: "c1" },
+  s2: { churchId: "c1" },
+  s3: { churchId: "c2" },
+} as Record<string, { churchId: string }>;
+
+beforeEach(() => {
+  jest.clearAllMocks();
+  events.rows.splice(
+    0,
+    events.rows.length,
+    {
       id: "evt-1",
-      churchId: "ch-1",
-      seriesId: "series-1",
+      churchId: "c1",
+      seriesId: "s1",
       title: "Sunday Service",
       isDraft: true,
       datetime: new Date(Date.now() + 86400000),
-    });
-    (mockPrisma.event.update as jest.Mock).mockResolvedValue({});
-    (mockPrisma.eventAttendee.findMany as jest.Mock).mockResolvedValue([]);
-    (mockPrisma.seriesFollower.findMany as jest.Mock).mockResolvedValue([
+    },
+    {
+      id: "evt-2",
+      churchId: "c1",
+      seriesId: null,
+      title: "Friday Night",
+      isDraft: false,
+      datetime: null,
+    },
+    {
+      id: "evt-3",
+      churchId: "c2",
+      seriesId: "s3",
+      title: "Other church",
+      isDraft: false,
+      datetime: null,
+    }
+  );
+  mockSeriesFind.mockImplementation(
+    async ({ where }: { where: { id: string } }) => SERIES[where.id] ?? null
+  );
+  mockAttendees.mockResolvedValue([]);
+  mockFollowers.mockResolvedValue([]);
+});
+
+const input = (over: Partial<CreateEventInput> = {}) =>
+  ({
+    title: "Event",
+    churchId: "c1",
+    tag: "Social",
+    description: "d",
+    ...over,
+  }) as CreateEventInput;
+
+describe("notification deduplication", () => {
+  it("publish queues NEW_SERIES_SESSION keyed by series and event", async () => {
+    signIn(grants({ church: [{ churchId: "c1", role: "EVENT_MANAGER" }] }));
+    mockFollowers.mockResolvedValue([
       { userId: "user-1" },
       { userId: "user-2" },
     ]);
 
-    const actor = {
-      isAuthenticated: true as const,
-      id: "admin-user",
-      isPlatformAdmin: false,
-      can: jest.fn().mockResolvedValue(true),
-      loadContext: jest.fn(),
-    };
-    await publishEvent("evt-1", "admin-user", actor);
+    await publishEvent("evt-1");
 
-    expect(mockPrisma.notification.createMany).not.toHaveBeenCalled();
-    expect(mockQueue.queueNotification).toHaveBeenCalledWith(
-      expect.objectContaining({
-        type: NotificationType.NEW_SERIES_SESSION,
-        dedupeKey: "series-1:evt-1",
-        userId: "user-1",
-      })
-    );
-    expect(mockQueue.queueNotification).toHaveBeenCalledWith(
-      expect.objectContaining({
-        type: NotificationType.NEW_SERIES_SESSION,
-        dedupeKey: "series-1:evt-1",
-        userId: "user-2",
-      })
-    );
+    for (const userId of ["user-1", "user-2"])
+      expect(mockQueue.queueNotification).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: NotificationType.NEW_SERIES_SESSION,
+          dedupeKey: "s1:evt-1",
+          userId,
+        })
+      );
   });
-});
 
-describe("notifyEventAttendees deduplication", () => {
-  beforeEach(() => jest.clearAllMocks());
+  it("cancel queues EVENT_CANCELLED keyed by event", async () => {
+    signIn(grants({ church: [{ churchId: "c1", role: "EVENT_MANAGER" }] }));
+    mockAttendees.mockResolvedValue([{ userId: "user-3" }]);
 
-  it("upserts EVENT_CANCELLED rather than creating duplicates", async () => {
-    (mockPrisma.event.findUnique as jest.Mock).mockResolvedValue({
-      id: "evt-2",
-      churchId: "ch-1",
-      seriesId: null,
-      title: "Friday Night",
-    });
-    (mockPrisma.event.update as jest.Mock).mockResolvedValue({});
-    (mockPrisma.eventAttendee.findMany as jest.Mock).mockResolvedValue([
-      { userId: "user-3" },
-      { userId: "user-4" },
-    ]);
+    await cancelEvent("evt-2", "Venue unavailable");
 
-    const actor = {
-      isAuthenticated: true as const,
-      id: "admin-user",
-      isPlatformAdmin: false,
-      can: jest.fn().mockResolvedValue(true),
-      loadContext: jest.fn(),
-    };
-    await cancelEvent("evt-2", "Venue unavailable", "admin-user", actor);
-
-    expect(mockPrisma.notification.createMany).not.toHaveBeenCalled();
     expect(mockQueue.queueNotification).toHaveBeenCalledWith(
       expect.objectContaining({
         type: NotificationType.EVENT_CANCELLED,
@@ -115,12 +156,149 @@ describe("notifyEventAttendees deduplication", () => {
         userId: "user-3",
       })
     );
-    expect(mockQueue.queueNotification).toHaveBeenCalledWith(
-      expect.objectContaining({
-        type: NotificationType.EVENT_CANCELLED,
-        dedupeKey: "cancelled:evt-2",
-        userId: "user-4",
-      })
+  });
+});
+
+describe("createEvent", () => {
+  it("guest is refused", async () => {
+    (getSessionUserId as jest.Mock).mockResolvedValue(null);
+    (getAbility as jest.Mock).mockResolvedValue(buildAbility(null));
+    expect(await createEvent(input())).toEqual({ error: "Unauthorised." });
+  });
+
+  it("Series-only staff may create a session in their Series", async () => {
+    signIn(
+      grants({ series: [{ seriesId: "s1", role: "SERIES_SESSION_CREATOR" }] })
     );
+    (prisma.event as unknown as { create: jest.Mock }).create = jest
+      .fn()
+      .mockResolvedValue({ id: "new-1" });
+
+    const result = await createEvent(
+      input({ seriesId: "s1", churchId: undefined })
+    );
+
+    expect(result).toMatchObject({
+      id: "new-1",
+      churchId: "c1",
+      seriesId: "s1",
+    });
+    // No Church/Series Grant lets them edit it, so they get a Creator Grant.
+    expect(mockStaffCreate).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        userId: "u1",
+        eventId: "new-1",
+        role: "EVENT_EDITOR",
+      }),
+    });
+  });
+
+  it("Series-only staff may not create outside their Series", async () => {
+    signIn(
+      grants({ series: [{ seriesId: "s1", role: "SERIES_SESSION_CREATOR" }] })
+    );
+    expect(
+      await createEvent(input({ seriesId: "s2", churchId: undefined }))
+    ).toEqual({
+      error: "Unauthorised.",
+    });
+    expect(await createEvent(input())).toEqual({ error: "Unauthorised." });
+  });
+
+  it("Church EVENT_MANAGER gets no redundant Creator Grant", async () => {
+    signIn(grants({ church: [{ churchId: "c1", role: "EVENT_MANAGER" }] }));
+    (prisma.event as unknown as { create: jest.Mock }).create = jest
+      .fn()
+      .mockResolvedValue({ id: "new-2" });
+
+    await createEvent(input());
+
+    expect(mockStaffCreate).not.toHaveBeenCalled();
+  });
+});
+
+describe("updateEvent", () => {
+  it("Church EVENT_CREATOR cannot edit an Event they have no Grant on", async () => {
+    signIn(grants({ church: [{ churchId: "c1", role: "EVENT_CREATOR" }] }));
+    expect(await updateEvent("evt-2", input())).toEqual({
+      error: "Unauthorised.",
+    });
+    expect(events.update).not.toHaveBeenCalled();
+  });
+
+  it("reports a missing Event as not found", async () => {
+    signIn(grants({ isPlatformAdmin: true }));
+    expect(await updateEvent("nope", input())).toEqual({
+      error: "Event not found.",
+    });
+  });
+
+  it("Series manager may not move a session into a Series they do not manage", async () => {
+    signIn(grants({ series: [{ seriesId: "s1", role: "SERIES_MANAGER" }] }));
+    expect(
+      await updateEvent("evt-1", input({ seriesId: "s2", churchId: undefined }))
+    ).toEqual({ error: "Unauthorised." });
+    expect(events.rows.find((e) => e.id === "evt-1")?.seriesId).toBe("s1");
+  });
+
+  it("Event editor may not move the Event to another Church", async () => {
+    signIn(grants({ event: [{ eventId: "evt-2", role: "EVENT_EDITOR" }] }));
+    expect(await updateEvent("evt-2", input({ churchId: "c2" }))).toEqual({
+      error: "Unauthorised.",
+    });
+  });
+
+  it("Church manager may move an Event between Series in their Church", async () => {
+    signIn(grants({ church: [{ churchId: "c1", role: "EVENT_MANAGER" }] }));
+    const result = await updateEvent(
+      "evt-1",
+      input({ seriesId: "s2", churchId: undefined })
+    );
+    expect(result).toEqual({
+      oldChurchId: "c1",
+      newChurchId: "c1",
+      affectedSeriesIds: ["s1", "s2"],
+    });
+    expect(events.rows.find((e) => e.id === "evt-1")?.seriesId).toBe("s2");
+    // The old Series' pending "new session" notification is cancelled.
+    expect(mockQueue.cancelManyNotifications).toHaveBeenCalledWith({
+      type: NotificationType.NEW_SERIES_SESSION,
+      dedupeKey: "s1:evt-1",
+    });
+  });
+
+  it("Event editor may edit their Event in place", async () => {
+    signIn(grants({ event: [{ eventId: "evt-2", role: "EVENT_EDITOR" }] }));
+    const result = await updateEvent("evt-2", input({ title: "Renamed" }));
+    expect(result).not.toHaveProperty("error");
+    expect(events.rows.find((e) => e.id === "evt-2")?.title).toBe("Renamed");
+  });
+});
+
+describe("scoped writes", () => {
+  it("no Grant on another Church's Event: nothing is written", async () => {
+    signIn(grants({ church: [{ churchId: "c1", role: "CHURCH_ADMIN" }] }));
+    expect(await deleteEvent("evt-3")).toEqual({ error: "Unauthorised." });
+    expect(await publishEvent("evt-3")).toEqual({ error: "Unauthorised." });
+    expect(events.rows).toHaveLength(3);
+  });
+
+  it("delete removes the Event for an authorised user", async () => {
+    signIn(grants({ church: [{ churchId: "c1", role: "CHURCH_ADMIN" }] }));
+    expect(await deleteEvent("evt-2")).toEqual({
+      churchId: "c1",
+      seriesId: null,
+    });
+    expect(events.rows.map((e) => e.id)).toEqual(["evt-1", "evt-3"]);
+  });
+
+  it("systemAbility acts without a session", async () => {
+    (getAbility as jest.Mock).mockRejectedValue(new Error("no session"));
+    expect(
+      await cancelEvent("evt-3", "storm", { ability: systemAbility() })
+    ).toEqual({
+      churchId: "c2",
+      seriesId: "s3",
+    });
   });
 });

@@ -8,9 +8,7 @@ export * from "./actions/platform-roles";
 export * from "./validations/roles";
 
 // Policies
-export { eventPolicy } from "./policies/event";
 export { churchPolicy } from "./policies/church";
-export { seriesPolicy } from "./policies/series";
 
 // Core permission API
 export { getActor } from "./lib/session";

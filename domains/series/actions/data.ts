@@ -44,23 +44,6 @@ export async function getMySeriesFollow(seriesId: string, userId: string) {
   });
 }
 
-export async function getSeriesByCreator(userId: string) {
-  cacheTag("series", `user-series-${userId}`);
-  cacheLife("minutes");
-  return prisma.series.findMany({
-    where: { createdById: userId },
-    orderBy: { createdAt: "desc" },
-    include: {
-      _count: {
-        select: {
-          events: { where: upcomingPublicEvents() },
-        },
-      },
-      createdBy: { select: { name: true } },
-    },
-  });
-}
-
 export async function getSeriesNotByCreator(userId: string) {
   cacheTag("series");
   return prisma.series.findMany({

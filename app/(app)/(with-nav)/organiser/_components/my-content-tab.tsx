@@ -3,15 +3,15 @@ import { Repeat } from "lucide-react";
 import { InfiniteEventList } from "@/domains/events/components/infinite-event-list";
 import { EmptyState } from "@/components/empty-state";
 import { Card, CardContent } from "@/components/ui/card";
-import { loadMoreMyCreatedEventsAction } from "@/domains/events/actions/pagination";
-import type { getSeriesByCreator } from "@/domains/series/actions/data";
+import { loadMoreManageableEventsAction } from "@/domains/events/actions/pagination";
+import type { ManageableSeries } from "@/domains/series/dal/manageable";
 import type { EventCardItem } from "@/lib/types/pagination";
 import { CADENCE_LABELS } from "@/lib/types/search";
 
 interface MyContentTabProps {
   items: EventCardItem[];
   cursor: string | null;
-  series: Awaited<ReturnType<typeof getSeriesByCreator>>;
+  series: ManageableSeries;
 }
 
 export function MyContentTab({ items, cursor, series }: MyContentTabProps) {
@@ -20,14 +20,14 @@ export function MyContentTab({ items, cursor, series }: MyContentTabProps) {
       <InfiniteEventList
         initialItems={items}
         initialCursor={cursor}
-        loadMore={loadMoreMyCreatedEventsAction}
-        title="My Events"
+        loadMore={loadMoreManageableEventsAction}
+        title="Events I Manage"
         emptyMessage="No upcoming events"
         isAuthenticated={true}
       />
 
       <section className="flex flex-col gap-3">
-        <h2 className="text-base font-semibold">My Series</h2>
+        <h2 className="text-base font-semibold">Series I Manage</h2>
         {series.length === 0 ? (
           <EmptyState icon={Repeat} label="No series yet" />
         ) : (

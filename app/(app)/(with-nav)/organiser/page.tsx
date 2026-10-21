@@ -1,14 +1,10 @@
 import { redirect } from "next/navigation";
 import { getAbility, getSessionUserId, hasAnyGrant } from "@/domains/roles";
 import { PageHeader } from "@/components/ui/page-header";
-import {
-  getEventsByCreatorPaged,
-  getEventsNotByCreatorPaged,
-} from "@/domains/events/actions/data";
-import {
-  getSeriesByCreator,
-  getSeriesNotByCreator,
-} from "@/domains/series/actions/data";
+import { getEventsNotByCreatorPaged } from "@/domains/events/actions/data";
+import { getManageableEventsPaged } from "@/domains/events/dal/manageable";
+import { getSeriesNotByCreator } from "@/domains/series/actions/data";
+import { getManageableSeries } from "@/domains/series/dal/manageable";
 import { OrganiserTabs } from "./_components/organiser-tabs";
 
 export default async function OrganiserPage() {
@@ -23,8 +19,8 @@ export default async function OrganiserPage() {
 
   const [myEventsPage, mySeries, communityEventsPage, communitySeries] =
     await Promise.all([
-      getEventsByCreatorPaged(userId, null),
-      getSeriesByCreator(userId),
+      getManageableEventsPaged(null, ability),
+      getManageableSeries(ability),
       getEventsNotByCreatorPaged(userId, null),
       getSeriesNotByCreator(userId),
     ]);

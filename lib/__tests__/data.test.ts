@@ -29,7 +29,6 @@ import {
   getEventsPaged,
   getUserAttendedEventsPaged,
   getUserAttendedPastEventsPaged,
-  getEventsByCreatorPaged,
   getEventsNotByCreatorPaged,
   getFollowedChurchEventsPaged,
   getOtherChurchEventsPaged,
@@ -47,7 +46,6 @@ import {
   getSeries,
   getSeriesById,
   getMySeriesFollow,
-  getSeriesByCreator,
   getSeriesNotByCreator,
   getUserFollowedSeries,
   getSeriesForEvent,
@@ -519,38 +517,6 @@ describe("getEventsByCreator", () => {
   });
 });
 
-describe("getSeriesByCreator", () => {
-  it("returns series created by the given user", async () => {
-    const seriesWithCount = {
-      ...sampleSeries,
-      _count: { events: 2 },
-      createdBy: { name: "Alice" },
-    };
-    mockSeriesFindMany.mockResolvedValue([seriesWithCount]);
-    const result = await getSeriesByCreator("user-1");
-    expect(result).toEqual([seriesWithCount]);
-    expect(mockSeriesFindMany).toHaveBeenCalledWith({
-      where: { createdById: "user-1" },
-      orderBy: { createdAt: "desc" },
-      include: {
-        _count: {
-          select: {
-            events: {
-              where: { datetime: { gte: expect.any(Date) }, isDraft: false },
-            },
-          },
-        },
-        createdBy: { select: { name: true } },
-      },
-    });
-  });
-
-  it("returns empty array when the user has no series", async () => {
-    mockSeriesFindMany.mockResolvedValue([]);
-    expect(await getSeriesByCreator("user-none")).toEqual([]);
-  });
-});
-
 describe("getEventsNotByCreator", () => {
   it("returns upcoming events not created by the given user", async () => {
     mockEventFindMany.mockResolvedValue([sampleEvent]);
@@ -878,18 +844,6 @@ describe("getUserAttendedPastEventsPaged", () => {
       expect.objectContaining({
         where: expect.objectContaining({ datetime: { lt: expect.any(Date) } }),
         orderBy: { datetime: "desc" },
-      })
-    );
-  });
-});
-
-describe("getEventsByCreatorPaged", () => {
-  it("filters by createdById", async () => {
-    mockEventFindMany.mockResolvedValue([pagedEvent]);
-    await getEventsByCreatorPaged("user-1", null);
-    expect(mockEventFindMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: { createdById: "user-1" },
       })
     );
   });

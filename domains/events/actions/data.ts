@@ -190,29 +190,6 @@ export async function getUserAttendedPastEventsPaged(
   };
 }
 
-export async function getEventsByCreatorPaged(
-  userId: string,
-  cursor: string | null
-): Promise<{ items: EventCardItem[]; nextCursor: string | null }> {
-  cacheTag(`user-events-${userId}`);
-  cacheLife("minutes");
-  const rows = await prisma.event.findMany({
-    where: { createdById: userId },
-    orderBy: [{ datetime: { sort: "asc", nulls: "last" } }],
-    take: PAGE_SIZE + 1,
-    ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
-    include: {
-      church: { select: { name: true } },
-      createdBy: { select: { name: true } },
-    },
-  });
-  const hasMore = rows.length > PAGE_SIZE;
-  return {
-    items: hasMore ? rows.slice(0, PAGE_SIZE) : rows,
-    nextCursor: hasMore ? rows[PAGE_SIZE - 1].id : null,
-  };
-}
-
 export async function getEventsNotByCreatorPaged(
   userId: string,
   cursor: string | null

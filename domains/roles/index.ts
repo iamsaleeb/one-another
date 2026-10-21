@@ -14,7 +14,6 @@ export { seriesPolicy } from "./policies/series";
 
 // Core permission API
 export { getActor } from "./lib/session";
-export { createFakeAccess } from "./lib/actor";
 export { Capabilities } from "./lib/capabilities";
 export type { Capability } from "./lib/capabilities";
 export type {

@@ -1,6 +1,7 @@
 import "server-only";
 import { cache } from "react";
 import { prisma } from "@/lib/db";
+import type { ChurchRole, EventRole, SeriesRole } from "@prisma/client";
 import {
   CHURCH_ROLE_CAPABILITIES,
   EVENT_ROLE_CAPABILITIES,
@@ -56,41 +57,25 @@ const getSeriesStaff = cache((userId: string, seriesId: string) =>
 );
 
 interface LoadedRoles {
-  churchRole: string | undefined;
-  eventRole: string | undefined;
-  seriesRole: string | undefined;
+  churchRole: ChurchRole | undefined;
+  eventRole: EventRole | undefined;
+  seriesRole: SeriesRole | undefined;
+}
+
+function grants(
+  capabilities: readonly Capability[] | undefined,
+  capability: Capability
+): boolean {
+  return capabilities?.includes(capability) ?? false;
 }
 
 function checkCapability(capability: Capability, roles: LoadedRoles): boolean {
   const { churchRole, eventRole, seriesRole } = roles;
-  if (
-    churchRole &&
-    (
-      CHURCH_ROLE_CAPABILITIES[
-        churchRole as keyof typeof CHURCH_ROLE_CAPABILITIES
-      ] as Capability[]
-    ).includes(capability)
-  )
-    return true;
-  if (
-    eventRole &&
-    (
-      EVENT_ROLE_CAPABILITIES[
-        eventRole as keyof typeof EVENT_ROLE_CAPABILITIES
-      ] as Capability[]
-    ).includes(capability)
-  )
-    return true;
-  if (
-    seriesRole &&
-    (
-      SERIES_ROLE_CAPABILITIES[
-        seriesRole as keyof typeof SERIES_ROLE_CAPABILITIES
-      ] as Capability[]
-    ).includes(capability)
-  )
-    return true;
-  return false;
+  return (
+    grants(churchRole && CHURCH_ROLE_CAPABILITIES[churchRole], capability) ||
+    grants(eventRole && EVENT_ROLE_CAPABILITIES[eventRole], capability) ||
+    grants(seriesRole && SERIES_ROLE_CAPABILITIES[seriesRole], capability)
+  );
 }
 
 async function loadRoles(
@@ -139,10 +124,4 @@ export function createActor(
       return { can: (capability) => checkCapability(capability, roles) };
     },
   };
-}
-
-export function createFakeAccess(
-  grants: Partial<Record<Capability, boolean>>
-): Access {
-  return { can: (cap) => grants[cap] ?? false };
 }

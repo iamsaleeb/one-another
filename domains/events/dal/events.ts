@@ -453,7 +453,7 @@ export async function publishEvent(
     eventId: id,
     seriesId: event.seriesId ?? undefined,
   });
-  if (!allowed) return { error: "You are not assigned to this church." };
+  if (!allowed) return { error: "Unauthorised." };
 
   if (!event.isDraft) {
     return {
@@ -515,7 +515,7 @@ export async function unpublishEvent(
     eventId: id,
     seriesId: event.seriesId ?? undefined,
   });
-  if (!allowed) return { error: "You are not assigned to this church." };
+  if (!allowed) return { error: "Unauthorised." };
 
   await prisma.event.update({ where: { id }, data: { isDraft: true } });
 

@@ -442,3 +442,80 @@ describe("who may approve Helpers", () => {
     expect(result.error).toBe("Unauthorised.");
   });
 });
+
+describe("who may approve Series and Church Helpers", () => {
+  const mockSeriesFindUnique = db.prisma.series.findUnique as jest.Mock;
+  const pending = (resourceType: string, resourceId: string) => ({
+    id: "r2",
+    status: "PENDING",
+    resourceType,
+    resourceId,
+    requesterId: "u2",
+  });
+
+  beforeEach(() => {
+    mockSeriesFindUnique.mockResolvedValue({ id: "s1", churchId: "church-1" });
+    (config.APPROVAL_CONFIG.SERIES.grantFn as jest.Mock).mockResolvedValue(
+      undefined
+    );
+    (config.APPROVAL_CONFIG.CHURCH.grantFn as jest.Mock).mockResolvedValue(
+      undefined
+    );
+  });
+
+  it("the Series manager may approve a Series request", async () => {
+    mockGetById.mockResolvedValue(pending("SERIES", "s1"));
+    signInAs(
+      "u1",
+      grants({ series: [{ seriesId: "s1", role: "SERIES_MANAGER" }] })
+    );
+    const result = await reviewRequestAction({
+      requestId: "r2",
+      decision: "APPROVED",
+    });
+    expect(result.error).toBeUndefined();
+  });
+
+  it("a session creator may not approve a Series request", async () => {
+    mockGetById.mockResolvedValue(pending("SERIES", "s1"));
+    signInAs(
+      "u1",
+      grants({ series: [{ seriesId: "s1", role: "SERIES_SESSION_CREATOR" }] })
+    );
+    const result = await reviewRequestAction({
+      requestId: "r2",
+      decision: "APPROVED",
+    });
+    expect(result.error).toBe("Unauthorised.");
+  });
+
+  it("reports a deleted Series as not found", async () => {
+    mockGetById.mockResolvedValue(pending("SERIES", "gone"));
+    mockSeriesFindUnique.mockResolvedValue(null);
+    const result = await reviewRequestAction({
+      requestId: "r2",
+      decision: "APPROVED",
+    });
+    expect(result.error).toBe("Resource not found.");
+  });
+
+  it("only a Church admin may approve a Church request", async () => {
+    mockGetById.mockResolvedValue(pending("CHURCH", "church-1"));
+    signInAs(
+      "u1",
+      grants({ church: [{ churchId: "church-1", role: "EVENT_MANAGER" }] })
+    );
+    expect(
+      (await reviewRequestAction({ requestId: "r2", decision: "APPROVED" }))
+        .error
+    ).toBe("Unauthorised.");
+    signInAs(
+      "u1",
+      grants({ church: [{ churchId: "church-1", role: "CHURCH_ADMIN" }] })
+    );
+    expect(
+      (await reviewRequestAction({ requestId: "r2", decision: "APPROVED" }))
+        .error
+    ).toBeUndefined();
+  });
+});

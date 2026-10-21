@@ -87,6 +87,38 @@ const eslintConfig = defineConfig([
     },
   },
 
+  // ── Permissions ─────────────────────────────────────────────────────────────
+  // systemAbility() bypasses every permission check. Only callers with no
+  // user session (cron, background workers, seed) may use it. See ADR 0001.
+  {
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              group: ["**/system-ability", "@/domains/roles/lib/system-ability"],
+              message:
+                "systemAbility() is only for cron, workers and seed. Use getAbility() for requests.",
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    files: [
+      "app/api/cron/**",
+      "domains/notifications/**",
+      "domains/roles/lib/**",
+      "prisma/seed.ts",
+      "scripts/**",
+    ],
+    rules: {
+      "no-restricted-imports": "off",
+    },
+  },
+
   // ── Script overrides ────────────────────────────────────────────────────────
   // Node.js scripts (cron workers, seeder, etc.) legitimately write to stdout
   // and run outside the browser bundle, so console.log is appropriate here.

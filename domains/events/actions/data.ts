@@ -2,6 +2,10 @@
 
 import { cacheTag, cacheLife } from "next/cache";
 import { prisma } from "@/lib/db";
+import {
+  upcomingPublicEvents,
+  publishedEvent,
+} from "@/domains/events/lib/visibility";
 import type { EventCardItem } from "@/lib/types/pagination";
 
 const PAGE_SIZE = 10;
@@ -13,7 +17,7 @@ export async function getEvents() {
   cacheTag("events-list");
   cacheLife("minutes");
   return prisma.event.findMany({
-    where: { datetime: { gte: new Date() }, isDraft: false },
+    where: upcomingPublicEvents(),
     orderBy: { datetime: "asc" },
     take: FLAT_LIST_LIMIT,
     include: { church: { select: { name: true } } },
@@ -79,8 +83,7 @@ export async function getEventsNotByCreator(userId: string) {
   cacheLife("minutes");
   return prisma.event.findMany({
     where: {
-      datetime: { gte: new Date() },
-      isDraft: false,
+      ...upcomingPublicEvents(),
       OR: [{ createdById: { not: userId } }, { createdById: null }],
     },
     orderBy: { datetime: "asc" },
@@ -97,8 +100,7 @@ export async function getUserAttendedEvents(userId: string) {
   cacheLife("minutes");
   return prisma.event.findMany({
     where: {
-      datetime: { gte: new Date() },
-      isDraft: false,
+      ...upcomingPublicEvents(),
       attendees: { some: { userId } },
     },
     orderBy: { datetime: "asc" },
@@ -113,7 +115,7 @@ export async function getUserAttendedPastEvents(userId: string) {
   return prisma.event.findMany({
     where: {
       datetime: { lt: new Date() },
-      isDraft: false,
+      ...publishedEvent,
       attendees: { some: { userId } },
     },
     orderBy: { datetime: "desc" },
@@ -128,7 +130,7 @@ export async function getEventsPaged(
   cacheTag("events-list");
   cacheLife("minutes");
   const rows = await prisma.event.findMany({
-    where: { datetime: { gte: new Date() }, isDraft: false },
+    where: upcomingPublicEvents(),
     orderBy: { datetime: "asc" },
     take: PAGE_SIZE + 1,
     ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
@@ -149,8 +151,7 @@ export async function getUserAttendedEventsPaged(
   cacheLife("minutes");
   const rows = await prisma.event.findMany({
     where: {
-      datetime: { gte: new Date() },
-      isDraft: false,
+      ...upcomingPublicEvents(),
       attendees: { some: { userId } },
     },
     orderBy: { datetime: "asc" },
@@ -174,7 +175,7 @@ export async function getUserAttendedPastEventsPaged(
   const rows = await prisma.event.findMany({
     where: {
       datetime: { lt: new Date() },
-      isDraft: false,
+      ...publishedEvent,
       attendees: { some: { userId } },
     },
     orderBy: { datetime: "desc" },
@@ -220,8 +221,7 @@ export async function getEventsNotByCreatorPaged(
   cacheLife("minutes");
   const rows = await prisma.event.findMany({
     where: {
-      datetime: { gte: new Date() },
-      isDraft: false,
+      ...upcomingPublicEvents(),
       OR: [{ createdById: { not: userId } }, { createdById: null }],
     },
     orderBy: { datetime: "asc" },
@@ -248,8 +248,7 @@ export async function getFollowedChurchEventsPaged(
   const rows = await prisma.event.findMany({
     where: {
       church: { followers: { some: { userId } } },
-      datetime: { gte: new Date() },
-      isDraft: false,
+      ...upcomingPublicEvents(),
     },
     orderBy: { datetime: "asc" },
     take: PAGE_SIZE + 1,
@@ -280,8 +279,7 @@ export async function getOtherChurchEventsPaged(
     const rows = await prisma.event.findMany({
       where: {
         church: { followers: { none: { userId } } },
-        datetime: { gte: new Date() },
-        isDraft: false,
+        ...upcomingPublicEvents(),
       },
       orderBy: { datetime: "asc" },
       take: PAGE_SIZE + 1,
@@ -305,7 +303,7 @@ export async function getOtherChurchEventsPaged(
   cacheTag("events-list");
   cacheLife("minutes");
   const rows = await prisma.event.findMany({
-    where: { datetime: { gte: new Date() }, isDraft: false },
+    where: upcomingPublicEvents(),
     orderBy: { datetime: "asc" },
     take: PAGE_SIZE + 1,
     ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
@@ -325,7 +323,7 @@ export async function getMySavedEventsPaged(
   cacheTag(`saved-events-${userId}`);
   cacheLife("minutes");
   const rows = await prisma.savedEvent.findMany({
-    where: { userId, event: { isDraft: false } },
+    where: { userId, event: publishedEvent },
     orderBy: { createdAt: "desc" },
     take: PAGE_SIZE + 1,
     ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),

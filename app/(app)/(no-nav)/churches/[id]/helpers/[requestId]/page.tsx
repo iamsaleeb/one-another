@@ -3,8 +3,7 @@ import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { getChurchById } from "@/domains/churches/actions/data";
-import { getActor } from "@/domains/roles/lib/session";
-import { Capabilities } from "@/domains/roles/lib/capabilities";
+import { getAbility, churchSubject } from "@/domains/roles";
 import { getApprovalRequestById } from "@/domains/approvals";
 import { ROLE_LABELS } from "@/domains/approvals/lib/labels";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -28,7 +27,10 @@ export async function generateMetadata({ params }: Props) {
 }
 
 export default async function ChurchHelperDetailPage({ params }: Props) {
-  const [{ id, requestId }, actor] = await Promise.all([params, getActor()]);
+  const [{ id, requestId }, ability] = await Promise.all([
+    params,
+    getAbility(),
+  ]);
 
   const [church, request] = await Promise.all([
     getChurchById(id),
@@ -39,8 +41,7 @@ export default async function ChurchHelperDetailPage({ params }: Props) {
   if (request.resourceType !== "CHURCH" || request.resourceId !== id)
     notFound();
 
-  const access = await actor.loadContext({ churchId: id });
-  if (!access.can(Capabilities.CHURCH_MANAGE_MEMBERS)) notFound();
+  if (!ability.can("manage_members", churchSubject({ id }))) notFound();
 
   const backHref = `/churches/${id}/helpers`;
   const initials = request.requester.name?.slice(0, 2).toUpperCase() ?? "??";

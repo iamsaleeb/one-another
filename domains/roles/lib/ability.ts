@@ -1,4 +1,4 @@
-import { AbilityBuilder, subject } from "@casl/ability";
+﻿import { AbilityBuilder, subject } from "@casl/ability";
 import {
   createPrismaAbility,
   type PrismaAbility,
@@ -27,6 +27,8 @@ export type Action =
   // On Church/Series: "may create an Event here". Mirrors the Event `create`
   // rules so pickers can use accessibleBy; pinned by the consistency test.
   | "create_event"
+  // On Church: "may create a Series here". Mirrors the Series `create` rules.
+  | "create_series"
   | "manage";
 
 export type AppSubjects =
@@ -64,12 +66,14 @@ const CHURCH_RULES = {
     can(["update", "manage_members"], "Church", { id: churchId });
     can(ALL_EVENT_ACTIONS, "Event", { churchId });
     can(["create", "update", "delete"], "Series", { churchId });
+    can("create_series", "Church", { id: churchId });
     can("create_event", "Church", { id: churchId });
     can("create_event", "Series", { churchId });
   },
   EVENT_MANAGER: (can, churchId) => {
     can(ALL_EVENT_ACTIONS, "Event", { churchId });
     can(["create", "update", "delete"], "Series", { churchId });
+    can("create_series", "Church", { id: churchId });
     can("create_event", "Church", { id: churchId });
     can("create_event", "Series", { churchId });
   },

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { auth } from "@/auth";
 import { getProfileUser } from "@/domains/profile/actions/data";
+import { loadGrants } from "@/domains/roles/lib/grants";
 import { signOutAction } from "@/domains/auth/actions/auth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -31,11 +32,14 @@ export default async function ProfilePage() {
   const session = await auth();
   const user = session?.user;
 
-  const dbUser = user?.id ? await getProfileUser(user.id) : null;
+  const [dbUser, grants] = user?.id
+    ? await Promise.all([getProfileUser(user.id), loadGrants(user.id)])
+    : [null, null];
 
-  const memberships = user?.churchMemberships ?? [];
+  // Display only: the highest Church-level role the user holds.
+  const memberships = grants?.church ?? [];
   let badgeRole: RoleBadgeRole | null = null;
-  if (user?.isPlatformAdmin) badgeRole = "PLATFORM_ADMIN";
+  if (grants?.isPlatformAdmin) badgeRole = "PLATFORM_ADMIN";
   else if (memberships.some((m) => m.role === "CHURCH_ADMIN"))
     badgeRole = "CHURCH_ADMIN";
   else if (memberships.some((m) => m.role === "EVENT_MANAGER"))

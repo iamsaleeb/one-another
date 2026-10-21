@@ -2,6 +2,7 @@
 
 import { cacheTag, cacheLife } from "next/cache";
 import { prisma } from "@/lib/db";
+import { upcomingPublicEvents } from "@/domains/events/lib/visibility";
 
 // TTL policy: church list → hours (churches rarely added/removed)
 //             church detail → hours (content changes infrequently)
@@ -22,7 +23,7 @@ export async function getChurchById(id: string) {
     include: {
       serviceTimes: true,
       events: {
-        where: { datetime: { gte: new Date() }, isDraft: false },
+        where: upcomingPublicEvents(),
         orderBy: { datetime: "asc" },
         take: 20,
       },
@@ -32,7 +33,7 @@ export async function getChurchById(id: string) {
           _count: {
             select: {
               events: {
-                where: { datetime: { gte: new Date() }, isDraft: false },
+                where: upcomingPublicEvents(),
               },
             },
           },
@@ -75,53 +76,28 @@ export async function getOrganisersByChurch(churchId: string) {
   return memberships.map((m) => m.user);
 }
 
-export async function getAdminChurches(
-  userId: string,
-  isPlatformAdmin = false
-) {
+// Churches with their organisers, for the admin screen. Which Churches a user
+// may manage is decided by the caller via getChurchTargets("manage_members").
+export async function getChurchesWithOrganisers(churchIds: string[]) {
+  if (churchIds.length === 0) return [];
   cacheTag("churches");
   cacheLife("hours");
-
-  if (isPlatformAdmin) {
-    const churches = await prisma.church.findMany({
-      select: {
-        id: true,
-        name: true,
-        memberships: {
-          where: { role: "EVENT_MANAGER" },
-          select: { user: { select: { id: true, name: true, email: true } } },
-          orderBy: { user: { name: "asc" } },
-        },
-      },
-      orderBy: { name: "asc" },
-    });
-    return churches.map((c) => ({
-      id: c.id,
-      name: c.name,
-      organisers: c.memberships.map((mb) => mb.user),
-    }));
-  }
-
-  const memberships = await prisma.churchMembership.findMany({
-    where: { userId, role: "CHURCH_ADMIN" },
+  const churches = await prisma.church.findMany({
+    where: { id: { in: churchIds } },
     select: {
-      church: {
-        select: {
-          id: true,
-          name: true,
-          memberships: {
-            where: { role: "EVENT_MANAGER" },
-            select: { user: { select: { id: true, name: true, email: true } } },
-            orderBy: { user: { name: "asc" } },
-          },
-        },
+      id: true,
+      name: true,
+      memberships: {
+        where: { role: "EVENT_MANAGER" },
+        select: { user: { select: { id: true, name: true, email: true } } },
+        orderBy: { user: { name: "asc" } },
       },
     },
-    orderBy: { church: { name: "asc" } },
+    orderBy: { name: "asc" },
   });
-  return memberships.map((m) => ({
-    id: m.church.id,
-    name: m.church.name,
-    organisers: m.church.memberships.map((mb) => mb.user),
+  return churches.map((c) => ({
+    id: c.id,
+    name: c.name,
+    organisers: c.memberships.map((mb) => mb.user),
   }));
 }

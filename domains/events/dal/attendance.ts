@@ -1,6 +1,7 @@
 import "server-only";
 
 import { prisma } from "@/lib/db";
+import { isPubliclyVisible } from "@/domains/events/lib/visibility";
 import { Prisma, NotificationType } from "@prisma/client";
 import { parseEventMetadata } from "../validations/event";
 import {
@@ -21,7 +22,7 @@ export async function attendEvent(
     where: { id: eventId },
     select: { id: true, title: true, datetime: true, isDraft: true },
   });
-  if (!event || event.isDraft) return { error: "Event not found." };
+  if (!event || !isPubliclyVisible(event)) return { error: "Event not found." };
 
   try {
     await prisma.eventAttendee.create({ data: { eventId, userId } });
@@ -99,7 +100,7 @@ export async function registerEvent(
     },
   });
 
-  if (!event || event.isDraft) return { error: "Event not found." };
+  if (!event || !isPubliclyVisible(event)) return { error: "Event not found." };
 
   const eventMeta = parseEventMetadata(event.metadata);
   const { capacity } = eventMeta.registration;

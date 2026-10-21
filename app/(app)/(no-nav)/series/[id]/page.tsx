@@ -6,8 +6,12 @@ import {
   getSeriesById,
   getMySeriesFollow,
 } from "@/domains/series/actions/data";
-import { getActor } from "@/domains/roles/lib/session";
-import { Capabilities } from "@/domains/roles/lib/capabilities";
+import {
+  getAbility,
+  getSessionUserId,
+  eventSubject,
+  seriesSubject,
+} from "@/domains/roles";
 import { InfoField } from "@/components/ui/info-field";
 import { HeroBanner } from "@/components/ui/hero-banner";
 import { EventCard } from "@/domains/events/components/event-card";
@@ -35,13 +39,12 @@ export async function generateMetadata({ params }: Props) {
 }
 
 export default async function SeriesDetailPage({ params }: Props) {
-  const [{ id }, actor, session] = await Promise.all([
+  const [{ id }, ability, userId, session] = await Promise.all([
     params,
-    getActor(),
+    getAbility(),
+    getSessionUserId(),
     auth(),
   ]);
-
-  const userId = actor.isAuthenticated ? actor.id : null;
 
   const [series, myFollow] = await Promise.all([
     getSeriesById(id),
@@ -50,14 +53,12 @@ export default async function SeriesDetailPage({ params }: Props) {
 
   if (!series) notFound();
 
-  const access = await actor.loadContext({
-    churchId: series.churchId,
-    seriesId: series.id,
-  });
-
-  const canEdit = access.can(Capabilities.SERIES_UPDATE);
-  const canDelete = access.can(Capabilities.SERIES_DELETE);
-  const canAddSession = access.can(Capabilities.EVENT_CREATE);
+  const canEdit = ability.can("update", seriesSubject(series));
+  const canDelete = ability.can("delete", seriesSubject(series));
+  const canAddSession = ability.can(
+    "create",
+    eventSubject({ churchId: series.churchId, seriesId: series.id })
+  );
   const isFollowing = myFollow !== null;
 
   const [myApprovalRequest, pendingApprovalRequests] = await Promise.all([

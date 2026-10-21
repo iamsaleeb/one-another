@@ -1,12 +1,12 @@
-import { subject } from "@casl/ability";
+﻿import { subject } from "@casl/ability";
 import type { Church, Event, Series } from "@prisma/client";
 import { buildAbility, hasAnyGrant, type Action } from "../ability";
 import type { Grants } from "../grants";
 
 // Fixture hierarchy:
-//   c1 ── s1 ── e2        c2 ── s3 ── e4
-//      ├─ s2 ── e3
-//      └─ e1 (no series)
+//   c1 â”€â”€ s1 â”€â”€ e2        c2 â”€â”€ s3 â”€â”€ e4
+//      â”œâ”€ s2 â”€â”€ e3
+//      â””â”€ e1 (no series)
 const church = (id: string) => subject("Church", { id } as Church);
 const series = (id: string, churchId: string) =>
   subject("Series", { id, churchId } as Series);
@@ -34,7 +34,13 @@ const ALL_EVENT_ACTIONS: Action[] = [
 ];
 
 function grants(partial: Partial<Grants>): Grants {
-  return { isPlatformAdmin: false, church: [], series: [], event: [], ...partial };
+  return {
+    isPlatformAdmin: false,
+    church: [],
+    series: [],
+    event: [],
+    ...partial,
+  };
 }
 
 describe("guest", () => {
@@ -320,6 +326,15 @@ describe("create_event agrees with Event create", () => {
     ],
   ];
 
+  it.each(cases)("%s: create_series agrees with Series create", (_name, g) => {
+    const ability = buildAbility(g);
+    for (const c of churches) {
+      expect(ability.can("create_series", church(c.id))).toBe(
+        ability.can("create", subject("Series", { churchId: c.id } as Series))
+      );
+    }
+  });
+
   it.each(cases)("%s", (_name, g) => {
     const ability = buildAbility(g);
     for (const c of churches) {
@@ -332,5 +347,34 @@ describe("create_event agrees with Event create", () => {
         ability.can("create", event("new", s.churchId, s.id))
       );
     }
+  });
+});
+
+// The nav layout asks "can they do X anywhere?" with subject-type checks.
+describe("subject-type checks mean 'somewhere'", () => {
+  it("manage_members on Church: Church admins only", () => {
+    const admin = buildAbility(
+      grants({ church: [{ churchId: "c1", role: "CHURCH_ADMIN" }] })
+    );
+    const manager = buildAbility(
+      grants({ church: [{ churchId: "c1", role: "EVENT_MANAGER" }] })
+    );
+    expect(admin.can("manage_members", "Church")).toBe(true);
+    expect(manager.can("manage_members", "Church")).toBe(false);
+  });
+
+  it("create on Series: Church admins and Event managers, not creators", () => {
+    const manager = buildAbility(
+      grants({ church: [{ churchId: "c1", role: "EVENT_MANAGER" }] })
+    );
+    const creator = buildAbility(
+      grants({ church: [{ churchId: "c1", role: "EVENT_CREATOR" }] })
+    );
+    const seriesStaff = buildAbility(
+      grants({ series: [{ seriesId: "s1", role: "SERIES_MANAGER" }] })
+    );
+    expect(manager.can("create", "Series")).toBe(true);
+    expect(creator.can("create", "Series")).toBe(false);
+    expect(seriesStaff.can("create", "Series")).toBe(false);
   });
 });

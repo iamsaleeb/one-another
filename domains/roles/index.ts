@@ -17,6 +17,7 @@ export {
 } from "./lib/ability";
 export type { Action, AppAbility } from "./lib/ability";
 export { getAbility, getSessionUserId } from "./lib/get-ability";
+export { getChurchTargets } from "./lib/scopes";
 export type { Grants } from "./lib/grants";
 
 // Legacy permission API (removed once all callers move to getAbility)

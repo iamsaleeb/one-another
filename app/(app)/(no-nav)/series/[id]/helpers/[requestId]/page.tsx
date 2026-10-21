@@ -3,8 +3,7 @@ import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { getSeriesById } from "@/domains/series/actions/data";
-import { getActor } from "@/domains/roles/lib/session";
-import { Capabilities } from "@/domains/roles/lib/capabilities";
+import { getAbility, seriesSubject } from "@/domains/roles";
 import { getApprovalRequestById } from "@/domains/approvals";
 import { ROLE_LABELS } from "@/domains/approvals/lib/labels";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -28,7 +27,10 @@ export async function generateMetadata({ params }: Props) {
 }
 
 export default async function SeriesHelperDetailPage({ params }: Props) {
-  const [{ id, requestId }, actor] = await Promise.all([params, getActor()]);
+  const [{ id, requestId }, ability] = await Promise.all([
+    params,
+    getAbility(),
+  ]);
 
   const [series, request] = await Promise.all([
     getSeriesById(id),
@@ -39,11 +41,7 @@ export default async function SeriesHelperDetailPage({ params }: Props) {
   if (request.resourceType !== "SERIES" || request.resourceId !== id)
     notFound();
 
-  const access = await actor.loadContext({
-    churchId: series.churchId,
-    seriesId: id,
-  });
-  if (!access.can(Capabilities.SERIES_UPDATE)) notFound();
+  if (!ability.can("update", seriesSubject(series))) notFound();
 
   const backHref = `/series/${id}/helpers`;
   const initials = request.requester.name?.slice(0, 2).toUpperCase() ?? "??";

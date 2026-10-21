@@ -12,8 +12,6 @@ import {
 } from "../validations/roles";
 import type { RoleActionState } from "../lib/types";
 
-export type { RoleActionState };
-
 export async function assignChurchRoleAction(
   input: unknown
 ): Promise<RoleActionState> {

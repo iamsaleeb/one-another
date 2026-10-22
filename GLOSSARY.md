@@ -9,7 +9,7 @@ A role a user holds on one Church, Series or Event. Grants only ever add access;
 _Avoid_: permission, membership (when meaning the role itself), assignment
 
 **Capability**:
-A single thing a user may do to a kind of resource, such as updating an Event or managing a Church's members.
+A single thing a user may do to a kind of resource, such as updating an Event or managing a Church's members. In code, an `Action` on the Ability.
 _Avoid_: permission, right
 
 **Ability**:
@@ -21,5 +21,5 @@ A Grant reaches down the hierarchy: a Church Grant covers every Series and Event
 _Avoid_: inheritance
 
 **Creator Grant**:
-The Event-level Grant a user receives when they create an Event. It is a normal Grant, so it can be removed or handed to someone else.
+The Event-level Grant a user receives when they create an Event, unless a Church Grant already lets them edit every Event in that Church. It is a normal Grant, so it can be removed or handed to someone else.
 _Avoid_: ownership, owner

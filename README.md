@@ -1,4 +1,4 @@
-﻿# 1Another
+# 1Another
 
 A church event discovery and management platform. Browse events from local churches, RSVP, follow churches, and manage recurring event series — available as a web app and on Android & iOS via [Capacitor](https://capacitorjs.com).
 
@@ -8,7 +8,7 @@ A church event discovery and management platform. Browse events from local churc
 - **Event management** — Create, edit, and cancel events with optional registration, capacity limits, and custom attendee fields
 - **Series** — Group recurring events into series with configurable cadences (weekly, biweekly, monthly)
 - **Churches** — Browse church profiles, view service times, and follow churches
-- **Roles** — Three-tier role system: `ATTENDEE`, `ORGANISER`, and `ADMIN`
+- **Roles** — Grants on a Church, Series or Event, cascading down the hierarchy, plus platform admins; checked through one CASL Ability (see `GLOSSARY.md` and `docs/adr/0001`)
 - **Authentication** — Email/password sign-up and OAuth via [Auth.js v5](https://authjs.dev)
 - **Push notifications** — Event reminders sent via FCM to Android and iOS devices, with per-user opt-out preferences
 - **Mobile** — Native Android and iOS apps via Capacitor

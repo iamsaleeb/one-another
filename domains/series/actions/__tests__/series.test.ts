@@ -6,8 +6,8 @@ jest.mock("next/cache", () => ({
   updateTag: jest.fn(),
 }));
 
-jest.mock("@/lib/db", () => ({
-  prisma: {
+jest.mock("@/lib/db", () => {
+  const prisma: Record<string, unknown> = {
     series: {
       create: jest.fn(),
       findUnique: jest.fn(),
@@ -23,7 +23,16 @@ jest.mock("@/lib/db", () => ({
       create: jest.fn(),
       delete: jest.fn(),
     },
-  },
+    $transaction: jest.fn((fn: (tx: unknown) => unknown) => fn(prisma)),
+  };
+  return { prisma };
+});
+
+// What a Series change does to its Events is tested against a real database
+// in domains/events/__tests__/series-cascade.db.test.ts.
+jest.mock("@/domains/events/lifecycle", () => ({
+  seriesDeleted: jest.fn().mockResolvedValue(() => {}),
+  seriesMovedChurch: jest.fn().mockResolvedValue(() => {}),
 }));
 
 jest.mock("@/domains/roles/lib/get-ability", () => ({

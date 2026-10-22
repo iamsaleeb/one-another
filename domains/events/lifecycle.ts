@@ -294,19 +294,21 @@ interface Stale {
   listsChanged?: boolean;
 }
 
-function invalidate({ id, churchIds, seriesIds, listsChanged }: Stale) {
-  const unique = (ids: Array<string | null>) =>
-    [...new Set(ids)].filter((x): x is string => !!x);
-  const churches = unique(churchIds);
-  const series = unique(seriesIds);
+function invalidate(...events: Stale[]) {
+  const tags = new Set<string>();
+  for (const { id, churchIds, seriesIds, listsChanged } of events) {
+    const churches = churchIds.filter((c): c is string => !!c);
+    const series = seriesIds.filter((s): s is string => !!s);
 
-  updateTag("events-list");
-  updateTag(`event-${id}`);
-  updateTag(`event-questions-${id}`);
-  if (listsChanged && churches.length > 0) updateTag("churches");
-  churches.forEach((c) => updateTag(`church-${c}`));
-  if (series.length > 0) updateTag("series");
-  series.forEach((s) => updateTag(`series-${s}`));
+    tags.add("events-list");
+    tags.add(`event-${id}`);
+    tags.add(`event-questions-${id}`);
+    if (listsChanged && churches.length > 0) tags.add("churches");
+    churches.forEach((c) => tags.add(`church-${c}`));
+    if (series.length > 0) tags.add("series");
+    series.forEach((s) => tags.add(`series-${s}`));
+  }
+  tags.forEach((tag) => updateTag(tag));
 }
 
 // ---------------------------------------------------------------------------
@@ -547,4 +549,63 @@ export async function deleteEvent(
 
   invalidate(result);
   return {};
+}
+
+// ---------------------------------------------------------------------------
+// Series changes that reach their Events
+//
+// Trusted: the Series module has already checked that the user may delete or
+// move the Series. A second Ability check here would refuse a Church admin
+// whenever one of the Events carries someone else's Creator Grant, breaking
+// the very cascade these keep. Each takes the Series module's transaction, so
+// it only runs inside one, and returns what to invalidate once that commits.
+
+type AfterCommit = () => void;
+
+function seriesEvents(tx: Db, seriesId: string) {
+  return tx.event.findMany({
+    where: { seriesId },
+    select: { id: true, churchId: true },
+  });
+}
+
+// The Series is about to be deleted: its Events stay, as standalone Events in
+// the same Church, and its followers hear nothing more about them.
+export async function seriesDeleted(
+  tx: Db,
+  seriesId: string
+): Promise<AfterCommit> {
+  const events = await seriesEvents(tx, seriesId);
+  for (const e of events) await withdrawSeriesSession(tx, seriesId, e.id);
+  await tx.event.updateMany({ where: { seriesId }, data: { seriesId: null } });
+
+  return () =>
+    invalidate(
+      ...events.map((e) => ({
+        id: e.id,
+        churchIds: [e.churchId],
+        seriesIds: [seriesId],
+      }))
+    );
+}
+
+// The Series moved Church: an Event in a Series always lives in that Series'
+// Church, so its Events move too and the Role cascade follows them.
+export async function seriesMovedChurch(
+  tx: Db,
+  seriesId: string,
+  churchId: string
+): Promise<AfterCommit> {
+  const events = await seriesEvents(tx, seriesId);
+  await tx.event.updateMany({ where: { seriesId }, data: { churchId } });
+
+  return () =>
+    invalidate(
+      ...events.map((e) => ({
+        id: e.id,
+        churchIds: [e.churchId, churchId],
+        seriesIds: [seriesId],
+        listsChanged: true,
+      }))
+    );
 }

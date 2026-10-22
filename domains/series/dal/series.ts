@@ -12,6 +12,7 @@ import {
   scopedTo as scopedToType,
   type WriteOptions,
 } from "@/domains/roles/lib/scoped-writes";
+import { seriesDeleted, seriesMovedChurch } from "@/domains/events/lifecycle";
 import type { CreateSeriesInput } from "../validations/series";
 
 type DalError = { error: string } | { fieldErrors: Record<string, string[]> };
@@ -104,19 +105,24 @@ export async function updateSeries(
   )
     return { error: "Unauthorised." };
 
-  await prisma.series.update({
-    where: scopedTo(ability, "update", id),
-    data: {
-      name,
-      description,
-      cadence,
-      location,
-      host,
-      tag,
-      churchId,
-      photoUrl: photoUrl ?? null,
-    },
+  const afterCommit = await prisma.$transaction(async (tx) => {
+    await tx.series.update({
+      where: scopedTo(ability, "update", id),
+      data: {
+        name,
+        description,
+        cadence,
+        location,
+        host,
+        tag,
+        churchId,
+        photoUrl: photoUrl ?? null,
+      },
+    });
+    if (churchId !== existing.churchId)
+      return seriesMovedChurch(tx, id, churchId);
   });
+  afterCommit?.();
 
   return { oldChurchId: existing.churchId, newChurchId: churchId };
 }
@@ -129,7 +135,12 @@ export async function deleteSeries(
   const series = await findForAction(ability, "delete", id);
   if ("error" in series) return series;
 
-  await prisma.series.delete({ where: scopedTo(ability, "delete", id) });
+  const afterCommit = await prisma.$transaction(async (tx) => {
+    const done = await seriesDeleted(tx, id);
+    await tx.series.delete({ where: scopedTo(ability, "delete", id) });
+    return done;
+  });
+  afterCommit();
 
   return { churchId: series.churchId };
 }

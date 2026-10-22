@@ -2,13 +2,6 @@ import "server-only";
 import { prisma } from "@/lib/db";
 import type { EventRole } from "@prisma/client";
 
-export function getEventStaff(eventId: string) {
-  return prisma.eventStaffAssignment.findMany({
-    where: { eventId },
-    include: { user: { select: { id: true, name: true, email: true } } },
-  });
-}
-
 export function getEventStaffForUser(userId: string, eventId: string) {
   return prisma.eventStaffAssignment.findUnique({
     where: { userId_eventId: { userId, eventId } },

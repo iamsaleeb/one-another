@@ -20,7 +20,7 @@ import {
   rescheduleEventReminderNotifications,
   scheduleEventReminderNotifications,
 } from "@/domains/notifications/queue";
-import type { CreateEventInput } from "../validations/event";
+import { createEventSchema, type CreateEventInput } from "../validations/event";
 
 const NOTIFY_CONCURRENCY = 20;
 
@@ -71,6 +71,57 @@ async function notifyEventAttendees(eventId: string, title: string) {
         })
       )
     );
+  }
+}
+
+// An Event just became public: attendees who registered while it was a draft
+// get their reminders, and its Series' followers hear about the new session.
+async function onPublished(event: {
+  id: string;
+  title: string;
+  datetime: Date | null;
+  seriesId: string | null;
+}) {
+  try {
+    const attendees = await prisma.eventAttendee.findMany({
+      where: { eventId: event.id },
+      select: { userId: true },
+    });
+    if (attendees.length > 0) {
+      await scheduleEventReminderNotifications(
+        attendees.map((a) => a.userId),
+        { id: event.id, title: event.title, datetime: event.datetime }
+      );
+    }
+  } catch (err) {
+    console.error("Failed to schedule reminders on publish:", err);
+  }
+
+  if (event.seriesId) {
+    try {
+      await notifySeriesFollowers(event.seriesId, event.title, event.id);
+    } catch (err) {
+      console.error("NEW_SERIES_SESSION push failed:", err);
+    }
+  }
+}
+
+// An Event went back to draft: nothing still queued may reach its attendees
+// or its Series' followers.
+async function onUnpublished(id: string, seriesId: string | null) {
+  try {
+    await cancelManyNotifications({
+      type: NotificationType.EVENT_REMINDER,
+      dedupeKey: id,
+    });
+    if (seriesId) {
+      await cancelManyNotifications({
+        type: NotificationType.NEW_SERIES_SESSION,
+        dedupeKey: `${seriesId}:${id}`,
+      });
+    }
+  } catch (err) {
+    console.error("Failed to cancel reminders on unpublish:", err);
   }
 }
 
@@ -229,12 +280,13 @@ export async function createEvent(
     });
   }
 
-  if (!isDraft && seriesId) {
-    try {
-      await notifySeriesFollowers(seriesId, title, created.id);
-    } catch (err) {
-      console.error("NEW_SERIES_SESSION push failed:", err);
-    }
+  if (!isDraft) {
+    await onPublished({
+      id: created.id,
+      title: title || "",
+      datetime,
+      seriesId: seriesId ?? null,
+    });
   }
 
   return {
@@ -255,6 +307,7 @@ export async function updateEvent(
       oldChurchId: string | null;
       newChurchId: string | null;
       affectedSeriesIds: string[];
+      publishedChanged: boolean;
     }
 > {
   const { ability, userId } = await resolveWrite(opts);
@@ -327,8 +380,35 @@ export async function updateEvent(
   )
     return { error: "Unauthorised." };
 
+  // The wizard publishes and unpublishes by saving the whole Event, so a
+  // change of draft state here needs `publish` and runs the publish side
+  // effects. An omitted isDraft keeps the current state.
+  const nowDraft = isDraft ?? existing.isDraft;
+
+  // A published Event must be complete however it is saved: auto-save sends
+  // whatever the form holds, validated only by the lenient draft schema.
+  if (!nowDraft) {
+    const complete = createEventSchema.safeParse(data);
+    if (!complete.success)
+      return { fieldErrors: complete.error.flatten().fieldErrors };
+  }
+  const publishing = existing.isDraft && !nowDraft;
+  const unpublishing = !existing.isDraft && nowDraft;
+  if (
+    (publishing || unpublishing) &&
+    !ability.can(
+      "publish",
+      eventSubject({
+        id,
+        churchId: existing.churchId,
+        seriesId: existing.seriesId,
+      })
+    )
+  )
+    return { error: "Unauthorised." };
+
   const isCamp = tag === "Camp";
-  if (isCamp && !campEndDate && !isDraft)
+  if (isCamp && !campEndDate && !nowDraft)
     return {
       fieldErrors: { campEndDate: ["End date is required for camp events"] },
     };
@@ -373,6 +453,7 @@ export async function updateEvent(
 
   if (
     !existing.isDraft &&
+    !unpublishing &&
     newDatetime &&
     existing.datetime &&
     newDatetime.getTime() !== existing.datetime.getTime()
@@ -397,6 +478,16 @@ export async function updateEvent(
     }
   }
 
+  if (publishing) {
+    await onPublished({
+      id,
+      title: title || "",
+      datetime: newDatetime,
+      seriesId: newSeriesId,
+    });
+  }
+  if (unpublishing) await onUnpublished(id, existing.seriesId);
+
   const affectedSeriesIds = [
     ...new Set([existing.seriesId, newSeriesId].filter(Boolean) as string[]),
   ];
@@ -405,6 +496,7 @@ export async function updateEvent(
     oldChurchId: existing.churchId,
     newChurchId: churchId,
     affectedSeriesIds,
+    publishedChanged: publishing || unpublishing,
   };
 }
 
@@ -458,108 +550,6 @@ export async function uncancelEvent(
     where: scopedTo(ability, "update", id),
     data: { cancelledAt: null, cancellationReason: null },
   });
-
-  return { churchId: event.churchId, seriesId: event.seriesId };
-}
-
-export async function publishEvent(
-  id: string,
-  opts?: WriteOptions
-): Promise<
-  | { error: string }
-  | {
-      churchId: string | null;
-      seriesId: string | null;
-      alreadyPublished: boolean;
-    }
-> {
-  const { ability } = await resolveWrite(opts);
-  const event = await findForAction(ability, "publish", id, {
-    churchId: true,
-    seriesId: true,
-    title: true,
-    isDraft: true,
-    datetime: true,
-  });
-  if ("error" in event) return event;
-
-  if (!event.isDraft) {
-    return {
-      churchId: event.churchId,
-      seriesId: event.seriesId,
-      alreadyPublished: true,
-    };
-  }
-
-  await prisma.event.update({
-    where: scopedTo(ability, "publish", id),
-    data: { isDraft: false },
-  });
-
-  try {
-    const attendees = await prisma.eventAttendee.findMany({
-      where: { eventId: id },
-      select: { userId: true },
-    });
-    if (attendees.length > 0) {
-      const userIds = attendees.map((a) => a.userId);
-      await scheduleEventReminderNotifications(userIds, {
-        id,
-        title: event.title,
-        datetime: event.datetime,
-      });
-    }
-  } catch (err) {
-    console.error("Failed to schedule reminders on publish:", err);
-  }
-
-  if (event.seriesId) {
-    try {
-      await notifySeriesFollowers(event.seriesId, event.title, id);
-    } catch (err) {
-      console.error("NEW_SERIES_SESSION push failed:", err);
-    }
-  }
-
-  return {
-    churchId: event.churchId,
-    seriesId: event.seriesId,
-    alreadyPublished: false,
-  };
-}
-
-export async function unpublishEvent(
-  id: string,
-  opts?: WriteOptions
-): Promise<
-  { error: string } | { churchId: string | null; seriesId: string | null }
-> {
-  const { ability } = await resolveWrite(opts);
-  const event = await findForAction(ability, "publish", id, {
-    churchId: true,
-    seriesId: true,
-  });
-  if ("error" in event) return event;
-
-  await prisma.event.update({
-    where: scopedTo(ability, "publish", id),
-    data: { isDraft: true },
-  });
-
-  try {
-    await cancelManyNotifications({
-      type: NotificationType.EVENT_REMINDER,
-      dedupeKey: id,
-    });
-    if (event.seriesId) {
-      await cancelManyNotifications({
-        type: NotificationType.NEW_SERIES_SESSION,
-        dedupeKey: `${event.seriesId}:${id}`,
-      });
-    }
-  } catch (err) {
-    console.error("Failed to cancel reminders on unpublish:", err);
-  }
 
   return { churchId: event.churchId, seriesId: event.seriesId };
 }

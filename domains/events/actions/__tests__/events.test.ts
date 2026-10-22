@@ -87,8 +87,6 @@ import {
   cancelEventAction,
   uncancelEventAction,
   deleteEventAction,
-  publishEventAction,
-  unpublishEventAction,
   saveDraftAction,
   saveEventAction,
 } from "@/domains/events/actions/crud";
@@ -278,7 +276,7 @@ describe("saveDraftAction", () => {
     expect(mockEventCreate).not.toHaveBeenCalled();
   });
 
-  it("updates an existing draft and keeps it a draft by default", async () => {
+  it("updates an existing draft and leaves its draft state alone", async () => {
     mockEventFindUnique.mockResolvedValue({
       churchId: "ch-1",
       datetime: null,
@@ -295,9 +293,10 @@ describe("saveDraftAction", () => {
     expect(mockEventUpdate).toHaveBeenCalledWith(
       expect.objectContaining({
         where: expect.objectContaining({ id: "evt-1" }),
-        data: expect.objectContaining({ title: "Renamed", isDraft: true }),
+        data: expect.objectContaining({ title: "Renamed" }),
       })
     );
+    expect(mockEventUpdate.mock.calls[0][0].data).not.toHaveProperty("isDraft");
     expect(mockUpdateTag).toHaveBeenCalledWith("event-evt-1");
   });
 
@@ -307,6 +306,121 @@ describe("saveDraftAction", () => {
     expect(await saveDraftAction("evt-gone", validData)).toEqual({
       error: "Event not found.",
     });
+    expect(mockEventUpdate).not.toHaveBeenCalled();
+  });
+});
+
+describe("publishing and unpublishing from the wizard", () => {
+  const queue = jest.requireMock("@/domains/notifications/queue") as {
+    scheduleEventReminderNotifications: jest.Mock;
+    cancelManyNotifications: jest.Mock;
+  };
+  const draftInSeries = {
+    churchId: "ch-1",
+    seriesId: "ser-1",
+    datetime: null,
+    isDraft: true,
+  };
+
+  beforeEach(() => {
+    mockSeriesFindUnique.mockResolvedValue({ churchId: "ch-1" });
+    mockEventUpdate.mockResolvedValue({});
+  });
+
+  it("Publish (saveEventAction) notifies Series followers and schedules reminders", async () => {
+    mockEventFindUnique.mockResolvedValue(draftInSeries);
+    mockEventAttendeeFindMany.mockResolvedValue([{ userId: "attendee-1" }]);
+    mockSeriesFollowerFindMany.mockResolvedValue([{ userId: "follower-1" }]);
+
+    const result = await saveEventAction("evt-1", {
+      ...validData,
+      seriesId: "ser-1",
+      isDraft: false,
+    });
+
+    expect(result).toEqual({ success: true });
+    expect(mockQueueNotification).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: "follower-1",
+        type: NotificationType.NEW_SERIES_SESSION,
+        title: "New Session Added",
+        dedupeKey: "ser-1:evt-1",
+      })
+    );
+    expect(queue.scheduleEventReminderNotifications).toHaveBeenCalledWith(
+      ["attendee-1"],
+      expect.objectContaining({ id: "evt-1", title: "Sunday Worship" })
+    );
+    // The Event now shows in public Church lists.
+    expect(mockUpdateTag).toHaveBeenCalledWith("churches");
+  });
+
+  it("re-saving a published Event sends nothing again", async () => {
+    mockEventFindUnique.mockResolvedValue({ ...draftInSeries, isDraft: false });
+    mockSeriesFollowerFindMany.mockResolvedValue([{ userId: "follower-1" }]);
+
+    await saveEventAction("evt-1", {
+      ...validData,
+      seriesId: "ser-1",
+      isDraft: false,
+    });
+
+    expect(mockQueueNotification).not.toHaveBeenCalled();
+    expect(mockUpdateTag).not.toHaveBeenCalledWith("churches");
+  });
+
+  it("Save as Draft on a published Event cancels what was queued for it", async () => {
+    mockEventFindUnique.mockResolvedValue({ ...draftInSeries, isDraft: false });
+
+    const result = await saveDraftAction("evt-1", {
+      ...validData,
+      seriesId: "ser-1",
+      isDraft: true,
+    });
+
+    expect(result).toEqual({ eventId: "evt-1" });
+    expect(queue.cancelManyNotifications).toHaveBeenCalledWith({
+      type: NotificationType.EVENT_REMINDER,
+      dedupeKey: "evt-1",
+    });
+    expect(queue.cancelManyNotifications).toHaveBeenCalledWith({
+      type: NotificationType.NEW_SERIES_SESSION,
+      dedupeKey: "ser-1:evt-1",
+    });
+    expect(mockUpdateTag).toHaveBeenCalledWith("churches");
+  });
+
+  it("auto-save on a published Event keeps it published", async () => {
+    mockEventFindUnique.mockResolvedValue({ ...draftInSeries, isDraft: false });
+    const { isDraft: _omitted, ...withoutDraftFlag } = {
+      ...validData,
+      isDraft: undefined,
+    };
+
+    await saveDraftAction("evt-1", {
+      ...withoutDraftFlag,
+      seriesId: "ser-1",
+      title: "Renamed",
+    });
+
+    const data = mockEventUpdate.mock.calls[0][0].data;
+    expect(data.title).toBe("Renamed");
+    expect(data).not.toHaveProperty("isDraft");
+    expect(queue.cancelManyNotifications).not.toHaveBeenCalled();
+  });
+
+  it("auto-save cannot blank a published Event", async () => {
+    mockEventFindUnique.mockResolvedValue({ ...draftInSeries, isDraft: false });
+
+    const result = await saveDraftAction("evt-1", {
+      ...validData,
+      title: "",
+      description: "",
+      isDraft: false,
+    });
+
+    expect(result).toHaveProperty("fieldErrors.title");
+    expect(result).toHaveProperty("fieldErrors.description");
     expect(mockEventUpdate).not.toHaveBeenCalled();
   });
 });
@@ -692,224 +806,5 @@ describe("deleteEventAction", () => {
       where: expect.objectContaining({ id: "evt-1" }),
     });
     expect(mockRedirect).toHaveBeenCalledWith("/organiser");
-  });
-});
-
-describe("publishEventAction", () => {
-  const mockScheduleReminderNotifs = jest.requireMock(
-    "@/domains/notifications/queue"
-  ).scheduleEventReminderNotifications as jest.Mock;
-  const mockEventAttendeeFindMany = prisma.eventAttendee.findMany as jest.Mock;
-
-  it("sets isDraft to false, schedules reminders for attendees, and redirects to the event page", async () => {
-    const datetime = new Date("2026-05-01T09:00:00Z");
-    mockEventFindUnique.mockResolvedValue({
-      churchId: "ch-1",
-      seriesId: null,
-      title: "Test",
-      isDraft: true,
-      datetime,
-    });
-    mockEventUpdate.mockResolvedValue({});
-    mockEventAttendeeFindMany.mockResolvedValue([
-      { userId: "user-2" },
-      { userId: "user-3" },
-    ]);
-
-    await publishEventAction("evt-1");
-
-    expect(mockEventUpdate).toHaveBeenCalledWith({
-      where: expect.objectContaining({ id: "evt-1" }),
-      data: { isDraft: false },
-    });
-    expect(mockScheduleReminderNotifs).toHaveBeenCalledTimes(1);
-    expect(mockScheduleReminderNotifs).toHaveBeenCalledWith(
-      ["user-2", "user-3"],
-      { id: "evt-1", title: "Test", datetime }
-    );
-    expect(mockUpdateTag).toHaveBeenCalledWith("events-list");
-    expect(mockUpdateTag).toHaveBeenCalledWith("event-evt-1");
-    expect(mockRedirect).toHaveBeenCalledWith("/events/evt-1");
-  });
-
-  it("schedules no reminders when there are no attendees", async () => {
-    mockEventFindUnique.mockResolvedValue({
-      churchId: "ch-1",
-      seriesId: null,
-      title: "Test",
-      isDraft: true,
-      datetime: new Date(),
-    });
-    mockEventUpdate.mockResolvedValue({});
-    mockEventAttendeeFindMany.mockResolvedValue([]);
-
-    await publishEventAction("evt-1");
-
-    expect(mockScheduleReminderNotifs).not.toHaveBeenCalled();
-  });
-
-  it("short-circuits without updating when the event is already published", async () => {
-    mockEventFindUnique.mockResolvedValue({
-      churchId: "ch-1",
-      seriesId: null,
-      title: "Test",
-      isDraft: false,
-    });
-    mockRedirect.mockImplementationOnce(() => {
-      throw new Error("NEXT_REDIRECT");
-    });
-
-    await expect(publishEventAction("evt-1")).rejects.toThrow("NEXT_REDIRECT");
-
-    expect(mockEventUpdate).not.toHaveBeenCalled();
-    expect(mockRedirect).toHaveBeenCalledWith("/events/evt-1");
-  });
-
-  it("returns an unauthorised error when the user is not an organiser", async () => {
-    signOut();
-
-    const result = await publishEventAction("evt-1");
-
-    expect(result?.error).toBeDefined();
-    expect(mockEventUpdate).not.toHaveBeenCalled();
-  });
-
-  it("returns an error when the organiser cannot manage the church", async () => {
-    mockEventFindUnique.mockResolvedValue({
-      churchId: "ch-1",
-      seriesId: null,
-      title: "Test",
-      isDraft: true,
-    });
-    signInAs({ canResult: false });
-
-    const result = await publishEventAction("evt-1");
-
-    expect(result?.error).toBeDefined();
-    expect(mockEventUpdate).not.toHaveBeenCalled();
-  });
-
-  it("sends series push notification to followers when publishing a series event", async () => {
-    const datetime = new Date("2026-05-01T09:00:00Z");
-    mockEventFindUnique.mockResolvedValue({
-      churchId: "ch-1",
-      seriesId: "ser-1",
-      title: "Bible Study",
-      isDraft: true,
-      datetime,
-    });
-    mockEventUpdate.mockResolvedValue({});
-    mockEventAttendeeFindMany.mockResolvedValue([]);
-    mockSeriesFollowerFindMany.mockResolvedValue([
-      { userId: "follower-1" },
-      { userId: "follower-2" },
-    ]);
-
-    await publishEventAction("evt-1");
-
-    expect(mockQueueNotification).toHaveBeenCalledWith(
-      expect.objectContaining({
-        userId: "follower-1",
-        type: NotificationType.NEW_SERIES_SESSION,
-        title: "New Session Added",
-        body: expect.stringContaining("Bible Study"),
-        data: expect.objectContaining({
-          type: "new_session",
-          seriesId: "ser-1",
-          eventId: "evt-1",
-        }),
-        dedupeKey: "ser-1:evt-1",
-      })
-    );
-  });
-
-  it("handles reminder scheduling failure gracefully", async () => {
-    mockEventFindUnique.mockResolvedValue({
-      churchId: "ch-1",
-      seriesId: null,
-      title: "Test",
-      isDraft: true,
-      datetime: new Date(),
-    });
-    mockEventUpdate.mockResolvedValue({});
-    mockEventAttendeeFindMany.mockResolvedValue([{ userId: "user-2" }]);
-    mockScheduleReminderNotifs.mockRejectedValueOnce(
-      new Error("scheduler down")
-    );
-
-    await publishEventAction("evt-1");
-
-    expect(mockRedirect).toHaveBeenCalledWith("/events/evt-1");
-  });
-
-  it("handles NEW_SERIES_SESSION push failure gracefully", async () => {
-    mockEventFindUnique.mockResolvedValue({
-      churchId: "ch-1",
-      seriesId: "ser-1",
-      title: "Test",
-      isDraft: true,
-      datetime: new Date(),
-    });
-    mockEventUpdate.mockResolvedValue({});
-    mockEventAttendeeFindMany.mockResolvedValue([]);
-    mockSeriesFollowerFindMany.mockResolvedValue([{ userId: "follower-1" }]);
-    mockQueueNotification.mockRejectedValueOnce(new Error("push failed"));
-
-    await publishEventAction("evt-1");
-
-    expect(mockRedirect).toHaveBeenCalledWith("/events/evt-1");
-  });
-});
-
-describe("unpublishEventAction", () => {
-  const mockCancelAll = jest.requireMock("@/domains/notifications/queue")
-    .cancelManyNotifications as jest.Mock;
-
-  it("sets isDraft to true, cancels pending reminders, and redirects to the event page", async () => {
-    mockEventFindUnique.mockResolvedValue({ churchId: "ch-1" });
-    mockEventUpdate.mockResolvedValue({});
-
-    await unpublishEventAction("evt-1");
-
-    expect(mockEventUpdate).toHaveBeenCalledWith({
-      where: expect.objectContaining({ id: "evt-1" }),
-      data: { isDraft: true },
-    });
-    expect(mockCancelAll).toHaveBeenCalledWith({
-      type: NotificationType.EVENT_REMINDER,
-      dedupeKey: "evt-1",
-    });
-    expect(mockUpdateTag).toHaveBeenCalledWith("events-list");
-    expect(mockUpdateTag).toHaveBeenCalledWith("event-evt-1");
-    expect(mockRedirect).toHaveBeenCalledWith("/events/evt-1");
-  });
-
-  it("returns an unauthorised error when the user is not an organiser", async () => {
-    signOut();
-
-    const result = await unpublishEventAction("evt-1");
-
-    expect(result?.error).toBeDefined();
-    expect(mockEventUpdate).not.toHaveBeenCalled();
-  });
-
-  it("returns an error when the organiser cannot manage the church", async () => {
-    mockEventFindUnique.mockResolvedValue({ churchId: "ch-1" });
-    signInAs({ canResult: false });
-
-    const result = await unpublishEventAction("evt-1");
-
-    expect(result?.error).toBeDefined();
-    expect(mockEventUpdate).not.toHaveBeenCalled();
-  });
-
-  it("handles cancelManyNotifications failure gracefully", async () => {
-    mockEventFindUnique.mockResolvedValue({ churchId: "ch-1" });
-    mockEventUpdate.mockResolvedValue({});
-    mockCancelAll.mockRejectedValueOnce(new Error("scheduler down"));
-
-    await unpublishEventAction("evt-1");
-
-    expect(mockRedirect).toHaveBeenCalledWith("/events/evt-1");
   });
 });

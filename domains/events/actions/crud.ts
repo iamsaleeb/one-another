@@ -13,8 +13,6 @@ import {
   updateEvent,
   cancelEvent,
   uncancelEvent,
-  publishEvent,
-  unpublishEvent,
   deleteEvent,
 } from "../dal/events";
 import type { ActionResult } from "@/lib/types/action";
@@ -43,30 +41,6 @@ export async function uncancelEventAction(id: string): Promise<void> {
   redirect(`/events/${id}`);
 }
 
-export async function publishEventAction(id: string): Promise<ActionResult> {
-  if (!(await getSessionUserId())) return { error: "Unauthorised." };
-
-  const result = await publishEvent(id);
-  if ("error" in result) return result;
-
-  invalidateEventCaches(id, result.churchId, result.seriesId, {
-    broadcastToChurchList: true,
-  });
-  redirect(`/events/${id}`);
-}
-
-export async function unpublishEventAction(id: string): Promise<ActionResult> {
-  if (!(await getSessionUserId())) return { error: "Unauthorised." };
-
-  const result = await unpublishEvent(id);
-  if ("error" in result) return result;
-
-  invalidateEventCaches(id, result.churchId, result.seriesId, {
-    broadcastToChurchList: true,
-  });
-  redirect(`/events/${id}`);
-}
-
 export async function saveDraftAction(
   id: string | undefined,
   data: SaveDraftInput
@@ -88,10 +62,9 @@ export async function saveDraftAction(
     invalidateEventCaches(result.id, result.churchId, result.seriesId ?? null);
     return { eventId: result.id };
   } else {
-    const result = await updateEvent(id, {
-      ...dataWithDefaults,
-      isDraft: dataWithDefaults.isDraft ?? true,
-    });
+    // An omitted isDraft keeps the Event's current state; auto-save on a
+    // published Event must not unpublish it.
+    const result = await updateEvent(id, dataWithDefaults);
     if ("error" in result || "fieldErrors" in result) return result;
     invalidateEventUpdate(id, result);
     return { eventId: id };

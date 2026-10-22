@@ -163,6 +163,7 @@ model Event {
 
   @@index([datetime, isDraft])
   @@index([churchId])
+  @@index([seriesId])
   @@index([createdById])
   @@map("events")
 }
@@ -328,7 +329,6 @@ model PlatformRoleAssignment {
   user       User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@id([userId, role])
-  @@index([userId])
   @@map("platform_role_assignments")
 }
 
@@ -343,7 +343,6 @@ model ChurchMembership {
   church     Church     @relation(fields: [churchId], references: [id], onDelete: Cascade)
 
   @@id([userId, churchId])
-  @@index([userId])
   @@index([churchId])
   @@map("church_memberships")
 }
@@ -359,7 +358,6 @@ model EventStaffAssignment {
   event      Event     @relation(fields: [eventId], references: [id], onDelete: Cascade)
 
   @@id([userId, eventId])
-  @@index([userId])
   @@index([eventId])
   @@map("event_staff_assignments")
 }
@@ -375,7 +373,6 @@ model SeriesStaffAssignment {
   series Series @relation(fields: [seriesId], references: [id], onDelete: Cascade)
 
   @@id([userId, seriesId])
-  @@index([userId])
   @@index([seriesId])
   @@map("series_staff_assignments")
 }

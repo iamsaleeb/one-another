@@ -6,5 +6,3 @@ export const searchParamsSchema = z.object({
   when: z.enum(["today", "tomorrow", "weekend"]).optional(),
   category: z.string().optional(),
 });
-
-export type ParsedSearchParams = z.infer<typeof searchParamsSchema>;

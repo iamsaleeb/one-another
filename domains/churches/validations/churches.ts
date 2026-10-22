@@ -14,6 +14,3 @@ export const removeOrganiserSchema = z.object({
   churchId: z.string({ error: "Church is required" }).min(1),
   targetUserId: z.string({ error: "User is required" }).min(1),
 });
-
-export type AddOrganiserInput = z.infer<typeof addOrganiserSchema>;
-export type RemoveOrganiserInput = z.infer<typeof removeOrganiserSchema>;

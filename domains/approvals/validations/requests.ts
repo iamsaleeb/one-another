@@ -18,8 +18,3 @@ export const CancelRequestSchema = z.object({
 export const RevokeAccessSchema = z.object({
   requestId: z.string().min(1),
 });
-
-export type SubmitRequestInput = z.infer<typeof SubmitRequestSchema>;
-export type ReviewRequestInput = z.infer<typeof ReviewRequestSchema>;
-export type CancelRequestInput = z.infer<typeof CancelRequestSchema>;
-export type RevokeAccessInput = z.infer<typeof RevokeAccessSchema>;

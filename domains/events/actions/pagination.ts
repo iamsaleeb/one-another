@@ -3,9 +3,7 @@
 import { auth } from "@/auth";
 import type { EventCardItem } from "@/lib/types/pagination";
 import {
-  getEventsPaged,
   getUserAttendedEventsPaged,
-  getUserAttendedPastEventsPaged,
   getEventsNotByCreatorPaged,
   getFollowedChurchEventsPaged,
   getOtherChurchEventsPaged,
@@ -20,26 +18,12 @@ interface Page {
 
 const empty: Page = { items: [], nextCursor: null };
 
-export async function loadMoreEventsAction(
-  cursor: string | null
-): Promise<Page> {
-  return getEventsPaged(cursor);
-}
-
 export async function loadMoreMyUpcomingEventsAction(
   cursor: string | null
 ): Promise<Page> {
   const session = await auth();
   if (!session?.user?.id) return empty;
   return getUserAttendedEventsPaged(session.user.id, cursor);
-}
-
-export async function loadMoreMyPastEventsAction(
-  cursor: string | null
-): Promise<Page> {
-  const session = await auth();
-  if (!session?.user?.id) return empty;
-  return getUserAttendedPastEventsPaged(session.user.id, cursor);
 }
 
 export async function loadMoreManageableEventsAction(

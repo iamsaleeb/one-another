@@ -84,20 +84,19 @@ import { NotificationType } from "@prisma/client";
 import { redirect } from "next/navigation";
 import { updateTag } from "next/cache";
 import {
-  createEventAction,
-  updateEventAction,
   cancelEventAction,
   uncancelEventAction,
   deleteEventAction,
   publishEventAction,
   unpublishEventAction,
+  saveDraftAction,
+  saveEventAction,
 } from "@/domains/events/actions/crud";
 import {
   attendEventAction,
   unattendEventAction,
   registerEventAction,
 } from "@/domains/events/actions/attendance";
-import { extractResponses } from "@/lib/utils/forms";
 import { prisma } from "@/lib/db";
 import { auth } from "@/auth";
 import { getAbility, getSessionUserId } from "@/domains/roles/lib/get-ability";
@@ -147,14 +146,6 @@ function signOut() {
   mockGetSessionUserId.mockResolvedValue(null);
   mockGetAbility.mockResolvedValue(buildAbility(null));
 }
-function makeFormData(fields: Record<string, string>): FormData {
-  const fd = new FormData();
-  for (const [key, value] of Object.entries(fields)) {
-    fd.append(key, value);
-  }
-  return fd;
-}
-
 const validData = {
   title: "Sunday Worship",
   date: "2026-04-06",
@@ -199,52 +190,34 @@ beforeEach(() => {
   mockRegisterEvent.mockResolvedValue({ success: true });
 });
 
-describe("createEventAction", () => {
-  it("creates an event and redirects to my-events", async () => {
-    mockEventCreate.mockResolvedValue({ id: "evt-1" });
+describe("saveDraftAction", () => {
+  it("creates a draft owned by the user and returns its id", async () => {
+    mockEventCreate.mockResolvedValue({ id: "evt-new" });
 
-    await createEventAction(validData);
+    const result = await saveDraftAction(undefined, {
+      ...validData,
+      title: "Half done",
+    });
 
+    expect(result).toEqual({ eventId: "evt-new" });
     expect(mockEventCreate).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
-          title: "Sunday Worship",
-          datetime: new Date("2026-04-06T09:00"),
-          location: "Main Hall",
-          host: "Pastor John",
-          tag: "Youth Meeting",
-          description: "Weekly Sunday service",
+          title: "Half done",
+          isDraft: true,
           churchId: "ch-1",
           createdById: "user-1",
         }),
       })
     );
-    expect(mockRedirect).toHaveBeenCalledWith("/my-events");
+    expect(mockUpdateTag).toHaveBeenCalledWith("event-evt-new");
   });
 
-  it("redirects to the series page when seriesId is provided", async () => {
-    mockSeriesFindUnique.mockResolvedValue({ churchId: "ch-1" });
-    mockEventCreate.mockResolvedValue({ id: "evt-2" });
-
-    await createEventAction({ ...validData, seriesId: "ser-1" });
-
-    expect(mockSeriesFindUnique).toHaveBeenCalledWith({
-      where: { id: "ser-1" },
-      select: { churchId: true },
-    });
-    expect(mockEventCreate).toHaveBeenCalledWith(
-      expect.objectContaining({
-        data: expect.objectContaining({ seriesId: "ser-1", churchId: "ch-1" }),
-      })
-    );
-    expect(mockRedirect).toHaveBeenCalledWith("/series/ser-1");
-  });
-
-  it("inherits churchId from the series, ignoring any submitted churchId", async () => {
+  it("places a session in its Series' Church, ignoring the submitted Church", async () => {
     mockSeriesFindUnique.mockResolvedValue({ churchId: "ch-from-series" });
-    mockEventCreate.mockResolvedValue({ id: "evt-3" });
+    mockEventCreate.mockResolvedValue({ id: "evt-s" });
 
-    await createEventAction({
+    await saveDraftAction(undefined, {
       ...validData,
       seriesId: "ser-1",
       churchId: "ch-submitted",
@@ -252,216 +225,149 @@ describe("createEventAction", () => {
 
     expect(mockEventCreate).toHaveBeenCalledWith(
       expect.objectContaining({
-        data: expect.objectContaining({ churchId: "ch-from-series" }),
-      })
-    );
-  });
-
-  it("includes churchId when provided for a standalone event", async () => {
-    mockEventCreate.mockResolvedValue({ id: "evt-4" });
-
-    await createEventAction({ ...validData, churchId: "ch-99" });
-
-    expect(mockEventCreate).toHaveBeenCalledWith(
-      expect.objectContaining({
-        data: expect.objectContaining({ churchId: "ch-99" }),
-      })
-    );
-  });
-
-  it("uses datetimeISO when provided, ignoring date+time fields", async () => {
-    mockEventCreate.mockResolvedValue({ id: "evt-1" });
-    const datetimeISO = "2026-04-06T09:00:00.000Z";
-
-    await createEventAction({ ...validData, datetimeISO });
-
-    expect(mockEventCreate).toHaveBeenCalledWith(
-      expect.objectContaining({
         data: expect.objectContaining({
-          datetime: new Date(datetimeISO),
-        }),
-      })
-    );
-  });
-
-  it("returns a fieldError when churchId is empty for a standalone event", async () => {
-    const result = await createEventAction({ ...validData, churchId: "" });
-
-    expect(result.fieldErrors?.churchId).toBeDefined();
-    expect(mockEventCreate).not.toHaveBeenCalled();
-  });
-
-  it("returns fieldErrors when required fields are missing", async () => {
-    const result = await createEventAction({ ...validData, title: "" });
-
-    expect(result.fieldErrors).toBeDefined();
-    expect(result.fieldErrors?.title).toBeDefined();
-    expect(mockEventCreate).not.toHaveBeenCalled();
-    expect(mockRedirect).not.toHaveBeenCalled();
-  });
-
-  it("returns an unauthorized error when there is no session", async () => {
-    signOut();
-
-    const result = await createEventAction(validData);
-
-    expect(result.error).toBeDefined();
-    expect(mockEventCreate).not.toHaveBeenCalled();
-  });
-
-  it("returns an unauthorized error when the user is not an organiser", async () => {
-    signOut();
-
-    const result = await createEventAction(validData);
-
-    expect(result.error).toBeDefined();
-    expect(mockEventCreate).not.toHaveBeenCalled();
-  });
-
-  it("returns an error when organiser is not assigned to the church", async () => {
-    signInAs({ canResult: false });
-
-    const result = await createEventAction(validData);
-
-    expect(result.error).toBeDefined();
-    expect(mockEventCreate).not.toHaveBeenCalled();
-  });
-
-  it("saves requiresRegistration=true when passed as boolean", async () => {
-    mockEventCreate.mockResolvedValue({ id: "evt-5" });
-
-    await createEventAction({ ...validData, requiresRegistration: true });
-
-    expect(mockEventCreate).toHaveBeenCalledWith(
-      expect.objectContaining({
-        data: expect.objectContaining({ requiresRegistration: true }),
-      })
-    );
-  });
-
-  it("saves requiresRegistration=false when the field is absent", async () => {
-    mockEventCreate.mockResolvedValue({ id: "evt-6" });
-
-    await createEventAction(validData);
-
-    expect(mockEventCreate).toHaveBeenCalledWith(
-      expect.objectContaining({
-        data: expect.objectContaining({ requiresRegistration: false }),
-      })
-    );
-  });
-
-  it("saves isDraft=true and redirects to the organiser page when saving as draft", async () => {
-    mockEventCreate.mockResolvedValue({ id: "evt-draft" });
-
-    await createEventAction({ ...validData, isDraft: true });
-
-    expect(mockEventCreate).toHaveBeenCalledWith(
-      expect.objectContaining({
-        data: expect.objectContaining({ isDraft: true }),
-      })
-    );
-    expect(mockRedirect).toHaveBeenCalledWith("/organiser");
-  });
-
-  it("handles series push notification failure gracefully", async () => {
-    mockSeriesFindUnique.mockResolvedValue({ churchId: "ch-1" });
-    mockEventCreate.mockResolvedValue({ id: "evt-series-fail" });
-    mockSeriesFollowerFindMany.mockResolvedValue([{ userId: "follower-1" }]);
-    mockQueueNotification.mockRejectedValueOnce(new Error("push failed"));
-
-    await createEventAction({ ...validData, seriesId: "ser-1" });
-
-    expect(mockRedirect).toHaveBeenCalledWith("/series/ser-1");
-  });
-
-  it("does not send series push notification when saving as draft", async () => {
-    mockSeriesFindUnique.mockResolvedValue({ churchId: "ch-1" });
-    mockEventCreate.mockResolvedValue({ id: "evt-draft-series" });
-
-    await createEventAction({ ...validData, seriesId: "ser-1", isDraft: true });
-
-    expect(mockQueueNotification).not.toHaveBeenCalled();
-    expect(mockRedirect).toHaveBeenCalledWith("/organiser");
-  });
-
-  it("sends series push notification when publishing with seriesId and followers exist", async () => {
-    mockSeriesFindUnique.mockResolvedValue({ churchId: "ch-1" });
-    mockEventCreate.mockResolvedValue({ id: "evt-series" });
-    mockSeriesFollowerFindMany.mockResolvedValue([{ userId: "follower-1" }]);
-
-    await createEventAction({ ...validData, seriesId: "ser-1" });
-
-    expect(mockQueueNotification).toHaveBeenCalledWith(
-      expect.objectContaining({
-        userId: "follower-1",
-        type: NotificationType.NEW_SERIES_SESSION,
-        title: "New Session Added",
-        body: expect.stringContaining(validData.title),
-        data: expect.objectContaining({
-          type: "new_session",
           seriesId: "ser-1",
-        }),
-        dedupeKey: expect.stringContaining("ser-1"),
-      })
-    );
-  });
-
-  it("persists photoUrl when provided", async () => {
-    mockEventCreate.mockResolvedValue({ id: "evt-photo" });
-
-    await createEventAction({
-      ...validData,
-      photoUrl: "https://utfs.io/f/photo.jpg",
-    });
-
-    expect(mockEventCreate).toHaveBeenCalledWith(
-      expect.objectContaining({
-        data: expect.objectContaining({
-          photoUrl: "https://utfs.io/f/photo.jpg",
+          churchId: "ch-from-series",
         }),
       })
     );
   });
 
-  it("sets photoUrl to null when not provided", async () => {
-    mockEventCreate.mockResolvedValue({ id: "evt-no-photo" });
-
-    await createEventAction(validData);
-
-    expect(mockEventCreate).toHaveBeenCalledWith(
-      expect.objectContaining({
-        data: expect.objectContaining({ photoUrl: null }),
-      })
-    );
-  });
-
-  it("auto-assigns EVENT_EDITOR staff role when creator has EVENT_CREATOR church role", async () => {
+  it("gives a Church EVENT_CREATOR a Creator Grant on the new draft", async () => {
     signInAs({
-      id: "creator-1",
       grants: grants({ church: [{ churchId: "ch-1", role: "EVENT_CREATOR" }] }),
     });
-    mockEventCreate.mockResolvedValue({ id: "evt-creator" });
-    mockStaffCreate.mockResolvedValue({});
+    mockEventCreate.mockResolvedValue({ id: "evt-c" });
 
-    await createEventAction(validData);
+    await saveDraftAction(undefined, validData);
 
     expect(mockStaffCreate).toHaveBeenCalledWith({
-      data: {
-        userId: "creator-1",
-        eventId: "evt-creator",
+      data: expect.objectContaining({
+        userId: "user-1",
+        eventId: "evt-c",
         role: "EVENT_EDITOR",
-        assignedBy: "creator-1",
-      },
+      }),
     });
   });
 
-  it("does not auto-assign staff when creator has EVENT_MANAGER church role", async () => {
-    mockEventCreate.mockResolvedValue({ id: "evt-manager" });
+  it("refuses a user who may not create Events in the Church", async () => {
+    signInAs({ canResult: false });
 
-    await createEventAction(validData);
+    expect(await saveDraftAction(undefined, validData)).toEqual({
+      error: "Unauthorised.",
+    });
+    expect(mockEventCreate).not.toHaveBeenCalled();
+  });
 
-    expect(mockStaffCreate).not.toHaveBeenCalled();
+  it("refuses a guest", async () => {
+    signOut();
+
+    expect(await saveDraftAction(undefined, validData)).toEqual({
+      error: "Unauthorised.",
+    });
+    expect(mockEventCreate).not.toHaveBeenCalled();
+  });
+
+  it("returns a fieldError when no Church is given", async () => {
+    const result = await saveDraftAction(undefined, {
+      ...validData,
+      churchId: "",
+    });
+
+    expect(result).toHaveProperty("fieldErrors.churchId");
+    expect(mockEventCreate).not.toHaveBeenCalled();
+  });
+
+  it("updates an existing draft and keeps it a draft by default", async () => {
+    mockEventFindUnique.mockResolvedValue({
+      churchId: "ch-1",
+      datetime: null,
+      isDraft: true,
+    });
+    mockEventUpdate.mockResolvedValue({});
+
+    const result = await saveDraftAction("evt-1", {
+      ...validData,
+      title: "Renamed",
+    });
+
+    expect(result).toEqual({ eventId: "evt-1" });
+    expect(mockEventUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ id: "evt-1" }),
+        data: expect.objectContaining({ title: "Renamed", isDraft: true }),
+      })
+    );
+    expect(mockUpdateTag).toHaveBeenCalledWith("event-evt-1");
+  });
+
+  it("reports a missing draft as not found", async () => {
+    mockEventFindUnique.mockResolvedValue(null);
+
+    expect(await saveDraftAction("evt-gone", validData)).toEqual({
+      error: "Event not found.",
+    });
+    expect(mockEventUpdate).not.toHaveBeenCalled();
+  });
+});
+
+describe("saveEventAction", () => {
+  const existing = {
+    churchId: "ch-1",
+    datetime: new Date("2026-05-01T09:00:00Z"),
+    isDraft: true,
+  };
+
+  it("saves the full Event and invalidates its caches", async () => {
+    mockEventFindUnique.mockResolvedValue(existing);
+    mockEventUpdate.mockResolvedValue({});
+    const datetimeISO = "2026-06-01T10:00:00.000Z";
+
+    const result = await saveEventAction("evt-1", {
+      ...validData,
+      datetimeISO,
+      isDraft: false,
+    });
+
+    expect(result).toEqual({ success: true });
+    expect(mockEventUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          title: "Sunday Worship",
+          datetime: new Date(datetimeISO),
+          isDraft: false,
+        }),
+      })
+    );
+    expect(mockUpdateTag).toHaveBeenCalledWith("events-list");
+    expect(mockUpdateTag).toHaveBeenCalledWith("event-evt-1");
+    expect(mockUpdateTag).toHaveBeenCalledWith("church-ch-1");
+  });
+
+  it("returns fieldErrors for an incomplete Event", async () => {
+    const result = await saveEventAction("evt-1", { ...validData, title: "" });
+
+    expect(result).toHaveProperty("fieldErrors.title");
+    expect(mockEventUpdate).not.toHaveBeenCalled();
+  });
+
+  it("refuses a user without update on the Event", async () => {
+    signInAs({ canResult: false });
+    mockEventFindUnique.mockResolvedValue(existing);
+
+    expect(await saveEventAction("evt-1", validData)).toEqual({
+      error: "Unauthorised.",
+    });
+    expect(mockEventUpdate).not.toHaveBeenCalled();
+  });
+
+  it("refuses a guest", async () => {
+    signOut();
+
+    expect(await saveEventAction("evt-1", validData)).toEqual({
+      error: "Unauthorised.",
+    });
+    expect(mockEventUpdate).not.toHaveBeenCalled();
   });
 });
 
@@ -715,240 +621,6 @@ describe("registerEventAction", () => {
   });
 });
 
-describe("updateEventAction", () => {
-  const oldDatetime = new Date("2026-05-01T09:00:00Z");
-  const existingPublished = {
-    churchId: "ch-1",
-    datetime: oldDatetime,
-    title: "Old Title",
-    isDraft: false,
-  };
-  const existingDraft = {
-    churchId: "ch-1",
-    datetime: oldDatetime,
-    title: "Old Title",
-    isDraft: true,
-  };
-
-  it("updates the event and redirects to the event page", async () => {
-    mockEventFindUnique.mockResolvedValue(existingPublished);
-    mockEventUpdate.mockResolvedValue({});
-
-    await updateEventAction("evt-1", validData);
-
-    expect(mockEventUpdate).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: expect.objectContaining({ id: "evt-1" }),
-        data: expect.objectContaining({
-          title: "Sunday Worship",
-          churchId: "ch-1",
-        }),
-      })
-    );
-    expect(mockUpdateTag).toHaveBeenCalledWith("events-list");
-    expect(mockUpdateTag).toHaveBeenCalledWith("event-evt-1");
-    expect(mockUpdateTag).toHaveBeenCalledWith("church-ch-1");
-    expect(mockRedirect).toHaveBeenCalledWith("/events/evt-1");
-  });
-
-  it("uses datetimeISO when provided, ignoring date+time fields", async () => {
-    mockEventFindUnique.mockResolvedValue(existingPublished);
-    mockEventUpdate.mockResolvedValue({});
-    const datetimeISO = "2026-06-01T10:00:00.000Z";
-
-    await updateEventAction("evt-1", { ...validData, datetimeISO });
-
-    expect(mockEventUpdate).toHaveBeenCalledWith(
-      expect.objectContaining({
-        data: expect.objectContaining({
-          datetime: new Date(datetimeISO),
-        }),
-      })
-    );
-  });
-
-  it("returns fieldErrors when required fields are missing", async () => {
-    const result = await updateEventAction("evt-1", {
-      ...validData,
-      title: "",
-    });
-
-    expect(result?.fieldErrors?.title).toBeDefined();
-    expect(mockEventUpdate).not.toHaveBeenCalled();
-  });
-
-  it("redirects away when the user is not an organiser", async () => {
-    signOut();
-    mockRedirect.mockImplementationOnce(() => {
-      throw new Error("NEXT_REDIRECT");
-    });
-
-    await expect(updateEventAction("evt-1", validData)).rejects.toThrow(
-      "NEXT_REDIRECT"
-    );
-
-    expect(mockEventUpdate).not.toHaveBeenCalled();
-  });
-
-  it("redirects to /organiser when the event is not found", async () => {
-    mockEventFindUnique.mockResolvedValue(null);
-    mockRedirect.mockImplementationOnce(() => {
-      throw new Error("NEXT_REDIRECT");
-    });
-
-    await expect(updateEventAction("evt-1", validData)).rejects.toThrow(
-      "NEXT_REDIRECT"
-    );
-
-    expect(mockEventUpdate).not.toHaveBeenCalled();
-    expect(mockRedirect).toHaveBeenCalledWith("/organiser");
-  });
-
-  it("redirects away when the organiser cannot manage the original church", async () => {
-    mockEventFindUnique.mockResolvedValue(existingPublished);
-    signInAs({ canResult: false });
-    mockRedirect.mockImplementationOnce(() => {
-      throw new Error("NEXT_REDIRECT");
-    });
-
-    await expect(updateEventAction("evt-1", validData)).rejects.toThrow(
-      "NEXT_REDIRECT"
-    );
-
-    expect(mockEventUpdate).not.toHaveBeenCalled();
-  });
-
-  it("reschedules reminders when datetime changes on a published event", async () => {
-    const mockReschedule = jest.requireMock("@/domains/notifications/queue")
-      .rescheduleEventReminderNotifications as jest.Mock;
-    mockEventFindUnique.mockResolvedValue(existingPublished);
-    mockEventUpdate.mockResolvedValue({});
-    // Use a different date to trigger reschedule
-    const newDate = "2026-05-10";
-
-    await updateEventAction("evt-1", { ...validData, date: newDate });
-
-    expect(mockReschedule).toHaveBeenCalledWith(
-      "evt-1",
-      new Date(`${newDate}T${validData.time}`)
-    );
-  });
-
-  it("does not reschedule when the datetime is unchanged", async () => {
-    const mockReschedule = jest.requireMock("@/domains/notifications/queue")
-      .rescheduleEventReminderNotifications as jest.Mock;
-    // existingPublished.datetime is new Date('2026-05-01T09:00:00Z') — match exactly using local-time constructor
-    const sameDate = "2026-05-01";
-    const sameTime = "09:00";
-    const existingWithLocalDatetime = {
-      ...existingPublished,
-      datetime: new Date(`${sameDate}T${sameTime}`),
-    };
-    mockEventFindUnique.mockResolvedValue(existingWithLocalDatetime);
-    mockEventUpdate.mockResolvedValue({});
-
-    await updateEventAction("evt-1", {
-      ...validData,
-      date: sameDate,
-      time: sameTime,
-    });
-
-    expect(mockReschedule).not.toHaveBeenCalled();
-  });
-
-  it("does not reschedule reminders when the event is a draft", async () => {
-    const mockReschedule = jest.requireMock("@/domains/notifications/queue")
-      .rescheduleEventReminderNotifications as jest.Mock;
-    mockEventFindUnique.mockResolvedValue(existingDraft);
-    mockEventUpdate.mockResolvedValue({});
-
-    await updateEventAction("evt-1", { ...validData, date: "2026-05-10" });
-
-    expect(mockReschedule).not.toHaveBeenCalled();
-  });
-
-  it("returns a fieldError when churchId is missing for a standalone event", async () => {
-    mockEventFindUnique.mockResolvedValue(existingPublished);
-
-    const result = await updateEventAction("evt-1", {
-      ...validData,
-      churchId: "",
-    });
-
-    expect(result?.fieldErrors?.churchId).toBeDefined();
-    expect(mockEventUpdate).not.toHaveBeenCalled();
-  });
-
-  it("inherits churchId from series when seriesId is provided", async () => {
-    mockSeriesFindUnique.mockResolvedValue({ churchId: "ch-from-series" });
-    mockEventFindUnique.mockResolvedValue({
-      ...existingPublished,
-      churchId: "ch-from-series",
-    });
-    mockEventUpdate.mockResolvedValue({});
-
-    await updateEventAction("evt-1", {
-      ...validData,
-      seriesId: "ser-1",
-      churchId: "ch-submitted",
-    });
-
-    expect(mockEventUpdate).toHaveBeenCalledWith(
-      expect.objectContaining({
-        data: expect.objectContaining({ churchId: "ch-from-series" }),
-      })
-    );
-  });
-
-  it("checks new church permission when church changes", async () => {
-    mockEventFindUnique.mockResolvedValue(existingPublished);
-    // Manages Events in ch-1 only, so may not move one into ch-new.
-    signInAs({
-      grants: grants({ church: [{ churchId: "ch-1", role: "EVENT_MANAGER" }] }),
-    });
-    mockRedirect.mockImplementationOnce(() => {
-      throw new Error("NEXT_REDIRECT");
-    });
-
-    await expect(
-      updateEventAction("evt-1", { ...validData, churchId: "ch-new" })
-    ).rejects.toThrow("NEXT_REDIRECT");
-
-    expect(mockEventUpdate).not.toHaveBeenCalled();
-  });
-
-  it("persists photoUrl when provided", async () => {
-    mockEventFindUnique.mockResolvedValue(existingPublished);
-    mockEventUpdate.mockResolvedValue({});
-
-    await updateEventAction("evt-1", {
-      ...validData,
-      photoUrl: "https://utfs.io/f/photo.jpg",
-    });
-
-    expect(mockEventUpdate).toHaveBeenCalledWith(
-      expect.objectContaining({
-        data: expect.objectContaining({
-          photoUrl: "https://utfs.io/f/photo.jpg",
-        }),
-      })
-    );
-  });
-
-  it("sets photoUrl to null when not provided", async () => {
-    mockEventFindUnique.mockResolvedValue(existingPublished);
-    mockEventUpdate.mockResolvedValue({});
-
-    await updateEventAction("evt-1", validData);
-
-    expect(mockEventUpdate).toHaveBeenCalledWith(
-      expect.objectContaining({
-        data: expect.objectContaining({ photoUrl: null }),
-      })
-    );
-  });
-});
-
 describe("deleteEventAction", () => {
   it("cancels reminders, deletes the event, and redirects to /organiser", async () => {
     const mockCancelAll = jest.requireMock("@/domains/notifications/queue")
@@ -1186,84 +858,6 @@ describe("publishEventAction", () => {
     await publishEventAction("evt-1");
 
     expect(mockRedirect).toHaveBeenCalledWith("/events/evt-1");
-  });
-});
-
-describe("extractResponses", () => {
-  it("extracts a text response", () => {
-    const fd = makeFormData({ response_q1: "hello" });
-    expect(extractResponses(fd)).toEqual([
-      { questionId: "q1", answer: "hello", fileUrl: null },
-    ]);
-  });
-
-  it("extracts a file response", () => {
-    const fd = makeFormData({
-      response_file_q1: "https://blob.example.com/file.pdf",
-    });
-    expect(extractResponses(fd)).toEqual([
-      {
-        questionId: "q1",
-        answer: null,
-        fileUrl: "https://blob.example.com/file.pdf",
-      },
-    ]);
-  });
-
-  it("converts empty string answer to null", () => {
-    const fd = makeFormData({ response_q1: "" });
-    expect(extractResponses(fd)).toEqual([
-      { questionId: "q1", answer: null, fileUrl: null },
-    ]);
-  });
-
-  it("converts empty string fileUrl to null (cleared file signal)", () => {
-    const fd = makeFormData({ response_file_q1: "" });
-    expect(extractResponses(fd)).toEqual([
-      { questionId: "q1", answer: null, fileUrl: null },
-    ]);
-  });
-
-  it("merges answer and fileUrl onto the same entry when both keys exist", () => {
-    const fd = makeFormData({
-      response_q1: "true",
-      response_file_q1: "https://blob.example.com/file.pdf",
-    });
-    expect(extractResponses(fd)).toEqual([
-      {
-        questionId: "q1",
-        answer: "true",
-        fileUrl: "https://blob.example.com/file.pdf",
-      },
-    ]);
-  });
-
-  it("handles multiple questions independently", () => {
-    const fd = makeFormData({ response_q1: "answer1", response_q2: "answer2" });
-    const result = extractResponses(fd);
-    expect(result).toHaveLength(2);
-    expect(result).toEqual(
-      expect.arrayContaining([
-        { questionId: "q1", answer: "answer1", fileUrl: null },
-        { questionId: "q2", answer: "answer2", fileUrl: null },
-      ])
-    );
-  });
-
-  it("ignores non-response_ keys", () => {
-    const fd = makeFormData({
-      phone: "07700",
-      notes: "veg",
-      response_q1: "yes",
-    });
-    expect(extractResponses(fd)).toEqual([
-      { questionId: "q1", answer: "yes", fileUrl: null },
-    ]);
-  });
-
-  it("returns an empty array when no response_ keys are present", () => {
-    const fd = makeFormData({ phone: "07700", notes: "veg" });
-    expect(extractResponses(fd)).toEqual([]);
   });
 });
 

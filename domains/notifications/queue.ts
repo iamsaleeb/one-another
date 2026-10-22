@@ -89,27 +89,6 @@ export async function cancelManyNotifications(
   });
 }
 
-interface RescheduleInput {
-  userId?: string;
-  type: NotificationType;
-  dedupeKey: string;
-  scheduledFor: Date;
-}
-
-export async function rescheduleNotification(
-  input: RescheduleInput
-): Promise<void> {
-  await prisma.notification.updateMany({
-    where: {
-      ...(input.userId ? { userId: input.userId } : {}),
-      type: input.type,
-      dedupeKey: input.dedupeKey,
-      sentAt: null,
-    },
-    data: { scheduledFor: input.scheduledFor, cancelledAt: null },
-  });
-}
-
 interface EventRef {
   id: string;
   title: string;

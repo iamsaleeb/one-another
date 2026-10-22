@@ -1,9 +1,7 @@
 jest.mock("@/auth", () => ({ auth: jest.fn() }));
 
 jest.mock("@/domains/events/actions/data", () => ({
-  getEventsPaged: jest.fn(),
   getUserAttendedEventsPaged: jest.fn(),
-  getUserAttendedPastEventsPaged: jest.fn(),
   getEventsNotByCreatorPaged: jest.fn(),
   getMySavedEventsPaged: jest.fn(),
 }));
@@ -14,27 +12,20 @@ jest.mock("@/domains/events/dal/manageable", () => ({
 
 import { auth } from "@/auth";
 import {
-  getEventsPaged,
   getUserAttendedEventsPaged,
-  getUserAttendedPastEventsPaged,
   getEventsNotByCreatorPaged,
   getMySavedEventsPaged,
 } from "@/domains/events/actions/data";
 import { getManageableEventsPaged } from "@/domains/events/dal/manageable";
 import {
-  loadMoreEventsAction,
   loadMoreMyUpcomingEventsAction,
-  loadMoreMyPastEventsAction,
   loadMoreManageableEventsAction,
   loadMoreCommunityEventsAction,
   loadMoreMySavedEventsAction,
 } from "@/domains/events/actions/pagination";
 
 const mockAuth = auth as jest.Mock;
-const mockGetEventsPaged = getEventsPaged as jest.Mock;
 const mockGetUserAttendedEventsPaged = getUserAttendedEventsPaged as jest.Mock;
-const mockGetUserAttendedPastEventsPaged =
-  getUserAttendedPastEventsPaged as jest.Mock;
 const mockGetManageableEventsPaged = getManageableEventsPaged as jest.Mock;
 const mockGetEventsNotByCreatorPaged = getEventsNotByCreatorPaged as jest.Mock;
 const mockGetMySavedEventsPaged = getMySavedEventsPaged as jest.Mock;
@@ -43,24 +34,10 @@ const fakePage = { items: [], nextCursor: null };
 
 beforeEach(() => {
   jest.clearAllMocks();
-  mockGetEventsPaged.mockResolvedValue(fakePage);
   mockGetUserAttendedEventsPaged.mockResolvedValue(fakePage);
-  mockGetUserAttendedPastEventsPaged.mockResolvedValue(fakePage);
   mockGetManageableEventsPaged.mockResolvedValue(fakePage);
   mockGetEventsNotByCreatorPaged.mockResolvedValue(fakePage);
   mockGetMySavedEventsPaged.mockResolvedValue(fakePage);
-});
-
-describe("loadMoreEventsAction", () => {
-  it("calls getEventsPaged with the provided cursor", async () => {
-    await loadMoreEventsAction("cursor-abc");
-    expect(mockGetEventsPaged).toHaveBeenCalledWith("cursor-abc");
-  });
-
-  it("works without auth", async () => {
-    const result = await loadMoreEventsAction(null);
-    expect(result).toEqual(fakePage);
-  });
 });
 
 describe("loadMoreMyUpcomingEventsAction", () => {
@@ -77,23 +54,6 @@ describe("loadMoreMyUpcomingEventsAction", () => {
     expect(mockGetUserAttendedEventsPaged).toHaveBeenCalledWith(
       "user-1",
       "cursor-x"
-    );
-  });
-});
-
-describe("loadMoreMyPastEventsAction", () => {
-  it("returns empty page when unauthenticated", async () => {
-    mockAuth.mockResolvedValue(null);
-    const result = await loadMoreMyPastEventsAction(null);
-    expect(result).toEqual({ items: [], nextCursor: null });
-  });
-
-  it("calls getUserAttendedPastEventsPaged with userId and cursor", async () => {
-    mockAuth.mockResolvedValue({ user: { id: "user-1" } });
-    await loadMoreMyPastEventsAction("cursor-y");
-    expect(mockGetUserAttendedPastEventsPaged).toHaveBeenCalledWith(
-      "user-1",
-      "cursor-y"
     );
   });
 });

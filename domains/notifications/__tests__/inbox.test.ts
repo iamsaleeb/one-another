@@ -2,7 +2,6 @@ jest.mock("@/lib/db", () => ({
   prisma: {
     notification: {
       findMany: jest.fn(),
-      count: jest.fn(),
       updateMany: jest.fn(),
     },
   },
@@ -11,12 +10,10 @@ jest.mock("@/lib/db", () => ({
 import { prisma } from "@/lib/db";
 import {
   getInboxNotifications,
-  getUnreadCount,
   markNotificationsRead,
 } from "@/domains/notifications/inbox";
 
 const mockFindMany = prisma.notification.findMany as jest.Mock;
-const mockCount = prisma.notification.count as jest.Mock;
 const mockUpdateMany = prisma.notification.updateMany as jest.Mock;
 
 beforeEach(() => {
@@ -100,19 +97,6 @@ describe("getInboxNotifications", () => {
     });
 
     expect(results[0].readAt).toBeNull();
-  });
-});
-
-describe("getUnreadCount", () => {
-  it("counts sent+unread notifications", async () => {
-    mockCount.mockResolvedValue(4);
-
-    const count = await getUnreadCount("u-1");
-
-    expect(mockCount).toHaveBeenCalledWith({
-      where: { userId: "u-1", sentAt: { not: null }, readAt: null },
-    });
-    expect(count).toBe(4);
   });
 });
 

@@ -21,7 +21,6 @@ import {
   queueNotification,
   cancelNotification,
   cancelManyNotifications,
-  rescheduleNotification,
   scheduleEventReminderNotification,
   rescheduleEventReminderNotifications,
   updateUserReminderSchedule,
@@ -143,46 +142,6 @@ describe("cancelManyNotifications", () => {
       },
       data: { cancelledAt: expect.any(Date) },
     });
-  });
-});
-
-describe("rescheduleNotification", () => {
-  it("updates scheduledFor and clears cancelledAt for all users", async () => {
-    const newTime = new Date(Date.now() + 7_200_000);
-    mockUpdateMany.mockResolvedValue({ count: 3 });
-
-    await rescheduleNotification({
-      type: NotificationType.EVENT_REMINDER,
-      dedupeKey: "ev-1",
-      scheduledFor: newTime,
-    });
-
-    expect(mockUpdateMany).toHaveBeenCalledWith({
-      where: {
-        type: NotificationType.EVENT_REMINDER,
-        dedupeKey: "ev-1",
-        sentAt: null,
-      },
-      data: { scheduledFor: newTime, cancelledAt: null },
-    });
-  });
-
-  it("scopes to single userId when provided", async () => {
-    const newTime = new Date(Date.now() + 7_200_000);
-    mockUpdateMany.mockResolvedValue({ count: 1 });
-
-    await rescheduleNotification({
-      userId: "u-1",
-      type: NotificationType.EVENT_REMINDER,
-      dedupeKey: "ev-1",
-      scheduledFor: newTime,
-    });
-
-    expect(mockUpdateMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: expect.objectContaining({ userId: "u-1" }),
-      })
-    );
   });
 });
 

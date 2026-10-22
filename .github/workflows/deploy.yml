@@ -16,7 +16,7 @@ on:
           - production
 
 env:
-  NODE_VERSION: "20"
+  NODE_VERSION: "24"
 
 jobs:
   migrate:
@@ -24,10 +24,10 @@ jobs:
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ inputs.version }}
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
@@ -47,10 +47,10 @@ jobs:
     needs: migrate
     environment: ${{ inputs.environment }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ inputs.version }}
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
@@ -62,7 +62,7 @@ jobs:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
         run: |
-          npm install -g vercel@53.3.1
+          npm install -g vercel@65.1.0
           if [ "${{ inputs.environment }}" = "production" ]; then
             DEPLOY_OUTPUT=$(vercel deploy --prod --token="$VERCEL_TOKEN" 2>&1)
             DEPLOY_EXIT=$?
@@ -75,7 +75,7 @@ jobs:
             echo "$DEPLOY_OUTPUT"
             exit $DEPLOY_EXIT
           fi
-          DEPLOY_URL=$(echo "$DEPLOY_OUTPUT" | tail -1)
+          DEPLOY_URL=$(echo "$DEPLOY_OUTPUT" | grep -oE 'https://[a-zA-Z0-9.-]+\.vercel\.app' | tail -1)
           echo "url=$DEPLOY_URL" >> $GITHUB_OUTPUT
       - name: Deployment summary
         run: |

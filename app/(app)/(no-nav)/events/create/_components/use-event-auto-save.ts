@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { UseFormReturn } from "react-hook-form";
 import { toast } from "sonner";
 import { saveDraftAction } from "@/domains/events/actions/crud";
@@ -53,11 +53,16 @@ export function useEventAutoSave({
   const hasChangesRef = useRef(false);
   const publishedRef = useRef(false);
 
-  // Sync refs inline — simpler than separate useEffects.
   // isDirty must be read here (render phase) so RHF's proxy subscribes to it.
-  draftIdRef.current = draftId;
-  isBusyRef.current = isBusy;
-  isDirtyRef.current = form.formState.isDirty;
+  const isDirty = form.formState.isDirty;
+
+  // Sync refs after commit — refs must not be written during render.
+  // Layout effect so they're current before any passive effect below runs.
+  useLayoutEffect(() => {
+    draftIdRef.current = draftId;
+    isBusyRef.current = isBusy;
+    isDirtyRef.current = isDirty;
+  });
 
   // Holds the latest performSave so the isBusy-transition effect can call it.
   const performSaveRef = useRef<() => void>(() => {});

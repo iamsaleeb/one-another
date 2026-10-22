@@ -54,17 +54,6 @@ export async function getMyChurchFollow(churchId: string, userId: string) {
   });
 }
 
-export async function getChurchesByIds(ids: string[]) {
-  if (ids.length === 0) return [];
-  cacheTag("churches");
-  cacheLife("hours");
-  return prisma.church.findMany({
-    where: { id: { in: ids } },
-    select: { id: true, name: true },
-    orderBy: { name: "asc" },
-  });
-}
-
 export async function getOrganisersByChurch(churchId: string) {
   cacheTag("churches");
   cacheLife("hours");

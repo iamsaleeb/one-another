@@ -1,4 +1,4 @@
-﻿// Actions
+// Actions
 export * from "./actions/church-memberships";
 export * from "./actions/event-staff";
 export * from "./actions/series-staff";

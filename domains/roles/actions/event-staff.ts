@@ -1,4 +1,4 @@
-﻿"use server";
+"use server";
 
 import { prisma } from "@/lib/db";
 import { eventSubject } from "../lib/ability";
@@ -30,8 +30,6 @@ async function authorise(
 export async function assignEventRoleAction(
   input: unknown
 ): Promise<RoleActionState> {
-  if (!(await getSessionUserId())) return { error: "Unauthorised." };
-
   const parsed = AssignEventRoleSchema.safeParse(input);
   if (!parsed.success)
     return { fieldErrors: parsed.error.flatten().fieldErrors };
@@ -47,8 +45,6 @@ export async function assignEventRoleAction(
 export async function removeEventStaffAction(
   input: unknown
 ): Promise<RoleActionState> {
-  if (!(await getSessionUserId())) return { error: "Unauthorised." };
-
   const parsed = RemoveEventStaffSchema.safeParse(input);
   if (!parsed.success)
     return { fieldErrors: parsed.error.flatten().fieldErrors };

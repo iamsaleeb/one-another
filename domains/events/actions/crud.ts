@@ -1,4 +1,4 @@
-﻿"use server";
+"use server";
 
 import { redirect } from "next/navigation";
 import { getSessionUserId } from "@/domains/roles/lib/get-ability";

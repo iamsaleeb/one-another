@@ -39,7 +39,6 @@ import {
   getChurches,
   getChurchById,
   getMyChurchFollow,
-  getChurchesByIds,
   getOrganisersByChurch,
 } from "@/domains/churches/actions/data";
 import {
@@ -204,33 +203,6 @@ describe("getOrganisersByChurch", () => {
   it("returns an empty array when the church has no organisers", async () => {
     mockChurchMembershipFindMany.mockResolvedValue([]);
     expect(await getOrganisersByChurch("ch-none")).toEqual([]);
-  });
-});
-
-describe("getChurchesByIds", () => {
-  it("returns churches matching the given IDs ordered by name", async () => {
-    mockChurchFindMany.mockResolvedValue([
-      { id: "ch-1", name: "Grace Church" },
-      { id: "ch-2", name: "Harvest Church" },
-    ]);
-
-    const result = await getChurchesByIds(["ch-1", "ch-2"]);
-
-    expect(result).toEqual([
-      { id: "ch-1", name: "Grace Church" },
-      { id: "ch-2", name: "Harvest Church" },
-    ]);
-    expect(mockChurchFindMany).toHaveBeenCalledWith({
-      where: { id: { in: ["ch-1", "ch-2"] } },
-      select: { id: true, name: true },
-      orderBy: { name: "asc" },
-    });
-  });
-
-  it("returns empty array without hitting the DB when ids is empty", async () => {
-    const result = await getChurchesByIds([]);
-    expect(result).toEqual([]);
-    expect(mockChurchFindMany).not.toHaveBeenCalled();
   });
 });
 

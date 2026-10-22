@@ -1,4 +1,4 @@
-﻿jest.mock("server-only", () => ({}));
+jest.mock("server-only", () => ({}));
 
 jest.mock("next/cache", () => ({
   updateTag: jest.fn(),

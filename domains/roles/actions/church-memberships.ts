@@ -1,4 +1,4 @@
-﻿"use server";
+"use server";
 
 import { churchSubject } from "../lib/ability";
 import { getAbility, getSessionUserId } from "../lib/get-ability";
@@ -34,8 +34,6 @@ export async function assignChurchRoleAction(
 export async function removeChurchMembershipAction(
   input: unknown
 ): Promise<RoleActionState> {
-  if (!(await getSessionUserId())) return { error: "Unauthorised." };
-
   const parsed = RemoveChurchMembershipSchema.safeParse(input);
   if (!parsed.success)
     return { fieldErrors: parsed.error.flatten().fieldErrors };

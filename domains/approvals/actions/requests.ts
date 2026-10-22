@@ -1,4 +1,4 @@
-﻿"use server";
+"use server";
 
 import { prisma } from "@/lib/db";
 import {
@@ -216,7 +216,7 @@ export async function revokeAccessAction(
       request.requesterId
     );
   } catch {
-    // idempotent â€” role may have already been removed
+    // idempotent — role may have already been removed
   }
 
   await updateApprovalRequest(requestId, {

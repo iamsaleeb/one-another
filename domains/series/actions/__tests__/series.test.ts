@@ -1,4 +1,4 @@
-﻿jest.mock("next/navigation", () => ({
+jest.mock("next/navigation", () => ({
   redirect: jest.fn(),
 }));
 

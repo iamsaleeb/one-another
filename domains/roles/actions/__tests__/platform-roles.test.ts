@@ -1,4 +1,4 @@
-﻿jest.mock("server-only", () => ({}));
+jest.mock("server-only", () => ({}));
 jest.mock("@/domains/roles/lib/get-ability", () => ({
   getAbility: jest.fn(),
   getSessionUserId: jest.fn(),

@@ -1,4 +1,4 @@
-﻿import { AbilityBuilder, subject } from "@casl/ability";
+import { AbilityBuilder, subject } from "@casl/ability";
 import {
   createPrismaAbility,
   type PrismaAbility,

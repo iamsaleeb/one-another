@@ -1,4 +1,4 @@
-﻿import { subject } from "@casl/ability";
+import { subject } from "@casl/ability";
 import type { Church, Event, Series } from "@prisma/client";
 import { buildAbility, hasAnyGrant, type Action } from "../ability";
 import type { Grants } from "../grants";

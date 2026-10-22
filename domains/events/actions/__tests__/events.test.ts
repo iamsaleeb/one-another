@@ -1,4 +1,4 @@
-﻿jest.mock("next/navigation", () => ({
+jest.mock("next/navigation", () => ({
   redirect: jest.fn(),
 }));
 
@@ -837,7 +837,7 @@ describe("updateEventAction", () => {
   it("does not reschedule when the datetime is unchanged", async () => {
     const mockReschedule = jest.requireMock("@/domains/notifications/queue")
       .rescheduleEventReminderNotifications as jest.Mock;
-    // existingPublished.datetime is new Date('2026-05-01T09:00:00Z') â€” match exactly using local-time constructor
+    // existingPublished.datetime is new Date('2026-05-01T09:00:00Z') — match exactly using local-time constructor
     const sameDate = "2026-05-01";
     const sameTime = "09:00";
     const existingWithLocalDatetime = {

@@ -23,7 +23,11 @@ const mockChurch = prisma.churchMembership.findMany as jest.Mock;
 const mockSeries = prisma.seriesStaffAssignment.findMany as jest.Mock;
 const mockEvent = prisma.eventStaffAssignment.findMany as jest.Mock;
 
-const e1 = subject("Event", { id: "e1", churchId: "c1", seriesId: "s1" } as Event);
+const e1 = subject("Event", {
+  id: "e1",
+  churchId: "c1",
+  seriesId: "s1",
+} as Event);
 
 beforeEach(() => {
   jest.clearAllMocks();

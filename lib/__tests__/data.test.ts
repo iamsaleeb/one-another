@@ -45,6 +45,7 @@ import {
   searchEventsAndChurches,
   getProfileUser,
 } from "@/domains/profile/actions/data";
+import { cacheTag } from "next/cache";
 import { prisma } from "@/lib/db";
 
 const mockEventFindMany = prisma.event.findMany as jest.Mock;
@@ -615,6 +616,12 @@ describe("getUserAttendedEventsPaged", () => {
     const result = await getUserAttendedEventsPaged("user-1", null);
     expect(result.nextCursor).toBeNull();
   });
+
+  it("goes stale with any Event it lists", async () => {
+    mockEventFindMany.mockResolvedValue([pagedEvent]);
+    await getUserAttendedEventsPaged("user-1", null);
+    expect(cacheTag).toHaveBeenCalledWith(`event-${pagedEvent.id}`);
+  });
 });
 
 describe("getEventsNotByCreatorPaged", () => {
@@ -851,6 +858,12 @@ describe("getMySavedEventsPaged", () => {
     const result = await getMySavedEventsPaged("user-1", null);
     expect(result.items).toHaveLength(10);
     expect(result.nextCursor).toBe("se-9");
+  });
+
+  it("goes stale with any Event it lists", async () => {
+    mockSavedEventFindMany.mockResolvedValue([savedRow]);
+    await getMySavedEventsPaged("user-1", null);
+    expect(cacheTag).toHaveBeenCalledWith("event-evt-1");
   });
 
   it("passes cursor and skip when cursor is provided", async () => {

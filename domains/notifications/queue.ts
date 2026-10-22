@@ -159,15 +159,7 @@ export async function scheduleEventReminderNotification(
     select: { config: true },
   });
 
-  let hours = DEFAULT_HOURS_BEFORE_EVENT;
-  if (
-    pref?.config &&
-    typeof pref.config === "object" &&
-    !Array.isArray(pref.config)
-  ) {
-    const h = (pref.config as Record<string, unknown>).hoursBeforeEvent;
-    if (typeof h === "number") hours = h;
-  }
+  const hours = hoursFrom(pref?.config);
 
   if (!event.datetime) return;
 
@@ -193,117 +185,83 @@ export async function scheduleEventReminderNotification(
   );
 }
 
-/**
- * Schedule EVENT_REMINDER notifications for multiple attendees in a single batch.
- * Fetches all hoursBeforeEvent preferences in one findMany query instead of N findUniques.
- * Skips any user whose reminder window has already passed.
- */
-export async function scheduleEventReminderNotifications(
-  userIds: string[],
-  event: EventRef,
-  db: Db = prisma
-): Promise<void> {
-  if (userIds.length === 0 || !event.datetime) return;
-
-  const datetime = event.datetime;
-
-  const prefs = await db.notificationPreference.findMany({
-    where: { userId: { in: userIds }, type: NotificationType.EVENT_REMINDER },
-    select: { userId: true, config: true },
-  });
-
-  const hoursMap = new Map<string, number>();
-  for (const pref of prefs) {
-    if (
-      pref.config &&
-      typeof pref.config === "object" &&
-      !Array.isArray(pref.config)
-    ) {
-      const h = (pref.config as Record<string, unknown>).hoursBeforeEvent;
-      if (typeof h === "number") hoursMap.set(pref.userId, h);
-    }
+function hoursFrom(config: unknown): number {
+  if (config && typeof config === "object" && !Array.isArray(config)) {
+    const h = (config as Record<string, unknown>).hoursBeforeEvent;
+    if (typeof h === "number") return h;
   }
+  return DEFAULT_HOURS_BEFORE_EVENT;
+}
 
-  const now = new Date();
-  const CONCURRENCY = 20;
-  for (let i = 0; i < userIds.length; i += CONCURRENCY) {
-    await Promise.all(
-      userIds.slice(i, i + CONCURRENCY).map((userId) => {
-        const hours = hoursMap.get(userId) ?? DEFAULT_HOURS_BEFORE_EVENT;
-        const scheduledFor = subHours(datetime, hours);
-        if (scheduledFor <= now) return Promise.resolve();
-        return queueNotification(
-          {
-            userId,
-            type: NotificationType.EVENT_REMINDER,
-            title: "Event Reminder",
-            body: `${event.title} starts in ${hours === 1 ? "1 hour" : `${hours} hours`}`,
-            data: {
-              type: "event_reminder",
-              eventId: event.id,
-              eventTitle: event.title,
-              eventDatetime: datetime.toISOString(),
-            },
-            scheduledFor,
-            dedupeKey: event.id,
-          },
-          db
-        );
-      })
-    );
-  }
+interface LiveEventRef extends EventRef {
+  // Published and not cancelled: an Event its attendees should hear about.
+  live: boolean;
 }
 
 /**
- * Reschedule all pending EVENT_REMINDER notifications for an event when its datetime changes.
- * Preserves each attendee's hoursBeforeEvent preference and updates body + data.eventDatetime.
+ * Makes an Event's EVENT_REMINDERs match it. While the Event is live, each
+ * attendee has one pending reminder at their preferred time before it, with
+ * its current title; otherwise none is pending. A reminder that has already
+ * gone out is left alone, and none is queued once its time has passed.
  */
-export async function rescheduleEventReminderNotifications(
-  eventId: string,
-  newDatetime: Date,
+export async function syncEventReminders(
+  event: LiveEventRef,
+  attendeeIds: string[],
   db: Db = prisma
 ): Promise<void> {
-  const pending = await db.notification.findMany({
-    where: {
-      type: NotificationType.EVENT_REMINDER,
-      dedupeKey: eventId,
-      sentAt: null,
-      cancelledAt: null,
-    },
-    select: { id: true, userId: true, data: true },
-  });
+  // Withdraw everything pending, then queue what should be: queueNotification
+  // revives a withdrawn row, so an unchanged reminder ends up as it was.
+  await cancelManyNotifications(
+    { type: NotificationType.EVENT_REMINDER, dedupeKey: event.id },
+    db
+  );
+  const { datetime } = event;
+  if (!event.live || !datetime || attendeeIds.length === 0) return;
 
-  if (pending.length === 0) return;
-
-  const userIds = [...new Set(pending.map((n) => n.userId))];
-  const prefs = await db.notificationPreference.findMany({
-    where: { userId: { in: userIds }, type: NotificationType.EVENT_REMINDER },
-    select: { userId: true, config: true },
-  });
-  const hoursMap = new Map<string, number>();
-  for (const pref of prefs) {
-    if (
-      pref.config &&
-      typeof pref.config === "object" &&
-      !Array.isArray(pref.config)
-    ) {
-      const hours = (pref.config as Record<string, unknown>).hoursBeforeEvent;
-      if (typeof hours === "number") hoursMap.set(pref.userId, hours);
-    }
-  }
-
-  for (const notif of pending) {
-    const hours = hoursMap.get(notif.userId) ?? DEFAULT_HOURS_BEFORE_EVENT;
-    const newScheduledFor = subHours(newDatetime, hours);
-    const existingData = (notif.data ?? {}) as Record<string, string>;
-    await db.notification.update({
-      where: { id: notif.id },
-      data: {
-        scheduledFor: newScheduledFor,
-        body: `${existingData.eventTitle} starts in ${hours === 1 ? "1 hour" : `${hours} hours`}`,
-        data: { ...existingData, eventDatetime: newDatetime.toISOString() },
+  const [sent, prefs] = await Promise.all([
+    db.notification.findMany({
+      where: {
+        type: NotificationType.EVENT_REMINDER,
+        dedupeKey: event.id,
+        userId: { in: attendeeIds },
+        sentAt: { not: null },
       },
-    });
+      select: { userId: true },
+    }),
+    db.notificationPreference.findMany({
+      where: {
+        userId: { in: attendeeIds },
+        type: NotificationType.EVENT_REMINDER,
+      },
+      select: { userId: true, config: true },
+    }),
+  ]);
+  const sentTo = new Set(sent.map((n) => n.userId));
+  const hoursFor = new Map(prefs.map((p) => [p.userId, hoursFrom(p.config)]));
+
+  const now = new Date();
+  for (const userId of attendeeIds) {
+    if (sentTo.has(userId)) continue;
+    const hours = hoursFor.get(userId) ?? DEFAULT_HOURS_BEFORE_EVENT;
+    const scheduledFor = subHours(datetime, hours);
+    if (scheduledFor <= now) continue;
+    await queueNotification(
+      {
+        userId,
+        type: NotificationType.EVENT_REMINDER,
+        title: "Event Reminder",
+        body: `${event.title} starts in ${hours === 1 ? "1 hour" : `${hours} hours`}`,
+        data: {
+          type: "event_reminder",
+          eventId: event.id,
+          eventTitle: event.title,
+          eventDatetime: datetime.toISOString(),
+        },
+        scheduledFor,
+        dedupeKey: event.id,
+      },
+      db
+    );
   }
 }
 

@@ -50,6 +50,12 @@ export async function getEventAttendees(eventId: string) {
   });
 }
 
+// A personal list goes stale whenever one of its Events changes, and every
+// Event lifecycle change invalidates `event-${id}`.
+function tagEachEvent(items: Array<{ id: string }>) {
+  if (items.length > 0) cacheTag(...items.map((e) => `event-${e.id}`));
+}
+
 export async function getUserAttendedEventsPaged(
   userId: string,
   cursor: string | null
@@ -67,8 +73,10 @@ export async function getUserAttendedEventsPaged(
     include: { church: { select: { name: true } } },
   });
   const hasMore = rows.length > PAGE_SIZE;
+  const items = hasMore ? rows.slice(0, PAGE_SIZE) : rows;
+  tagEachEvent(items);
   return {
-    items: hasMore ? rows.slice(0, PAGE_SIZE) : rows,
+    items,
     nextCursor: hasMore ? rows[PAGE_SIZE - 1].id : null,
   };
 }
@@ -206,6 +214,7 @@ export async function getMySavedEventsPaged(
     church: r.event.church,
     isSaved: true,
   }));
+  tagEachEvent(items);
   return {
     items,
     nextCursor: hasMore ? rows[PAGE_SIZE - 1].id : null,

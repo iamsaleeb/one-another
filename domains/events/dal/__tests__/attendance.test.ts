@@ -50,6 +50,7 @@ const baseEvent = {
   title: "Test Event",
   datetime: new Date("2026-06-01T10:00:00Z"),
   isDraft: false,
+  cancelledAt: null,
   metadata: {},
   _count: { attendees: 0 },
 };
@@ -66,6 +67,19 @@ describe("attendEvent", () => {
     expect(await attendEvent("evt-1", "user-1")).toEqual({
       error: "Event not found.",
     });
+  });
+
+  it("refuses a cancelled event and schedules no reminder", async () => {
+    mockEventFindUnique.mockResolvedValue({
+      ...baseEvent,
+      cancelledAt: new Date(),
+    });
+
+    const result = await attendEvent("evt-1", "user-1");
+
+    expect(result).toEqual({ error: "This event has been cancelled." });
+    expect(mockAttendeeCreate).not.toHaveBeenCalled();
+    expect(mockQueue.scheduleEventReminderNotification).not.toHaveBeenCalled();
   });
 
   it("returns error when event is a draft", async () => {
@@ -160,6 +174,19 @@ describe("registerEvent", () => {
     expect(await registerEvent("evt-1", "user-1", {})).toEqual({
       error: "Event not found.",
     });
+  });
+
+  it("refuses a cancelled event and schedules no reminder", async () => {
+    mockEventFindUnique.mockResolvedValue({
+      ...baseEvent,
+      cancelledAt: new Date(),
+    });
+
+    const result = await registerEvent("evt-1", "user-1", {});
+
+    expect(result).toEqual({ error: "This event has been cancelled." });
+    expect(mockAttendeeCreate).not.toHaveBeenCalled();
+    expect(mockQueue.scheduleEventReminderNotification).not.toHaveBeenCalled();
   });
 
   it("returns error when event is a draft", async () => {

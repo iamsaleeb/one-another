@@ -22,7 +22,6 @@ import {
   cancelNotification,
   cancelManyNotifications,
   scheduleEventReminderNotification,
-  rescheduleEventReminderNotifications,
   updateUserReminderSchedule,
 } from "@/domains/notifications/queue";
 
@@ -33,7 +32,6 @@ const mockUpdateMany = prisma.notification.updateMany as jest.Mock;
 const mockFindMany = prisma.notification.findMany as jest.Mock;
 const mockPrefFindUnique = prisma.notificationPreference
   .findUnique as jest.Mock;
-const mockPrefFindMany = prisma.notificationPreference.findMany as jest.Mock;
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -219,64 +217,6 @@ describe("scheduleEventReminderNotification", () => {
         }),
       })
     );
-  });
-});
-
-describe("rescheduleEventReminderNotifications", () => {
-  it("updates each pending notification with per-user hours preference", async () => {
-    const newDatetime = new Date(Date.now() + 12 * 3_600_000);
-    mockFindMany.mockResolvedValue([
-      {
-        id: "n-1",
-        userId: "u-1",
-        data: {
-          eventTitle: "Sunday Service",
-          eventDatetime: new Date().toISOString(),
-        },
-      },
-      {
-        id: "n-2",
-        userId: "u-2",
-        data: {
-          eventTitle: "Sunday Service",
-          eventDatetime: new Date().toISOString(),
-        },
-      },
-    ]);
-    mockPrefFindMany.mockResolvedValue([
-      { userId: "u-1", config: { hoursBeforeEvent: 4 } },
-    ]);
-    mockUpdate.mockResolvedValue({});
-
-    await rescheduleEventReminderNotifications("ev-1", newDatetime);
-
-    expect(mockUpdate).toHaveBeenCalledTimes(2);
-    // u-1 uses 4h preference
-    expect(mockUpdate).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: { id: "n-1" },
-        data: expect.objectContaining({
-          body: "Sunday Service starts in 4 hours",
-        }),
-      })
-    );
-    // u-2 falls back to default 2h
-    expect(mockUpdate).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: { id: "n-2" },
-        data: expect.objectContaining({
-          body: "Sunday Service starts in 2 hours",
-        }),
-      })
-    );
-  });
-
-  it("no-ops when no pending notifications exist", async () => {
-    mockFindMany.mockResolvedValue([]);
-
-    await rescheduleEventReminderNotifications("ev-1", new Date());
-
-    expect(mockUpdate).not.toHaveBeenCalled();
   });
 });
 

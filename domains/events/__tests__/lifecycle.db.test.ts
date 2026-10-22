@@ -532,6 +532,116 @@ describe("cancelEvent and uncancelEvent", () => {
   });
 });
 
+// Each attendee has exactly one pending reminder exactly when the Event is
+// published, not cancelled and still ahead, with its time and title.
+describe("reminders follow the Event", () => {
+  beforeEach(async () => {
+    await makeEvent({
+      id: "e1",
+      churchId: "c1",
+      seriesId: "s1",
+      isDraft: true,
+      datetime: START,
+    });
+    await attend("e1", "u1");
+    await follow("s1", "u2");
+    await saveEvent(
+      "e1",
+      input({ seriesId: "s1", title: "Picnic", isDraft: false }),
+      admin()
+    );
+    jest.clearAllMocks();
+  });
+
+  it("uncancel restores the reminders cancel withdrew", async () => {
+    await cancelEvent("e1", "Rain", admin());
+    await uncancelEvent("e1", admin());
+
+    expect(await pending("EVENT_REMINDER")).toEqual([
+      expect.objectContaining({ userId: "u1", scheduledFor: REMINDER_AT }),
+    ]);
+  });
+
+  it("uncancel withdraws the cancellation notice if it has not gone out", async () => {
+    await cancelEvent("e1", "Rain", admin());
+    await uncancelEvent("e1", admin());
+
+    expect(await pending("EVENT_CANCELLED")).toEqual([]);
+  });
+
+  it("cancel withdraws the new-session notice, and uncancel does not resend it", async () => {
+    await cancelEvent("e1", "Rain", admin());
+    expect(await pending("NEW_SERIES_SESSION")).toEqual([]);
+
+    await uncancelEvent("e1", admin());
+    expect(await pending("NEW_SERIES_SESSION")).toEqual([]);
+  });
+
+  it("renaming rewrites the reminder's text", async () => {
+    await saveEvent(
+      "e1",
+      input({ seriesId: "s1", title: "Beach Day" }),
+      admin()
+    );
+
+    const [reminder] = await pending("EVENT_REMINDER");
+    expect(reminder.body).toBe("Beach Day starts in 2 hours");
+    expect(reminder.data).toMatchObject({ eventTitle: "Beach Day" });
+  });
+
+  it("a cancelled Event gets no reminders, even when rescheduled", async () => {
+    await cancelEvent("e1", "Rain", admin());
+    await saveEvent(
+      "e1",
+      input({ seriesId: "s1", datetimeISO: "2030-07-01T10:00:00.000Z" }),
+      admin()
+    );
+
+    expect(await pending("EVENT_REMINDER")).toEqual([]);
+  });
+
+  it("a reminder that has gone out is left alone", async () => {
+    await prisma.notification.updateMany({
+      where: { type: "EVENT_REMINDER" },
+      data: { sentAt: new Date() },
+    });
+
+    await saveEvent(
+      "e1",
+      input({ seriesId: "s1", title: "Beach Day" }),
+      admin()
+    );
+
+    const [sent] = await prisma.notification.findMany({
+      where: { type: "EVENT_REMINDER" },
+    });
+    expect(sent.body).toBe("Picnic starts in 2 hours");
+    expect(await pending("EVENT_REMINDER")).toEqual([]);
+  });
+
+  it("an Event whose reminder time has passed gets none", async () => {
+    const soon = new Date(Date.now() + 30 * 60_000);
+    await saveEvent(
+      "e1",
+      input({ seriesId: "s1", datetimeISO: soon.toISOString() }),
+      admin()
+    );
+
+    expect(await pending("EVENT_REMINDER")).toEqual([]);
+  });
+
+  it("deleting a published Event tells its attendees, without a link", async () => {
+    await deleteEvent("e1", admin());
+
+    const [notice] = await pending("EVENT_CANCELLED");
+    expect(notice).toMatchObject({
+      userId: "u1",
+      body: "Picnic has been cancelled",
+    });
+    expect(notice.data).not.toHaveProperty("eventId");
+  });
+});
+
 describe("deleteEvent", () => {
   beforeEach(async () => {
     await makeEvent({

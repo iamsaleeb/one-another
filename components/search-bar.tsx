@@ -97,19 +97,23 @@ export function SearchBar({
   const [category, setCategory] = useState(initialCategory);
   const [type, setType] = useState<TypeFilter>(initialType);
 
-  // Sync with URL changes (e.g. back/forward navigation)
-  useEffect(() => {
-    setQuery(initialQuery);
-  }, [initialQuery]);
-  useEffect(() => {
-    setWhen(initialWhen);
-  }, [initialWhen]);
-  useEffect(() => {
-    setCategory(initialCategory);
-  }, [initialCategory]);
-  useEffect(() => {
-    setType(initialType);
-  }, [initialType]);
+  // Sync with URL changes (e.g. back/forward navigation). Adjusting state
+  // during render avoids the extra render pass a syncing effect would cause.
+  const initial = { initialQuery, initialWhen, initialCategory, initialType };
+  const [prevInitial, setPrevInitial] = useState(initial);
+  if (
+    prevInitial.initialQuery !== initialQuery ||
+    prevInitial.initialWhen !== initialWhen ||
+    prevInitial.initialCategory !== initialCategory ||
+    prevInitial.initialType !== initialType
+  ) {
+    setPrevInitial(initial);
+    if (prevInitial.initialQuery !== initialQuery) setQuery(initialQuery);
+    if (prevInitial.initialWhen !== initialWhen) setWhen(initialWhen);
+    if (prevInitial.initialCategory !== initialCategory)
+      setCategory(initialCategory);
+    if (prevInitial.initialType !== initialType) setType(initialType);
+  }
 
   // Close dropdown on Escape
   useEffect(() => {

@@ -70,7 +70,7 @@ export function EventWizard({
   questionsLocked,
 }: EventWizardProps) {
   const router = useRouter();
-  const [currentStep, setCurrentStep] = useState(0);
+  const [stepIndex, setStepIndex] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
 
@@ -172,10 +172,8 @@ export function EventWizard({
     { label: "Review", key: "review", fields: [] },
   ];
 
-  // Clamp currentStep when steps are removed (e.g. requiresRegistration toggled off)
-  useEffect(() => {
-    setCurrentStep((s) => Math.min(s, activeSteps.length - 1));
-  }, [activeSteps.length]);
+  // Clamp to the last step when steps are removed (e.g. requiresRegistration toggled off)
+  const currentStep = Math.min(stepIndex, activeSteps.length - 1);
 
   // Clear questions from form state when registration is disabled so they aren't persisted
   useEffect(() => {
@@ -208,10 +206,10 @@ export function EventWizard({
       });
       return;
     }
-    setCurrentStep((s) => s + 1);
+    setStepIndex(currentStep + 1);
   };
 
-  const handleBack = () => setCurrentStep((s) => Math.max(0, s - 1));
+  const handleBack = () => setStepIndex(Math.max(0, currentStep - 1));
 
   const handleSaveDraft = async () => {
     setIsSaving(true);

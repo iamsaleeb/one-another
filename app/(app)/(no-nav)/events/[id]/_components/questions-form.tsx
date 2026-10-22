@@ -3,6 +3,8 @@
 import { useRef, useState } from "react";
 import { type Control, Controller } from "react-hook-form";
 import { upload } from "@vercel/blob/client";
+import { useSession } from "next-auth/react";
+import { uploadPathname } from "@/domains/upload/lib/paths";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
@@ -35,6 +37,7 @@ export function QuestionsForm({
   activeIndex,
   disabled,
 }: QuestionsFormProps) {
+  const userId = useSession().data?.user?.id;
   const [uploadState, setUploadState] = useState<Record<string, UploadState>>(
     {}
   );
@@ -54,11 +57,16 @@ export function QuestionsForm({
     }
     setUploadState((prev) => ({ ...prev, [questionId]: { uploading: true } }));
     try {
-      const blob = await upload(file.name, file, {
-        access: "public",
-        handleUploadUrl: "/api/upload",
-        clientPayload: "response",
-      });
+      if (!userId) throw new Error("Not signed in");
+      const blob = await upload(
+        uploadPathname("response", userId, file.name),
+        file,
+        {
+          access: "public",
+          handleUploadUrl: "/api/upload",
+          clientPayload: "response",
+        }
+      );
       onChange(blob.url);
       setUploadState((prev) => ({
         ...prev,

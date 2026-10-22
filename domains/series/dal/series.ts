@@ -1,17 +1,47 @@
 import "server-only";
 
 import { prisma } from "@/lib/db";
-import type { Actor } from "@/domains/roles/lib/actor";
-import { Capabilities } from "@/domains/roles/lib/capabilities";
+import {
+  seriesSubject,
+  type Action,
+  type AppAbility,
+} from "@/domains/roles/lib/ability";
+import {
+  missingOrForbidden,
+  resolveWrite,
+  scopedTo as scopedToType,
+  type WriteOptions,
+} from "@/domains/roles/lib/scoped-writes";
 import type { CreateSeriesInput } from "../validations/series";
 
 type DalError = { error: string } | { fieldErrors: Record<string, string[]> };
 
+function scopedTo(ability: AppAbility, action: Action, id: string) {
+  return scopedToType(ability, action, "Series", id);
+}
+
+async function findForAction(
+  ability: AppAbility,
+  action: Action,
+  id: string
+): Promise<{ churchId: string } | { error: string }> {
+  const series = await prisma.series.findFirst({
+    where: scopedTo(ability, action, id),
+    select: { churchId: true },
+  });
+  if (series) return series;
+  return missingOrForbidden(
+    await prisma.series.count({ where: { id } }),
+    "Series"
+  );
+}
+
 export async function createSeries(
   data: CreateSeriesInput,
-  userId: string,
-  actor: Actor
+  opts?: WriteOptions
 ): Promise<DalError | { id: string; churchId: string }> {
+  const { ability, userId } = await resolveWrite(opts);
+
   const {
     name,
     description,
@@ -23,8 +53,8 @@ export async function createSeries(
     photoUrl,
   } = data;
 
-  const allowed = await actor.can(Capabilities.SERIES_CREATE, { churchId });
-  if (!allowed) return { error: "Unauthorised." };
+  if (!ability.can("create", seriesSubject({ churchId })))
+    return { error: "Unauthorised." };
 
   const created = await prisma.series.create({
     data: {
@@ -46,9 +76,9 @@ export async function createSeries(
 export async function updateSeries(
   id: string,
   data: CreateSeriesInput,
-  userId: string,
-  actor: Actor
+  opts?: WriteOptions
 ): Promise<DalError | { oldChurchId: string; newChurchId: string }> {
+  const { ability } = await resolveWrite(opts);
   const {
     name,
     description,
@@ -60,27 +90,22 @@ export async function updateSeries(
     photoUrl,
   } = data;
 
-  const existing = await prisma.series.findUnique({
-    where: { id },
-    select: { churchId: true },
-  });
-  if (!existing) return { error: "Series not found." };
+  const existing = await findForAction(ability, "update", id);
+  if ("error" in existing) return existing;
 
-  const allowedOriginal = await actor.can(Capabilities.SERIES_UPDATE, {
-    churchId: existing.churchId,
-    seriesId: id,
-  });
-  if (!allowedOriginal) return { error: "Unauthorised." };
-
-  if (churchId !== existing.churchId) {
-    const allowedNew = await actor.can(Capabilities.SERIES_UPDATE, {
-      churchId,
-    });
-    if (!allowedNew) return { error: "Unauthorised." };
-  }
+  // Moving a Series needs authority to create one in the destination Church,
+  // and to still edit it once it lands there.
+  if (
+    churchId !== existing.churchId &&
+    !(
+      ability.can("create", seriesSubject({ churchId })) &&
+      ability.can("update", seriesSubject({ id, churchId }))
+    )
+  )
+    return { error: "Unauthorised." };
 
   await prisma.series.update({
-    where: { id },
+    where: scopedTo(ability, "update", id),
     data: {
       name,
       description,
@@ -98,21 +123,13 @@ export async function updateSeries(
 
 export async function deleteSeries(
   id: string,
-  userId: string,
-  actor: Actor
+  opts?: WriteOptions
 ): Promise<{ error: string } | { churchId: string }> {
-  const series = await prisma.series.findUnique({
-    where: { id },
-    select: { churchId: true },
-  });
-  if (!series) return { error: "Series not found." };
+  const { ability } = await resolveWrite(opts);
+  const series = await findForAction(ability, "delete", id);
+  if ("error" in series) return series;
 
-  const allowed = await actor.can(Capabilities.SERIES_DELETE, {
-    churchId: series.churchId,
-  });
-  if (!allowed) return { error: "Unauthorised." };
-
-  await prisma.series.delete({ where: { id } });
+  await prisma.series.delete({ where: scopedTo(ability, "delete", id) });
 
   return { churchId: series.churchId };
 }

@@ -6,12 +6,12 @@ import {
   getEventsPaged,
   getUserAttendedEventsPaged,
   getUserAttendedPastEventsPaged,
-  getEventsByCreatorPaged,
   getEventsNotByCreatorPaged,
   getFollowedChurchEventsPaged,
   getOtherChurchEventsPaged,
   getMySavedEventsPaged,
 } from "./data";
+import { getManageableEventsPaged } from "../dal/manageable";
 
 interface Page {
   items: EventCardItem[];
@@ -42,12 +42,12 @@ export async function loadMoreMyPastEventsAction(
   return getUserAttendedPastEventsPaged(session.user.id, cursor);
 }
 
-export async function loadMoreMyCreatedEventsAction(
+export async function loadMoreManageableEventsAction(
   cursor: string | null
 ): Promise<Page> {
   const session = await auth();
   if (!session?.user?.id) return empty;
-  return getEventsByCreatorPaged(session.user.id, cursor);
+  return getManageableEventsPaged(cursor);
 }
 
 export async function loadMoreCommunityEventsAction(

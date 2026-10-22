@@ -28,8 +28,7 @@ import {
   parseEventMetadata,
   parseEventAttendeeMetadata,
 } from "@/domains/events/validations/event";
-import { getActor } from "@/domains/roles/lib/session";
-import { Capabilities } from "@/domains/roles/lib/capabilities";
+import { getAbility, getSessionUserId, eventSubject } from "@/domains/roles";
 import { EventDatetime } from "@/domains/events/components/event-datetime";
 import { formatDateOnly, parseDateOfBirth } from "@/lib/datetime";
 import { InfoField } from "@/components/ui/info-field";
@@ -55,13 +54,8 @@ export async function generateMetadata({ params }: Props) {
   const event = await getEventById(id);
   if (!event) return { title: "Event Not Found" };
   if (event.isDraft) {
-    const actor = await getActor();
-    const access = await actor.loadContext({
-      churchId: event.churchId,
-      eventId: id,
-      seriesId: event.seriesId ?? undefined,
-    });
-    if (!access.can(Capabilities.EVENT_UPDATE))
+    const ability = await getAbility();
+    if (!ability.can("update", eventSubject(event)))
       return { title: "Event Not Found" };
   }
   const description = event.description.slice(0, 160);
@@ -79,13 +73,12 @@ export async function generateMetadata({ params }: Props) {
 }
 
 export default async function EventDetailPage({ params }: Props) {
-  const [{ id }, actor, session] = await Promise.all([
+  const [{ id }, ability, userId, session] = await Promise.all([
     params,
-    getActor(),
+    getAbility(),
+    getSessionUserId(),
     auth(),
   ]);
-
-  const userId = actor.isAuthenticated ? actor.id : null;
 
   const [event, myAttendance, isSaved] = await Promise.all([
     getEventById(id),
@@ -97,16 +90,11 @@ export default async function EventDetailPage({ params }: Props) {
 
   const isAttending = myAttendance !== null;
 
-  const access = await actor.loadContext({
-    churchId: event.churchId,
-    eventId: id,
-    seriesId: event.seriesId ?? undefined,
-  });
-
-  const canEdit = access.can(Capabilities.EVENT_UPDATE);
-  const canDelete = access.can(Capabilities.EVENT_DELETE);
-  const canViewAttendees = access.can(Capabilities.EVENT_VIEW_ATTENDEES);
-  const canManageStaff = access.can(Capabilities.EVENT_MANAGE_STAFF);
+  const subject = eventSubject(event);
+  const canEdit = ability.can("update", subject);
+  const canDelete = ability.can("delete", subject);
+  const canViewAttendees = ability.can("view_attendees", subject);
+  const canManageStaff = ability.can("manage_staff", subject);
 
   const [myApprovalRequest, pendingApprovalRequests] = await Promise.all([
     userId

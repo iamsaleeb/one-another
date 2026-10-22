@@ -1,9 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
-
-const globalForPrisma = globalThis as unknown as {
-  prisma: PrismaClient | undefined;
-};
+import { createCaslExtension } from "@casl/prisma";
 
 function createPrismaClient() {
   const connectionString = process.env.DATABASE_URL;
@@ -16,8 +13,12 @@ function createPrismaClient() {
       process.env.NODE_ENV === "development"
         ? ["query", "error", "warn"]
         : ["error"],
-  });
+  }).$extends(createCaslExtension());
 }
+
+const globalForPrisma = globalThis as unknown as {
+  prisma: ReturnType<typeof createPrismaClient> | undefined;
+};
 
 export const prisma = globalForPrisma.prisma ?? createPrismaClient();
 

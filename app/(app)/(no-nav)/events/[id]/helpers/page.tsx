@@ -2,8 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
 import { getEventById } from "@/domains/events/actions/data";
-import { getActor } from "@/domains/roles/lib/session";
-import { Capabilities } from "@/domains/roles/lib/capabilities";
+import { getAbility, eventSubject } from "@/domains/roles";
 import {
   getPendingRequestsForResource,
   getResolvedRequestsForResource,
@@ -21,15 +20,11 @@ export async function generateMetadata({ params }: Props) {
 }
 
 export default async function EventHelpersPage({ params }: Props) {
-  const [{ id }, actor] = await Promise.all([params, getActor()]);
+  const [{ id }, ability] = await Promise.all([params, getAbility()]);
   const event = await getEventById(id);
   if (!event) notFound();
 
-  const access = await actor.loadContext({
-    churchId: event.churchId,
-    eventId: id,
-  });
-  if (!access.can(Capabilities.EVENT_MANAGE_STAFF)) notFound();
+  if (!ability.can("manage_staff", eventSubject(event))) notFound();
 
   const [pendingRequests, resolvedRequests] = await Promise.all([
     getPendingRequestsForResource("EVENT", id),

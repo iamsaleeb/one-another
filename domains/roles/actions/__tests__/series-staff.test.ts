@@ -2,8 +2,9 @@ jest.mock("server-only", () => ({}));
 jest.mock("@/lib/db", () => ({
   prisma: { series: { findUnique: jest.fn() } },
 }));
-jest.mock("@/domains/roles/lib/session", () => ({
-  getActor: jest.fn(),
+jest.mock("@/domains/roles/lib/get-ability", () => ({
+  getAbility: jest.fn(),
+  getSessionUserId: jest.fn(),
 }));
 jest.mock("@/domains/roles/dal/series-staff", () => ({
   upsertSeriesStaff: jest.fn(),
@@ -15,37 +16,24 @@ import {
   removeSeriesStaffAction,
 } from "../series-staff";
 import { prisma } from "@/lib/db";
-import { getActor } from "@/domains/roles/lib/session";
 import {
   upsertSeriesStaff,
   removeSeriesStaff,
 } from "@/domains/roles/dal/series-staff";
+import { grants, signInAs } from "@/domains/roles/testing";
 
-const mockGetActor = getActor as jest.Mock;
 const mockSeriesFindUnique = prisma.series.findUnique as jest.Mock;
 const mockUpsert = upsertSeriesStaff as jest.Mock;
 const mockRemove = removeSeriesStaff as jest.Mock;
 
-function makeActor(opts?: { id?: string; canResult?: boolean }) {
-  return {
-    isAuthenticated: true as const,
-    id: opts?.id ?? "admin-1",
-    isPlatformAdmin: false,
-    can: jest.fn().mockResolvedValue(opts?.canResult ?? true),
-    loadContext: jest.fn(),
-  };
-}
-
-const guestActor = {
-  isAuthenticated: false as const,
-  can: jest.fn().mockResolvedValue(false),
-  loadContext: jest.fn(),
-};
+const seriesManagerOfS1 = grants({
+  series: [{ seriesId: "s1", role: "SERIES_MANAGER" }],
+});
 
 beforeEach(() => {
   jest.clearAllMocks();
-  mockGetActor.mockResolvedValue(makeActor());
-  mockSeriesFindUnique.mockResolvedValue({ churchId: "c1" });
+  signInAs("admin-1", seriesManagerOfS1);
+  mockSeriesFindUnique.mockResolvedValue({ id: "s1", churchId: "c1" });
 });
 
 describe("assignSeriesRoleAction", () => {
@@ -55,7 +43,7 @@ describe("assignSeriesRoleAction", () => {
   });
 
   it("returns error when unauthenticated", async () => {
-    mockGetActor.mockResolvedValue(guestActor);
+    signInAs(null);
     const result = await assignSeriesRoleAction({
       userId: "u1",
       seriesId: "s1",
@@ -75,8 +63,11 @@ describe("assignSeriesRoleAction", () => {
     expect(mockUpsert).not.toHaveBeenCalled();
   });
 
-  it("returns error when not authorized", async () => {
-    mockGetActor.mockResolvedValue(makeActor({ canResult: false }));
+  it("returns error for a session creator (cannot update the Series)", async () => {
+    signInAs(
+      "sc-1",
+      grants({ series: [{ seriesId: "s1", role: "SERIES_SESSION_CREATOR" }] })
+    );
     const result = await assignSeriesRoleAction({
       userId: "u1",
       seriesId: "s1",
@@ -86,9 +77,7 @@ describe("assignSeriesRoleAction", () => {
     expect(mockUpsert).not.toHaveBeenCalled();
   });
 
-  it("assigns series role when authorized", async () => {
-    const actor = makeActor();
-    mockGetActor.mockResolvedValue(actor);
+  it("assigns series role for the Series manager", async () => {
     mockUpsert.mockResolvedValue({});
     const result = await assignSeriesRoleAction({
       userId: "u1",
@@ -96,16 +85,26 @@ describe("assignSeriesRoleAction", () => {
       role: "SERIES_MANAGER",
     });
     expect(result).toEqual({ success: "Series role assigned." });
-    expect(actor.can).toHaveBeenCalledWith(
-      expect.any(String),
-      expect.objectContaining({ churchId: "c1", seriesId: "s1" })
-    );
     expect(mockUpsert).toHaveBeenCalledWith(
       "u1",
       "s1",
       "SERIES_MANAGER",
       "admin-1"
     );
+  });
+
+  it("assigns series role for a Church admin via the role cascade", async () => {
+    signInAs(
+      "ca-1",
+      grants({ church: [{ churchId: "c1", role: "CHURCH_ADMIN" }] })
+    );
+    mockUpsert.mockResolvedValue({});
+    const result = await assignSeriesRoleAction({
+      userId: "u1",
+      seriesId: "s1",
+      role: "SERIES_SESSION_CREATOR",
+    });
+    expect(result).toEqual({ success: "Series role assigned." });
   });
 });
 
@@ -116,7 +115,7 @@ describe("removeSeriesStaffAction", () => {
   });
 
   it("returns error when unauthenticated", async () => {
-    mockGetActor.mockResolvedValue(guestActor);
+    signInAs(null);
     const result = await removeSeriesStaffAction({
       userId: "u1",
       seriesId: "s1",
@@ -135,7 +134,7 @@ describe("removeSeriesStaffAction", () => {
   });
 
   it("returns error when not authorized", async () => {
-    mockGetActor.mockResolvedValue(makeActor({ canResult: false }));
+    signInAs("u9", grants());
     const result = await removeSeriesStaffAction({
       userId: "u1",
       seriesId: "s1",
@@ -145,18 +144,12 @@ describe("removeSeriesStaffAction", () => {
   });
 
   it("removes series staff when authorized", async () => {
-    const actor = makeActor();
-    mockGetActor.mockResolvedValue(actor);
     mockRemove.mockResolvedValue({});
     const result = await removeSeriesStaffAction({
       userId: "u1",
       seriesId: "s1",
     });
     expect(result).toEqual({ success: "Series staff removed." });
-    expect(actor.can).toHaveBeenCalledWith(
-      expect.any(String),
-      expect.objectContaining({ churchId: "c1", seriesId: "s1" })
-    );
     expect(mockRemove).toHaveBeenCalledWith("u1", "s1");
   });
 });

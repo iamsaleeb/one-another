@@ -2,6 +2,7 @@
 
 import { cacheTag, cacheLife } from "next/cache";
 import { prisma } from "@/lib/db";
+import { upcomingPublicEvents } from "@/domains/events/lib/visibility";
 import type { Prisma } from "@prisma/client";
 import { startOfDay, endOfDay, addDays, getDay } from "date-fns";
 import type { WhenFilter, TypeFilter } from "@/lib/types/search";
@@ -63,8 +64,7 @@ export async function searchEventsAndChurches(filters: SearchFilters) {
   const shouldFetchChurches = type === "all" || type === "churches";
 
   const eventWhere: Prisma.EventWhereInput = {
-    datetime: { gte: new Date() },
-    isDraft: false,
+    ...upcomingPublicEvents(),
   };
   if (query) {
     eventWhere.OR = [

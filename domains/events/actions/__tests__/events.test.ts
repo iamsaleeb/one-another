@@ -11,6 +11,8 @@ jest.mock("@/lib/db", () => ({
     event: {
       create: jest.fn(),
       findUnique: jest.fn(),
+      findFirst: jest.fn(),
+      count: jest.fn(),
       update: jest.fn(),
       delete: jest.fn(),
     },
@@ -62,8 +64,9 @@ jest.mock("@/auth", () => ({
   auth: jest.fn(),
 }));
 
-jest.mock("@/domains/roles/lib/session", () => ({
-  getActor: jest.fn(),
+jest.mock("@/domains/roles/lib/get-ability", () => ({
+  getAbility: jest.fn(),
+  getSessionUserId: jest.fn(),
 }));
 
 jest.mock("@/domains/events/questions/dal", () => ({
@@ -97,7 +100,10 @@ import {
 import { extractResponses } from "@/lib/utils/forms";
 import { prisma } from "@/lib/db";
 import { auth } from "@/auth";
-import { getActor } from "@/domains/roles/lib/session";
+import { getAbility, getSessionUserId } from "@/domains/roles/lib/get-ability";
+import { buildAbility } from "@/domains/roles/lib/ability";
+import type { Grants } from "@/domains/roles/lib/grants";
+import { grants, matchesWhere } from "@/domains/roles/testing";
 import {
   registerEvent as _registerEvent,
   attendEvent as _attendEvent,
@@ -119,27 +125,28 @@ const mockStaffCreate = prisma.eventStaffAssignment.create as jest.Mock;
 const mockQueueNotification = jest.requireMock("@/domains/notifications/queue")
   .queueNotification as jest.Mock;
 const mockAuth = auth as jest.Mock;
-const mockGetActor = getActor as jest.Mock;
+const mockGetAbility = getAbility as jest.Mock;
+const mockGetSessionUserId = getSessionUserId as jest.Mock;
 const mockRegisterEvent = _registerEvent as jest.Mock;
 const mockAttendEvent = _attendEvent as jest.Mock;
 const mockUnattendEvent = _unattendEvent as jest.Mock;
 
-function makeActor(opts: { id?: string; canResult?: boolean } = {}) {
-  return {
-    isAuthenticated: true as const,
-    id: opts.id ?? "user-1",
-    isPlatformAdmin: false,
-    can: jest.fn().mockResolvedValue(opts.canResult ?? true),
-    loadContext: jest.fn(),
-  };
+// Signs in with real Grants. Default is a platform admin so tests that only
+// exercise behaviour (not permissions) pass any Church/Series id.
+function signInAs(
+  opts: { id?: string; canResult?: boolean; grants?: Grants } = {}
+) {
+  mockGetSessionUserId.mockResolvedValue(opts.id ?? "user-1");
+  const g =
+    opts.grants ??
+    (opts.canResult === false ? grants() : grants({ isPlatformAdmin: true }));
+  mockGetAbility.mockResolvedValue(buildAbility(g));
 }
 
-const guestActor = {
-  isAuthenticated: false as const,
-  can: jest.fn().mockResolvedValue(false),
-  loadContext: jest.fn(),
-};
-
+function signOut() {
+  mockGetSessionUserId.mockResolvedValue(null);
+  mockGetAbility.mockResolvedValue(buildAbility(null));
+}
 function makeFormData(fields: Record<string, string>): FormData {
   const fd = new FormData();
   for (const [key, value] of Object.entries(fields)) {
@@ -165,13 +172,25 @@ beforeEach(() => {
   mockAuth.mockResolvedValue({
     user: {
       id: "user-1",
-      isPlatformAdmin: false,
-      churchMemberships: [{ churchId: "ch-1", role: "EVENT_MANAGER" as const }],
       onboardingCompleted: true,
       isEmailVerified: true,
     },
   });
-  mockGetActor.mockResolvedValue(makeActor({ id: "user-1" }));
+  signInAs();
+  // The DAL loads Events through a permission-scoped findFirst. Serve it from
+  // the findUnique fixture, filtered by the real CASL where clause.
+  (prisma.event.findFirst as jest.Mock).mockImplementation(
+    async ({ where }: { where: { id: string } }) => {
+      const row = await mockEventFindUnique({ where: { id: where.id } });
+      if (!row) return null;
+      const record = { id: where.id, seriesId: null, ...row };
+      return matchesWhere(where, record) ? record : null;
+    }
+  );
+  (prisma.event.count as jest.Mock).mockImplementation(
+    async ({ where }: { where: { id: string } }) =>
+      (await mockEventFindUnique({ where })) ? 1 : 0
+  );
   mockSeriesFollowerFindMany.mockResolvedValue([]);
   mockEventAttendeeFindMany.mockResolvedValue([]);
   mockEventAttendeeFindUnique.mockResolvedValue(null);
@@ -282,7 +301,7 @@ describe("createEventAction", () => {
   });
 
   it("returns an unauthorized error when there is no session", async () => {
-    mockGetActor.mockResolvedValue(guestActor);
+    signOut();
 
     const result = await createEventAction(validData);
 
@@ -291,7 +310,7 @@ describe("createEventAction", () => {
   });
 
   it("returns an unauthorized error when the user is not an organiser", async () => {
-    mockGetActor.mockResolvedValue(guestActor);
+    signOut();
 
     const result = await createEventAction(validData);
 
@@ -300,7 +319,7 @@ describe("createEventAction", () => {
   });
 
   it("returns an error when organiser is not assigned to the church", async () => {
-    mockGetActor.mockResolvedValue(makeActor({ canResult: false }));
+    signInAs({ canResult: false });
 
     const result = await createEventAction(validData);
 
@@ -418,9 +437,10 @@ describe("createEventAction", () => {
   });
 
   it("auto-assigns EVENT_EDITOR staff role when creator has EVENT_CREATOR church role", async () => {
-    const actor = makeActor({ id: "creator-1" });
-    actor.can.mockResolvedValueOnce(true).mockResolvedValueOnce(false);
-    mockGetActor.mockResolvedValue(actor);
+    signInAs({
+      id: "creator-1",
+      grants: grants({ church: [{ churchId: "ch-1", role: "EVENT_CREATOR" }] }),
+    });
     mockEventCreate.mockResolvedValue({ id: "evt-creator" });
     mockStaffCreate.mockResolvedValue({});
 
@@ -453,7 +473,7 @@ describe("cancelEventAction", () => {
     await cancelEventAction("evt-1", "Venue unavailable");
 
     expect(mockEventUpdate).toHaveBeenCalledWith({
-      where: { id: "evt-1" },
+      where: expect.objectContaining({ id: "evt-1" }),
       data: expect.objectContaining({
         cancellationReason: "Venue unavailable",
       }),
@@ -463,7 +483,7 @@ describe("cancelEventAction", () => {
   });
 
   it("redirects away when the user is not an organiser", async () => {
-    mockGetActor.mockResolvedValue(guestActor);
+    signOut();
     mockRedirect.mockImplementationOnce(() => {
       throw new Error("NEXT_REDIRECT");
     });
@@ -478,7 +498,7 @@ describe("cancelEventAction", () => {
 
   it("redirects away when the user cannot manage the church", async () => {
     mockEventFindUnique.mockResolvedValue({ churchId: "ch-1" });
-    mockGetActor.mockResolvedValue(makeActor({ canResult: false }));
+    signInAs({ canResult: false });
     mockRedirect.mockImplementationOnce(() => {
       throw new Error("NEXT_REDIRECT");
     });
@@ -553,7 +573,7 @@ describe("uncancelEventAction", () => {
     await uncancelEventAction("evt-1");
 
     expect(mockEventUpdate).toHaveBeenCalledWith({
-      where: { id: "evt-1" },
+      where: expect.objectContaining({ id: "evt-1" }),
       data: { cancelledAt: null, cancellationReason: null },
     });
     expect(mockUpdateTag).toHaveBeenCalledWith("event-evt-1");
@@ -561,7 +581,7 @@ describe("uncancelEventAction", () => {
   });
 
   it("redirects away when the user is not an organiser", async () => {
-    mockGetActor.mockResolvedValue(guestActor);
+    signOut();
     mockRedirect.mockImplementationOnce(() => {
       throw new Error("NEXT_REDIRECT");
     });
@@ -718,7 +738,7 @@ describe("updateEventAction", () => {
 
     expect(mockEventUpdate).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { id: "evt-1" },
+        where: expect.objectContaining({ id: "evt-1" }),
         data: expect.objectContaining({
           title: "Sunday Worship",
           churchId: "ch-1",
@@ -758,7 +778,7 @@ describe("updateEventAction", () => {
   });
 
   it("redirects away when the user is not an organiser", async () => {
-    mockGetActor.mockResolvedValue(guestActor);
+    signOut();
     mockRedirect.mockImplementationOnce(() => {
       throw new Error("NEXT_REDIRECT");
     });
@@ -786,7 +806,7 @@ describe("updateEventAction", () => {
 
   it("redirects away when the organiser cannot manage the original church", async () => {
     mockEventFindUnique.mockResolvedValue(existingPublished);
-    mockGetActor.mockResolvedValue(makeActor({ canResult: false }));
+    signInAs({ canResult: false });
     mockRedirect.mockImplementationOnce(() => {
       throw new Error("NEXT_REDIRECT");
     });
@@ -882,9 +902,10 @@ describe("updateEventAction", () => {
 
   it("checks new church permission when church changes", async () => {
     mockEventFindUnique.mockResolvedValue(existingPublished);
-    const actor = makeActor();
-    actor.can.mockResolvedValueOnce(true).mockResolvedValueOnce(false);
-    mockGetActor.mockResolvedValue(actor);
+    // Manages Events in ch-1 only, so may not move one into ch-new.
+    signInAs({
+      grants: grants({ church: [{ churchId: "ch-1", role: "EVENT_MANAGER" }] }),
+    });
     mockRedirect.mockImplementationOnce(() => {
       throw new Error("NEXT_REDIRECT");
     });
@@ -941,14 +962,16 @@ describe("deleteEventAction", () => {
       type: NotificationType.EVENT_REMINDER,
       dedupeKey: "evt-1",
     });
-    expect(mockEventDelete).toHaveBeenCalledWith({ where: { id: "evt-1" } });
+    expect(mockEventDelete).toHaveBeenCalledWith({
+      where: expect.objectContaining({ id: "evt-1" }),
+    });
     expect(mockUpdateTag).toHaveBeenCalledWith("events-list");
     expect(mockUpdateTag).toHaveBeenCalledWith("event-evt-1");
     expect(mockRedirect).toHaveBeenCalledWith("/organiser");
   });
 
   it("redirects away when the user is not an organiser", async () => {
-    mockGetActor.mockResolvedValue(guestActor);
+    signOut();
     mockRedirect.mockImplementationOnce(() => {
       throw new Error("NEXT_REDIRECT");
     });
@@ -974,7 +997,7 @@ describe("deleteEventAction", () => {
 
   it("redirects away when the organiser cannot manage the church", async () => {
     mockEventFindUnique.mockResolvedValue({ churchId: "ch-1" });
-    mockGetActor.mockResolvedValue(makeActor({ canResult: false }));
+    signInAs({ canResult: false });
     mockRedirect.mockImplementationOnce(() => {
       throw new Error("NEXT_REDIRECT");
     });
@@ -993,7 +1016,9 @@ describe("deleteEventAction", () => {
 
     await deleteEventAction("evt-1");
 
-    expect(mockEventDelete).toHaveBeenCalledWith({ where: { id: "evt-1" } });
+    expect(mockEventDelete).toHaveBeenCalledWith({
+      where: expect.objectContaining({ id: "evt-1" }),
+    });
     expect(mockRedirect).toHaveBeenCalledWith("/organiser");
   });
 });
@@ -1022,7 +1047,7 @@ describe("publishEventAction", () => {
     await publishEventAction("evt-1");
 
     expect(mockEventUpdate).toHaveBeenCalledWith({
-      where: { id: "evt-1" },
+      where: expect.objectContaining({ id: "evt-1" }),
       data: { isDraft: false },
     });
     expect(mockScheduleReminderNotifs).toHaveBeenCalledTimes(1);
@@ -1069,7 +1094,7 @@ describe("publishEventAction", () => {
   });
 
   it("returns an unauthorised error when the user is not an organiser", async () => {
-    mockGetActor.mockResolvedValue(guestActor);
+    signOut();
 
     const result = await publishEventAction("evt-1");
 
@@ -1084,7 +1109,7 @@ describe("publishEventAction", () => {
       title: "Test",
       isDraft: true,
     });
-    mockGetActor.mockResolvedValue(makeActor({ canResult: false }));
+    signInAs({ canResult: false });
 
     const result = await publishEventAction("evt-1");
 
@@ -1253,7 +1278,7 @@ describe("unpublishEventAction", () => {
     await unpublishEventAction("evt-1");
 
     expect(mockEventUpdate).toHaveBeenCalledWith({
-      where: { id: "evt-1" },
+      where: expect.objectContaining({ id: "evt-1" }),
       data: { isDraft: true },
     });
     expect(mockCancelAll).toHaveBeenCalledWith({
@@ -1266,7 +1291,7 @@ describe("unpublishEventAction", () => {
   });
 
   it("returns an unauthorised error when the user is not an organiser", async () => {
-    mockGetActor.mockResolvedValue(guestActor);
+    signOut();
 
     const result = await unpublishEventAction("evt-1");
 
@@ -1276,7 +1301,7 @@ describe("unpublishEventAction", () => {
 
   it("returns an error when the organiser cannot manage the church", async () => {
     mockEventFindUnique.mockResolvedValue({ churchId: "ch-1" });
-    mockGetActor.mockResolvedValue(makeActor({ canResult: false }));
+    signInAs({ canResult: false });
 
     const result = await unpublishEventAction("evt-1");
 

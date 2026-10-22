@@ -2,6 +2,7 @@
 
 import { updateTag } from "next/cache";
 import { prisma } from "@/lib/db";
+import { isPubliclyVisible } from "@/domains/events/lib/visibility";
 import { auth } from "@/auth";
 import { Prisma } from "@prisma/client";
 
@@ -20,7 +21,7 @@ export async function saveEventAction(
     where: { id: eventId },
     select: { isDraft: true },
   });
-  if (!event || event.isDraft) return { error: "Event not found." };
+  if (!event || !isPubliclyVisible(event)) return { error: "Event not found." };
 
   try {
     await prisma.savedEvent.create({ data: { userId, eventId } });

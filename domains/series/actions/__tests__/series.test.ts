@@ -11,6 +11,8 @@ jest.mock("@/lib/db", () => ({
     series: {
       create: jest.fn(),
       findUnique: jest.fn(),
+      findFirst: jest.fn(),
+      count: jest.fn(),
       update: jest.fn(),
       delete: jest.fn(),
     },
@@ -24,8 +26,9 @@ jest.mock("@/lib/db", () => ({
   },
 }));
 
-jest.mock("@/domains/roles/lib/session", () => ({
-  getActor: jest.fn(),
+jest.mock("@/domains/roles/lib/get-ability", () => ({
+  getAbility: jest.fn(),
+  getSessionUserId: jest.fn(),
 }));
 
 import { redirect } from "next/navigation";
@@ -38,7 +41,10 @@ import {
   unfollowSeriesAction,
 } from "@/domains/series/actions/series";
 import { prisma } from "@/lib/db";
-import { getActor } from "@/domains/roles/lib/session";
+import { getAbility, getSessionUserId } from "@/domains/roles/lib/get-ability";
+import { buildAbility } from "@/domains/roles/lib/ability";
+import type { Grants } from "@/domains/roles/lib/grants";
+import { grants, matchesWhere } from "@/domains/roles/testing";
 
 const mockRedirect = redirect as unknown as jest.Mock;
 const mockUpdateTag = updateTag as jest.Mock;
@@ -48,24 +54,25 @@ const mockSeriesDelete = prisma.series.delete as jest.Mock;
 const mockSeriesFindUnique = prisma.series.findUnique as jest.Mock;
 const mockSeriesFollowerCreate = prisma.seriesFollower.create as jest.Mock;
 const mockSeriesFollowerDelete = prisma.seriesFollower.delete as jest.Mock;
-const mockGetActor = getActor as jest.Mock;
+const mockGetAbility = getAbility as jest.Mock;
+const mockGetSessionUserId = getSessionUserId as jest.Mock;
 
-function makeActor(opts: { id?: string; canResult?: boolean } = {}) {
-  return {
-    isAuthenticated: true as const,
-    id: opts.id ?? "user-1",
-    isPlatformAdmin: false,
-    can: jest.fn().mockResolvedValue(opts.canResult ?? true),
-    loadContext: jest.fn(),
-  };
+// Signs in with real Grants. Default is a platform admin so tests that only
+// exercise behaviour (not permissions) pass any Church id.
+function signInAs(
+  opts: { id?: string; canResult?: boolean; grants?: Grants } = {}
+) {
+  mockGetSessionUserId.mockResolvedValue(opts.id ?? "user-1");
+  const g =
+    opts.grants ??
+    (opts.canResult === false ? grants() : grants({ isPlatformAdmin: true }));
+  mockGetAbility.mockResolvedValue(buildAbility(g));
 }
 
-const guestActor = {
-  isAuthenticated: false as const,
-  can: jest.fn().mockResolvedValue(false),
-  loadContext: jest.fn(),
-};
-
+function signOut() {
+  mockGetSessionUserId.mockResolvedValue(null);
+  mockGetAbility.mockResolvedValue(buildAbility(null));
+}
 const validData = {
   name: "Weekly Bible Study",
   description: "A weekly deep dive into scripture",
@@ -78,7 +85,21 @@ const validData = {
 
 beforeEach(() => {
   jest.clearAllMocks();
-  mockGetActor.mockResolvedValue(makeActor());
+  signInAs();
+  // The DAL loads Series through a permission-scoped findFirst. Serve it from
+  // the findUnique fixture, filtered by the real CASL where clause.
+  (prisma.series.findFirst as jest.Mock).mockImplementation(
+    async ({ where }: { where: { id: string } }) => {
+      const row = await mockSeriesFindUnique({ where: { id: where.id } });
+      if (!row) return null;
+      const record = { id: where.id, ...row };
+      return matchesWhere(where, record) ? record : null;
+    }
+  );
+  (prisma.series.count as jest.Mock).mockImplementation(
+    async ({ where }: { where: { id: string } }) =>
+      (await mockSeriesFindUnique({ where })) ? 1 : 0
+  );
 });
 
 describe("createSeriesAction", () => {
@@ -141,7 +162,7 @@ describe("createSeriesAction", () => {
   });
 
   it("returns an unauthorized error when there is no session", async () => {
-    mockGetActor.mockResolvedValue(guestActor);
+    signOut();
 
     const result = await createSeriesAction(validData);
 
@@ -150,7 +171,7 @@ describe("createSeriesAction", () => {
   });
 
   it("returns an unauthorized error when the user is not an organiser", async () => {
-    mockGetActor.mockResolvedValue(guestActor);
+    signOut();
 
     const result = await createSeriesAction(validData);
 
@@ -159,7 +180,7 @@ describe("createSeriesAction", () => {
   });
 
   it("returns an error when organiser is not assigned to the church", async () => {
-    mockGetActor.mockResolvedValue(makeActor({ canResult: false }));
+    signInAs({ canResult: false });
 
     const result = await createSeriesAction(validData);
 
@@ -206,7 +227,7 @@ describe("followSeriesAction", () => {
   });
 
   it("does nothing when there is no session", async () => {
-    mockGetActor.mockResolvedValue(guestActor);
+    signOut();
 
     await followSeriesAction("ser-1");
 
@@ -227,7 +248,7 @@ describe("unfollowSeriesAction", () => {
   });
 
   it("does nothing when there is no session", async () => {
-    mockGetActor.mockResolvedValue(guestActor);
+    signOut();
 
     await unfollowSeriesAction("ser-1");
 
@@ -247,7 +268,7 @@ describe("updateSeriesAction", () => {
     await updateSeriesAction("ser-1", validData);
 
     expect(mockSeriesUpdate).toHaveBeenCalledWith({
-      where: { id: "ser-1" },
+      where: expect.objectContaining({ id: "ser-1" }),
       data: expect.objectContaining({
         name: validData.name,
         churchId: validData.churchId,
@@ -265,7 +286,7 @@ describe("updateSeriesAction", () => {
     await updateSeriesAction("ser-1", dataWithPhoto);
 
     expect(mockSeriesUpdate).toHaveBeenCalledWith({
-      where: { id: "ser-1" },
+      where: expect.objectContaining({ id: "ser-1" }),
       data: expect.objectContaining({
         photoUrl: "https://utfs.io/f/photo.jpg",
       }),
@@ -276,7 +297,7 @@ describe("updateSeriesAction", () => {
     await updateSeriesAction("ser-1", validData);
 
     expect(mockSeriesUpdate).toHaveBeenCalledWith({
-      where: { id: "ser-1" },
+      where: expect.objectContaining({ id: "ser-1" }),
       data: expect.objectContaining({ photoUrl: null }),
     });
   });
@@ -292,7 +313,7 @@ describe("updateSeriesAction", () => {
   });
 
   it("redirects to / when user is not an organiser", async () => {
-    mockGetActor.mockResolvedValue(guestActor);
+    signOut();
     mockRedirect.mockImplementationOnce(() => {
       throw new Error("NEXT_REDIRECT");
     });
@@ -320,7 +341,7 @@ describe("updateSeriesAction", () => {
   });
 
   it("redirects to /organiser when organiser is not assigned to the church", async () => {
-    mockGetActor.mockResolvedValue(makeActor({ canResult: false }));
+    signInAs({ canResult: false });
     mockRedirect.mockImplementationOnce(() => {
       throw new Error("NEXT_REDIRECT");
     });
@@ -335,9 +356,10 @@ describe("updateSeriesAction", () => {
 
   it("redirects to /organiser when user lacks access to new church on church change", async () => {
     mockSeriesFindUnique.mockResolvedValue({ churchId: "ch-1" });
-    const actor = makeActor();
-    actor.can.mockResolvedValueOnce(true).mockResolvedValueOnce(false);
-    mockGetActor.mockResolvedValue(actor);
+    // Manages Series in ch-1 only, so may not move one into ch-2.
+    signInAs({
+      grants: grants({ church: [{ churchId: "ch-1", role: "EVENT_MANAGER" }] }),
+    });
     mockRedirect.mockImplementationOnce(() => {
       throw new Error("NEXT_REDIRECT");
     });
@@ -362,12 +384,14 @@ describe("deleteSeriesAction", () => {
   it("deletes the series and redirects to /organiser", async () => {
     await deleteSeriesAction("ser-1");
 
-    expect(mockSeriesDelete).toHaveBeenCalledWith({ where: { id: "ser-1" } });
+    expect(mockSeriesDelete).toHaveBeenCalledWith({
+      where: expect.objectContaining({ id: "ser-1" }),
+    });
     expect(mockRedirect).toHaveBeenCalledWith("/organiser");
   });
 
   it("redirects to / when user is not an organiser", async () => {
-    mockGetActor.mockResolvedValue(guestActor);
+    signOut();
     mockRedirect.mockImplementationOnce(() => {
       throw new Error("NEXT_REDIRECT");
     });
@@ -391,7 +415,7 @@ describe("deleteSeriesAction", () => {
   });
 
   it("redirects to /organiser when organiser is not assigned to the church", async () => {
-    mockGetActor.mockResolvedValue(makeActor({ canResult: false }));
+    signInAs({ canResult: false });
     mockRedirect.mockImplementationOnce(() => {
       throw new Error("NEXT_REDIRECT");
     });
@@ -400,5 +424,44 @@ describe("deleteSeriesAction", () => {
 
     expect(mockRedirect).toHaveBeenCalledWith("/organiser");
     expect(mockSeriesDelete).not.toHaveBeenCalled();
+  });
+});
+
+describe("Series-level Grants", () => {
+  const seriesManager = () =>
+    signInAs({
+      grants: grants({
+        series: [{ seriesId: "ser-1", role: "SERIES_MANAGER" }],
+      }),
+    });
+
+  it("SERIES_MANAGER may update their Series", async () => {
+    seriesManager();
+    mockSeriesFindUnique.mockResolvedValue({ churchId: "ch-1" });
+    mockSeriesUpdate.mockResolvedValue({});
+
+    await updateSeriesAction("ser-1", validData);
+
+    expect(mockSeriesUpdate).toHaveBeenCalled();
+    expect(mockRedirect).toHaveBeenCalledWith("/series/ser-1");
+  });
+
+  it("SERIES_MANAGER may not delete their Series", async () => {
+    seriesManager();
+    mockSeriesFindUnique.mockResolvedValue({ churchId: "ch-1" });
+
+    await deleteSeriesAction("ser-1");
+
+    expect(mockSeriesDelete).not.toHaveBeenCalled();
+    expect(mockRedirect).toHaveBeenCalledWith("/organiser");
+  });
+
+  it("SERIES_MANAGER may not update a different Series", async () => {
+    seriesManager();
+    mockSeriesFindUnique.mockResolvedValue({ churchId: "ch-1" });
+
+    await updateSeriesAction("ser-2", validData);
+
+    expect(mockSeriesUpdate).not.toHaveBeenCalled();
   });
 });

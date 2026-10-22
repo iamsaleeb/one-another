@@ -1,6 +1,7 @@
 jest.mock("server-only", () => ({}));
-jest.mock("@/domains/roles/lib/session", () => ({
-  getActor: jest.fn(),
+jest.mock("@/domains/roles/lib/get-ability", () => ({
+  getAbility: jest.fn(),
+  getSessionUserId: jest.fn(),
 }));
 jest.mock("@/domains/roles/dal/platform-roles", () => ({
   upsertPlatformRole: jest.fn(),
@@ -11,40 +12,23 @@ import {
   assignPlatformRoleAction,
   removePlatformRoleAction,
 } from "../platform-roles";
-import { getActor } from "@/domains/roles/lib/session";
 import {
   upsertPlatformRole,
   removePlatformRole,
 } from "@/domains/roles/dal/platform-roles";
+import { grants, platformAdmin, signInAs } from "@/domains/roles/testing";
 
-const mockGetActor = getActor as jest.Mock;
 const mockUpsert = upsertPlatformRole as jest.Mock;
 const mockRemove = removePlatformRole as jest.Mock;
 
-function makeActor(opts: { id?: string; isPlatformAdmin?: boolean } = {}) {
-  return {
-    isAuthenticated: true as const,
-    id: opts.id ?? "admin-1",
-    isPlatformAdmin: opts.isPlatformAdmin ?? true,
-    can: jest.fn().mockResolvedValue(true),
-    loadContext: jest.fn(),
-  };
-}
-
-const guestActor = {
-  isAuthenticated: false as const,
-  can: jest.fn().mockResolvedValue(false),
-  loadContext: jest.fn(),
-};
-
 beforeEach(() => {
   jest.clearAllMocks();
-  mockGetActor.mockResolvedValue(makeActor());
+  signInAs("admin-1", platformAdmin());
 });
 
 describe("assignPlatformRoleAction", () => {
   it("returns error when unauthenticated", async () => {
-    mockGetActor.mockResolvedValue(guestActor);
+    signInAs(null);
     const result = await assignPlatformRoleAction({
       userId: "u1",
       role: "PLATFORM_ADMIN",
@@ -53,7 +37,10 @@ describe("assignPlatformRoleAction", () => {
   });
 
   it("returns error when caller is not platform admin", async () => {
-    mockGetActor.mockResolvedValue(makeActor({ isPlatformAdmin: false }));
+    signInAs(
+      "u9",
+      grants({ church: [{ churchId: "c1", role: "CHURCH_ADMIN" }] })
+    );
     const result = await assignPlatformRoleAction({
       userId: "u1",
       role: "PLATFORM_ADMIN",
@@ -63,7 +50,7 @@ describe("assignPlatformRoleAction", () => {
   });
 
   it("assigns platform role when caller is platform admin", async () => {
-    mockGetActor.mockResolvedValue(makeActor({ id: "admin-1" }));
+    signInAs("admin-1", platformAdmin());
     mockUpsert.mockResolvedValue({});
     const result = await assignPlatformRoleAction({
       userId: "u1",
@@ -82,13 +69,16 @@ describe("removePlatformRoleAction", () => {
   });
 
   it("returns error when unauthenticated", async () => {
-    mockGetActor.mockResolvedValue(guestActor);
+    signInAs(null);
     const result = await removePlatformRoleAction({ userId: "u1" });
     expect(result).toEqual({ error: "Unauthorised." });
   });
 
   it("returns error when caller is not platform admin", async () => {
-    mockGetActor.mockResolvedValue(makeActor({ isPlatformAdmin: false }));
+    signInAs(
+      "u9",
+      grants({ church: [{ churchId: "c1", role: "CHURCH_ADMIN" }] })
+    );
     const result = await removePlatformRoleAction({ userId: "u1" });
     expect(result).toEqual({ error: "Unauthorised." });
     expect(mockRemove).not.toHaveBeenCalled();

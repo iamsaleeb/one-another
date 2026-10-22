@@ -66,6 +66,13 @@ describe("syncEventQuestions", () => {
     });
   });
 
+  it("syncs the Event but no library when there is no user", async () => {
+    await syncEventQuestions("evt-1", [baseQuestion], null);
+
+    expect(mockQuestionCreateMany).toHaveBeenCalled();
+    expect(mockLibraryUpsert).not.toHaveBeenCalled();
+  });
+
   it("silently skips sync when responses already exist (questions locked)", async () => {
     mockResponseCount.mockResolvedValue(1);
 

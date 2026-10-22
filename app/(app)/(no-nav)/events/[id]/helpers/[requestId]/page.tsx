@@ -3,8 +3,7 @@ import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { getEventById } from "@/domains/events/actions/data";
-import { getActor } from "@/domains/roles/lib/session";
-import { Capabilities } from "@/domains/roles/lib/capabilities";
+import { getAbility, eventSubject } from "@/domains/roles";
 import { getApprovalRequestById } from "@/domains/approvals";
 import { ROLE_LABELS } from "@/domains/approvals/lib/labels";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -28,7 +27,10 @@ export async function generateMetadata({ params }: Props) {
 }
 
 export default async function EventHelperDetailPage({ params }: Props) {
-  const [{ id, requestId }, actor] = await Promise.all([params, getActor()]);
+  const [{ id, requestId }, ability] = await Promise.all([
+    params,
+    getAbility(),
+  ]);
 
   const [event, request] = await Promise.all([
     getEventById(id),
@@ -38,11 +40,7 @@ export default async function EventHelperDetailPage({ params }: Props) {
   if (!event || !request) notFound();
   if (request.resourceType !== "EVENT" || request.resourceId !== id) notFound();
 
-  const access = await actor.loadContext({
-    churchId: event.churchId,
-    eventId: id,
-  });
-  if (!access.can(Capabilities.EVENT_MANAGE_STAFF)) notFound();
+  if (!ability.can("manage_staff", eventSubject(event))) notFound();
 
   const backHref = `/events/${id}/helpers`;
   const initials = request.requester.name?.slice(0, 2).toUpperCase() ?? "??";

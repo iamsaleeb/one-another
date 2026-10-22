@@ -2,6 +2,7 @@
 
 import { cacheTag, cacheLife } from "next/cache";
 import { prisma } from "@/lib/db";
+import { upcomingPublicEvents } from "@/domains/events/lib/visibility";
 
 export async function getSeries() {
   cacheTag("series");
@@ -10,7 +11,7 @@ export async function getSeries() {
     include: {
       _count: {
         select: {
-          events: { where: { datetime: { gte: new Date() }, isDraft: false } },
+          events: { where: upcomingPublicEvents() },
         },
       },
     },
@@ -25,7 +26,7 @@ export async function getSeriesById(id: string) {
     include: {
       church: { select: { id: true, name: true } },
       events: {
-        where: { datetime: { gte: new Date() }, isDraft: false },
+        where: upcomingPublicEvents(),
         orderBy: { datetime: "asc" },
       },
       _count: { select: { followers: true } },
@@ -43,23 +44,6 @@ export async function getMySeriesFollow(seriesId: string, userId: string) {
   });
 }
 
-export async function getSeriesByCreator(userId: string) {
-  cacheTag("series", `user-series-${userId}`);
-  cacheLife("minutes");
-  return prisma.series.findMany({
-    where: { createdById: userId },
-    orderBy: { createdAt: "desc" },
-    include: {
-      _count: {
-        select: {
-          events: { where: { datetime: { gte: new Date() }, isDraft: false } },
-        },
-      },
-      createdBy: { select: { name: true } },
-    },
-  });
-}
-
 export async function getSeriesNotByCreator(userId: string) {
   cacheTag("series");
   return prisma.series.findMany({
@@ -71,7 +55,7 @@ export async function getSeriesNotByCreator(userId: string) {
     include: {
       _count: {
         select: {
-          events: { where: { datetime: { gte: new Date() }, isDraft: false } },
+          events: { where: upcomingPublicEvents() },
         },
       },
       createdBy: { select: { name: true } },
@@ -87,7 +71,7 @@ export async function getUserFollowedSeries(userId: string) {
     include: {
       _count: {
         select: {
-          events: { where: { datetime: { gte: new Date() }, isDraft: false } },
+          events: { where: upcomingPublicEvents() },
         },
       },
     },

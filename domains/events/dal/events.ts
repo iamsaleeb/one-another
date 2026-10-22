@@ -1,9 +1,18 @@
 import "server-only";
 
 import { prisma } from "@/lib/db";
-import { NotificationType } from "@prisma/client";
-import type { Actor } from "@/domains/roles/lib/actor";
-import { Capabilities } from "@/domains/roles/lib/capabilities";
+import { NotificationType, type Prisma } from "@prisma/client";
+import {
+  eventSubject,
+  type Action,
+  type AppAbility,
+} from "@/domains/roles/lib/ability";
+import {
+  missingOrForbidden,
+  resolveWrite,
+  scopedTo as scopedToType,
+  type WriteOptions,
+} from "@/domains/roles/lib/scoped-writes";
 import { syncEventQuestions } from "../questions/dal";
 import {
   cancelManyNotifications,
@@ -67,10 +76,32 @@ async function notifyEventAttendees(eventId: string, title: string) {
 
 type DalError = { error: string } | { fieldErrors: Record<string, string[]> };
 
+function scopedTo(ability: AppAbility, action: Action, id: string) {
+  return scopedToType(ability, action, "Event", id);
+}
+
+// Loads an Event the Ability may act on, telling "missing" apart from
+// "forbidden" only after the scoped read has failed.
+async function findForAction<S extends Prisma.EventSelect>(
+  ability: AppAbility,
+  action: Action,
+  id: string,
+  select: S
+): Promise<Prisma.EventGetPayload<{ select: S }> | { error: string }> {
+  const event = await prisma.event.findFirst({
+    where: scopedTo(ability, action, id),
+    select,
+  });
+  if (event) return event as Prisma.EventGetPayload<{ select: S }>;
+  return missingOrForbidden(
+    await prisma.event.count({ where: { id } }),
+    "Event"
+  );
+}
+
 export async function createEvent(
   data: CreateEventInput,
-  userId: string,
-  actor: Actor
+  opts?: WriteOptions
 ): Promise<
   | DalError
   | {
@@ -80,6 +111,8 @@ export async function createEvent(
       isDraft: boolean;
     }
 > {
+  const { ability, userId } = await resolveWrite(opts);
+
   const {
     title,
     date,
@@ -125,11 +158,13 @@ export async function createEvent(
 
   if (!churchId) return { fieldErrors: { churchId: ["Church is required"] } };
 
-  const allowed = await actor.can(Capabilities.EVENT_CREATE, {
-    churchId,
-    seriesId: seriesId ?? undefined,
-  });
-  if (!allowed) return { error: "Unauthorised." };
+  if (
+    !ability.can(
+      "create",
+      eventSubject({ churchId, seriesId: seriesId ?? null })
+    )
+  )
+    return { error: "Unauthorised." };
 
   const isCamp = tag === "Camp";
   if (isCamp && !campEndDate && !isDraft)
@@ -176,13 +211,14 @@ export async function createEvent(
     await syncEventQuestions(created.id, questions, userId);
   }
 
-  // Auto-assign EVENT_EDITOR on the new event for any user who lacks
-  // church-level event:update — covers EVENT_CREATOR church role and
-  // series staff who created via their series assignment.
-  const hasChurchUpdateAccess = await actor.can(Capabilities.EVENT_UPDATE, {
-    churchId,
-  });
-  if (!hasChurchUpdateAccess) {
+  // Creator Grant: unless a Church Grant already lets the creator edit every
+  // Event in the Church, give them EVENT_EDITOR on it. A Series Grant is not
+  // enough: the Event may later leave the Series, or the Grant be revoked.
+  const canEditAcrossChurch = ability.can(
+    "update",
+    eventSubject({ churchId, seriesId: null })
+  );
+  if (userId && !canEditAcrossChurch) {
     await prisma.eventStaffAssignment.create({
       data: {
         userId,
@@ -212,8 +248,7 @@ export async function createEvent(
 export async function updateEvent(
   id: string,
   data: CreateEventInput,
-  userId: string,
-  actor: Actor
+  opts?: WriteOptions
 ): Promise<
   | DalError
   | {
@@ -222,6 +257,7 @@ export async function updateEvent(
       affectedSeriesIds: string[];
     }
 > {
+  const { ability, userId } = await resolveWrite(opts);
   const {
     title,
     date,
@@ -267,25 +303,29 @@ export async function updateEvent(
 
   if (!churchId) return { fieldErrors: { churchId: ["Church is required"] } };
 
-  const existing = await prisma.event.findUnique({
-    where: { id },
-    select: { churchId: true, datetime: true, isDraft: true, seriesId: true },
+  const existing = await findForAction(ability, "update", id, {
+    churchId: true,
+    datetime: true,
+    isDraft: true,
+    seriesId: true,
   });
-  if (!existing) return { error: "Event not found." };
+  if ("error" in existing) return existing;
 
-  const allowedOriginal = await actor.can(Capabilities.EVENT_UPDATE, {
-    churchId: existing.churchId,
-    eventId: id,
-    seriesId: existing.seriesId ?? undefined,
-  });
-  if (!allowedOriginal) return { error: "Unauthorised." };
-
-  if (churchId !== existing.churchId) {
-    const allowedNew = await actor.can(Capabilities.EVENT_UPDATE, {
-      churchId,
-    });
-    if (!allowedNew) return { error: "Unauthorised." };
-  }
+  // Moving an Event needs authority to place one at the destination, and the
+  // user must still be able to edit it once it lands there: otherwise the move
+  // would lock them out of their own Event.
+  const newSeriesId = seriesId ?? null;
+  const moved =
+    churchId !== existing.churchId || newSeriesId !== existing.seriesId;
+  const destination = { churchId, seriesId: newSeriesId };
+  if (
+    moved &&
+    !(
+      ability.can("create", eventSubject(destination)) &&
+      ability.can("update", eventSubject({ id, ...destination }))
+    )
+  )
+    return { error: "Unauthorised." };
 
   const isCamp = tag === "Camp";
   if (isCamp && !campEndDate && !isDraft)
@@ -294,7 +334,7 @@ export async function updateEvent(
     };
 
   await prisma.event.update({
-    where: { id },
+    where: scopedTo(ability, "update", id),
     data: {
       title: title || "",
       datetime: newDatetime ?? null,
@@ -323,7 +363,7 @@ export async function updateEvent(
       price: price ?? null,
       photoUrl: photoUrl ?? null,
       churchId,
-      seriesId: seriesId ?? null,
+      seriesId: newSeriesId,
     },
   });
 
@@ -344,10 +384,21 @@ export async function updateEvent(
     }
   }
 
+  // An Event leaving a Series must not leave behind a pending "new session"
+  // notification for that Series' followers.
+  if (existing.seriesId && existing.seriesId !== newSeriesId) {
+    try {
+      await cancelManyNotifications({
+        type: NotificationType.NEW_SERIES_SESSION,
+        dedupeKey: `${existing.seriesId}:${id}`,
+      });
+    } catch (err) {
+      console.error("Failed to cancel old series notifications:", err);
+    }
+  }
+
   const affectedSeriesIds = [
-    ...new Set(
-      [existing.seriesId, seriesId ?? null].filter(Boolean) as string[]
-    ),
+    ...new Set([existing.seriesId, newSeriesId].filter(Boolean) as string[]),
   ];
 
   return {
@@ -360,26 +411,20 @@ export async function updateEvent(
 export async function cancelEvent(
   id: string,
   reason: string,
-  userId: string,
-  actor: Actor
+  opts?: WriteOptions
 ): Promise<
   { error: string } | { churchId: string | null; seriesId: string | null }
 > {
-  const event = await prisma.event.findUnique({
-    where: { id },
-    select: { churchId: true, title: true, seriesId: true },
+  const { ability } = await resolveWrite(opts);
+  const event = await findForAction(ability, "update", id, {
+    churchId: true,
+    title: true,
+    seriesId: true,
   });
-  if (!event) return { error: "Event not found." };
-
-  const allowed = await actor.can(Capabilities.EVENT_UPDATE, {
-    churchId: event.churchId,
-    eventId: id,
-    seriesId: event.seriesId ?? undefined,
-  });
-  if (!allowed) return { error: "Unauthorised." };
+  if ("error" in event) return event;
 
   await prisma.event.update({
-    where: { id },
+    where: scopedTo(ability, "update", id),
     data: { cancelledAt: new Date(), cancellationReason: reason },
   });
 
@@ -398,26 +443,19 @@ export async function cancelEvent(
 
 export async function uncancelEvent(
   id: string,
-  userId: string,
-  actor: Actor
+  opts?: WriteOptions
 ): Promise<
   { error: string } | { churchId: string | null; seriesId: string | null }
 > {
-  const event = await prisma.event.findUnique({
-    where: { id },
-    select: { churchId: true, seriesId: true },
+  const { ability } = await resolveWrite(opts);
+  const event = await findForAction(ability, "update", id, {
+    churchId: true,
+    seriesId: true,
   });
-  if (!event) return { error: "Event not found." };
-
-  const allowed = await actor.can(Capabilities.EVENT_UPDATE, {
-    churchId: event.churchId,
-    eventId: id,
-    seriesId: event.seriesId ?? undefined,
-  });
-  if (!allowed) return { error: "Unauthorised." };
+  if ("error" in event) return event;
 
   await prisma.event.update({
-    where: { id },
+    where: scopedTo(ability, "update", id),
     data: { cancelledAt: null, cancellationReason: null },
   });
 
@@ -426,8 +464,7 @@ export async function uncancelEvent(
 
 export async function publishEvent(
   id: string,
-  userId: string,
-  actor: Actor
+  opts?: WriteOptions
 ): Promise<
   | { error: string }
   | {
@@ -436,24 +473,15 @@ export async function publishEvent(
       alreadyPublished: boolean;
     }
 > {
-  const event = await prisma.event.findUnique({
-    where: { id },
-    select: {
-      churchId: true,
-      seriesId: true,
-      title: true,
-      isDraft: true,
-      datetime: true,
-    },
+  const { ability } = await resolveWrite(opts);
+  const event = await findForAction(ability, "publish", id, {
+    churchId: true,
+    seriesId: true,
+    title: true,
+    isDraft: true,
+    datetime: true,
   });
-  if (!event) return { error: "Event not found." };
-
-  const allowed = await actor.can(Capabilities.EVENT_PUBLISH, {
-    churchId: event.churchId,
-    eventId: id,
-    seriesId: event.seriesId ?? undefined,
-  });
-  if (!allowed) return { error: "Unauthorised." };
+  if ("error" in event) return event;
 
   if (!event.isDraft) {
     return {
@@ -463,7 +491,10 @@ export async function publishEvent(
     };
   }
 
-  await prisma.event.update({ where: { id }, data: { isDraft: false } });
+  await prisma.event.update({
+    where: scopedTo(ability, "publish", id),
+    data: { isDraft: false },
+  });
 
   try {
     const attendees = await prisma.eventAttendee.findMany({
@@ -499,25 +530,21 @@ export async function publishEvent(
 
 export async function unpublishEvent(
   id: string,
-  userId: string,
-  actor: Actor
+  opts?: WriteOptions
 ): Promise<
   { error: string } | { churchId: string | null; seriesId: string | null }
 > {
-  const event = await prisma.event.findUnique({
-    where: { id },
-    select: { churchId: true, seriesId: true },
+  const { ability } = await resolveWrite(opts);
+  const event = await findForAction(ability, "publish", id, {
+    churchId: true,
+    seriesId: true,
   });
-  if (!event) return { error: "Event not found." };
+  if ("error" in event) return event;
 
-  const allowed = await actor.can(Capabilities.EVENT_PUBLISH, {
-    churchId: event.churchId,
-    eventId: id,
-    seriesId: event.seriesId ?? undefined,
+  await prisma.event.update({
+    where: scopedTo(ability, "publish", id),
+    data: { isDraft: true },
   });
-  if (!allowed) return { error: "Unauthorised." };
-
-  await prisma.event.update({ where: { id }, data: { isDraft: true } });
 
   try {
     await cancelManyNotifications({
@@ -539,23 +566,16 @@ export async function unpublishEvent(
 
 export async function deleteEvent(
   id: string,
-  userId: string,
-  actor: Actor
+  opts?: WriteOptions
 ): Promise<
   { error: string } | { churchId: string | null; seriesId: string | null }
 > {
-  const event = await prisma.event.findUnique({
-    where: { id },
-    select: { churchId: true, seriesId: true },
+  const { ability } = await resolveWrite(opts);
+  const event = await findForAction(ability, "delete", id, {
+    churchId: true,
+    seriesId: true,
   });
-  if (!event) return { error: "Event not found." };
-
-  const allowed = await actor.can(Capabilities.EVENT_DELETE, {
-    churchId: event.churchId,
-    eventId: id,
-    seriesId: event.seriesId ?? undefined,
-  });
-  if (!allowed) return { error: "Unauthorised." };
+  if ("error" in event) return event;
 
   try {
     await cancelManyNotifications({
@@ -572,7 +592,7 @@ export async function deleteEvent(
     console.error("Failed to cancel reminders before delete:", err);
   }
 
-  await prisma.event.delete({ where: { id } });
+  await prisma.event.delete({ where: scopedTo(ability, "delete", id) });
 
   return { churchId: event.churchId, seriesId: event.seriesId };
 }

@@ -4,9 +4,12 @@ jest.mock("@/domains/events/actions/data", () => ({
   getEventsPaged: jest.fn(),
   getUserAttendedEventsPaged: jest.fn(),
   getUserAttendedPastEventsPaged: jest.fn(),
-  getEventsByCreatorPaged: jest.fn(),
   getEventsNotByCreatorPaged: jest.fn(),
   getMySavedEventsPaged: jest.fn(),
+}));
+
+jest.mock("@/domains/events/dal/manageable", () => ({
+  getManageableEventsPaged: jest.fn(),
 }));
 
 import { auth } from "@/auth";
@@ -14,15 +17,15 @@ import {
   getEventsPaged,
   getUserAttendedEventsPaged,
   getUserAttendedPastEventsPaged,
-  getEventsByCreatorPaged,
   getEventsNotByCreatorPaged,
   getMySavedEventsPaged,
 } from "@/domains/events/actions/data";
+import { getManageableEventsPaged } from "@/domains/events/dal/manageable";
 import {
   loadMoreEventsAction,
   loadMoreMyUpcomingEventsAction,
   loadMoreMyPastEventsAction,
-  loadMoreMyCreatedEventsAction,
+  loadMoreManageableEventsAction,
   loadMoreCommunityEventsAction,
   loadMoreMySavedEventsAction,
 } from "@/domains/events/actions/pagination";
@@ -32,7 +35,7 @@ const mockGetEventsPaged = getEventsPaged as jest.Mock;
 const mockGetUserAttendedEventsPaged = getUserAttendedEventsPaged as jest.Mock;
 const mockGetUserAttendedPastEventsPaged =
   getUserAttendedPastEventsPaged as jest.Mock;
-const mockGetEventsByCreatorPaged = getEventsByCreatorPaged as jest.Mock;
+const mockGetManageableEventsPaged = getManageableEventsPaged as jest.Mock;
 const mockGetEventsNotByCreatorPaged = getEventsNotByCreatorPaged as jest.Mock;
 const mockGetMySavedEventsPaged = getMySavedEventsPaged as jest.Mock;
 
@@ -43,7 +46,7 @@ beforeEach(() => {
   mockGetEventsPaged.mockResolvedValue(fakePage);
   mockGetUserAttendedEventsPaged.mockResolvedValue(fakePage);
   mockGetUserAttendedPastEventsPaged.mockResolvedValue(fakePage);
-  mockGetEventsByCreatorPaged.mockResolvedValue(fakePage);
+  mockGetManageableEventsPaged.mockResolvedValue(fakePage);
   mockGetEventsNotByCreatorPaged.mockResolvedValue(fakePage);
   mockGetMySavedEventsPaged.mockResolvedValue(fakePage);
 });
@@ -95,17 +98,19 @@ describe("loadMoreMyPastEventsAction", () => {
   });
 });
 
-describe("loadMoreMyCreatedEventsAction", () => {
+describe("loadMoreManageableEventsAction", () => {
   it("returns empty page when unauthenticated", async () => {
     mockAuth.mockResolvedValue(null);
-    const result = await loadMoreMyCreatedEventsAction(null);
+    const result = await loadMoreManageableEventsAction(null);
     expect(result).toEqual({ items: [], nextCursor: null });
+    expect(mockGetManageableEventsPaged).not.toHaveBeenCalled();
   });
 
-  it("calls getEventsByCreatorPaged with userId and cursor", async () => {
+  it("loads the next page of manageable Events for the session", async () => {
     mockAuth.mockResolvedValue({ user: { id: "user-1" } });
-    await loadMoreMyCreatedEventsAction(null);
-    expect(mockGetEventsByCreatorPaged).toHaveBeenCalledWith("user-1", null);
+    mockGetManageableEventsPaged.mockResolvedValue(fakePage);
+    await loadMoreManageableEventsAction("cursor-1");
+    expect(mockGetManageableEventsPaged).toHaveBeenCalledWith("cursor-1");
   });
 });
 

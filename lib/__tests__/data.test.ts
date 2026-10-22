@@ -29,7 +29,6 @@ import {
   getEventsPaged,
   getUserAttendedEventsPaged,
   getUserAttendedPastEventsPaged,
-  getEventsByCreatorPaged,
   getEventsNotByCreatorPaged,
   getFollowedChurchEventsPaged,
   getOtherChurchEventsPaged,
@@ -40,14 +39,12 @@ import {
   getChurches,
   getChurchById,
   getMyChurchFollow,
-  getChurchesByIds,
   getOrganisersByChurch,
 } from "@/domains/churches/actions/data";
 import {
   getSeries,
   getSeriesById,
   getMySeriesFollow,
-  getSeriesByCreator,
   getSeriesNotByCreator,
   getUserFollowedSeries,
   getSeriesForEvent,
@@ -206,33 +203,6 @@ describe("getOrganisersByChurch", () => {
   it("returns an empty array when the church has no organisers", async () => {
     mockChurchMembershipFindMany.mockResolvedValue([]);
     expect(await getOrganisersByChurch("ch-none")).toEqual([]);
-  });
-});
-
-describe("getChurchesByIds", () => {
-  it("returns churches matching the given IDs ordered by name", async () => {
-    mockChurchFindMany.mockResolvedValue([
-      { id: "ch-1", name: "Grace Church" },
-      { id: "ch-2", name: "Harvest Church" },
-    ]);
-
-    const result = await getChurchesByIds(["ch-1", "ch-2"]);
-
-    expect(result).toEqual([
-      { id: "ch-1", name: "Grace Church" },
-      { id: "ch-2", name: "Harvest Church" },
-    ]);
-    expect(mockChurchFindMany).toHaveBeenCalledWith({
-      where: { id: { in: ["ch-1", "ch-2"] } },
-      select: { id: true, name: true },
-      orderBy: { name: "asc" },
-    });
-  });
-
-  it("returns empty array without hitting the DB when ids is empty", async () => {
-    const result = await getChurchesByIds([]);
-    expect(result).toEqual([]);
-    expect(mockChurchFindMany).not.toHaveBeenCalled();
   });
 });
 
@@ -516,38 +486,6 @@ describe("getEventsByCreator", () => {
   it("returns empty array when the user has no events", async () => {
     mockEventFindMany.mockResolvedValue([]);
     expect(await getEventsByCreator("user-none")).toEqual([]);
-  });
-});
-
-describe("getSeriesByCreator", () => {
-  it("returns series created by the given user", async () => {
-    const seriesWithCount = {
-      ...sampleSeries,
-      _count: { events: 2 },
-      createdBy: { name: "Alice" },
-    };
-    mockSeriesFindMany.mockResolvedValue([seriesWithCount]);
-    const result = await getSeriesByCreator("user-1");
-    expect(result).toEqual([seriesWithCount]);
-    expect(mockSeriesFindMany).toHaveBeenCalledWith({
-      where: { createdById: "user-1" },
-      orderBy: { createdAt: "desc" },
-      include: {
-        _count: {
-          select: {
-            events: {
-              where: { datetime: { gte: expect.any(Date) }, isDraft: false },
-            },
-          },
-        },
-        createdBy: { select: { name: true } },
-      },
-    });
-  });
-
-  it("returns empty array when the user has no series", async () => {
-    mockSeriesFindMany.mockResolvedValue([]);
-    expect(await getSeriesByCreator("user-none")).toEqual([]);
   });
 });
 
@@ -878,18 +816,6 @@ describe("getUserAttendedPastEventsPaged", () => {
       expect.objectContaining({
         where: expect.objectContaining({ datetime: { lt: expect.any(Date) } }),
         orderBy: { datetime: "desc" },
-      })
-    );
-  });
-});
-
-describe("getEventsByCreatorPaged", () => {
-  it("filters by createdById", async () => {
-    mockEventFindMany.mockResolvedValue([pagedEvent]);
-    await getEventsByCreatorPaged("user-1", null);
-    expect(mockEventFindMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: { createdById: "user-1" },
       })
     );
   });

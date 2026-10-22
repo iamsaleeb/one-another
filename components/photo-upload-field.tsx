@@ -3,11 +3,13 @@
 import { useRef, useState } from "react";
 import Image from "next/image";
 import { upload } from "@vercel/blob/client";
+import { useSession } from "next-auth/react";
 import { ImageIcon, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import { deleteUploadedFileAction } from "@/domains/upload/actions/upload";
+import { uploadPathname } from "@/domains/upload/lib/paths";
 
 const MAX_SIZE_BYTES = 4 * 1024 * 1024;
 
@@ -22,6 +24,7 @@ export function PhotoUploadField({
   value,
   onChange,
 }: PhotoUploadFieldProps) {
+  const userId = useSession().data?.user?.id;
   const inputRef = useRef<HTMLInputElement>(null);
   const [localUrl, setLocalUrl] = useState(value);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
@@ -51,14 +54,19 @@ export function PhotoUploadField({
     setUploadProgress(0);
 
     try {
-      const blob = await upload(file.name, file, {
-        access: "public",
-        handleUploadUrl: "/api/upload",
-        clientPayload: variant,
-        onUploadProgress: ({ percentage }) => {
-          setUploadProgress(percentage);
-        },
-      });
+      if (!userId) throw new Error("Not signed in");
+      const blob = await upload(
+        uploadPathname(variant, userId, file.name),
+        file,
+        {
+          access: "public",
+          handleUploadUrl: "/api/upload",
+          clientPayload: variant,
+          onUploadProgress: ({ percentage }) => {
+            setUploadProgress(percentage);
+          },
+        }
+      );
       setUploadProgress(null);
       setUploadingFilename(null);
       setLocalUrl(blob.url);

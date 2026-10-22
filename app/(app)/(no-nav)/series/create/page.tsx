@@ -1,32 +1,13 @@
 import { redirect } from "next/navigation";
-import { auth } from "@/auth";
 import { CreateSeriesForm } from "./_components/create-series-form";
 import { PageHeader } from "@/components/ui/page-header";
-import { getChurches, getChurchesByIds } from "@/domains/churches/actions/data";
-import { getActor } from "@/domains/roles/lib/session";
-import { Capabilities } from "@/domains/roles/lib/capabilities";
+import { getChurchTargets, getSessionUserId } from "@/domains/roles";
 
 export default async function CreateSeriesPage() {
-  const [session, actor] = await Promise.all([auth(), getActor()]);
-  if (!session) redirect("/");
+  if (!(await getSessionUserId())) redirect("/");
 
-  const churchMemberships = session.user.churchMemberships ?? [];
-  const eligibleIds = (
-    await Promise.all(
-      churchMemberships.map(async (m) => {
-        const allowed = await actor.can(Capabilities.SERIES_CREATE, {
-          churchId: m.churchId,
-        });
-        return allowed ? m.churchId : null;
-      })
-    )
-  ).filter((id): id is string => id !== null);
-
-  if (!session.user.isPlatformAdmin && eligibleIds.length === 0) redirect("/");
-
-  const churches = session.user.isPlatformAdmin
-    ? await getChurches()
-    : await getChurchesByIds(eligibleIds);
+  const churches = await getChurchTargets("create_series");
+  if (churches.length === 0) redirect("/");
 
   return (
     <div className="mx-auto max-w-lg">

@@ -8,8 +8,7 @@ import {
   getMyChurchFollow,
 } from "@/domains/churches/actions/data";
 import { auth } from "@/auth";
-import { getActor } from "@/domains/roles/lib/session";
-import { Capabilities } from "@/domains/roles/lib/capabilities";
+import { getAbility, getSessionUserId, churchSubject } from "@/domains/roles";
 import {
   getMyRequestForResource,
   getPendingRequestsForResource,
@@ -31,13 +30,12 @@ export async function generateMetadata({ params }: Props) {
 }
 
 export default async function ChurchDetailPage({ params }: Props) {
-  const [{ id }, actor, session] = await Promise.all([
+  const [{ id }, ability, userId, session] = await Promise.all([
     params,
-    getActor(),
+    getAbility(),
+    getSessionUserId(),
     auth(),
   ]);
-
-  const userId = actor.isAuthenticated ? actor.id : null;
 
   const [church, myFollow] = await Promise.all([
     getChurchById(id),
@@ -48,9 +46,8 @@ export default async function ChurchDetailPage({ params }: Props) {
 
   const isFollowing = myFollow !== null;
 
-  const access = await actor.loadContext({ churchId: id });
-  const canManageMembers = access.can(Capabilities.CHURCH_MANAGE_MEMBERS);
-  const canCreateEvent = access.can(Capabilities.EVENT_CREATE);
+  const canManageMembers = ability.can("manage_members", churchSubject({ id }));
+  const canCreateEvent = ability.can("create_event", churchSubject({ id }));
 
   const [myApprovalRequest, pendingApprovalRequests] = await Promise.all([
     userId

@@ -1,31 +1,26 @@
 import { redirect } from "next/navigation";
-import { auth } from "@/auth";
+import { getAbility, getSessionUserId, hasAnyGrant } from "@/domains/roles";
 import { PageHeader } from "@/components/ui/page-header";
-import {
-  getEventsByCreatorPaged,
-  getEventsNotByCreatorPaged,
-} from "@/domains/events/actions/data";
-import {
-  getSeriesByCreator,
-  getSeriesNotByCreator,
-} from "@/domains/series/actions/data";
+import { getEventsNotByCreatorPaged } from "@/domains/events/actions/data";
+import { getManageableEventsPaged } from "@/domains/events/dal/manageable";
+import { getSeriesNotByCreator } from "@/domains/series/actions/data";
+import { getManageableSeries } from "@/domains/series/dal/manageable";
 import { OrganiserTabs } from "./_components/organiser-tabs";
 
 export default async function OrganiserPage() {
-  const session = await auth();
-  if (!session) redirect("/");
+  const [userId, ability] = await Promise.all([
+    getSessionUserId(),
+    getAbility(),
+  ]);
+  if (!userId) redirect("/");
 
-  const churchMemberships = session.user.churchMemberships ?? [];
-  if (!session.user.isPlatformAdmin && churchMemberships.length === 0) {
-    redirect("/");
-  }
-
-  const { id: userId } = session.user;
+  // Organisers: anyone holding a Grant at any level (Church, Series, Event).
+  if (!hasAnyGrant(ability)) redirect("/");
 
   const [myEventsPage, mySeries, communityEventsPage, communitySeries] =
     await Promise.all([
-      getEventsByCreatorPaged(userId, null),
-      getSeriesByCreator(userId),
+      getManageableEventsPaged(null, ability),
+      getManageableSeries(ability),
       getEventsNotByCreatorPaged(userId, null),
       getSeriesNotByCreator(userId),
     ]);

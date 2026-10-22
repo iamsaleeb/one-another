@@ -2,8 +2,8 @@
 
 import { updateTag } from "next/cache";
 import { prisma } from "@/lib/db";
-import { getActor } from "@/domains/roles/lib/session";
-import { churchPolicy } from "@/domains/roles/policies/church";
+import { churchSubject } from "@/domains/roles/lib/ability";
+import { getAbility, getSessionUserId } from "@/domains/roles/lib/get-ability";
 import {
   getChurchMembership,
   upsertChurchMembership,
@@ -15,6 +15,11 @@ import {
   removeOrganiserSchema,
 } from "@/domains/churches/validations/churches";
 
+async function canManageMembers(churchId: string): Promise<boolean> {
+  const ability = await getAbility();
+  return ability.can("manage_members", churchSubject({ id: churchId }));
+}
+
 export interface AdminActionState {
   error?: string;
   success?: string;
@@ -24,8 +29,8 @@ export async function addOrganiserToChurchAction(
   _prevState: AdminActionState,
   formData: FormData
 ): Promise<AdminActionState> {
-  const actor = await getActor();
-  if (!actor.isAuthenticated) return { error: "Unauthorised." };
+  const actorId = await getSessionUserId();
+  if (!actorId) return { error: "Unauthorised." };
 
   const parsed = addOrganiserSchema.safeParse({
     churchId: formData.get("churchId"),
@@ -36,8 +41,7 @@ export async function addOrganiserToChurchAction(
 
   const { churchId, email } = parsed.data;
 
-  if (!(await churchPolicy.canManageMembers(actor, churchId)))
-    return { error: "Unauthorised." };
+  if (!(await canManageMembers(churchId))) return { error: "Unauthorised." };
 
   const targetUser = await prisma.user.findUnique({
     where: { email },
@@ -57,7 +61,7 @@ export async function addOrganiserToChurchAction(
     targetUser.id,
     churchId,
     ChurchRole.EVENT_MANAGER,
-    actor.id
+    actorId
   );
 
   updateTag("churches");
@@ -68,9 +72,6 @@ export async function removeOrganiserFromChurchAction(
   _prevState: AdminActionState,
   formData: FormData
 ): Promise<AdminActionState> {
-  const actor = await getActor();
-  if (!actor.isAuthenticated) return { error: "Unauthorised." };
-
   const parsed = removeOrganiserSchema.safeParse({
     churchId: formData.get("churchId"),
     targetUserId: formData.get("targetUserId"),
@@ -79,8 +80,7 @@ export async function removeOrganiserFromChurchAction(
 
   const { churchId, targetUserId } = parsed.data;
 
-  if (!(await churchPolicy.canManageMembers(actor, churchId)))
-    return { error: "Unauthorised." };
+  if (!(await canManageMembers(churchId))) return { error: "Unauthorised." };
 
   const existing = await getChurchMembership(targetUserId, churchId);
   if (existing?.role === ChurchRole.CHURCH_ADMIN)

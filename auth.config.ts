@@ -59,25 +59,8 @@ export const authConfig = {
         return Response.redirect(onboardingUrl);
       }
 
-      const { isPlatformAdmin, churchMemberships } = auth?.user ?? {};
-      if (
-        nextUrl.pathname.startsWith("/organiser") &&
-        !isPlatformAdmin &&
-        (!churchMemberships || churchMemberships.length === 0)
-      ) {
-        return Response.redirect(new URL("/", nextUrl));
-      }
-      const isChurchAdmin = churchMemberships?.some(
-        (m) => m.role === "CHURCH_ADMIN"
-      );
-      if (
-        nextUrl.pathname.startsWith("/admin") &&
-        !isPlatformAdmin &&
-        !isChurchAdmin
-      ) {
-        return Response.redirect(new URL("/", nextUrl));
-      }
-
+      // Signed-in and onboarded only. Permission checks (e.g. /organiser,
+      // /admin) happen in pages and writes against the DB-loaded Ability.
       return true;
     },
   },

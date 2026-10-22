@@ -3,6 +3,10 @@
  */
 
 jest.mock("@/auth", () => ({ auth: jest.fn() }));
+jest.mock("@/domains/roles/lib/get-ability", () => ({
+  getAbility: jest.fn(),
+  getSessionUserId: jest.fn(),
+}));
 jest.mock("@vercel/blob/client", () => ({
   handleUpload: jest.fn(),
 }));
@@ -11,6 +15,7 @@ import { NextRequest } from "next/server";
 import { auth } from "@/auth";
 import { handleUpload } from "@vercel/blob/client";
 import { POST } from "../route";
+import { grants, platformAdmin, signInAs } from "@/domains/roles/testing";
 
 const mockAuth = auth as jest.Mock;
 const mockHandleUpload = handleUpload as jest.Mock;
@@ -26,8 +31,9 @@ function makeRequest(body: unknown) {
 beforeEach(() => {
   jest.clearAllMocks();
   mockAuth.mockResolvedValue({
-    user: { id: "user-1", isPlatformAdmin: false, churchMemberships: [] },
+    user: { id: "user-1" },
   });
+  signInAs("user-1", grants());
   mockHandleUpload.mockResolvedValue({
     url: "https://example.public.blob.vercel-storage.com/img.jpg",
   });
@@ -51,10 +57,10 @@ describe("POST /api/upload", () => {
 
     it("returns 403 when a non-organiser requests a cover token", async () => {
       mockAuth.mockResolvedValue({
-        user: { id: "user-1", isPlatformAdmin: false, churchMemberships: [] },
+        user: { id: "user-1" },
       });
       mockHandleUpload.mockImplementation(async ({ onBeforeGenerateToken }) => {
-        await onBeforeGenerateToken("img.jpg", "cover");
+        await onBeforeGenerateToken("cover/user-1/img.jpg", "cover");
       });
       const res = await POST(
         makeRequest({ type: "blob.generate-client-token" })
@@ -65,15 +71,16 @@ describe("POST /api/upload", () => {
     });
 
     it("allows ORGANISER to request a cover token", async () => {
-      mockAuth.mockResolvedValue({
-        user: {
-          id: "user-2",
-          isPlatformAdmin: false,
-          churchMemberships: [{ churchId: "ch-1", role: "EVENT_MANAGER" }],
-        },
-      });
+      mockAuth.mockResolvedValue({ user: { id: "user-2" } });
+      signInAs(
+        "user-2",
+        grants({ church: [{ churchId: "ch-1", role: "EVENT_MANAGER" }] })
+      );
       mockHandleUpload.mockImplementation(async ({ onBeforeGenerateToken }) => {
-        const opts = await onBeforeGenerateToken("img.jpg", "cover");
+        const opts = await onBeforeGenerateToken(
+          "cover/user-2/img.jpg",
+          "cover"
+        );
         return { tokenPayload: opts.tokenPayload };
       });
       const res = await POST(
@@ -83,11 +90,32 @@ describe("POST /api/upload", () => {
     });
 
     it("allows ADMIN to request a cover token", async () => {
-      mockAuth.mockResolvedValue({
-        user: { id: "user-3", isPlatformAdmin: true, churchMemberships: [] },
-      });
+      mockAuth.mockResolvedValue({ user: { id: "user-3" } });
+      signInAs("user-3", platformAdmin());
       mockHandleUpload.mockImplementation(async ({ onBeforeGenerateToken }) => {
-        const opts = await onBeforeGenerateToken("img.jpg", "cover");
+        const opts = await onBeforeGenerateToken(
+          "cover/user-3/img.jpg",
+          "cover"
+        );
+        return { tokenPayload: opts.tokenPayload };
+      });
+      const res = await POST(
+        makeRequest({ type: "blob.generate-client-token" })
+      );
+      expect(res.status).toBe(200);
+    });
+
+    it("allows Series-only staff (no Church Grant) to request a cover token", async () => {
+      mockAuth.mockResolvedValue({ user: { id: "user-4" } });
+      signInAs(
+        "user-4",
+        grants({ series: [{ seriesId: "s1", role: "SERIES_SESSION_CREATOR" }] })
+      );
+      mockHandleUpload.mockImplementation(async ({ onBeforeGenerateToken }) => {
+        const opts = await onBeforeGenerateToken(
+          "cover/user-4/img.jpg",
+          "cover"
+        );
         return { tokenPayload: opts.tokenPayload };
       });
       const res = await POST(
@@ -98,10 +126,13 @@ describe("POST /api/upload", () => {
 
     it("allows any authenticated user to request a profile token", async () => {
       mockAuth.mockResolvedValue({
-        user: { id: "user-1", isPlatformAdmin: false, churchMemberships: [] },
+        user: { id: "user-1" },
       });
       mockHandleUpload.mockImplementation(async ({ onBeforeGenerateToken }) => {
-        const opts = await onBeforeGenerateToken("avatar.jpg", "profile");
+        const opts = await onBeforeGenerateToken(
+          "profile/user-1/avatar.jpg",
+          "profile"
+        );
         return { tokenPayload: opts.tokenPayload };
       });
       const res = await POST(
@@ -109,12 +140,26 @@ describe("POST /api/upload", () => {
       );
       expect(res.status).toBe(200);
     });
+
+    it.each([
+      ["no owner prefix", "avatar.jpg", "profile"],
+      ["another user's prefix", "profile/user-2/avatar.jpg", "profile"],
+      ["a prefix for another variant", "cover/user-1/avatar.jpg", "profile"],
+    ])("returns 403 for a pathname with %s", async (_name, path, variant) => {
+      mockHandleUpload.mockImplementation(async ({ onBeforeGenerateToken }) => {
+        await onBeforeGenerateToken(path, variant);
+      });
+      const res = await POST(
+        makeRequest({ type: "blob.generate-client-token" })
+      );
+      expect(res.status).toBe(403);
+    });
   });
 
   describe("token options (via onBeforeGenerateToken)", () => {
     it("returns allowedContentTypes covering common image formats", async () => {
       mockAuth.mockResolvedValue({
-        user: { id: "user-1", isPlatformAdmin: false, churchMemberships: [] },
+        user: { id: "user-1" },
       });
       let capturedOpts:
         | Awaited<
@@ -125,7 +170,10 @@ describe("POST /api/upload", () => {
         | undefined;
 
       mockHandleUpload.mockImplementation(async ({ onBeforeGenerateToken }) => {
-        capturedOpts = await onBeforeGenerateToken("img.png", "profile");
+        capturedOpts = await onBeforeGenerateToken(
+          "profile/user-1/img.png",
+          "profile"
+        );
         return {};
       });
 
@@ -144,7 +192,7 @@ describe("POST /api/upload", () => {
 
     it("caps upload size at 4MB", async () => {
       mockAuth.mockResolvedValue({
-        user: { id: "user-1", isPlatformAdmin: false, churchMemberships: [] },
+        user: { id: "user-1" },
       });
       let capturedOpts:
         | Awaited<
@@ -155,7 +203,10 @@ describe("POST /api/upload", () => {
         | undefined;
 
       mockHandleUpload.mockImplementation(async ({ onBeforeGenerateToken }) => {
-        capturedOpts = await onBeforeGenerateToken("img.png", "profile");
+        capturedOpts = await onBeforeGenerateToken(
+          "profile/user-1/img.png",
+          "profile"
+        );
         return {};
       });
 
@@ -165,13 +216,11 @@ describe("POST /api/upload", () => {
     });
 
     it("includes userId and variant in tokenPayload", async () => {
-      mockAuth.mockResolvedValue({
-        user: {
-          id: "user-42",
-          isPlatformAdmin: false,
-          churchMemberships: [{ churchId: "ch-1", role: "EVENT_MANAGER" }],
-        },
-      });
+      mockAuth.mockResolvedValue({ user: { id: "user-42" } });
+      signInAs(
+        "user-42",
+        grants({ church: [{ churchId: "ch-1", role: "EVENT_MANAGER" }] })
+      );
       let capturedOpts:
         | Awaited<
             ReturnType<
@@ -181,7 +230,10 @@ describe("POST /api/upload", () => {
         | undefined;
 
       mockHandleUpload.mockImplementation(async ({ onBeforeGenerateToken }) => {
-        capturedOpts = await onBeforeGenerateToken("img.png", "cover");
+        capturedOpts = await onBeforeGenerateToken(
+          "cover/user-42/img.png",
+          "cover"
+        );
         return {};
       });
 

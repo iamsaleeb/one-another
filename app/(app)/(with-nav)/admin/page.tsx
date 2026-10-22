@@ -1,25 +1,18 @@
 import { redirect } from "next/navigation";
-import { auth } from "@/auth";
 import { PageHeader } from "@/components/ui/page-header";
-import { getAdminChurches } from "@/domains/churches/actions/data";
+import { getChurchesWithOrganisers } from "@/domains/churches/actions/data";
+import { getChurchTargets, getSessionUserId } from "@/domains/roles";
 import { AdminChurchCard } from "./_components/admin-church-card";
 
 export default async function AdminPage() {
-  const session = await auth();
-  if (!session) redirect("/");
+  if (!(await getSessionUserId())) redirect("/");
 
-  const churchMemberships = session.user.churchMemberships ?? [];
-  const isChurchAdmin = churchMemberships.some(
-    (m) => m.role === "CHURCH_ADMIN"
-  );
+  // Anyone who may manage the members of at least one Church.
+  const manageable = await getChurchTargets("manage_members");
+  if (manageable.length === 0) redirect("/");
 
-  if (!session.user.isPlatformAdmin && !isChurchAdmin) {
-    redirect("/");
-  }
-
-  const churchesWithOrganisers = await getAdminChurches(
-    session.user.id,
-    session.user.isPlatformAdmin ?? false
+  const churchesWithOrganisers = await getChurchesWithOrganisers(
+    manageable.map((c) => c.id)
   );
 
   return (

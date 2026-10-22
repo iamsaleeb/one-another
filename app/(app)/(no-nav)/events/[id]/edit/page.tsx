@@ -1,14 +1,16 @@
 import { notFound, redirect } from "next/navigation";
-import { auth } from "@/auth";
 import { getEventById } from "@/domains/events/actions/data";
-import { getChurchesByIds } from "@/domains/churches/actions/data";
 import {
   getEventQuestions,
   hasEventResponses,
 } from "@/domains/events/questions/actions";
 import { getQuestionLibraryForUser } from "@/domains/events/questions/dal";
-import { getActor } from "@/domains/roles/lib/session";
-import { Capabilities } from "@/domains/roles/lib/capabilities";
+import {
+  eventSubject,
+  getAbility,
+  getChurchTargets,
+  getSessionUserId,
+} from "@/domains/roles";
 import { parseEventMetadata } from "@/domains/events/validations/event";
 import { PageHeader } from "@/components/ui/page-header";
 import { EventWizard } from "@/app/(app)/(no-nav)/events/create/_components/event-wizard";
@@ -19,40 +21,35 @@ interface Props {
 
 export default async function EditEventPage({ params }: Props) {
   const { id } = await params;
-  const [event, session, actor] = await Promise.all([
+  const [event, userId, ability] = await Promise.all([
     getEventById(id),
-    auth(),
-    getActor(),
+    getSessionUserId(),
+    getAbility(),
   ]);
 
-  if (!session) redirect("/");
+  if (!userId) redirect("/");
   if (!event) notFound();
+  if (!ability.can("update", eventSubject(event))) notFound();
 
-  const access = await actor.loadContext({
-    churchId: event.churchId,
-    eventId: id,
-    seriesId: event.seriesId ?? undefined,
-  });
-  if (!access.can(Capabilities.EVENT_UPDATE)) notFound();
-
-  // UI: which churches to show in the church-change dropdown
-  // Use JWT memberships (acceptable slight staleness for UI only)
-  const churchMemberships = session.user.churchMemberships ?? [];
-  const editableChurchIds = churchMemberships
-    .filter((m) => m.role === "CHURCH_ADMIN" || m.role === "EVENT_MANAGER")
-    .map((m) => m.churchId);
-
-  const [churches, questions, libraryItems, questionsLocked] =
+  // Church dropdown: its own Church, plus those updateEvent would let it move
+  // to (the user may place an Event there and still edit it afterwards).
+  const [placeable, questions, libraryItems, questionsLocked] =
     await Promise.all([
-      editableChurchIds.length > 0
-        ? getChurchesByIds(editableChurchIds)
-        : event.church
-          ? Promise.resolve([event.church])
-          : Promise.resolve([]),
+      getChurchTargets("create_event", ability),
       getEventQuestions(id),
-      getQuestionLibraryForUser(session.user.id),
+      getQuestionLibraryForUser(userId),
       hasEventResponses(id),
     ]);
+  const targets = placeable.filter((c) =>
+    ability.can(
+      "update",
+      eventSubject({ id: event.id, churchId: c.id, seriesId: null })
+    )
+  );
+  const churches =
+    event.church && !targets.some((c) => c.id === event.churchId)
+      ? [event.church, ...targets]
+      : targets;
 
   const datetimeISO = event.datetime?.toISOString() ?? "";
   const { registration, camp } = parseEventMetadata(event.metadata);

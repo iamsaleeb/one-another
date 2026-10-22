@@ -2,8 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
 import { getSeriesById } from "@/domains/series/actions/data";
-import { getActor } from "@/domains/roles/lib/session";
-import { Capabilities } from "@/domains/roles/lib/capabilities";
+import { getAbility, seriesSubject } from "@/domains/roles";
 import {
   getPendingRequestsForResource,
   getResolvedRequestsForResource,
@@ -21,15 +20,11 @@ export async function generateMetadata({ params }: Props) {
 }
 
 export default async function SeriesHelpersPage({ params }: Props) {
-  const [{ id }, actor] = await Promise.all([params, getActor()]);
+  const [{ id }, ability] = await Promise.all([params, getAbility()]);
   const series = await getSeriesById(id);
   if (!series) notFound();
 
-  const access = await actor.loadContext({
-    churchId: series.churchId,
-    seriesId: id,
-  });
-  if (!access.can(Capabilities.SERIES_UPDATE)) notFound();
+  if (!ability.can("update", seriesSubject(series))) notFound();
 
   const [pendingRequests, resolvedRequests] = await Promise.all([
     getPendingRequestsForResource("SERIES", id),

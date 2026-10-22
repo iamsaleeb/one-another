@@ -2,6 +2,10 @@ jest.mock("@vercel/blob/client", () => ({
   upload: jest.fn(),
 }));
 
+jest.mock("next-auth/react", () => ({
+  useSession: () => ({ data: { user: { id: "u1" } } }),
+}));
+
 jest.mock("@/domains/upload/actions/upload", () => ({
   deleteUploadedFileAction: jest.fn().mockResolvedValue(undefined),
 }));
@@ -193,7 +197,7 @@ describe("PhotoUploadField", () => {
       fireEvent.change(input);
       await waitFor(() => {
         expect(mockUpload).toHaveBeenCalledWith(
-          "photo.jpg",
+          "cover/u1/photo.jpg",
           file,
           expect.objectContaining({
             access: "public",

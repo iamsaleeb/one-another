@@ -1,9 +1,11 @@
 import { notFound, redirect } from "next/navigation";
-import { auth } from "@/auth";
 import { getSeriesById } from "@/domains/series/actions/data";
-import { getChurchesByIds } from "@/domains/churches/actions/data";
-import { getActor } from "@/domains/roles/lib/session";
-import { Capabilities } from "@/domains/roles/lib/capabilities";
+import {
+  getAbility,
+  getChurchTargets,
+  getSessionUserId,
+  seriesSubject,
+} from "@/domains/roles";
 import { PageHeader } from "@/components/ui/page-header";
 import { EditSeriesForm } from "./_components/edit-series-form";
 
@@ -13,34 +15,21 @@ interface Props {
 
 export default async function EditSeriesPage({ params }: Props) {
   const { id } = await params;
-  const [series, session, actor] = await Promise.all([
+  const [series, userId, ability] = await Promise.all([
     getSeriesById(id),
-    auth(),
-    getActor(),
+    getSessionUserId(),
+    getAbility(),
   ]);
 
-  if (!session) redirect("/");
+  if (!userId) redirect("/");
   if (!series) notFound();
+  if (!ability.can("update", seriesSubject(series))) notFound();
 
-  const access = await actor.loadContext({
-    churchId: series.churchId,
-    seriesId: series.id,
-  });
-  if (!access.can(Capabilities.SERIES_UPDATE)) notFound();
-
-  // UI: church dropdown — filter JWT memberships to roles that have SERIES_UPDATE
-  // (CHURCH_ADMIN and EVENT_MANAGER). Slightly stale is acceptable for UI only;
-  // the actual auth decision above uses the DB via actor.loadContext().
-  const churchMemberships = session.user.churchMemberships ?? [];
-  const editableChurchIds = churchMemberships
-    .filter((m) => m.role === "CHURCH_ADMIN" || m.role === "EVENT_MANAGER")
-    .map((m) => m.churchId);
-
-  let churches = await getChurchesByIds(editableChurchIds);
-  if (!churches.some((c) => c.id === series.churchId)) {
-    if (series.church) churches = [series.church];
-    else notFound();
-  }
+  // Church dropdown: Churches the Series could be moved to, plus its own.
+  const targets = await getChurchTargets("create_series", ability);
+  const churches = targets.some((c) => c.id === series.churchId)
+    ? targets
+    : [series.church, ...targets];
 
   return (
     <div className="mx-auto max-w-lg">

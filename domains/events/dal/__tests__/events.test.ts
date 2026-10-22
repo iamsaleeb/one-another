@@ -29,20 +29,15 @@ jest.mock("@/domains/events/questions/dal", () => ({
   syncEventQuestions: jest.fn().mockResolvedValue(undefined),
 }));
 
+import { createPrismaAbility } from "@casl/prisma";
 import { prisma } from "@/lib/db";
-import { buildAbility } from "@/domains/roles/lib/ability";
+import { buildAbility, type AppAbility } from "@/domains/roles/lib/ability";
 import { getAbility, getSessionUserId } from "@/domains/roles/lib/get-ability";
 import { systemAbility } from "@/domains/roles/lib/system-ability";
 import { grants, type fakeTable } from "@/domains/roles/testing";
 import type { Grants } from "@/domains/roles/lib/grants";
 import type { CreateEventInput } from "../../validations/event";
-import {
-  cancelEvent,
-  createEvent,
-  deleteEvent,
-  publishEvent,
-  updateEvent,
-} from "../events";
+import { cancelEvent, createEvent, deleteEvent, updateEvent } from "../events";
 
 type FakeTable = ReturnType<
   typeof fakeTable<{
@@ -63,6 +58,8 @@ const mockFollowers = prisma.seriesFollower.findMany as jest.Mock;
 const mockQueue = jest.requireMock("@/domains/notifications/queue") as {
   queueNotification: jest.Mock;
   cancelManyNotifications: jest.Mock;
+  scheduleEventReminderNotifications: jest.Mock;
+  rescheduleEventReminderNotifications: jest.Mock;
 };
 
 function signIn(userGrants: Grants, userId = "u1") {
@@ -117,6 +114,10 @@ beforeEach(() => {
 const input = (over: Partial<CreateEventInput> = {}) =>
   ({
     title: "Event",
+    date: "2026-04-06",
+    time: "09:00",
+    location: "Hall",
+    host: "Host",
     churchId: "c1",
     tag: "Social",
     description: "d",
@@ -131,7 +132,10 @@ describe("notification deduplication", () => {
       { userId: "user-2" },
     ]);
 
-    await publishEvent("evt-1");
+    await updateEvent(
+      "evt-1",
+      input({ seriesId: "s1", churchId: undefined, isDraft: false })
+    );
 
     for (const userId of ["user-1", "user-2"])
       expect(mockQueue.queueNotification).toHaveBeenCalledWith(
@@ -286,6 +290,7 @@ describe("updateEvent", () => {
       oldChurchId: "c1",
       newChurchId: "c1",
       affectedSeriesIds: ["s1", "s2"],
+      publishedChanged: false,
     });
     expect(events.rows.find((e) => e.id === "evt-1")?.seriesId).toBe("s2");
     // The old Series' pending "new session" notification is cancelled.
@@ -321,6 +326,7 @@ describe("updateEvent", () => {
       oldChurchId: "c1",
       newChurchId: "c2",
       affectedSeriesIds: [],
+      publishedChanged: false,
     });
   });
 
@@ -345,11 +351,146 @@ describe("updateEvent", () => {
   });
 });
 
+describe("draft state changes through updateEvent", () => {
+  const publishDraft = (opts?: { ability: AppAbility }) =>
+    updateEvent(
+      "evt-1",
+      input({ seriesId: "s1", churchId: undefined, isDraft: false }),
+      opts
+    );
+  const row = (id: string) => events.rows.find((e) => e.id === id);
+
+  beforeEach(() =>
+    signIn(grants({ church: [{ churchId: "c1", role: "EVENT_MANAGER" }] }))
+  );
+
+  it("publishing a draft schedules reminders and notifies Series followers", async () => {
+    mockAttendees.mockResolvedValue([{ userId: "a1" }, { userId: "a2" }]);
+    mockFollowers.mockResolvedValue([{ userId: "f1" }]);
+    const datetimeISO = "2026-07-01T09:00:00.000Z";
+
+    const result = await updateEvent(
+      "evt-1",
+      input({
+        seriesId: "s1",
+        churchId: undefined,
+        isDraft: false,
+        title: "Bible Study",
+        datetimeISO,
+      })
+    );
+
+    expect(result).toMatchObject({ publishedChanged: true });
+    expect(row("evt-1")?.isDraft).toBe(false);
+    expect(mockQueue.scheduleEventReminderNotifications).toHaveBeenCalledWith(
+      ["a1", "a2"],
+      { id: "evt-1", title: "Bible Study", datetime: new Date(datetimeISO) }
+    );
+    expect(mockQueue.queueNotification).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: "f1",
+        type: NotificationType.NEW_SERIES_SESSION,
+        body: expect.stringContaining("Bible Study"),
+        dedupeKey: "s1:evt-1",
+      })
+    );
+  });
+
+  it("a failing side effect does not fail the publish", async () => {
+    mockAttendees.mockResolvedValue([{ userId: "a1" }]);
+    mockFollowers.mockResolvedValue([{ userId: "f1" }]);
+    mockQueue.scheduleEventReminderNotifications.mockRejectedValueOnce(
+      new Error("scheduler down")
+    );
+    mockQueue.queueNotification.mockRejectedValueOnce(new Error("push down"));
+    const spy = jest.spyOn(console, "error").mockImplementation(() => {});
+
+    expect(await publishDraft()).toMatchObject({ publishedChanged: true });
+    expect(row("evt-1")?.isDraft).toBe(false);
+    spy.mockRestore();
+  });
+
+  it("unpublishing cancels pending reminders instead of rescheduling them", async () => {
+    Object.assign(row("evt-2") ?? {}, {
+      datetime: new Date("2026-05-01T09:00:00Z"),
+    });
+
+    const result = await updateEvent(
+      "evt-2",
+      input({ isDraft: true, datetimeISO: "2026-06-01T09:00:00.000Z" })
+    );
+
+    expect(result).toMatchObject({ publishedChanged: true });
+    expect(row("evt-2")?.isDraft).toBe(true);
+    expect(mockQueue.cancelManyNotifications).toHaveBeenCalledWith({
+      type: NotificationType.EVENT_REMINDER,
+      dedupeKey: "evt-2",
+    });
+    expect(
+      mockQueue.rescheduleEventReminderNotifications
+    ).not.toHaveBeenCalled();
+  });
+
+  it("unpublishing a session cancels its pending new-session notification", async () => {
+    Object.assign(row("evt-1") ?? {}, { isDraft: false });
+
+    await updateEvent(
+      "evt-1",
+      input({ seriesId: "s1", churchId: undefined, isDraft: true })
+    );
+
+    expect(mockQueue.cancelManyNotifications).toHaveBeenCalledWith({
+      type: NotificationType.NEW_SERIES_SESSION,
+      dedupeKey: "s1:evt-1",
+    });
+  });
+
+  it("an omitted isDraft keeps the current state and runs no side effects", async () => {
+    const result = await updateEvent("evt-2", input({ title: "Renamed" }));
+
+    expect(result).toMatchObject({ publishedChanged: false });
+    expect(row("evt-2")).toMatchObject({ isDraft: false, title: "Renamed" });
+    expect(mockQueue.queueNotification).not.toHaveBeenCalled();
+    expect(mockQueue.cancelManyNotifications).not.toHaveBeenCalled();
+  });
+
+  it("a published Event must stay complete", async () => {
+    const result = await updateEvent("evt-2", input({ title: "" }));
+
+    expect(result).toHaveProperty("fieldErrors.title");
+    expect(row("evt-2")?.title).toBe("Friday Night");
+  });
+
+  it("a draft may be saved incomplete", async () => {
+    const result = await updateEvent(
+      "evt-1",
+      input({ seriesId: "s1", churchId: undefined, title: "", description: "" })
+    );
+
+    expect(result).not.toHaveProperty("fieldErrors");
+    expect(row("evt-1")).toMatchObject({ isDraft: true, title: "" });
+  });
+
+  it("changing draft state needs publish, not just update", async () => {
+    const updateOnly = createPrismaAbility([
+      { action: "update", subject: "Event" },
+    ]) as AppAbility;
+
+    expect(await publishDraft({ ability: updateOnly })).toEqual({
+      error: "Unauthorised.",
+    });
+    expect(row("evt-1")?.isDraft).toBe(true);
+    expect(mockQueue.queueNotification).not.toHaveBeenCalled();
+  });
+});
+
 describe("scoped writes", () => {
   it("no Grant on another Church's Event: nothing is written", async () => {
     signIn(grants({ church: [{ churchId: "c1", role: "CHURCH_ADMIN" }] }));
     expect(await deleteEvent("evt-3")).toEqual({ error: "Unauthorised." });
-    expect(await publishEvent("evt-3")).toEqual({ error: "Unauthorised." });
+    expect(
+      await updateEvent("evt-3", input({ churchId: "c2", isDraft: true }))
+    ).toEqual({ error: "Unauthorised." });
     expect(events.rows).toHaveLength(3);
   });
 

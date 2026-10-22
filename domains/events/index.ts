@@ -4,8 +4,6 @@
 export {
   cancelEventAction,
   uncancelEventAction,
-  publishEventAction,
-  unpublishEventAction,
   saveDraftAction,
   saveEventAction as saveEventEditsAction,
   deleteEventAction,

@@ -30,9 +30,13 @@ export function invalidateEventUpdate(
     oldChurchId: string | null;
     newChurchId: string | null;
     affectedSeriesIds: string[];
+    publishedChanged?: boolean;
   }
 ) {
-  invalidateEventCaches(id, result.oldChurchId);
+  // Publishing or unpublishing changes which Events the Church lists show.
+  invalidateEventCaches(id, result.oldChurchId, null, {
+    broadcastToChurchList: result.publishedChanged,
+  });
   if (result.newChurchId && result.newChurchId !== result.oldChurchId)
     updateTag(`church-${result.newChurchId}`);
   if (result.affectedSeriesIds.length > 0) {

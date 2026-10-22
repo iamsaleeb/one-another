@@ -1,9 +1,12 @@
 import "server-only";
-import { prisma } from "@/lib/db";
+import { prisma, type Db } from "@/lib/db";
 import { NotificationType, Prisma } from "@prisma/client";
 import { subHours } from "date-fns";
 
 const DEFAULT_HOURS_BEFORE_EVENT = 2;
+
+// Every write below takes an optional `db`, so a caller can queue or cancel
+// notifications inside its own transaction.
 
 interface QueueInput {
   userId: string;
@@ -15,7 +18,10 @@ interface QueueInput {
   dedupeKey?: string;
 }
 
-export async function queueNotification(input: QueueInput): Promise<void> {
+export async function queueNotification(
+  input: QueueInput,
+  db: Db = prisma
+): Promise<void> {
   const {
     userId,
     type,
@@ -39,16 +45,55 @@ export async function queueNotification(input: QueueInput): Promise<void> {
   };
 
   if (dedupeKey != null) {
-    await prisma.notification.upsert({
+    await db.notification.upsert({
       where: { userId_type_dedupeKey: { userId, type, dedupeKey } },
       create: { ...basePayload, dedupeKey },
       update: { scheduledFor, cancelledAt: null, title, body, data: jsonData },
     });
   } else {
-    await prisma.notification.create({
+    await db.notification.create({
       data: { ...basePayload, dedupeKey: undefined },
     });
   }
+}
+
+type FanOutInput = Omit<QueueInput, "userId" | "dedupeKey"> & {
+  dedupeKey: string;
+};
+
+/**
+ * Queues the same notification for many users in two statements, with the
+ * same effect as queueNotification per user: an existing row for the key is
+ * refreshed and un-cancelled, and a missing one is created.
+ */
+export async function queueNotificationForUsers(
+  userIds: string[],
+  input: FanOutInput,
+  db: Db = prisma
+): Promise<void> {
+  if (userIds.length === 0) return;
+  const { type, title, body, data, dedupeKey } = input;
+  const scheduledFor = input.scheduledFor ?? new Date();
+  const jsonData = (
+    data !== undefined ? data : Prisma.DbNull
+  ) as Prisma.InputJsonValue;
+
+  await db.notification.updateMany({
+    where: { userId: { in: userIds }, type, dedupeKey },
+    data: { scheduledFor, cancelledAt: null, title, body, data: jsonData },
+  });
+  await db.notification.createMany({
+    data: userIds.map((userId) => ({
+      userId,
+      type,
+      title,
+      body,
+      data: jsonData,
+      scheduledFor,
+      dedupeKey,
+    })),
+    skipDuplicates: true,
+  });
 }
 
 interface CancelInput {
@@ -57,8 +102,11 @@ interface CancelInput {
   dedupeKey: string;
 }
 
-export async function cancelNotification(input: CancelInput): Promise<void> {
-  await prisma.notification.updateMany({
+export async function cancelNotification(
+  input: CancelInput,
+  db: Db = prisma
+): Promise<void> {
+  await db.notification.updateMany({
     where: {
       userId: input.userId,
       type: input.type,
@@ -76,9 +124,10 @@ interface CancelManyInput {
 }
 
 export async function cancelManyNotifications(
-  input: CancelManyInput
+  input: CancelManyInput,
+  db: Db = prisma
 ): Promise<void> {
-  await prisma.notification.updateMany({
+  await db.notification.updateMany({
     where: {
       type: input.type,
       dedupeKey: input.dedupeKey,
@@ -102,9 +151,10 @@ interface EventRef {
  */
 export async function scheduleEventReminderNotification(
   userId: string,
-  event: EventRef
+  event: EventRef,
+  db: Db = prisma
 ): Promise<void> {
-  const pref = await prisma.notificationPreference.findUnique({
+  const pref = await db.notificationPreference.findUnique({
     where: { userId_type: { userId, type: NotificationType.EVENT_REMINDER } },
     select: { config: true },
   });
@@ -124,20 +174,23 @@ export async function scheduleEventReminderNotification(
   const scheduledFor = subHours(event.datetime, hours);
   if (scheduledFor <= new Date()) return;
 
-  await queueNotification({
-    userId,
-    type: NotificationType.EVENT_REMINDER,
-    title: "Event Reminder",
-    body: `${event.title} starts in ${hours === 1 ? "1 hour" : `${hours} hours`}`,
-    data: {
-      type: "event_reminder",
-      eventId: event.id,
-      eventTitle: event.title,
-      eventDatetime: event.datetime.toISOString(),
+  await queueNotification(
+    {
+      userId,
+      type: NotificationType.EVENT_REMINDER,
+      title: "Event Reminder",
+      body: `${event.title} starts in ${hours === 1 ? "1 hour" : `${hours} hours`}`,
+      data: {
+        type: "event_reminder",
+        eventId: event.id,
+        eventTitle: event.title,
+        eventDatetime: event.datetime.toISOString(),
+      },
+      scheduledFor,
+      dedupeKey: event.id,
     },
-    scheduledFor,
-    dedupeKey: event.id,
-  });
+    db
+  );
 }
 
 /**
@@ -147,13 +200,14 @@ export async function scheduleEventReminderNotification(
  */
 export async function scheduleEventReminderNotifications(
   userIds: string[],
-  event: EventRef
+  event: EventRef,
+  db: Db = prisma
 ): Promise<void> {
   if (userIds.length === 0 || !event.datetime) return;
 
   const datetime = event.datetime;
 
-  const prefs = await prisma.notificationPreference.findMany({
+  const prefs = await db.notificationPreference.findMany({
     where: { userId: { in: userIds }, type: NotificationType.EVENT_REMINDER },
     select: { userId: true, config: true },
   });
@@ -178,20 +232,23 @@ export async function scheduleEventReminderNotifications(
         const hours = hoursMap.get(userId) ?? DEFAULT_HOURS_BEFORE_EVENT;
         const scheduledFor = subHours(datetime, hours);
         if (scheduledFor <= now) return Promise.resolve();
-        return queueNotification({
-          userId,
-          type: NotificationType.EVENT_REMINDER,
-          title: "Event Reminder",
-          body: `${event.title} starts in ${hours === 1 ? "1 hour" : `${hours} hours`}`,
-          data: {
-            type: "event_reminder",
-            eventId: event.id,
-            eventTitle: event.title,
-            eventDatetime: datetime.toISOString(),
+        return queueNotification(
+          {
+            userId,
+            type: NotificationType.EVENT_REMINDER,
+            title: "Event Reminder",
+            body: `${event.title} starts in ${hours === 1 ? "1 hour" : `${hours} hours`}`,
+            data: {
+              type: "event_reminder",
+              eventId: event.id,
+              eventTitle: event.title,
+              eventDatetime: datetime.toISOString(),
+            },
+            scheduledFor,
+            dedupeKey: event.id,
           },
-          scheduledFor,
-          dedupeKey: event.id,
-        });
+          db
+        );
       })
     );
   }
@@ -203,9 +260,10 @@ export async function scheduleEventReminderNotifications(
  */
 export async function rescheduleEventReminderNotifications(
   eventId: string,
-  newDatetime: Date
+  newDatetime: Date,
+  db: Db = prisma
 ): Promise<void> {
-  const pending = await prisma.notification.findMany({
+  const pending = await db.notification.findMany({
     where: {
       type: NotificationType.EVENT_REMINDER,
       dedupeKey: eventId,
@@ -218,7 +276,7 @@ export async function rescheduleEventReminderNotifications(
   if (pending.length === 0) return;
 
   const userIds = [...new Set(pending.map((n) => n.userId))];
-  const prefs = await prisma.notificationPreference.findMany({
+  const prefs = await db.notificationPreference.findMany({
     where: { userId: { in: userIds }, type: NotificationType.EVENT_REMINDER },
     select: { userId: true, config: true },
   });
@@ -234,21 +292,19 @@ export async function rescheduleEventReminderNotifications(
     }
   }
 
-  await prisma.$transaction(
-    pending.map((notif) => {
-      const hours = hoursMap.get(notif.userId) ?? DEFAULT_HOURS_BEFORE_EVENT;
-      const newScheduledFor = subHours(newDatetime, hours);
-      const existingData = (notif.data ?? {}) as Record<string, string>;
-      return prisma.notification.update({
-        where: { id: notif.id },
-        data: {
-          scheduledFor: newScheduledFor,
-          body: `${existingData.eventTitle} starts in ${hours === 1 ? "1 hour" : `${hours} hours`}`,
-          data: { ...existingData, eventDatetime: newDatetime.toISOString() },
-        },
-      });
-    })
-  );
+  for (const notif of pending) {
+    const hours = hoursMap.get(notif.userId) ?? DEFAULT_HOURS_BEFORE_EVENT;
+    const newScheduledFor = subHours(newDatetime, hours);
+    const existingData = (notif.data ?? {}) as Record<string, string>;
+    await db.notification.update({
+      where: { id: notif.id },
+      data: {
+        scheduledFor: newScheduledFor,
+        body: `${existingData.eventTitle} starts in ${hours === 1 ? "1 hour" : `${hours} hours`}`,
+        data: { ...existingData, eventDatetime: newDatetime.toISOString() },
+      },
+    });
+  }
 }
 
 /**

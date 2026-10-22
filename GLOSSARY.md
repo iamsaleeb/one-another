@@ -1,6 +1,12 @@
 # One Another
 
-Churches publish Events and Series; members follow, attend and help run them. This glossary covers the language of who may do what.
+Churches publish Events and Series; members follow, attend and help run them. This glossary covers the language of who may do what, and of what happens when an Event changes.
+
+## Events
+
+**Event lifecycle**:
+Every change to an Event's state, and everything that must follow from it: reminders, Series-follower notices, the Creator Grant, and which pages go stale. A change and its consequences commit together or not at all.
+_Avoid_: publish side effects, event hooks
 
 ## Access
 

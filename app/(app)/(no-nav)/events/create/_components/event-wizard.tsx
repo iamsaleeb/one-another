@@ -15,7 +15,7 @@ import {
 } from "@/domains/events/validations/event";
 import {
   saveDraftAction,
-  saveEventAction,
+  saveEventEditsAction,
 } from "@/domains/events/actions/crud";
 import { localInputsToUtcDate, utcIsoToLocalInputs } from "@/lib/datetime";
 import { WizardProgress } from "./wizard-progress";
@@ -193,7 +193,7 @@ export function EventWizard({
     return data;
   };
 
-  // Validate the current step's fields then advance — auto-save persists in the background
+  // Validate the current step's fields then advance â€” auto-save persists in the background
   const handleNext = async () => {
     const step = activeSteps[currentStep];
     if (!step) return;
@@ -254,7 +254,7 @@ export function EventWizard({
         setDraftId(id);
         form.setValue("isDraft", true, { shouldDirty: false });
       }
-      const result = await saveEventAction(id, {
+      const result = await saveEventEditsAction(id, {
         ...buildData(),
         isDraft: false,
       });

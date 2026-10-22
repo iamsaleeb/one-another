@@ -1,37 +1,47 @@
 // lib/dal/questions.ts
 import "server-only";
 
-import { prisma } from "@/lib/db";
+import { prisma, type Db } from "@/lib/db";
 import type { QuestionInput } from "./validations";
+
+async function replaceQuestions(
+  db: Db,
+  eventId: string,
+  questions: QuestionInput[]
+) {
+  const responseCount = await db.eventAttendeeResponse.count({
+    where: { question: { eventId } },
+  });
+
+  // Questions are locked once responses exist — skip sync, preserve existing questions
+  if (responseCount > 0) return;
+
+  await db.eventQuestion.deleteMany({ where: { eventId } });
+  await db.eventQuestion.createMany({
+    data: questions.map((q, i) => ({
+      eventId,
+      type: q.type,
+      label: q.label,
+      options: q.options,
+      required: q.required,
+      order: i,
+      libraryItemId: q.libraryItemId ?? null,
+    })),
+  });
+}
 
 export async function syncEventQuestions(
   eventId: string,
   questions: QuestionInput[],
   // The user whose question library learns these questions. `null` for a
   // trusted caller with no user, which syncs the Event only.
-  createdById: string | null
+  createdById: string | null,
+  // A caller's transaction to join. Without one, the replace runs in its own.
+  db?: Db
 ): Promise<void> {
-  await prisma.$transaction(async (tx) => {
-    const responseCount = await tx.eventAttendeeResponse.count({
-      where: { question: { eventId } },
-    });
-
-    // Questions are locked once responses exist — skip sync, preserve existing questions
-    if (responseCount > 0) return;
-
-    await tx.eventQuestion.deleteMany({ where: { eventId } });
-    await tx.eventQuestion.createMany({
-      data: questions.map((q, i) => ({
-        eventId,
-        type: q.type,
-        label: q.label,
-        options: q.options,
-        required: q.required,
-        order: i,
-        libraryItemId: q.libraryItemId ?? null,
-      })),
-    });
-  });
+  if (db) await replaceQuestions(db, eventId, questions);
+  else
+    await prisma.$transaction((tx) => replaceQuestions(tx, eventId, questions));
 
   if (!createdById) return;
 
@@ -42,7 +52,7 @@ export async function syncEventQuestions(
     if (seen.has(key)) continue;
     seen.add(key);
 
-    await prisma.questionLibraryItem.upsert({
+    await (db ?? prisma).questionLibraryItem.upsert({
       where: {
         createdById_label_type: { createdById, label: q.label, type: q.type },
       },

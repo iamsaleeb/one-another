@@ -133,6 +133,14 @@ const eslintConfig = defineConfig([
     },
   },
 
+  // Jest setup for the db project runs outside the bundler, as CommonJS.
+  {
+    files: ["test/db/*.js"],
+    rules: {
+      "@typescript-eslint/no-require-imports": "off",
+    },
+  },
+
   // ── Ignored paths ────────────────────────────────────────────────────────────
   // Override default ignores of eslint-config-next.
   globalIgnores([

@@ -1,11 +1,9 @@
 // Actions ("use server" stays in each action file)
-// Note: saveEventAction exists in both crud (organiser edit save) and save (user bookmark save).
-// Import directly from the specific subpath to avoid ambiguity.
 export {
   cancelEventAction,
   uncancelEventAction,
   saveDraftAction,
-  saveEventAction as saveEventEditsAction,
+  saveEventEditsAction,
   deleteEventAction,
 } from "./actions/crud";
 export * from "./actions/attendance";
@@ -27,7 +25,5 @@ export { PriceInput } from "./components/price-input";
 export * from "./validations/event";
 export * from "./questions/validations";
 
-// Cache tags (for cross-domain invalidation)
-export { invalidateEventCaches, invalidateEventUpdate } from "./cache";
-
-// NOT exported: dal/, questions/dal, questions/responses (server-only, internal)
+// NOT exported: lifecycle, dal/, questions/dal, questions/responses
+// (server-only, internal)

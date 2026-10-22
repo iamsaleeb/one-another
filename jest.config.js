@@ -2,15 +2,40 @@ const nextJest = require("next/jest");
 
 const createJestConfig = nextJest({ dir: "./" });
 
-/** @type {import('jest').Config} */
-const config = {
-  coverageProvider: "v8",
-  testEnvironment: "jsdom",
-  setupFilesAfterEnv: ["<rootDir>/jest.setup.ts"],
+const shared = {
   moduleNameMapper: {
     "^@/(.*)$": "<rootDir>/$1",
   },
   testPathIgnorePatterns: ["<rootDir>/node_modules/", "<rootDir>/.next/"],
+};
+
+// Mocked unit tests: everything except *.db.test.ts.
+const unit = createJestConfig({
+  ...shared,
+  displayName: "unit",
+  testEnvironment: "jsdom",
+  setupFilesAfterEnv: ["<rootDir>/jest.setup.ts"],
+  testPathIgnorePatterns: [
+    ...shared.testPathIgnorePatterns,
+    "\\.db\\.test\\.ts$",
+  ],
+});
+
+// Tests against a real Postgres: one database per worker, cloned from a
+// migrated template (see test/db/). Needs a reachable server; see README.
+const db = createJestConfig({
+  ...shared,
+  displayName: "db",
+  testEnvironment: "node",
+  testMatch: ["**/*.db.test.ts"],
+  globalSetup: "<rootDir>/test/db/global-setup.js",
+  setupFiles: ["<rootDir>/test/db/env.js"],
+  setupFilesAfterEnv: ["<rootDir>/test/db/setup.ts"],
+});
+
+/** @type {() => Promise<import('jest').Config>} */
+module.exports = async () => ({
+  coverageProvider: "v8",
   collectCoverageFrom: [
     "components/**/*.{ts,tsx}",
     "domains/**/*.{ts,tsx}",
@@ -25,6 +50,9 @@ const config = {
     // Exclude Next.js App Router pages and layouts — covered by e2e tests
     "!app/**",
     "!**/*.d.ts",
+    // Exclude the tests themselves (implicit with one project, not with several)
+    "!**/__tests__/**",
+    "!**/*.test.{ts,tsx}",
     // Exclude barrel re-export files — no own logic, only re-exports
     "!**/index.ts",
     // Exclude approval UI components — rendering-only, covered by e2e tests
@@ -40,6 +68,5 @@ const config = {
       statements: 80,
     },
   },
-};
-
-module.exports = createJestConfig(config);
+  projects: [await unit(), await db()],
+});

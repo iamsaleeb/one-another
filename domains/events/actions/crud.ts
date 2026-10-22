@@ -20,48 +20,6 @@ import {
 import type { ActionResult } from "@/lib/types/action";
 import { invalidateEventCaches, invalidateEventUpdate } from "../cache";
 
-export async function createEventAction(
-  data: CreateEventInput
-): Promise<ActionResult> {
-  if (!(await getSessionUserId())) return { error: "Unauthorised." };
-
-  const parsed = createEventSchema.safeParse(data);
-  if (!parsed.success)
-    return { fieldErrors: parsed.error.flatten().fieldErrors };
-
-  const result = await createEvent(parsed.data);
-  if ("error" in result || "fieldErrors" in result) return result;
-
-  invalidateEventCaches(result.id, result.churchId, result.seriesId, {
-    broadcastToChurchList: true,
-  });
-  redirect(
-    result.isDraft
-      ? "/organiser"
-      : result.seriesId
-        ? `/series/${result.seriesId}`
-        : "/my-events"
-  );
-}
-
-export async function updateEventAction(
-  id: string,
-  data: CreateEventInput
-): Promise<ActionResult> {
-  if (!(await getSessionUserId())) redirect("/");
-
-  const parsed = createEventSchema.safeParse(data);
-  if (!parsed.success)
-    return { fieldErrors: parsed.error.flatten().fieldErrors };
-
-  const result = await updateEvent(id, parsed.data);
-  if ("error" in result) redirect("/organiser");
-  if ("fieldErrors" in result) return result;
-
-  invalidateEventUpdate(id, result);
-  redirect(`/events/${id}`);
-}
-
 export async function cancelEventAction(
   id: string,
   reason: string

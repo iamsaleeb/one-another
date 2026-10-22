@@ -54,17 +54,6 @@ export async function getMyChurchFollow(churchId: string, userId: string) {
   });
 }
 
-export async function getOrganisersByChurch(churchId: string) {
-  cacheTag("churches");
-  cacheLife("hours");
-  const memberships = await prisma.churchMembership.findMany({
-    where: { churchId, role: { in: ["EVENT_MANAGER", "EVENT_CREATOR"] } },
-    select: { user: { select: { id: true, name: true, email: true } } },
-    orderBy: { user: { name: "asc" } },
-  });
-  return memberships.map((m) => m.user);
-}
-
 // Churches with their organisers, for the admin screen. Which Churches a user
 // may manage is decided by the caller via getChurchTargets("manage_members").
 export async function getChurchesWithOrganisers(churchIds: string[]) {

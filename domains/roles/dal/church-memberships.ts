@@ -8,13 +8,6 @@ export function getChurchMembership(userId: string, churchId: string) {
   });
 }
 
-export function getChurchMembers(churchId: string) {
-  return prisma.churchMembership.findMany({
-    where: { churchId },
-    include: { user: { select: { id: true, name: true, email: true } } },
-  });
-}
-
 export function upsertChurchMembership(
   userId: string,
   churchId: string,

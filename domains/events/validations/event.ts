@@ -68,14 +68,6 @@ export const saveDraftSchema = createEventSchema.extend({
 });
 export type SaveDraftInput = z.infer<typeof saveDraftSchema>;
 
-export const registerEventSchema = z.object({
-  phone: z.string().optional(),
-  notes: z.string().optional(),
-  selectedDays: z.array(z.string()).optional(),
-});
-
-export type RegisterEventInput = z.infer<typeof registerEventSchema>;
-
 export const registrationFormSchema = z.object({
   phone: z
     .string()

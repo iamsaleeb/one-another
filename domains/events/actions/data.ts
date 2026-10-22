@@ -9,20 +9,6 @@ import {
 import type { EventCardItem } from "@/lib/types/pagination";
 
 const PAGE_SIZE = 10;
-const FLAT_LIST_LIMIT = 50;
-
-// TTL policy: event lists → minutes (change on new events/RSVPs)
-//             event detail → hours (changes infrequently once published)
-export async function getEvents() {
-  cacheTag("events-list");
-  cacheLife("minutes");
-  return prisma.event.findMany({
-    where: upcomingPublicEvents(),
-    orderBy: { datetime: "asc" },
-    take: FLAT_LIST_LIMIT,
-    include: { church: { select: { name: true } } },
-  });
-}
 
 export async function getEventById(id: string) {
   cacheTag(`event-${id}`);
@@ -64,85 +50,6 @@ export async function getEventAttendees(eventId: string) {
   });
 }
 
-export async function getEventsByCreator(userId: string) {
-  cacheTag(`user-events-${userId}`);
-  cacheLife("minutes");
-  return prisma.event.findMany({
-    where: { createdById: userId },
-    orderBy: { datetime: "asc" },
-    take: FLAT_LIST_LIMIT,
-    include: {
-      church: { select: { name: true } },
-      createdBy: { select: { name: true } },
-    },
-  });
-}
-
-export async function getEventsNotByCreator(userId: string) {
-  cacheTag("events-list");
-  cacheLife("minutes");
-  return prisma.event.findMany({
-    where: {
-      ...upcomingPublicEvents(),
-      OR: [{ createdById: { not: userId } }, { createdById: null }],
-    },
-    orderBy: { datetime: "asc" },
-    take: FLAT_LIST_LIMIT,
-    include: {
-      church: { select: { name: true } },
-      createdBy: { select: { name: true } },
-    },
-  });
-}
-
-export async function getUserAttendedEvents(userId: string) {
-  cacheTag(`user-events-${userId}`);
-  cacheLife("minutes");
-  return prisma.event.findMany({
-    where: {
-      ...upcomingPublicEvents(),
-      attendees: { some: { userId } },
-    },
-    orderBy: { datetime: "asc" },
-    take: FLAT_LIST_LIMIT,
-    include: { church: { select: { name: true } } },
-  });
-}
-
-export async function getUserAttendedPastEvents(userId: string) {
-  cacheTag(`user-events-${userId}`);
-  cacheLife("minutes");
-  return prisma.event.findMany({
-    where: {
-      datetime: { lt: new Date() },
-      ...publishedEvent,
-      attendees: { some: { userId } },
-    },
-    orderBy: { datetime: "desc" },
-    take: FLAT_LIST_LIMIT,
-    include: { church: { select: { name: true } } },
-  });
-}
-
-export async function getEventsPaged(
-  cursor: string | null
-): Promise<{ items: EventCardItem[]; nextCursor: string | null }> {
-  cacheTag("events-list");
-  cacheLife("minutes");
-  const rows = await prisma.event.findMany({
-    where: upcomingPublicEvents(),
-    orderBy: { datetime: "asc" },
-    take: PAGE_SIZE + 1,
-    ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
-    include: { church: { select: { name: true } } },
-  });
-  const hasMore = rows.length > PAGE_SIZE;
-  return {
-    items: hasMore ? rows.slice(0, PAGE_SIZE) : rows,
-    nextCursor: hasMore ? rows[PAGE_SIZE - 1].id : null,
-  };
-}
-
 export async function getUserAttendedEventsPaged(
   userId: string,
   cursor: string | null
@@ -155,30 +62,6 @@ export async function getUserAttendedEventsPaged(
       attendees: { some: { userId } },
     },
     orderBy: { datetime: "asc" },
-    take: PAGE_SIZE + 1,
-    ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
-    include: { church: { select: { name: true } } },
-  });
-  const hasMore = rows.length > PAGE_SIZE;
-  return {
-    items: hasMore ? rows.slice(0, PAGE_SIZE) : rows,
-    nextCursor: hasMore ? rows[PAGE_SIZE - 1].id : null,
-  };
-}
-
-export async function getUserAttendedPastEventsPaged(
-  userId: string,
-  cursor: string | null
-): Promise<{ items: EventCardItem[]; nextCursor: string | null }> {
-  cacheTag(`user-events-${userId}`);
-  cacheLife("minutes");
-  const rows = await prisma.event.findMany({
-    where: {
-      datetime: { lt: new Date() },
-      ...publishedEvent,
-      attendees: { some: { userId } },
-    },
-    orderBy: { datetime: "desc" },
     take: PAGE_SIZE + 1,
     ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
     include: { church: { select: { name: true } } },

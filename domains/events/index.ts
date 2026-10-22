@@ -2,8 +2,6 @@
 // Note: saveEventAction exists in both crud (organiser edit save) and save (user bookmark save).
 // Import directly from the specific subpath to avoid ambiguity.
 export {
-  createEventAction,
-  updateEventAction,
   cancelEventAction,
   uncancelEventAction,
   publishEventAction,
@@ -26,7 +24,6 @@ export { InfiniteEventList } from "./components/infinite-event-list";
 export { HomeEventTabs } from "./components/home-event-tabs";
 export { CreateEventFAB } from "./components/create-event-fab";
 export { PriceInput } from "./components/price-input";
-export { EventList } from "./components/event-list";
 
 // Validations + types (client-safe)
 export * from "./validations/event";

@@ -3,7 +3,6 @@ jest.mock("@/lib/db", () => ({
   prisma: {
     eventStaffAssignment: {
       findUnique: jest.fn(),
-      findMany: jest.fn(),
       upsert: jest.fn(),
       delete: jest.fn(),
     },
@@ -11,7 +10,6 @@ jest.mock("@/lib/db", () => ({
 }));
 
 import {
-  getEventStaff,
   getEventStaffForUser,
   upsertEventStaff,
   removeEventStaff,
@@ -19,23 +17,11 @@ import {
 import { prisma } from "@/lib/db";
 
 const mockFindUnique = prisma.eventStaffAssignment.findUnique as jest.Mock;
-const mockFindMany = prisma.eventStaffAssignment.findMany as jest.Mock;
 const mockUpsert = prisma.eventStaffAssignment.upsert as jest.Mock;
 const mockDelete = prisma.eventStaffAssignment.delete as jest.Mock;
 
 describe("event-staff DAL", () => {
   beforeEach(() => jest.clearAllMocks());
-
-  describe("getEventStaff", () => {
-    it("queries by eventId with user include", async () => {
-      mockFindMany.mockResolvedValue([]);
-      await getEventStaff("e1");
-      expect(mockFindMany).toHaveBeenCalledWith({
-        where: { eventId: "e1" },
-        include: { user: { select: { id: true, name: true, email: true } } },
-      });
-    });
-  });
 
   describe("getEventStaffForUser", () => {
     it("queries by composite key", async () => {

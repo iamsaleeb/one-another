@@ -28,4 +28,4 @@ export {
 export { ApprovalMenuTrigger } from "./components/approval-menu-trigger";
 
 // Types
-export type { ApprovalActionState, ResolvedRequest } from "./lib/types";
+export type { ApprovalActionState } from "./lib/types";

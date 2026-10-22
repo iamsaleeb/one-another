@@ -3,7 +3,6 @@ jest.mock("@/lib/db", () => ({
   prisma: {
     seriesStaffAssignment: {
       findUnique: jest.fn(),
-      findMany: jest.fn(),
       upsert: jest.fn(),
       delete: jest.fn(),
     },
@@ -11,7 +10,6 @@ jest.mock("@/lib/db", () => ({
 }));
 
 import {
-  getSeriesStaff,
   getSeriesStaffForUser,
   upsertSeriesStaff,
   removeSeriesStaff,
@@ -19,23 +17,11 @@ import {
 import { prisma } from "@/lib/db";
 
 const mockFindUnique = prisma.seriesStaffAssignment.findUnique as jest.Mock;
-const mockFindMany = prisma.seriesStaffAssignment.findMany as jest.Mock;
 const mockUpsert = prisma.seriesStaffAssignment.upsert as jest.Mock;
 const mockDelete = prisma.seriesStaffAssignment.delete as jest.Mock;
 
 describe("series-staff DAL", () => {
   beforeEach(() => jest.clearAllMocks());
-
-  describe("getSeriesStaff", () => {
-    it("queries by seriesId with user include", async () => {
-      mockFindMany.mockResolvedValue([]);
-      await getSeriesStaff("s1");
-      expect(mockFindMany).toHaveBeenCalledWith({
-        where: { seriesId: "s1" },
-        include: { user: { select: { id: true, name: true, email: true } } },
-      });
-    });
-  });
 
   describe("getSeriesStaffForUser", () => {
     it("queries by composite key", async () => {

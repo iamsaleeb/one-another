@@ -44,8 +44,6 @@ export const responseValueSchema = z.object({
   fileUrl: z.url().nullable().optional(),
 });
 
-export const responseInputSchema = responseValueSchema.extend({
-  questionId: z.string(),
-});
-
-export type ResponseInput = z.infer<typeof responseInputSchema>;
+export type ResponseInput = z.infer<typeof responseValueSchema> & {
+  questionId: string;
+};

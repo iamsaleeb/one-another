@@ -39,12 +39,6 @@ export async function getInboxNotifications(input: {
   }));
 }
 
-export async function getUnreadCount(userId: string): Promise<number> {
-  return prisma.notification.count({
-    where: { userId, sentAt: { not: null }, readAt: null },
-  });
-}
-
 export async function markNotificationsRead(userId: string): Promise<void> {
   await prisma.notification.updateMany({
     where: { userId, sentAt: { not: null }, readAt: null },

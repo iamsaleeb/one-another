@@ -3,7 +3,6 @@ jest.mock("@/lib/db", () => ({
   prisma: {
     churchMembership: {
       findUnique: jest.fn(),
-      findMany: jest.fn(),
       upsert: jest.fn(),
       delete: jest.fn(),
     },
@@ -12,14 +11,12 @@ jest.mock("@/lib/db", () => ({
 
 import {
   getChurchMembership,
-  getChurchMembers,
   upsertChurchMembership,
   removeChurchMembership,
 } from "../church-memberships";
 import { prisma } from "@/lib/db";
 
 const mockFindUnique = prisma.churchMembership.findUnique as jest.Mock;
-const mockFindMany = prisma.churchMembership.findMany as jest.Mock;
 const mockUpsert = prisma.churchMembership.upsert as jest.Mock;
 const mockDelete = prisma.churchMembership.delete as jest.Mock;
 
@@ -38,17 +35,6 @@ describe("church-memberships DAL", () => {
       const record = { userId: "u1", churchId: "c1", role: "CHURCH_ADMIN" };
       mockFindUnique.mockResolvedValue(record);
       expect(await getChurchMembership("u1", "c1")).toEqual(record);
-    });
-  });
-
-  describe("getChurchMembers", () => {
-    it("queries by churchId and includes user select", async () => {
-      mockFindMany.mockResolvedValue([]);
-      await getChurchMembers("c1");
-      expect(mockFindMany).toHaveBeenCalledWith({
-        where: { churchId: "c1" },
-        include: { user: { select: { id: true, name: true, email: true } } },
-      });
     });
   });
 

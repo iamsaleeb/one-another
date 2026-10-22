@@ -316,7 +316,7 @@ model SavedEvent {
   event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
 
   @@unique([userId, eventId])
-  @@index([userId])
+  @@index([eventId])
   @@map("saved_events")
 }
 

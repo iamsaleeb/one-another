@@ -31,14 +31,20 @@ export default async function EditEventPage({ params }: Props) {
   if (!event) notFound();
   if (!ability.can("update", eventSubject(event))) notFound();
 
-  // Church dropdown: Churches the Event could be moved to, plus its own.
-  const [targets, questions, libraryItems, questionsLocked] = await Promise.all(
-    [
+  // Church dropdown: its own Church, plus those updateEvent would let it move
+  // to (the user may place an Event there and still edit it afterwards).
+  const [placeable, questions, libraryItems, questionsLocked] =
+    await Promise.all([
       getChurchTargets("create_event", ability),
       getEventQuestions(id),
       getQuestionLibraryForUser(userId),
       hasEventResponses(id),
-    ]
+    ]);
+  const targets = placeable.filter((c) =>
+    ability.can(
+      "update",
+      eventSubject({ id: event.id, churchId: c.id, seriesId: null })
+    )
   );
   const churches =
     event.church && !targets.some((c) => c.id === event.churchId)

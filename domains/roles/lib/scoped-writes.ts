@@ -12,7 +12,7 @@ export interface WriteOptions {
   userId?: string | null;
 }
 
-export interface WriteContext {
+interface WriteContext {
   ability: AppAbility;
   userId: string | null;
 }

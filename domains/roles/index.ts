@@ -9,7 +9,6 @@ export * from "./validations/roles";
 
 // Permissions (CASL Ability built from DB-loaded Grants; see ADR 0001)
 export {
-  buildAbility,
   hasAnyGrant,
   eventSubject,
   seriesSubject,

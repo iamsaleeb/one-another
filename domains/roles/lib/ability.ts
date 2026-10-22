@@ -31,7 +31,7 @@ export type Action =
   | "create_series"
   | "manage";
 
-export type AppSubjects =
+type AppSubjects =
   | Subjects<{ Event: Event; Series: Series; Church: Church }>
   | "all";
 

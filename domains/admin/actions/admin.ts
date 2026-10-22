@@ -72,8 +72,6 @@ export async function removeOrganiserFromChurchAction(
   _prevState: AdminActionState,
   formData: FormData
 ): Promise<AdminActionState> {
-  if (!(await getSessionUserId())) return { error: "Unauthorised." };
-
   const parsed = removeOrganiserSchema.safeParse({
     churchId: formData.get("churchId"),
     targetUserId: formData.get("targetUserId"),

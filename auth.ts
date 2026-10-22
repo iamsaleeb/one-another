@@ -58,6 +58,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       }
 
       if (shouldRefresh && token.id) {
+        // Tokens issued before ADR 0001 also carried Grants; drop them.
+        delete token.isPlatformAdmin;
+        delete token.churchMemberships;
         const freshUser = await prisma.user.findUnique({
           where: { id: token.id },
           select: { onboardingCompleted: true, emailVerified: true },

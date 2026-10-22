@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { hasAnyGrant } from "@/domains/roles/lib/ability";
 import { getAbility } from "@/domains/roles/lib/get-ability";
+import { uploadOwner, type UploadVariant } from "@/domains/upload/lib/paths";
 
 export async function POST(request: Request): Promise<NextResponse> {
   try {
@@ -10,24 +11,33 @@ export async function POST(request: Request): Promise<NextResponse> {
     const jsonResponse = await handleUpload({
       body,
       request,
-      onBeforeGenerateToken: async (_pathname, clientPayload) => {
+      onBeforeGenerateToken: async (pathname, clientPayload) => {
         const session = await auth();
 
         if (!session?.user?.id) {
           throw new Error("Unauthorized");
         }
 
-        const variant =
+        const variant: UploadVariant =
           clientPayload === "cover"
             ? "cover"
             : clientPayload === "response"
               ? "response"
               : "profile";
 
+        // Uploads must land under the uploader's own prefix, which is what
+        // lets deleteUploadedFileAction limit deletes to the owner.
+        if (
+          !pathname.startsWith(`${variant}/`) ||
+          uploadOwner(pathname) !== session.user.id
+        ) {
+          throw new Error("Forbidden");
+        }
+
         if (variant === "cover") {
-          // Coarse gate: any organiser (holder of any Grant) may upload covers.
-          // Permission on the specific Event/Series is enforced by the write
-          // that saves the URL.
+          // Coarse gate: covers are for organisers, and any Grant (down to
+          // EVENT_EDITOR on one Event) may change one. Permission on the
+          // specific Event/Series is enforced by the write that saves the URL.
           if (!hasAnyGrant(await getAbility())) {
             throw new Error("Forbidden");
           }
@@ -55,6 +65,7 @@ export async function POST(request: Request): Promise<NextResponse> {
                 ],
           maximumSizeInBytes:
             variant === "response" ? 10 * 1024 * 1024 : 4 * 1024 * 1024,
+          addRandomSuffix: true,
           tokenPayload: JSON.stringify({
             userId: session.user.id,
             variant,

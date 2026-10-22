@@ -1,4 +1,4 @@
-﻿/**
+/**
  * @jest-environment node
  */
 
@@ -43,7 +43,7 @@ describe("POST /api/upload", () => {
   describe("auth checks (via onBeforeGenerateToken)", () => {
     it("returns 401 when unauthenticated", async () => {
       mockAuth.mockResolvedValue(null);
-      // handleUpload calls onBeforeGenerateToken â€” simulate it throwing
+      // handleUpload calls onBeforeGenerateToken — simulate it throwing
       mockHandleUpload.mockImplementation(async ({ onBeforeGenerateToken }) => {
         await onBeforeGenerateToken("img.jpg", "profile");
       });
@@ -60,7 +60,7 @@ describe("POST /api/upload", () => {
         user: { id: "user-1" },
       });
       mockHandleUpload.mockImplementation(async ({ onBeforeGenerateToken }) => {
-        await onBeforeGenerateToken("img.jpg", "cover");
+        await onBeforeGenerateToken("cover/user-1/img.jpg", "cover");
       });
       const res = await POST(
         makeRequest({ type: "blob.generate-client-token" })
@@ -77,7 +77,10 @@ describe("POST /api/upload", () => {
         grants({ church: [{ churchId: "ch-1", role: "EVENT_MANAGER" }] })
       );
       mockHandleUpload.mockImplementation(async ({ onBeforeGenerateToken }) => {
-        const opts = await onBeforeGenerateToken("img.jpg", "cover");
+        const opts = await onBeforeGenerateToken(
+          "cover/user-2/img.jpg",
+          "cover"
+        );
         return { tokenPayload: opts.tokenPayload };
       });
       const res = await POST(
@@ -90,7 +93,10 @@ describe("POST /api/upload", () => {
       mockAuth.mockResolvedValue({ user: { id: "user-3" } });
       signInAs("user-3", platformAdmin());
       mockHandleUpload.mockImplementation(async ({ onBeforeGenerateToken }) => {
-        const opts = await onBeforeGenerateToken("img.jpg", "cover");
+        const opts = await onBeforeGenerateToken(
+          "cover/user-3/img.jpg",
+          "cover"
+        );
         return { tokenPayload: opts.tokenPayload };
       });
       const res = await POST(
@@ -106,7 +112,10 @@ describe("POST /api/upload", () => {
         grants({ series: [{ seriesId: "s1", role: "SERIES_SESSION_CREATOR" }] })
       );
       mockHandleUpload.mockImplementation(async ({ onBeforeGenerateToken }) => {
-        const opts = await onBeforeGenerateToken("img.jpg", "cover");
+        const opts = await onBeforeGenerateToken(
+          "cover/user-4/img.jpg",
+          "cover"
+        );
         return { tokenPayload: opts.tokenPayload };
       });
       const res = await POST(
@@ -120,13 +129,30 @@ describe("POST /api/upload", () => {
         user: { id: "user-1" },
       });
       mockHandleUpload.mockImplementation(async ({ onBeforeGenerateToken }) => {
-        const opts = await onBeforeGenerateToken("avatar.jpg", "profile");
+        const opts = await onBeforeGenerateToken(
+          "profile/user-1/avatar.jpg",
+          "profile"
+        );
         return { tokenPayload: opts.tokenPayload };
       });
       const res = await POST(
         makeRequest({ type: "blob.generate-client-token" })
       );
       expect(res.status).toBe(200);
+    });
+
+    it.each([
+      ["no owner prefix", "avatar.jpg", "profile"],
+      ["another user's prefix", "profile/user-2/avatar.jpg", "profile"],
+      ["a prefix for another variant", "cover/user-1/avatar.jpg", "profile"],
+    ])("returns 403 for a pathname with %s", async (_name, path, variant) => {
+      mockHandleUpload.mockImplementation(async ({ onBeforeGenerateToken }) => {
+        await onBeforeGenerateToken(path, variant);
+      });
+      const res = await POST(
+        makeRequest({ type: "blob.generate-client-token" })
+      );
+      expect(res.status).toBe(403);
     });
   });
 
@@ -144,7 +170,10 @@ describe("POST /api/upload", () => {
         | undefined;
 
       mockHandleUpload.mockImplementation(async ({ onBeforeGenerateToken }) => {
-        capturedOpts = await onBeforeGenerateToken("img.png", "profile");
+        capturedOpts = await onBeforeGenerateToken(
+          "profile/user-1/img.png",
+          "profile"
+        );
         return {};
       });
 
@@ -174,7 +203,10 @@ describe("POST /api/upload", () => {
         | undefined;
 
       mockHandleUpload.mockImplementation(async ({ onBeforeGenerateToken }) => {
-        capturedOpts = await onBeforeGenerateToken("img.png", "profile");
+        capturedOpts = await onBeforeGenerateToken(
+          "profile/user-1/img.png",
+          "profile"
+        );
         return {};
       });
 
@@ -198,7 +230,10 @@ describe("POST /api/upload", () => {
         | undefined;
 
       mockHandleUpload.mockImplementation(async ({ onBeforeGenerateToken }) => {
-        capturedOpts = await onBeforeGenerateToken("img.png", "cover");
+        capturedOpts = await onBeforeGenerateToken(
+          "cover/user-42/img.png",
+          "cover"
+        );
         return {};
       });
 

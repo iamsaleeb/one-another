@@ -205,6 +205,34 @@ describe("createEvent", () => {
     expect(await createEvent(input())).toEqual({ error: "Unauthorised." });
   });
 
+  it("Series manager still gets a Creator Grant, so it survives leaving the Series", async () => {
+    signIn(grants({ series: [{ seriesId: "s1", role: "SERIES_MANAGER" }] }));
+    (prisma.event as unknown as { create: jest.Mock }).create = jest
+      .fn()
+      .mockResolvedValue({ id: "new-3" });
+
+    await createEvent(input({ seriesId: "s1", churchId: undefined }));
+
+    expect(mockStaffCreate).toHaveBeenCalledWith({
+      data: expect.objectContaining({ eventId: "new-3", role: "EVENT_EDITOR" }),
+    });
+  });
+
+  it("systemAbility creates with the named user, or none", async () => {
+    (getAbility as jest.Mock).mockRejectedValue(new Error("no session"));
+    const create = jest.fn().mockResolvedValue({ id: "new-4" });
+    (prisma.event as unknown as { create: jest.Mock }).create = create;
+
+    expect(
+      await createEvent(input(), { ability: systemAbility() })
+    ).toMatchObject({ id: "new-4" });
+    expect(create.mock.calls[0][0].data.createdById).toBeNull();
+    expect(mockStaffCreate).not.toHaveBeenCalled();
+
+    await createEvent(input(), { ability: systemAbility(), userId: "seed" });
+    expect(create.mock.calls[1][0].data.createdById).toBe("seed");
+  });
+
   it("Church EVENT_MANAGER gets no redundant Creator Grant", async () => {
     signIn(grants({ church: [{ churchId: "c1", role: "EVENT_MANAGER" }] }));
     (prisma.event as unknown as { create: jest.Mock }).create = jest
@@ -265,6 +293,48 @@ describe("updateEvent", () => {
       type: NotificationType.NEW_SERIES_SESSION,
       dedupeKey: "s1:evt-1",
     });
+  });
+
+  it("may not move an Event somewhere they could not then edit it", async () => {
+    signIn(
+      grants({
+        church: [
+          { churchId: "c1", role: "EVENT_MANAGER" },
+          { churchId: "c2", role: "EVENT_CREATOR" },
+        ],
+      })
+    );
+    expect(await updateEvent("evt-2", input({ churchId: "c2" }))).toEqual({
+      error: "Unauthorised.",
+    });
+    expect(events.rows.find((e) => e.id === "evt-2")?.churchId).toBe("c1");
+  });
+
+  it("creator at the destination who keeps an Event Grant may move it", async () => {
+    signIn(
+      grants({
+        church: [{ churchId: "c2", role: "EVENT_CREATOR" }],
+        event: [{ eventId: "evt-2", role: "EVENT_EDITOR" }],
+      })
+    );
+    expect(await updateEvent("evt-2", input({ churchId: "c2" }))).toEqual({
+      oldChurchId: "c1",
+      newChurchId: "c2",
+      affectedSeriesIds: [],
+    });
+  });
+
+  it("systemAbility syncs questions without a library owner", async () => {
+    (getAbility as jest.Mock).mockRejectedValue(new Error("no session"));
+    const { syncEventQuestions } = jest.requireMock(
+      "@/domains/events/questions/dal"
+    ) as { syncEventQuestions: jest.Mock };
+
+    await updateEvent("evt-2", input({ questions: [] }), {
+      ability: systemAbility(),
+    });
+
+    expect(syncEventQuestions).toHaveBeenCalledWith("evt-2", [], null);
   });
 
   it("Event editor may edit their Event in place", async () => {

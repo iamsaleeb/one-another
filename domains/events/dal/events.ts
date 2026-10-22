@@ -1,6 +1,5 @@
 import "server-only";
 
-import { accessibleBy } from "@casl/prisma";
 import { prisma } from "@/lib/db";
 import { NotificationType, type Prisma } from "@prisma/client";
 import {
@@ -8,7 +7,12 @@ import {
   type Action,
   type AppAbility,
 } from "@/domains/roles/lib/ability";
-import { getAbility, getSessionUserId } from "@/domains/roles/lib/get-ability";
+import {
+  missingOrForbidden,
+  resolveWrite,
+  scopedTo as scopedToType,
+  type WriteOptions,
+} from "@/domains/roles/lib/scoped-writes";
 import { syncEventQuestions } from "../questions/dal";
 import {
   cancelManyNotifications,
@@ -72,15 +76,8 @@ async function notifyEventAttendees(eventId: string, title: string) {
 
 type DalError = { error: string } | { fieldErrors: Record<string, string[]> };
 
-// Trusted callers with no session (cron, workers) pass `systemAbility()`.
-export interface WriteOptions {
-  ability?: AppAbility;
-}
-
-// Scopes a query to the Events this Ability may act on. Put first in `AND` so
-// the CASL extension can short-circuit an empty condition.
 function scopedTo(ability: AppAbility, action: Action, id: string) {
-  return { id, AND: [accessibleBy(ability, action).ofType("Event")] };
+  return scopedToType(ability, action, "Event", id);
 }
 
 // Loads an Event the Ability may act on, telling "missing" apart from
@@ -96,8 +93,10 @@ async function findForAction<S extends Prisma.EventSelect>(
     select,
   });
   if (event) return event as Prisma.EventGetPayload<{ select: S }>;
-  const exists = await prisma.event.count({ where: { id } });
-  return { error: exists ? "Unauthorised." : "Event not found." };
+  return missingOrForbidden(
+    await prisma.event.count({ where: { id } }),
+    "Event"
+  );
 }
 
 export async function createEvent(
@@ -112,9 +111,7 @@ export async function createEvent(
       isDraft: boolean;
     }
 > {
-  const userId = await getSessionUserId();
-  if (!userId) return { error: "Unauthorised." };
-  const ability = opts?.ability ?? (await getAbility());
+  const { ability, userId } = await resolveWrite(opts);
 
   const {
     title,
@@ -214,14 +211,14 @@ export async function createEvent(
     await syncEventQuestions(created.id, questions, userId);
   }
 
-  // Creator Grant: if no Church or Series Grant already lets the creator edit
-  // the new Event (e.g. Church EVENT_CREATOR, SERIES_SESSION_CREATOR), give
-  // them EVENT_EDITOR on it so they can manage what they made.
-  const canEditCreated = ability.can(
+  // Creator Grant: unless a Church Grant already lets the creator edit every
+  // Event in the Church, give them EVENT_EDITOR on it. A Series Grant is not
+  // enough: the Event may later leave the Series, or the Grant be revoked.
+  const canEditAcrossChurch = ability.can(
     "update",
-    eventSubject({ id: created.id, churchId, seriesId: seriesId ?? null })
+    eventSubject({ churchId, seriesId: null })
   );
-  if (!canEditCreated) {
+  if (userId && !canEditAcrossChurch) {
     await prisma.eventStaffAssignment.create({
       data: {
         userId,
@@ -260,7 +257,7 @@ export async function updateEvent(
       affectedSeriesIds: string[];
     }
 > {
-  const ability = opts?.ability ?? (await getAbility());
+  const { ability, userId } = await resolveWrite(opts);
   const {
     title,
     date,
@@ -314,14 +311,19 @@ export async function updateEvent(
   });
   if ("error" in existing) return existing;
 
-  // Moving an Event to another Church or Series needs authority over the
-  // destination too: the user must be able to place an Event there.
+  // Moving an Event needs authority to place one at the destination, and the
+  // user must still be able to edit it once it lands there: otherwise the move
+  // would lock them out of their own Event.
   const newSeriesId = seriesId ?? null;
   const moved =
     churchId !== existing.churchId || newSeriesId !== existing.seriesId;
+  const destination = { churchId, seriesId: newSeriesId };
   if (
     moved &&
-    !ability.can("create", eventSubject({ churchId, seriesId: newSeriesId }))
+    !(
+      ability.can("create", eventSubject(destination)) &&
+      ability.can("update", eventSubject({ id, ...destination }))
+    )
   )
     return { error: "Unauthorised." };
 
@@ -366,8 +368,7 @@ export async function updateEvent(
   });
 
   if (questions !== undefined) {
-    const userId = await getSessionUserId();
-    await syncEventQuestions(id, questions, userId ?? "");
+    await syncEventQuestions(id, questions, userId);
   }
 
   if (
@@ -414,7 +415,7 @@ export async function cancelEvent(
 ): Promise<
   { error: string } | { churchId: string | null; seriesId: string | null }
 > {
-  const ability = opts?.ability ?? (await getAbility());
+  const { ability } = await resolveWrite(opts);
   const event = await findForAction(ability, "update", id, {
     churchId: true,
     title: true,
@@ -446,7 +447,7 @@ export async function uncancelEvent(
 ): Promise<
   { error: string } | { churchId: string | null; seriesId: string | null }
 > {
-  const ability = opts?.ability ?? (await getAbility());
+  const { ability } = await resolveWrite(opts);
   const event = await findForAction(ability, "update", id, {
     churchId: true,
     seriesId: true,
@@ -472,7 +473,7 @@ export async function publishEvent(
       alreadyPublished: boolean;
     }
 > {
-  const ability = opts?.ability ?? (await getAbility());
+  const { ability } = await resolveWrite(opts);
   const event = await findForAction(ability, "publish", id, {
     churchId: true,
     seriesId: true,
@@ -533,7 +534,7 @@ export async function unpublishEvent(
 ): Promise<
   { error: string } | { churchId: string | null; seriesId: string | null }
 > {
-  const ability = opts?.ability ?? (await getAbility());
+  const { ability } = await resolveWrite(opts);
   const event = await findForAction(ability, "publish", id, {
     churchId: true,
     seriesId: true,
@@ -569,7 +570,7 @@ export async function deleteEvent(
 ): Promise<
   { error: string } | { churchId: string | null; seriesId: string | null }
 > {
-  const ability = opts?.ability ?? (await getAbility());
+  const { ability } = await resolveWrite(opts);
   const event = await findForAction(ability, "delete", id, {
     churchId: true,
     seriesId: true,

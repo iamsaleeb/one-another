@@ -7,7 +7,9 @@ import type { QuestionInput } from "./validations";
 export async function syncEventQuestions(
   eventId: string,
   questions: QuestionInput[],
-  createdById: string
+  // The user whose question library learns these questions. `null` for a
+  // trusted caller with no user, which syncs the Event only.
+  createdById: string | null
 ): Promise<void> {
   await prisma.$transaction(async (tx) => {
     const responseCount = await tx.eventAttendeeResponse.count({
@@ -30,6 +32,8 @@ export async function syncEventQuestions(
       })),
     });
   });
+
+  if (!createdById) return;
 
   // Upsert library items for each unique (label, type) pair
   const seen = new Set<string>();

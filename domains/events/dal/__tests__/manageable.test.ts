@@ -1,4 +1,4 @@
-﻿jest.mock("server-only", () => ({}));
+jest.mock("server-only", () => ({}));
 jest.mock("@/lib/db", () => {
   const { fakeTable } = jest.requireActual("@/domains/roles/testing");
   return {

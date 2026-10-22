@@ -1,24 +1,23 @@
 import "server-only";
 
-import { accessibleBy } from "@casl/prisma";
 import { prisma } from "@/lib/db";
 import {
   seriesSubject,
   type Action,
   type AppAbility,
 } from "@/domains/roles/lib/ability";
-import { getAbility, getSessionUserId } from "@/domains/roles/lib/get-ability";
+import {
+  missingOrForbidden,
+  resolveWrite,
+  scopedTo as scopedToType,
+  type WriteOptions,
+} from "@/domains/roles/lib/scoped-writes";
 import type { CreateSeriesInput } from "../validations/series";
 
 type DalError = { error: string } | { fieldErrors: Record<string, string[]> };
 
-// Trusted callers with no session (cron, workers) pass `systemAbility()`.
-export interface WriteOptions {
-  ability?: AppAbility;
-}
-
 function scopedTo(ability: AppAbility, action: Action, id: string) {
-  return { id, AND: [accessibleBy(ability, action).ofType("Series")] };
+  return scopedToType(ability, action, "Series", id);
 }
 
 async function findForAction(
@@ -31,17 +30,17 @@ async function findForAction(
     select: { churchId: true },
   });
   if (series) return series;
-  const exists = await prisma.series.count({ where: { id } });
-  return { error: exists ? "Unauthorised." : "Series not found." };
+  return missingOrForbidden(
+    await prisma.series.count({ where: { id } }),
+    "Series"
+  );
 }
 
 export async function createSeries(
   data: CreateSeriesInput,
   opts?: WriteOptions
 ): Promise<DalError | { id: string; churchId: string }> {
-  const userId = await getSessionUserId();
-  if (!userId) return { error: "Unauthorised." };
-  const ability = opts?.ability ?? (await getAbility());
+  const { ability, userId } = await resolveWrite(opts);
 
   const {
     name,
@@ -79,7 +78,7 @@ export async function updateSeries(
   data: CreateSeriesInput,
   opts?: WriteOptions
 ): Promise<DalError | { oldChurchId: string; newChurchId: string }> {
-  const ability = opts?.ability ?? (await getAbility());
+  const { ability } = await resolveWrite(opts);
   const {
     name,
     description,
@@ -94,10 +93,14 @@ export async function updateSeries(
   const existing = await findForAction(ability, "update", id);
   if ("error" in existing) return existing;
 
-  // Moving a Series to another Church needs authority to create one there.
+  // Moving a Series needs authority to create one in the destination Church,
+  // and to still edit it once it lands there.
   if (
     churchId !== existing.churchId &&
-    !ability.can("create", seriesSubject({ churchId }))
+    !(
+      ability.can("create", seriesSubject({ churchId })) &&
+      ability.can("update", seriesSubject({ id, churchId }))
+    )
   )
     return { error: "Unauthorised." };
 
@@ -122,7 +125,7 @@ export async function deleteSeries(
   id: string,
   opts?: WriteOptions
 ): Promise<{ error: string } | { churchId: string }> {
-  const ability = opts?.ability ?? (await getAbility());
+  const { ability } = await resolveWrite(opts);
   const series = await findForAction(ability, "delete", id);
   if ("error" in series) return series;
 

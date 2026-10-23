@@ -1,6 +1,6 @@
 import "server-only";
 import { revalidateTag } from "next/cache";
-import { NotificationType } from "@prisma/client";
+import { NotificationType, type Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { firebaseSender, type PushSender } from "./push";
 
@@ -8,7 +8,9 @@ import { firebaseSender, type PushSender } from "./push";
 // rows first: a claimed row belongs to one run until its lease expires. A run
 // that crashes leaves its leases to expire, and the rows go out on a later
 // run. The lease outlives the route's maxDuration, so a live run never loses
-// a row to another.
+// a row to another. A run only marks rows it still holds: refreshing a row
+// (queueNotification) releases its lease, so a reminder rescheduled mid-push
+// goes out again at its new time instead of being marked sent.
 const CLAIM_LIMIT = 500;
 const LEASE_MS = 2 * 60_000;
 // After this many attempts a push is given up on; the notification still
@@ -28,8 +30,7 @@ interface Claimed {
 
 // Claims due rows nobody holds, oldest first. SKIP LOCKED lets concurrent runs
 // take disjoint batches instead of waiting on each other.
-async function claimDue(now: Date): Promise<Claimed[]> {
-  const leaseUntil = new Date(now.getTime() + LEASE_MS);
+async function claimDue(now: Date, leaseUntil: Date): Promise<Claimed[]> {
   return prisma.$queryRaw<Claimed[]>`
     UPDATE notifications
     SET claimed_until = ${leaseUntil}, attempts = attempts + 1
@@ -67,7 +68,8 @@ export async function processNotifications(
   sender: PushSender = firebaseSender,
   now = new Date()
 ): Promise<{ processed: number; failed: number }> {
-  const due = await claimDue(now);
+  const leaseUntil = new Date(now.getTime() + LEASE_MS);
+  const due = await claimDue(now, leaseUntil);
   if (due.length === 0) return { processed: 0, failed: 0 };
 
   const userIds = [...new Set(due.map((n) => n.userId))];
@@ -137,20 +139,25 @@ export async function processNotifications(
     }
 
     const sentAt = new Date();
-    await Promise.all([
-      released.length > 0 &&
-        prisma.notification.updateMany({
-          where: { id: { in: released.map((n) => n.id) } },
-          data: { sentAt, claimedUntil: null },
-        }),
-      gaveUp.length > 0 &&
-        prisma.notification.updateMany({
-          where: { id: { in: gaveUp.map((n) => n.id) } },
-          data: { sentAt, failedAt: sentAt, claimedUntil: null },
-        }),
+    const mark = (
+      rows: Claimed[],
+      data: Prisma.NotificationUpdateManyMutationInput
+    ) =>
+      rows.length === 0
+        ? { count: 0 }
+        : prisma.notification.updateMany({
+            where: {
+              id: { in: rows.map((n) => n.id) },
+              claimedUntil: leaseUntil,
+            },
+            data: { ...data, claimedUntil: null },
+          });
+    const [sent, gone] = await Promise.all([
+      mark(released, { sentAt }),
+      mark(gaveUp, { sentAt, failedAt: sentAt }),
     ]);
-    processed += released.length;
-    failed += gaveUp.length;
+    processed += sent.count;
+    failed += gone.count;
   }
 
   if (stale.size > 0) {

@@ -238,6 +238,38 @@ describe("processNotifications", () => {
     expect((await row(onTime.id)).sentAt).not.toBeNull();
   });
 
+  it("sends a reminder rescheduled mid-push again at its new time", async () => {
+    const reminder = (scheduledFor: Date, body: string) =>
+      queueNotification({
+        userId: "u1",
+        type: "EVENT_REMINDER",
+        title: "Event Reminder",
+        body,
+        scheduledFor,
+        dedupeKey: "e1",
+      });
+    await reminder(NOW, "starts in 2 hours");
+    const pushes: string[] = [];
+    const sender: PushSender = {
+      async send(tokens, message) {
+        pushes.push(message.body);
+        // The Event moves while this push is in flight.
+        if (pushes.length === 1) await reminder(later(60), "moved");
+        return tokens.map(() => "ok" as const);
+      },
+    };
+
+    expect((await processNotifications(sender, NOW)).processed).toBe(0);
+    const [row] = await prisma.notification.findMany();
+    expect(row).toMatchObject({ sentAt: null, claimedUntil: null });
+
+    await processNotifications(sender, later(60));
+    expect(pushes).toEqual(["starts in 2 hours", "moved"]);
+    expect(
+      (await prisma.notification.findFirstOrThrow()).sentAt
+    ).not.toBeNull();
+  });
+
   it("starts a refreshed notification's attempts again", async () => {
     await queueNotification({
       userId: "u1",

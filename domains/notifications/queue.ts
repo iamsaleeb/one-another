@@ -51,6 +51,8 @@ export async function queueNotification(
       update: {
         scheduledFor,
         cancelledAt: null,
+        // A fresh row: any run holding the old one no longer owns it.
+        claimedUntil: null,
         attempts: 0,
         title,
         body,
@@ -90,6 +92,8 @@ export async function queueNotificationForUsers(
     data: {
       scheduledFor,
       cancelledAt: null,
+      // A fresh row: any run holding the old one no longer owns it.
+      claimedUntil: null,
       attempts: 0,
       title,
       body,

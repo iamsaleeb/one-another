@@ -9,18 +9,24 @@ jest.mock("@/auth", () => ({
   auth: jest.fn(),
 }));
 
-jest.mock("@/lib/db", () => ({
-  prisma: {
+jest.mock("@/lib/db", () => {
+  const prisma = {
     notificationPreference: {
       findMany: jest.fn(),
       upsert: jest.fn(),
       deleteMany: jest.fn(),
     },
-  },
-}));
+    $transaction: jest.fn(),
+  };
+  prisma.$transaction.mockImplementation(
+    async (fn: (tx: typeof prisma) => unknown) => fn(prisma)
+  );
+  return { prisma };
+});
 
-jest.mock("@/domains/notifications/queue", () => ({
-  updateUserReminderSchedule: jest.fn(),
+// The re-sync itself is covered against Postgres in reminder-preference.db.test.ts.
+jest.mock("@/domains/events/lifecycle", () => ({
+  reminderPreferenceChanged: jest.fn(),
 }));
 
 jest.mock("@/domains/notifications/inbox", () => ({
@@ -30,7 +36,7 @@ jest.mock("@/domains/notifications/inbox", () => ({
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
 import { updateTag, revalidatePath } from "next/cache";
-import { updateUserReminderSchedule } from "@/domains/notifications/queue";
+import { reminderPreferenceChanged } from "@/domains/events/lifecycle";
 import { markNotificationsRead } from "@/domains/notifications/inbox";
 import {
   getNotificationPreferencesAction,
@@ -43,7 +49,7 @@ const mockPrefFindMany = prisma.notificationPreference.findMany as jest.Mock;
 const mockPrefUpsert = prisma.notificationPreference.upsert as jest.Mock;
 const mockPrefDeleteMany = prisma.notificationPreference
   .deleteMany as jest.Mock;
-const mockUpdateReminderSchedule = updateUserReminderSchedule as jest.Mock;
+const mockReminderPreferenceChanged = reminderPreferenceChanged as jest.Mock;
 const mockUpdateTag = updateTag as jest.Mock;
 const mockRevalidatePath = revalidatePath as jest.Mock;
 const mockMarkNotificationsRead = markNotificationsRead as jest.Mock;
@@ -122,10 +128,13 @@ describe("updateNotificationPreferenceAction", () => {
       expect(mockUpdateTag).toHaveBeenCalledWith("user-notifications-user-1");
     });
 
-    it("does not call updateUserReminderSchedule when re-enabling with no config", async () => {
+    it("re-syncs reminders when EVENT_REMINDER returns to the default", async () => {
       await updateNotificationPreferenceAction("EVENT_REMINDER", true);
 
-      expect(mockUpdateReminderSchedule).not.toHaveBeenCalled();
+      expect(mockReminderPreferenceChanged).toHaveBeenCalledWith(
+        prisma,
+        "user-1"
+      );
     });
   });
 
@@ -164,24 +173,21 @@ describe("updateNotificationPreferenceAction", () => {
       expect(mockPrefDeleteMany).not.toHaveBeenCalled();
     });
 
-    it("calls updateUserReminderSchedule when EVENT_REMINDER hoursBeforeEvent changes", async () => {
+    it("re-syncs reminders in the transaction when EVENT_REMINDER changes", async () => {
       await updateNotificationPreferenceAction("EVENT_REMINDER", true, {
         hoursBeforeEvent: 4,
       });
 
-      expect(mockUpdateReminderSchedule).toHaveBeenCalledWith("user-1", 4);
+      expect(mockReminderPreferenceChanged).toHaveBeenCalledWith(
+        prisma,
+        "user-1"
+      );
     });
 
-    it("does not call updateUserReminderSchedule for non-EVENT_REMINDER types", async () => {
+    it("does not re-sync reminders for other types", async () => {
       await updateNotificationPreferenceAction("EVENT_CANCELLED", false);
 
-      expect(mockUpdateReminderSchedule).not.toHaveBeenCalled();
-    });
-
-    it("does not call updateUserReminderSchedule when config has no hoursBeforeEvent", async () => {
-      await updateNotificationPreferenceAction("EVENT_REMINDER", false);
-
-      expect(mockUpdateReminderSchedule).not.toHaveBeenCalled();
+      expect(mockReminderPreferenceChanged).not.toHaveBeenCalled();
     });
   });
 

@@ -298,6 +298,11 @@ model Notification {
   readAt       DateTime?        @map("read_at")
   cancelledAt  DateTime?        @map("cancelled_at")
   dedupeKey    String?          @map("dedupe_key")
+  // Worker lease: a run owns the row until then. Expired leases are reclaimed.
+  claimedUntil DateTime?        @map("claimed_until")
+  attempts     Int              @default(0)
+  // Push gave up after the last attempt; the row still reaches the inbox.
+  failedAt     DateTime?        @map("failed_at")
   createdAt    DateTime         @default(now()) @map("created_at")
   user         User             @relation(fields: [userId], references: [id], onDelete: Cascade)
 

@@ -9,7 +9,7 @@ import {
   NotificationType,
   type NotificationTypeKey,
 } from "../types";
-import { updateUserReminderSchedule } from "../queue";
+import { reminderPreferenceChanged } from "@/domains/events/lifecycle";
 import {
   markNotificationsRead,
   getInboxNotifications,
@@ -76,7 +76,7 @@ export async function getNotificationPreferencesAction(): Promise<NotificationPr
 
 /**
  * Update (upsert) a single notification preference for the current user.
- * If changing EVENT_REMINDER hoursBeforeEvent, updates all pending scheduled reminders.
+ * Changing EVENT_REMINDER re-syncs the user's reminders in the same transaction.
  */
 export async function updateNotificationPreferenceAction(
   type: NotificationTypeKey,
@@ -92,32 +92,35 @@ export async function updateNotificationPreferenceAction(
     return { error: "Invalid notification type" };
   }
 
-  if (enabled && !config) {
-    // Nothing non-default to persist — delete the row so absence correctly
-    // signals "enabled" (true opt-out model). deleteMany is a no-op when absent.
-    await prisma.notificationPreference.deleteMany({
-      where: { userId: session.user.id, type },
-    });
-  } else {
-    // Disabled, or re-enabled with a custom config (e.g. hoursBeforeEvent) that
-    // needs to be remembered — persist the row.
-    const jsonConfig = config as Prisma.InputJsonValue | undefined;
-    await prisma.notificationPreference.upsert({
-      where: { userId_type: { userId: session.user.id, type } },
-      update: { enabled, config: jsonConfig },
-      create: { userId: session.user.id, type, enabled, config: jsonConfig },
-    });
-  }
+  const userId = session.user.id;
+  await prisma.$transaction(
+    async (tx) => {
+      if (enabled && !config) {
+        // Nothing non-default to persist — delete the row so absence correctly
+        // signals "enabled" (true opt-out model). deleteMany is a no-op when absent.
+        await tx.notificationPreference.deleteMany({ where: { userId, type } });
+      } else {
+        // Disabled, or re-enabled with a custom config (e.g. hoursBeforeEvent) that
+        // needs to be remembered — persist the row.
+        const jsonConfig = config as Prisma.InputJsonValue | undefined;
+        await tx.notificationPreference.upsert({
+          where: { userId_type: { userId, type } },
+          update: { enabled, config: jsonConfig },
+          create: { userId, type, enabled, config: jsonConfig },
+        });
+      }
 
-  // If the user changed their EVENT_REMINDER timing, update pending scheduled notifications
-  if (
-    type === NotificationType.EVENT_REMINDER &&
-    typeof config?.hoursBeforeEvent === "number"
-  ) {
-    await updateUserReminderSchedule(session.user.id, config.hoursBeforeEvent);
-  }
+      // Any EVENT_REMINDER write can move the lead time, including back to the
+      // default when the row is deleted. Opting out is applied at send time.
+      if (type === NotificationType.EVENT_REMINDER) {
+        await reminderPreferenceChanged(tx, userId);
+      }
+    },
+    // Re-syncing runs a few statements per upcoming Event the user attends.
+    { timeout: 15_000 }
+  );
 
-  updateTag(`user-notifications-${session.user.id}`);
+  updateTag(`user-notifications-${userId}`);
   return {};
 }
 

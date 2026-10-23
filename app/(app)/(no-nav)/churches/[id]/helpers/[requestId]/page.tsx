@@ -38,8 +38,7 @@ export default async function ChurchHelperDetailPage({ params }: Props) {
   ]);
 
   if (!church || !request) notFound();
-  if (request.resourceType !== "CHURCH" || request.resourceId !== id)
-    notFound();
+  if (request.churchId !== id) notFound();
 
   if (!ability.can("manage_members", churchSubject({ id }))) notFound();
 

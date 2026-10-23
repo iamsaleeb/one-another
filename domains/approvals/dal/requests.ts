@@ -1,56 +1,19 @@
 import "server-only";
 import { prisma } from "@/lib/db";
-import type { ApprovalStatus, ResourceType } from "@prisma/client";
+import type { ResourceType } from "@prisma/client";
+import { requestResource } from "@/domains/roles/access";
 
-interface UpsertInput {
-  requesterId: string;
-  resourceType: ResourceType;
-  resourceId: string;
-  requestedRole: string;
-  message?: string;
-}
-
-export function upsertApprovalRequest(input: UpsertInput) {
-  const { requesterId, resourceType, resourceId, requestedRole, message } =
-    input;
-  return prisma.approvalRequest.upsert({
-    where: {
-      requesterId_resourceType_resourceId: {
-        requesterId,
-        resourceType,
-        resourceId,
-      },
-    },
-    create: {
-      requesterId,
-      resourceType,
-      resourceId,
-      requestedRole,
-      message,
-      status: "PENDING",
-    },
-    update: {
-      status: "PENDING",
-      message,
-      requestedRole,
-      reviewedBy: null,
-      reviewedAt: null,
-    },
-  });
-}
+// Reads only: every Access request write goes through domains/roles/access.
 
 export function getMyRequestForResource(
   resourceType: ResourceType,
   resourceId: string,
   userId: string
 ) {
-  return prisma.approvalRequest.findUnique({
+  return prisma.approvalRequest.findFirst({
     where: {
-      requesterId_resourceType_resourceId: {
-        requesterId: userId,
-        resourceType,
-        resourceId,
-      },
+      requesterId: userId,
+      ...requestResource({ type: resourceType, id: resourceId }),
     },
   });
 }
@@ -60,7 +23,10 @@ export function getPendingRequestsForResource(
   resourceId: string
 ) {
   return prisma.approvalRequest.findMany({
-    where: { resourceType, resourceId, status: "PENDING" },
+    where: {
+      ...requestResource({ type: resourceType, id: resourceId }),
+      status: "PENDING",
+    },
     include: { requester: { select: { id: true, name: true, image: true } } },
     orderBy: { createdAt: "asc" },
   });
@@ -71,7 +37,10 @@ export function getResolvedRequestsForResource(
   resourceId: string
 ) {
   return prisma.approvalRequest.findMany({
-    where: { resourceType, resourceId, status: { not: "PENDING" } },
+    where: {
+      ...requestResource({ type: resourceType, id: resourceId }),
+      status: { not: "PENDING" },
+    },
     include: {
       requester: { select: { id: true, name: true, image: true } },
       reviewer: { select: { id: true, name: true } },
@@ -88,26 +57,4 @@ export function getApprovalRequestById(id: string) {
       reviewer: { select: { id: true, name: true } },
     },
   });
-}
-
-export function updateApprovalRequest(
-  id: string,
-  data: Partial<{
-    status: ApprovalStatus;
-    reviewedBy: string | null;
-    reviewedAt: Date | null;
-  }>
-) {
-  return prisma.approvalRequest.update({ where: { id }, data });
-}
-
-export async function updateApprovalRequestIfPending(
-  id: string,
-  data: { status: ApprovalStatus; reviewedBy: string; reviewedAt: Date }
-): Promise<number> {
-  const result = await prisma.approvalRequest.updateMany({
-    where: { id, status: "PENDING" },
-    data,
-  });
-  return result.count;
 }

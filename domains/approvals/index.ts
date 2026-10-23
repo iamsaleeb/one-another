@@ -15,15 +15,6 @@ export {
   getApprovalRequestById,
 } from "./actions/data";
 
-// Cache invalidation helpers — server-only
-export {
-  invalidateRequesterView,
-  invalidatePendingApprovals,
-  invalidateResolvedApprovals,
-  invalidateApprovalRequestDetail,
-  revalidateHelpersPage,
-} from "./cache";
-
 // Components
 export { ApprovalMenuTrigger } from "./components/approval-menu-trigger";
 

@@ -38,10 +38,9 @@ export default async function SeriesHelperDetailPage({ params }: Props) {
   ]);
 
   if (!series || !request) notFound();
-  if (request.resourceType !== "SERIES" || request.resourceId !== id)
-    notFound();
+  if (request.seriesId !== id) notFound();
 
-  if (!ability.can("update", seriesSubject(series))) notFound();
+  if (!ability.can("manage_staff", seriesSubject(series))) notFound();
 
   const backHref = `/series/${id}/helpers`;
   const initials = request.requester.name?.slice(0, 2).toUpperCase() ?? "??";

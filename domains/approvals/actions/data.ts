@@ -8,13 +8,14 @@ import {
   getResolvedRequestsForResource as dalGetAll,
   getApprovalRequestById as dalGetById,
 } from "../dal/requests";
+import { accessRequestTags } from "../lib/tags";
 
 export async function getMyRequestForResource(
   resourceType: ResourceType,
   resourceId: string,
   userId: string
 ) {
-  cacheTag(`approval-${resourceType}-${resourceId}-${userId}`);
+  cacheTag(accessRequestTags.mine(resourceType, resourceId, userId));
   cacheLife("seconds");
   return dalGetMy(resourceType, resourceId, userId);
 }
@@ -23,7 +24,7 @@ export async function getPendingRequestsForResource(
   resourceType: ResourceType,
   resourceId: string
 ) {
-  cacheTag(`approval-pending-${resourceType}-${resourceId}`);
+  cacheTag(accessRequestTags.pending(resourceType, resourceId));
   cacheLife("seconds");
   return dalGetPending(resourceType, resourceId);
 }
@@ -32,13 +33,13 @@ export async function getResolvedRequestsForResource(
   resourceType: ResourceType,
   resourceId: string
 ) {
-  cacheTag(`approval-resolved-${resourceType}-${resourceId}`);
+  cacheTag(accessRequestTags.resolved(resourceType, resourceId));
   cacheLife("minutes");
   return dalGetAll(resourceType, resourceId);
 }
 
 export async function getApprovalRequestById(requestId: string) {
-  cacheTag(`approval-request-${requestId}`);
+  cacheTag(accessRequestTags.request(requestId));
   cacheLife("minutes");
   return dalGetById(requestId);
 }

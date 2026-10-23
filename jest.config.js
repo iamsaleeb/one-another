@@ -57,7 +57,7 @@ module.exports = async () => ({
     "!**/index.ts",
     // Exclude approval UI components — rendering-only, covered by e2e tests
     "!domains/approvals/components/**",
-    // Exclude approval lib — config.ts uses server-only, types.ts has no executable code
+    // Exclude approval lib — constants, labels, tags and types only
     "!domains/approvals/lib/**",
   ],
   coverageThreshold: {

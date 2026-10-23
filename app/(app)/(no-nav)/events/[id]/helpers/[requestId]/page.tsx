@@ -38,7 +38,7 @@ export default async function EventHelperDetailPage({ params }: Props) {
   ]);
 
   if (!event || !request) notFound();
-  if (request.resourceType !== "EVENT" || request.resourceId !== id) notFound();
+  if (request.eventId !== id) notFound();
 
   if (!ability.can("manage_staff", eventSubject(event))) notFound();
 

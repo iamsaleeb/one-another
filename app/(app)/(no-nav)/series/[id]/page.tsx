@@ -59,13 +59,14 @@ export default async function SeriesDetailPage({ params }: Props) {
     "create",
     eventSubject({ churchId: series.churchId, seriesId: series.id })
   );
+  const canManageHelpers = ability.can("manage_staff", seriesSubject(series));
   const isFollowing = myFollow !== null;
 
   const [myApprovalRequest, pendingApprovalRequests] = await Promise.all([
     userId
       ? getMyRequestForResource("SERIES", series.id, userId)
       : Promise.resolve(null),
-    canEdit
+    canManageHelpers
       ? getPendingRequestsForResource("SERIES", series.id)
       : Promise.resolve([]),
   ]);
@@ -83,7 +84,7 @@ export default async function SeriesDetailPage({ params }: Props) {
           hasContributorAccess={canAddSession}
           myRequest={myApprovalRequest ?? null}
           pendingCount={pendingApprovalRequests.length}
-          isApprover={canEdit}
+          isApprover={canManageHelpers}
         />
       </div>
 

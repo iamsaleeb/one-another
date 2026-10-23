@@ -24,7 +24,7 @@ export default async function SeriesHelpersPage({ params }: Props) {
   const series = await getSeriesById(id);
   if (!series) notFound();
 
-  if (!ability.can("update", seriesSubject(series))) notFound();
+  if (!ability.can("manage_staff", seriesSubject(series))) notFound();
 
   const [pendingRequests, resolvedRequests] = await Promise.all([
     getPendingRequestsForResource("SERIES", id),

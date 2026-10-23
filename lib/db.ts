@@ -28,5 +28,5 @@ globalForPrisma.prisma = prisma;
 // caller's transaction accepts.
 export type Db = Omit<
   typeof prisma,
-  "$connect" | "$disconnect" | "$on" | "$transaction" | "$extends" | "$use"
+  "$connect" | "$disconnect" | "$on" | "$transaction" | "$extends"
 >;

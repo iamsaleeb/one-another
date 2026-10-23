@@ -159,19 +159,32 @@ export async function scheduleEventReminderNotification(
     select: { config: true },
   });
 
-  const hours = hoursFrom(pref?.config);
+  await queueReminder(userId, event, hoursFrom(pref?.config), db);
+}
 
+function reminderBody(title: string, hours: number): string {
+  return `${title} starts in ${hours === 1 ? "1 hour" : `${hours} hours`}`;
+}
+
+// Queues `userId`'s reminder `hours` before the Event, unless that time has
+// already passed.
+async function queueReminder(
+  userId: string,
+  event: EventRef,
+  hours: number,
+  db: Db,
+  now = new Date()
+): Promise<void> {
   if (!event.datetime) return;
-
   const scheduledFor = subHours(event.datetime, hours);
-  if (scheduledFor <= new Date()) return;
+  if (scheduledFor <= now) return;
 
   await queueNotification(
     {
       userId,
       type: NotificationType.EVENT_REMINDER,
       title: "Event Reminder",
-      body: `${event.title} starts in ${hours === 1 ? "1 hour" : `${hours} hours`}`,
+      body: reminderBody(event.title, hours),
       data: {
         type: "event_reminder",
         eventId: event.id,
@@ -215,8 +228,7 @@ export async function syncEventReminders(
     { type: NotificationType.EVENT_REMINDER, dedupeKey: event.id },
     db
   );
-  const { datetime } = event;
-  if (!event.live || !datetime || attendeeIds.length === 0) return;
+  if (!event.live || !event.datetime || attendeeIds.length === 0) return;
 
   const [sent, prefs] = await Promise.all([
     db.notification.findMany({
@@ -243,25 +255,7 @@ export async function syncEventReminders(
   for (const userId of attendeeIds) {
     if (sentTo.has(userId)) continue;
     const hours = hoursFor.get(userId) ?? DEFAULT_HOURS_BEFORE_EVENT;
-    const scheduledFor = subHours(datetime, hours);
-    if (scheduledFor <= now) continue;
-    await queueNotification(
-      {
-        userId,
-        type: NotificationType.EVENT_REMINDER,
-        title: "Event Reminder",
-        body: `${event.title} starts in ${hours === 1 ? "1 hour" : `${hours} hours`}`,
-        data: {
-          type: "event_reminder",
-          eventId: event.id,
-          eventTitle: event.title,
-          eventDatetime: datetime.toISOString(),
-        },
-        scheduledFor,
-        dedupeKey: event.id,
-      },
-      db
-    );
+    await queueReminder(userId, event, hours, db, now);
   }
 }
 
@@ -294,7 +288,7 @@ export async function updateUserReminderSchedule(
         where: { id: notif.id },
         data: {
           scheduledFor: newScheduledFor,
-          body: `${data.eventTitle} starts in ${newHoursBeforeEvent === 1 ? "1 hour" : `${newHoursBeforeEvent} hours`}`,
+          body: reminderBody(data.eventTitle, newHoursBeforeEvent),
         },
       }),
     ];

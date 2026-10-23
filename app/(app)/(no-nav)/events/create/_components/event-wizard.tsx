@@ -193,7 +193,7 @@ export function EventWizard({
     return data;
   };
 
-  // Validate the current step's fields then advance â€” auto-save persists in the background
+  // Validate the current step's fields then advance — auto-save persists in the background
   const handleNext = async () => {
     const step = activeSteps[currentStep];
     if (!step) return;

@@ -19,8 +19,16 @@ import {
   queueNotificationForUsers,
   syncEventReminders,
 } from "@/domains/notifications/queue";
+import { isPubliclyVisible } from "./lib/visibility";
 import { syncEventQuestions } from "./questions/dal";
-import { createEventSchema, type CreateEventInput } from "./validations/event";
+import { checkAnswers, saveAnswers } from "./questions/responses";
+import type { ResponseInput } from "./questions/validations";
+import {
+  createEventSchema,
+  parseEventMetadata,
+  type CreateEventInput,
+  type EventMetadata,
+} from "./validations/event";
 
 // The Event lifecycle (see GLOSSARY.md): every change to an Event's state, and
 // everything that must follow from it. A change commits together with the
@@ -184,9 +192,13 @@ async function grantCreator(
 const seriesSessionKey = (seriesId: string, eventId: string) =>
   `${seriesId}:${eventId}`;
 
-async function attendeeIds(db: Db, eventId: string): Promise<string[]> {
+async function attendeeIds(
+  db: Db,
+  eventId: string,
+  userId?: string
+): Promise<string[]> {
   const attendees = await db.eventAttendee.findMany({
-    where: { eventId },
+    where: { eventId, ...(userId ? { userId } : {}) },
     select: { userId: true },
   });
   return attendees.map((a) => a.userId);
@@ -231,12 +243,18 @@ async function withdrawSeriesSession(
 
 // Reminders follow one rule rather than a fix per transition: after any change
 // the Event's reminders are made to match it (see syncEventReminders). A
-// deleted Event has none.
-async function syncReminders(db: Db, eventId: string) {
+// deleted Event has none. With `only`, just that user's reminder is synced:
+// one attendee joining or leaving costs one row, not one per attendee.
+async function syncReminders(
+  db: Db,
+  eventId: string,
+  only?: { userId: string }
+) {
   const event = await db.event.findUnique({
     where: { id: eventId },
     select: { title: true, datetime: true, isDraft: true, cancelledAt: true },
   });
+  const attendees = event ? await attendeeIds(db, eventId, only?.userId) : [];
   await syncEventReminders(
     {
       id: eventId,
@@ -244,8 +262,9 @@ async function syncReminders(db: Db, eventId: string) {
       datetime: event?.datetime ?? null,
       live: !!event && !event.isDraft && !event.cancelledAt,
     },
-    event ? await attendeeIds(db, eventId) : [],
-    db
+    attendees,
+    db,
+    only
   );
 }
 
@@ -548,6 +567,174 @@ export async function deleteEvent(
   if ("error" in result) return result;
 
   invalidate(result);
+  return {};
+}
+
+// ---------------------------------------------------------------------------
+// Attendance
+//
+// An Attendee joining or leaving is an Event change too: their reminder and
+// the Event's pages follow it. Each runs under a lock on the Event row, so it
+// sees the Event as a concurrent cancel or save leaves it, and capacity is
+// counted with no other join in flight. Attending a published Event needs no
+// Grant, only a signed-in user.
+
+export interface Registration {
+  phone?: string;
+  notes?: string;
+  selectedDays?: string[];
+  responses?: ResponseInput[];
+}
+
+const SIGNED_OUT = "You must be signed in.";
+const CANCELLED = "This event has been cancelled.";
+const FULLY_BOOKED = "Sorry, this event is fully booked.";
+
+async function lockEvent(tx: Db, id: string) {
+  await tx.$queryRaw`SELECT 1 FROM events WHERE id = ${id} FOR UPDATE`;
+}
+
+// A camp open to partial registration keeps only the chosen days inside it.
+function campDays(
+  datetime: Date | null,
+  camp: EventMetadata["camp"],
+  selected: string[] = []
+): { error: string } | { days?: string[] } {
+  if (!camp?.allowPartialRegistration || !camp.endDate) return {};
+  if (!datetime) {
+    return {
+      error:
+        "This camp event is missing a start date, so partial registration is unavailable.",
+    };
+  }
+  const start = datetime.toISOString().slice(0, 10);
+  const days = selected.filter((d) => d >= start && d <= camp.endDate);
+  if (days.length === 0) {
+    return { error: "Please select at least one valid day to attend." };
+  }
+  return { days };
+}
+
+// Only this Attendee's view of the Event changed; public lists carry no
+// attendee counts, so they stay cached.
+function invalidateAttendance(id: string, userId: string) {
+  [
+    `event-${id}`,
+    `event-questions-${id}`,
+    `user-attendance-${userId}-${id}`,
+    `user-events-${userId}`,
+    `user-responses-${id}-${userId}`,
+  ].forEach((tag) => updateTag(tag));
+}
+
+// The Attend button and the registration form both end here, and the Event's
+// own rules decide: one that requires registration enforces its capacity,
+// camp days and required questions, so a bare attend cannot skip them.
+// Attending again updates the registration and never counts twice.
+export async function attendEvent(
+  id: string,
+  registration: Registration = {},
+  opts?: WriteOptions
+): Promise<{ error: string } | Done> {
+  const { userId } = await resolveWrite(opts);
+  if (!userId) return { error: SIGNED_OUT };
+
+  // Every refusal returns before the first write, so nothing commits with it.
+  const result = await prisma.$transaction(
+    async (tx): Promise<{ error: string } | Done> => {
+      await lockEvent(tx, id);
+      const event = await tx.event.findUnique({
+        where: { id },
+        select: {
+          isDraft: true,
+          cancelledAt: true,
+          datetime: true,
+          requiresRegistration: true,
+          metadata: true,
+        },
+      });
+      if (!event || !isPubliclyVisible(event)) {
+        return { error: "Event not found." };
+      }
+      if (event.cancelledAt) return { error: CANCELLED };
+
+      const existing = await tx.eventAttendee.findUnique({
+        where: { eventId_userId: { eventId: id, userId } },
+        select: { id: true },
+      });
+
+      if (!event.requiresRegistration) {
+        if (!existing) {
+          await tx.eventAttendee.create({ data: { eventId: id, userId } });
+        }
+      } else {
+        const meta = parseEventMetadata(event.metadata);
+        const camp = campDays(
+          event.datetime,
+          meta.camp,
+          registration.selectedDays
+        );
+        if ("error" in camp) return camp;
+        const answers = await checkAnswers(
+          tx,
+          id,
+          registration.responses ?? []
+        );
+        if ("error" in answers) return answers;
+
+        const { capacity } = meta.registration;
+        if (
+          !existing &&
+          capacity != null &&
+          (await tx.eventAttendee.count({ where: { eventId: id } })) >= capacity
+        ) {
+          return { error: FULLY_BOOKED };
+        }
+
+        const details = {
+          phone: registration.phone,
+          notes: registration.notes,
+          ...(camp.days ? { metadata: { selectedDays: camp.days } } : {}),
+        };
+        const attendee = existing
+          ? await tx.eventAttendee.update({
+              where: { id: existing.id },
+              data: details,
+              select: { id: true },
+            })
+          : await tx.eventAttendee.create({
+              data: { eventId: id, userId, ...details },
+              select: { id: true },
+            });
+        await saveAnswers(tx, attendee.id, answers);
+      }
+
+      await syncReminders(tx, id, { userId });
+      return {};
+    }
+  );
+  if ("error" in result) return result;
+
+  invalidateAttendance(id, userId);
+  return {};
+}
+
+// Leaving is always allowed, even once the Event is cancelled or gone, and
+// leaving twice changes nothing. Answers go with the Attendee.
+export async function unattendEvent(
+  id: string,
+  opts?: WriteOptions
+): Promise<{ error: string } | Done> {
+  const { userId } = await resolveWrite(opts);
+  if (!userId) return { error: SIGNED_OUT };
+
+  await prisma.$transaction(async (tx) => {
+    await lockEvent(tx, id);
+    await tx.eventAttendee.deleteMany({ where: { eventId: id, userId } });
+    await syncReminders(tx, id, { userId });
+  });
+
+  invalidateAttendance(id, userId);
   return {};
 }
 

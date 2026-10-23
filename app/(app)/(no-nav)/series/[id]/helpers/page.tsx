@@ -6,8 +6,8 @@ import { getAbility, seriesSubject } from "@/domains/roles";
 import {
   getPendingRequestsForResource,
   getResolvedRequestsForResource,
-} from "@/domains/approvals";
-import { HelpersTabs } from "@/domains/approvals/components/helpers-tabs";
+} from "@/domains/access-requests";
+import { HelpersTabs } from "@/domains/access-requests/components/helpers-tabs";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -24,7 +24,7 @@ export default async function SeriesHelpersPage({ params }: Props) {
   const series = await getSeriesById(id);
   if (!series) notFound();
 
-  if (!ability.can("update", seriesSubject(series))) notFound();
+  if (!ability.can("manage_staff", seriesSubject(series))) notFound();
 
   const [pendingRequests, resolvedRequests] = await Promise.all([
     getPendingRequestsForResource("SERIES", id),

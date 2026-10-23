@@ -32,8 +32,7 @@ export type Action =
   | "manage";
 
 type AppSubjects =
-  | Subjects<{ Event: Event; Series: Series; Church: Church }>
-  | "all";
+  Subjects<{ Event: Event; Series: Series; Church: Church }> | "all";
 
 export type AppAbility = PrismaAbility<[Action, AppSubjects], PrismaQuery>;
 
@@ -65,14 +64,18 @@ const CHURCH_RULES = {
   CHURCH_ADMIN: (can, churchId) => {
     can(["update", "manage_members"], "Church", { id: churchId });
     can(ALL_EVENT_ACTIONS, "Event", { churchId });
-    can(["create", "update", "delete"], "Series", { churchId });
+    can(["create", "update", "delete", "manage_staff"], "Series", {
+      churchId,
+    });
     can("create_series", "Church", { id: churchId });
     can("create_event", "Church", { id: churchId });
     can("create_event", "Series", { churchId });
   },
   EVENT_MANAGER: (can, churchId) => {
     can(ALL_EVENT_ACTIONS, "Event", { churchId });
-    can(["create", "update", "delete"], "Series", { churchId });
+    can(["create", "update", "delete", "manage_staff"], "Series", {
+      churchId,
+    });
     can("create_series", "Church", { id: churchId });
     can("create_event", "Church", { id: churchId });
     can("create_event", "Series", { churchId });
@@ -87,7 +90,7 @@ const CHURCH_RULES = {
 // Series Grants cascade to every Event in the Series.
 const SERIES_RULES = {
   SERIES_MANAGER: (can, seriesId) => {
-    can("update", "Series", { id: seriesId });
+    can(["update", "manage_staff"], "Series", { id: seriesId });
     can(["create", ...EDIT_EVENT_ACTIONS], "Event", { seriesId });
     can("create_event", "Series", { id: seriesId });
   },

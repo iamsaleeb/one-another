@@ -55,10 +55,10 @@ module.exports = async () => ({
     "!**/*.test.{ts,tsx}",
     // Exclude barrel re-export files — no own logic, only re-exports
     "!**/index.ts",
-    // Exclude approval UI components — rendering-only, covered by e2e tests
-    "!domains/approvals/components/**",
-    // Exclude approval lib — config.ts uses server-only, types.ts has no executable code
-    "!domains/approvals/lib/**",
+    // Exclude Access request UI components — rendering-only, covered by e2e tests
+    "!domains/access-requests/components/**",
+    // Exclude Access request lib — constants, labels, tags and types only
+    "!domains/access-requests/lib/**",
   ],
   coverageThreshold: {
     global: {

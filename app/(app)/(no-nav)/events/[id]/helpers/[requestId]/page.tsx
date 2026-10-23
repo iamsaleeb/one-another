@@ -4,13 +4,13 @@ import { ChevronLeft } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { getEventById } from "@/domains/events/actions/data";
 import { getAbility, eventSubject } from "@/domains/roles";
-import { getApprovalRequestById } from "@/domains/approvals";
-import { ROLE_LABELS } from "@/domains/approvals/lib/labels";
+import { getAccessRequestById } from "@/domains/access-requests";
+import { ROLE_LABELS } from "@/domains/access-requests/lib/labels";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { RequestTimeline } from "@/domains/approvals/components/request-timeline";
-import { RequestDetailActions } from "@/domains/approvals/components/request-detail-actions";
+import { RequestTimeline } from "@/domains/access-requests/components/request-timeline";
+import { RequestDetailActions } from "@/domains/access-requests/components/request-detail-actions";
 
 interface Props {
   params: Promise<{ id: string; requestId: string }>;
@@ -18,7 +18,7 @@ interface Props {
 
 export async function generateMetadata({ params }: Props) {
   const { requestId } = await params;
-  const request = await getApprovalRequestById(requestId);
+  const request = await getAccessRequestById(requestId);
   return {
     title: request?.requester.name
       ? `Request — ${request.requester.name}`
@@ -34,11 +34,11 @@ export default async function EventHelperDetailPage({ params }: Props) {
 
   const [event, request] = await Promise.all([
     getEventById(id),
-    getApprovalRequestById(requestId),
+    getAccessRequestById(requestId),
   ]);
 
   if (!event || !request) notFound();
-  if (request.resourceType !== "EVENT" || request.resourceId !== id) notFound();
+  if (request.eventId !== id) notFound();
 
   if (!ability.can("manage_staff", eventSubject(event))) notFound();
 

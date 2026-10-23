@@ -1,24 +1,13 @@
 "use server";
 
-import { updateTag } from "next/cache";
 import { prisma } from "@/lib/db";
 import { churchSubject } from "@/domains/roles/lib/ability";
 import { getAbility, getSessionUserId } from "@/domains/roles/lib/get-ability";
-import {
-  getChurchMembership,
-  upsertChurchMembership,
-  removeChurchMembership,
-} from "@/domains/roles/dal/church-memberships";
-import { ChurchRole } from "@prisma/client";
+import { grant, MANAGE_HELPERS, removeGrant } from "@/domains/roles/access";
 import {
   addOrganiserSchema,
   removeOrganiserSchema,
 } from "@/domains/churches/validations/churches";
-
-async function canManageMembers(churchId: string): Promise<boolean> {
-  const ability = await getAbility();
-  return ability.can("manage_members", churchSubject({ id: churchId }));
-}
 
 export interface AdminActionState {
   error?: string;
@@ -41,7 +30,11 @@ export async function addOrganiserToChurchAction(
 
   const { churchId, email } = parsed.data;
 
-  if (!(await canManageMembers(churchId))) return { error: "Unauthorised." };
+  // Checked before the email lookup too, so nobody else can probe which
+  // emails have accounts.
+  const ability = await getAbility();
+  if (!ability.can(MANAGE_HELPERS.CHURCH, churchSubject({ id: churchId })))
+    return { error: "Unauthorised." };
 
   const targetUser = await prisma.user.findUnique({
     where: { email },
@@ -49,22 +42,14 @@ export async function addOrganiserToChurchAction(
   });
   if (!targetUser) return { error: "No account found with that email." };
 
-  const existing = await getChurchMembership(targetUser.id, churchId);
-  if (
-    existing?.role === ChurchRole.CHURCH_ADMIN ||
-    existing?.role === ChurchRole.EVENT_MANAGER
-  ) {
-    return { success: "User is already an organiser for this church." };
-  }
-
-  await upsertChurchMembership(
+  const result = await grant(
+    { type: "CHURCH", id: churchId },
     targetUser.id,
-    churchId,
-    ChurchRole.EVENT_MANAGER,
-    actorId
+    "EVENT_MANAGER"
   );
-
-  updateTag("churches");
+  if ("error" in result) return result;
+  if (!result.granted)
+    return { success: "User is already an organiser for this church." };
   return { success: "Organiser added successfully." };
 }
 
@@ -80,14 +65,10 @@ export async function removeOrganiserFromChurchAction(
 
   const { churchId, targetUserId } = parsed.data;
 
-  if (!(await canManageMembers(churchId))) return { error: "Unauthorised." };
-
-  const existing = await getChurchMembership(targetUserId, churchId);
-  if (existing?.role === ChurchRole.CHURCH_ADMIN)
-    return { error: "Cannot remove a church admin through this action." };
-
-  await removeChurchMembership(targetUserId, churchId);
-
-  updateTag("churches");
+  const result = await removeGrant(
+    { type: "CHURCH", id: churchId },
+    targetUserId
+  );
+  if ("error" in result) return result;
   return { success: "Organiser removed." };
 }

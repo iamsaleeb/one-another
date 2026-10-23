@@ -12,8 +12,8 @@ import { getAbility, getSessionUserId, churchSubject } from "@/domains/roles";
 import {
   getMyRequestForResource,
   getPendingRequestsForResource,
-  ApprovalMenuTrigger,
-} from "@/domains/approvals";
+  AccessMenuTrigger,
+} from "@/domains/access-requests";
 import { ChurchTabs } from "./_components/church-tabs";
 import { FollowButton } from "./_components/follow-button";
 
@@ -49,7 +49,7 @@ export default async function ChurchDetailPage({ params }: Props) {
   const canManageMembers = ability.can("manage_members", churchSubject({ id }));
   const canCreateEvent = ability.can("create_event", churchSubject({ id }));
 
-  const [myApprovalRequest, pendingApprovalRequests] = await Promise.all([
+  const [myAccessRequest, pendingAccessRequests] = await Promise.all([
     userId
       ? getMyRequestForResource("CHURCH", id, userId)
       : Promise.resolve(null),
@@ -125,14 +125,14 @@ export default async function ChurchDetailPage({ params }: Props) {
       </div>
 
       <div className="flex justify-end px-4 py-2">
-        <ApprovalMenuTrigger
+        <AccessMenuTrigger
           resourceType="CHURCH"
           resourceId={id}
           resourceName={church.name}
           isAuthenticated={!!userId}
           hasContributorAccess={canCreateEvent}
-          myRequest={myApprovalRequest ?? null}
-          pendingCount={pendingApprovalRequests.length}
+          myRequest={myAccessRequest ?? null}
+          pendingCount={pendingAccessRequests.length}
           isApprover={canManageMembers}
         />
       </div>

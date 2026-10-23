@@ -1,6 +1,6 @@
 "use client";
 
-import type { ApprovalStatus, ResourceType } from "@prisma/client";
+import type { AccessRequestStatus, ResourceType } from "@prisma/client";
 import {
   Drawer,
   DrawerContent,
@@ -11,7 +11,7 @@ import { MyRequestView } from "./my-request-view";
 
 interface MyRequest {
   id: string;
-  status: ApprovalStatus;
+  status: AccessRequestStatus;
   createdAt: Date;
   reviewedAt: Date | null;
   message: string | null;
@@ -26,7 +26,7 @@ interface Props {
   myRequest: MyRequest | null;
 }
 
-function drawerTitle(status: ApprovalStatus | null): string {
+function drawerTitle(status: AccessRequestStatus | null): string {
   if (status === "PENDING") return "Your request";
   if (status === "APPROVED") return "Access granted";
   return "Help out";

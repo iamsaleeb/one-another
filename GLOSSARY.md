@@ -15,7 +15,7 @@ _Avoid_: RSVP, registrant (as a separate concept), guest
 ## Access
 
 **Grant**:
-A role a user holds on one Church, Series or Event. Grants only ever add access; there is no grant that takes access away.
+A role a user holds on one Church, Series or Event. Grants only ever add access; there is no grant that takes access away. Granting a role never lowers one the user already holds on the same resource.
 _Avoid_: permission, membership (when meaning the role itself), assignment
 
 **Capability**:
@@ -29,6 +29,14 @@ _Avoid_: permissions, access list
 **Role cascade**:
 A Grant reaches down the hierarchy: a Church Grant covers every Series and Event in that Church, and a Series Grant covers every Event in that Series.
 _Avoid_: inheritance
+
+**Access request**:
+A user asking for a Grant on one Church, Series or Event. Someone who may manage that resource's Helpers approves or denies it; approving gives the Grant, and revoking takes back only the Grant it gave.
+_Avoid_: approval, application
+
+**Helper**:
+A user holding a Grant that came from an approved Access request.
+_Avoid_: staff, volunteer
 
 **Creator Grant**:
 The Event-level Grant a user receives when they create an Event, unless a Church Grant already lets them edit every Event in that Church. It is a normal Grant, so it can be removed or handed to someone else.

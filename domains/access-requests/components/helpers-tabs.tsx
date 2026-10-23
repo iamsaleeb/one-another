@@ -3,14 +3,14 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { HelperSummaryRow } from "./helper-summary-row";
-import type { ApprovalStatus } from "@prisma/client";
+import type { AccessRequestStatus } from "@prisma/client";
 
 interface RequestRow {
   id: string;
   requestedRole: string;
   message: string | null;
   createdAt: Date;
-  status: ApprovalStatus;
+  status: AccessRequestStatus;
   requester: { name: string | null; image: string | null };
 }
 

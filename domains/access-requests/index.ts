@@ -12,20 +12,11 @@ export {
   getMyRequestForResource,
   getPendingRequestsForResource,
   getResolvedRequestsForResource,
-  getApprovalRequestById,
+  getAccessRequestById,
 } from "./actions/data";
 
-// Cache invalidation helpers — server-only
-export {
-  invalidateRequesterView,
-  invalidatePendingApprovals,
-  invalidateResolvedApprovals,
-  invalidateApprovalRequestDetail,
-  revalidateHelpersPage,
-} from "./cache";
-
 // Components
-export { ApprovalMenuTrigger } from "./components/approval-menu-trigger";
+export { AccessMenuTrigger } from "./components/access-menu-trigger";
 
 // Types
-export type { ApprovalActionState } from "./lib/types";
+export type { AccessRequestActionState } from "./lib/types";

@@ -93,7 +93,12 @@ describe("Church CHURCH_ADMIN on c1", () => {
       expect(ability.can(action, E2)).toBe(true);
       expect(ability.can(action, E3)).toBe(true);
     }
-    for (const action of ["create", "update", "delete"] as Action[]) {
+    for (const action of [
+      "create",
+      "update",
+      "delete",
+      "manage_staff",
+    ] as Action[]) {
       expect(ability.can(action, S1)).toBe(true);
       expect(ability.can(action, S2)).toBe(true);
     }
@@ -125,6 +130,7 @@ describe("Church EVENT_MANAGER on c1", () => {
     expect(ability.can("create", S1)).toBe(true);
     expect(ability.can("update", S2)).toBe(true);
     expect(ability.can("delete", S2)).toBe(true);
+    expect(ability.can("manage_staff", S2)).toBe(true);
   });
 
   it("cannot manage the Church itself", () => {
@@ -169,8 +175,10 @@ describe("Series SERIES_MANAGER on s1", () => {
     grants({ series: [{ seriesId: "s1", role: "SERIES_MANAGER" }] })
   );
 
-  it("updates the Series", () => {
+  it("updates the Series and manages its Helpers", () => {
     expect(ability.can("update", S1)).toBe(true);
+    expect(ability.can("manage_staff", S1)).toBe(true);
+    expect(ability.can("manage_staff", S2)).toBe(false);
   });
 
   it("cannot create or delete Series", () => {
@@ -210,6 +218,7 @@ describe("Series SERIES_SESSION_CREATOR on s1", () => {
   it("may not edit Events or the Series", () => {
     expect(ability.can("update", E2)).toBe(false);
     expect(ability.can("update", S1)).toBe(false);
+    expect(ability.can("manage_staff", S1)).toBe(false);
   });
 
   it("counts as an organiser", () => {

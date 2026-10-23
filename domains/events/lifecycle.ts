@@ -14,6 +14,7 @@ import {
   scopedTo as scopedToType,
   type WriteOptions,
 } from "@/domains/roles/lib/scoped-writes";
+import { grantCreator } from "@/domains/roles/access";
 import {
   cancelManyNotifications,
   queueNotificationForUsers,
@@ -171,23 +172,6 @@ async function findForAction<S extends Prisma.EventSelect>(
 
 // ---------------------------------------------------------------------------
 // Consequences
-
-// Creator Grant: unless a Church Grant already lets the creator edit every
-// Event in the Church, give them EVENT_EDITOR on it. A Series Grant is not
-// enough: the Event may later leave the Series, or the Grant be revoked.
-async function grantCreator(
-  db: Db,
-  ability: AppAbility,
-  userId: string | null,
-  eventId: string,
-  churchId: string
-) {
-  if (!userId) return;
-  if (ability.can("update", eventSubject({ churchId, seriesId: null }))) return;
-  await db.eventStaffAssignment.create({
-    data: { userId, eventId, role: "EVENT_EDITOR", assignedBy: userId },
-  });
-}
 
 const seriesSessionKey = (seriesId: string, eventId: string) =>
   `${seriesId}:${eventId}`;

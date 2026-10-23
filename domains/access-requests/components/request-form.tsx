@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { submitRequestAction } from "@/domains/approvals/actions/requests";
+import { submitRequestAction } from "@/domains/access-requests/actions/requests";
 
 const FormSchema = z.object({
   message: z.string().max(280, "Max 280 characters").optional(),

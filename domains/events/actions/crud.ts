@@ -2,21 +2,15 @@
 
 import { redirect } from "next/navigation";
 import { getSessionUserId } from "@/domains/roles/lib/get-ability";
-import {
-  createEventSchema,
-  saveDraftSchema,
-  type CreateEventInput,
-  type SaveDraftInput,
-} from "../validations/event";
+import { saveDraftSchema, type SaveDraftInput } from "../validations/event";
 import {
   createEvent,
-  updateEvent,
+  saveEvent,
   cancelEvent,
   uncancelEvent,
   deleteEvent,
-} from "../dal/events";
+} from "../lifecycle";
 import type { ActionResult } from "@/lib/types/action";
-import { invalidateEventCaches, invalidateEventUpdate } from "../cache";
 
 export async function cancelEventAction(
   id: string,
@@ -27,7 +21,6 @@ export async function cancelEventAction(
   const result = await cancelEvent(id, reason);
   if ("error" in result) redirect("/organiser");
 
-  invalidateEventCaches(id, result.churchId, result.seriesId);
   redirect(`/events/${id}`);
 }
 
@@ -37,10 +30,11 @@ export async function uncancelEventAction(id: string): Promise<void> {
   const result = await uncancelEvent(id);
   if ("error" in result) redirect("/organiser");
 
-  invalidateEventCaches(id, result.churchId, result.seriesId);
   redirect(`/events/${id}`);
 }
 
+// Every wizard save, auto-save included. Whether the Event must be complete is
+// the lifecycle's call: a draft may be partial, a published Event may not.
 export async function saveDraftAction(
   id: string | undefined,
   data: SaveDraftInput
@@ -51,41 +45,34 @@ export async function saveDraftAction(
   if (!parsed.success)
     return { fieldErrors: parsed.error.flatten().fieldErrors };
 
-  const dataWithDefaults = {
-    ...parsed.data,
-    questions: parsed.data.questions ?? [],
-  };
+  const input = { ...parsed.data, questions: parsed.data.questions ?? [] };
 
   if (!id) {
-    const result = await createEvent({ ...dataWithDefaults, isDraft: true });
+    const result = await createEvent({ ...input, isDraft: true });
     if ("error" in result || "fieldErrors" in result) return result;
-    invalidateEventCaches(result.id, result.churchId, result.seriesId ?? null);
     return { eventId: result.id };
-  } else {
-    // An omitted isDraft keeps the Event's current state; auto-save on a
-    // published Event must not unpublish it.
-    const result = await updateEvent(id, dataWithDefaults);
-    if ("error" in result || "fieldErrors" in result) return result;
-    invalidateEventUpdate(id, result);
-    return { eventId: id };
   }
+
+  // An omitted isDraft keeps the Event's current state; auto-save on a
+  // published Event must not unpublish it.
+  const result = await saveEvent(id, input);
+  if ("error" in result || "fieldErrors" in result) return result;
+  return { eventId: id };
 }
 
-export async function saveEventAction(
+// The wizard's explicit save, which publishes by sending isDraft: false.
+export async function saveEventEditsAction(
   id: string,
-  data: CreateEventInput
+  data: SaveDraftInput
 ): Promise<{ success: true } | ActionResult> {
   if (!(await getSessionUserId())) return { error: "Unauthorised." };
 
-  const parsed = createEventSchema.safeParse(data);
+  const parsed = saveDraftSchema.safeParse(data);
   if (!parsed.success)
     return { fieldErrors: parsed.error.flatten().fieldErrors };
 
-  const result = await updateEvent(id, parsed.data);
+  const result = await saveEvent(id, parsed.data);
   if ("error" in result || "fieldErrors" in result) return result;
-
-  invalidateEventUpdate(id, result);
-
   return { success: true };
 }
 
@@ -95,8 +82,5 @@ export async function deleteEventAction(id: string): Promise<void> {
   const result = await deleteEvent(id);
   if ("error" in result) redirect("/organiser");
 
-  invalidateEventCaches(id, result.churchId, result.seriesId, {
-    broadcastToChurchList: true,
-  });
   redirect("/organiser");
 }

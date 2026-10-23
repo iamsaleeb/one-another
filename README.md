@@ -85,8 +85,18 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 | `npm run start`         | Start the production server          |
 | `npm run lint`          | Run ESLint                           |
 | `npm test`              | Run the test suite                   |
+| `npm run test:unit`     | Run only the mocked unit tests       |
+| `npm run test:db`       | Run only the database tests          |
 | `npm run test:watch`    | Run tests in watch mode              |
 | `npm run test:coverage` | Run tests with coverage report       |
+
+### Database tests
+
+Files named `*.db.test.ts` run against a real Postgres on the same server as
+`DATABASE_URL`, in a database named after it with `_test` appended (override
+with `TEST_DATABASE_URL`). Jest migrates that template once, then clones one
+database per worker from it. Every test starts from empty tables, and setup
+refuses to touch any database whose name does not end in `_test`.
 
 ## Project Structure
 

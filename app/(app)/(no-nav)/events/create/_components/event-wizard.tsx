@@ -15,7 +15,7 @@ import {
 } from "@/domains/events/validations/event";
 import {
   saveDraftAction,
-  saveEventAction,
+  saveEventEditsAction,
 } from "@/domains/events/actions/crud";
 import { localInputsToUtcDate, utcIsoToLocalInputs } from "@/lib/datetime";
 import { WizardProgress } from "./wizard-progress";
@@ -254,7 +254,7 @@ export function EventWizard({
         setDraftId(id);
         form.setValue("isDraft", true, { shouldDirty: false });
       }
-      const result = await saveEventAction(id, {
+      const result = await saveEventEditsAction(id, {
         ...buildData(),
         isDraft: false,
       });

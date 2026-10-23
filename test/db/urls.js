@@ -2,7 +2,7 @@
 // cloned from a migrated template, so test files can truncate freely.
 //
 // The base comes from TEST_DATABASE_URL, or DATABASE_URL with "_test" appended
-// to its database name. Every name built here ends in "_test": resetDb()
+// to its database name. Every name built here ends in "_test", and setup.ts
 // refuses to truncate anything else, which keeps the dev database safe.
 
 function baseUrl() {

@@ -17,8 +17,7 @@ import {
 import {
   cancelManyNotifications,
   queueNotificationForUsers,
-  rescheduleEventReminderNotifications,
-  scheduleEventReminderNotifications,
+  syncEventReminders,
 } from "@/domains/notifications/queue";
 import { syncEventQuestions } from "./questions/dal";
 import { createEventSchema, type CreateEventInput } from "./validations/event";
@@ -52,7 +51,6 @@ interface Placement {
 }
 
 interface Normalised extends Placement {
-  datetime: Date | null;
   fields: Omit<
     Prisma.EventUncheckedCreateInput,
     "churchId" | "seriesId" | "isDraft" | "createdById"
@@ -108,7 +106,6 @@ async function normalise(
   return {
     churchId,
     seriesId,
-    datetime,
     fields: {
       title: input.title || "",
       datetime,
@@ -232,17 +229,34 @@ async function withdrawSeriesSession(
   );
 }
 
-async function withdrawReminders(db: Db, eventId: string) {
-  await cancelManyNotifications(
-    { type: NotificationType.EVENT_REMINDER, dedupeKey: eventId },
+// Reminders follow one rule rather than a fix per transition: after any change
+// the Event's reminders are made to match it (see syncEventReminders). A
+// deleted Event has none.
+async function syncReminders(db: Db, eventId: string) {
+  const event = await db.event.findUnique({
+    where: { id: eventId },
+    select: { title: true, datetime: true, isDraft: true, cancelledAt: true },
+  });
+  await syncEventReminders(
+    {
+      id: eventId,
+      title: event?.title ?? "",
+      datetime: event?.datetime ?? null,
+      live: !!event && !event.isDraft && !event.cancelledAt,
+    },
+    event ? await attendeeIds(db, eventId) : [],
     db
   );
 }
 
+const cancelledKey = (eventId: string) => `cancelled:${eventId}`;
+
+// A deleted Event has no page to link to, so its notice carries no eventId.
 async function notifyAttendeesCancelled(
   db: Db,
   eventId: string,
-  title: string
+  title: string,
+  { link }: { link: boolean }
 ) {
   await queueNotificationForUsers(
     await attendeeIds(db, eventId),
@@ -250,38 +264,23 @@ async function notifyAttendeesCancelled(
       type: NotificationType.EVENT_CANCELLED,
       title: "Event Cancelled",
       body: `${title} has been cancelled`,
-      data: { type: "event_cancelled", eventId },
-      dedupeKey: `cancelled:${eventId}`,
+      data: link
+        ? { type: "event_cancelled", eventId }
+        : { type: "event_cancelled" },
+      dedupeKey: cancelledKey(eventId),
     },
     db
   );
 }
 
-// An Event just became public: attendees who registered while it was a draft
-// get their reminders, and its Series' followers hear about the new session.
-async function onPublished(
-  db: Db,
-  event: {
-    id: string;
-    title: string;
-    datetime: Date | null;
-    seriesId: string | null;
-  }
-) {
-  await scheduleEventReminderNotifications(
-    await attendeeIds(db, event.id),
-    event,
+async function withdrawCancelledNotice(db: Db, eventId: string) {
+  await cancelManyNotifications(
+    {
+      type: NotificationType.EVENT_CANCELLED,
+      dedupeKey: cancelledKey(eventId),
+    },
     db
   );
-  if (event.seriesId)
-    await notifySeriesFollowers(db, event.seriesId, event.title, event.id);
-}
-
-// An Event went back to draft: nothing still queued may reach its attendees
-// or its Series' followers.
-async function onUnpublished(db: Db, id: string, seriesId: string | null) {
-  await withdrawReminders(db, id);
-  if (seriesId) await withdrawSeriesSession(db, seriesId, id);
 }
 
 // ---------------------------------------------------------------------------
@@ -335,13 +334,9 @@ export async function createEvent(
       if (input.questions && input.questions.length > 0)
         await syncEventQuestions(id, input.questions, userId, tx);
       await grantCreator(tx, ability, userId, id, churchId);
-      if (!isDraft)
-        await onPublished(tx, {
-          id,
-          title: n.fields.title,
-          datetime: n.datetime,
-          seriesId,
-        });
+      // A new Event has no attendees yet, so no reminders to sync.
+      if (!isDraft && seriesId)
+        await notifySeriesFollowers(tx, seriesId, n.fields.title, id);
       return { id, churchId, seriesId };
     },
     TRANSACTION
@@ -372,7 +367,6 @@ export async function saveEvent(
     async (tx): Promise<LifecycleError | Stale> => {
       const existing = await findForAction(tx, ability, "update", id, {
         churchId: true,
-        datetime: true,
         isDraft: true,
         seriesId: true,
       });
@@ -381,7 +375,7 @@ export async function saveEvent(
       const isDraft = input.isDraft ?? existing.isDraft;
       const n = await normalise(tx, input, isDraft);
       if (failed(n)) return n;
-      const { churchId, seriesId, datetime } = n;
+      const { churchId, seriesId } = n;
 
       // Moving an Event needs authority to place one at the destination, and
       // the user must still be able to edit it once it lands there: otherwise
@@ -419,26 +413,15 @@ export async function saveEvent(
       if (input.questions !== undefined)
         await syncEventQuestions(id, input.questions, userId, tx);
 
-      const rescheduled =
-        datetime &&
-        existing.datetime &&
-        datetime.getTime() !== existing.datetime.getTime();
-      if (!existing.isDraft && !unpublishing && rescheduled)
-        await rescheduleEventReminderNotifications(id, datetime, tx);
+      await syncReminders(tx, id);
 
-      // An Event leaving a Series must not leave behind a pending "new
-      // session" notification for that Series' followers.
-      if (existing.seriesId && existing.seriesId !== seriesId)
+      // An Event leaving its Series, or going back to draft, must not leave
+      // behind a pending "new session" notice for that Series' followers.
+      if (existing.seriesId && (existing.seriesId !== seriesId || unpublishing))
         await withdrawSeriesSession(tx, existing.seriesId, id);
-
-      if (publishing)
-        await onPublished(tx, {
-          id,
-          title: n.fields.title,
-          datetime,
-          seriesId,
-        });
-      if (unpublishing) await onUnpublished(tx, id, existing.seriesId);
+      // A session that just became public is news to its Series' followers.
+      if (publishing && seriesId)
+        await notifySeriesFollowers(tx, seriesId, n.fields.title, id);
 
       return {
         id,
@@ -475,8 +458,10 @@ export async function cancelEvent(
         where: scopedTo(ability, "update", id),
         data: { cancelledAt: new Date(), cancellationReason: reason },
       });
-      await withdrawReminders(tx, id);
-      await notifyAttendeesCancelled(tx, id, event.title);
+      await syncReminders(tx, id);
+      // Uncancelling does not send it again: "new session" would be stale.
+      if (event.seriesId) await withdrawSeriesSession(tx, event.seriesId, id);
+      await notifyAttendeesCancelled(tx, id, event.title, { link: true });
 
       return { id, churchIds: [event.churchId], seriesIds: [event.seriesId] };
     },
@@ -506,6 +491,8 @@ export async function uncancelEvent(
         where: scopedTo(ability, "update", id),
         data: { cancelledAt: null, cancellationReason: null },
       });
+      await syncReminders(tx, id);
+      await withdrawCancelledNotice(tx, id);
 
       return { id, churchIds: [event.churchId], seriesIds: [event.seriesId] };
     },
@@ -528,12 +515,24 @@ export async function deleteEvent(
       const event = await findForAction(tx, ability, "delete", id, {
         churchId: true,
         seriesId: true,
+        title: true,
+        isDraft: true,
+        cancelledAt: true,
+        datetime: true,
       });
       if ("error" in event) return event;
 
-      await withdrawReminders(tx, id);
+      // Attendees of an Event still to come would otherwise just turn up.
+      const upcoming =
+        !event.isDraft &&
+        !event.cancelledAt &&
+        !!event.datetime &&
+        event.datetime > new Date();
+      if (upcoming)
+        await notifyAttendeesCancelled(tx, id, event.title, { link: false });
       if (event.seriesId) await withdrawSeriesSession(tx, event.seriesId, id);
       await tx.event.delete({ where: scopedTo(ability, "delete", id) });
+      await syncReminders(tx, id);
 
       return {
         id,

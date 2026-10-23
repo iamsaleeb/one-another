@@ -14,15 +14,25 @@ interface DalError {
   error: string;
 }
 
+// A cancelled Event takes no new attendees, so none gets a reminder for it.
+const CANCELLED = "This event has been cancelled.";
+
 export async function attendEvent(
   eventId: string,
   userId: string
 ): Promise<DalError | Record<string, never>> {
   const event = await prisma.event.findUnique({
     where: { id: eventId },
-    select: { id: true, title: true, datetime: true, isDraft: true },
+    select: {
+      id: true,
+      title: true,
+      datetime: true,
+      isDraft: true,
+      cancelledAt: true,
+    },
   });
   if (!event || !isPubliclyVisible(event)) return { error: "Event not found." };
+  if (event.cancelledAt) return { error: CANCELLED };
 
   try {
     await prisma.eventAttendee.create({ data: { eventId, userId } });
@@ -95,12 +105,14 @@ export async function registerEvent(
       title: true,
       datetime: true,
       isDraft: true,
+      cancelledAt: true,
       metadata: true,
       _count: { select: { attendees: true } },
     },
   });
 
   if (!event || !isPubliclyVisible(event)) return { error: "Event not found." };
+  if (event.cancelledAt) return { error: CANCELLED };
 
   const eventMeta = parseEventMetadata(event.metadata);
   const { capacity } = eventMeta.registration;

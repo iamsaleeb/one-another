@@ -5,8 +5,12 @@ Churches publish Events and Series; members follow, attend and help run them. Th
 ## Events
 
 **Event lifecycle**:
-Every change to an Event's state, and everything that must follow from it: reminders, Series-follower notices, the Creator Grant, and which pages go stale. A change and its consequences commit together or not at all.
+Every change to an Event's state, and everything that must follow from it: reminders, Series-follower notices, the Creator Grant, and which pages go stale. An Attendee joining or leaving is such a change. A change and its consequences commit together or not at all.
 _Avoid_: publish side effects, event hooks
+
+**Attendee**:
+A user attending an Event. On an Event that requires registration, attending means registering: the Event's capacity, camp days and required questions decide whether they may join, however they ask. Attending again updates the registration; it never counts twice.
+_Avoid_: RSVP, registrant (as a separate concept), guest
 
 ## Access
 

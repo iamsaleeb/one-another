@@ -19,9 +19,7 @@ import { NotificationType } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import {
   queueNotification,
-  cancelNotification,
   cancelManyNotifications,
-  scheduleEventReminderNotification,
   updateUserReminderSchedule,
 } from "@/domains/notifications/queue";
 
@@ -30,8 +28,6 @@ const mockCreate = prisma.notification.create as jest.Mock;
 const mockUpdate = prisma.notification.update as jest.Mock;
 const mockUpdateMany = prisma.notification.updateMany as jest.Mock;
 const mockFindMany = prisma.notification.findMany as jest.Mock;
-const mockPrefFindUnique = prisma.notificationPreference
-  .findUnique as jest.Mock;
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -99,29 +95,6 @@ describe("queueNotification — instant (EVENT_CANCELLED, NEW_SERIES_SESSION)", 
   });
 });
 
-describe("cancelNotification", () => {
-  it("sets cancelledAt for unsent record matching userId+type+dedupeKey", async () => {
-    mockUpdateMany.mockResolvedValue({ count: 1 });
-
-    await cancelNotification({
-      userId: "u-1",
-      type: NotificationType.EVENT_REMINDER,
-      dedupeKey: "ev-1",
-    });
-
-    expect(mockUpdateMany).toHaveBeenCalledWith({
-      where: {
-        userId: "u-1",
-        type: NotificationType.EVENT_REMINDER,
-        dedupeKey: "ev-1",
-        sentAt: null,
-        cancelledAt: null,
-      },
-      data: { cancelledAt: expect.any(Date) },
-    });
-  });
-});
-
 describe("cancelManyNotifications", () => {
   it("cancels all unsent records for a type+dedupeKey across users", async () => {
     mockUpdateMany.mockResolvedValue({ count: 5 });
@@ -140,83 +113,6 @@ describe("cancelManyNotifications", () => {
       },
       data: { cancelledAt: expect.any(Date) },
     });
-  });
-});
-
-describe("scheduleEventReminderNotification", () => {
-  const futureEvent = {
-    id: "ev-1",
-    title: "Sunday Service",
-    datetime: new Date(Date.now() + 10 * 3_600_000), // 10 hours from now
-  };
-
-  it("upserts reminder using default 2h offset when no preference stored", async () => {
-    mockPrefFindUnique.mockResolvedValue(null);
-    mockUpsert.mockResolvedValue({ id: "n-1" });
-
-    await scheduleEventReminderNotification("u-1", futureEvent);
-
-    expect(mockUpsert).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: {
-          userId_type_dedupeKey: {
-            userId: "u-1",
-            type: NotificationType.EVENT_REMINDER,
-            dedupeKey: "ev-1",
-          },
-        },
-        create: expect.objectContaining({
-          body: "Sunday Service starts in 2 hours",
-          data: expect.objectContaining({
-            eventId: "ev-1",
-            eventTitle: "Sunday Service",
-          }),
-        }),
-      })
-    );
-  });
-
-  it("uses hoursBeforeEvent from stored preference", async () => {
-    mockPrefFindUnique.mockResolvedValue({ config: { hoursBeforeEvent: 4 } });
-    mockUpsert.mockResolvedValue({ id: "n-1" });
-
-    await scheduleEventReminderNotification("u-1", futureEvent);
-
-    expect(mockUpsert).toHaveBeenCalledWith(
-      expect.objectContaining({
-        create: expect.objectContaining({
-          body: "Sunday Service starts in 4 hours",
-        }),
-      })
-    );
-  });
-
-  it("skips scheduling when scheduledFor is in the past", async () => {
-    mockPrefFindUnique.mockResolvedValue(null);
-    const pastEvent = {
-      id: "ev-2",
-      title: "Past Event",
-      datetime: new Date(Date.now() + 1_000),
-    };
-
-    await scheduleEventReminderNotification("u-1", pastEvent);
-
-    expect(mockUpsert).not.toHaveBeenCalled();
-  });
-
-  it('uses singular "1 hour" body when hoursBeforeEvent is 1', async () => {
-    mockPrefFindUnique.mockResolvedValue({ config: { hoursBeforeEvent: 1 } });
-    mockUpsert.mockResolvedValue({ id: "n-1" });
-
-    await scheduleEventReminderNotification("u-1", futureEvent);
-
-    expect(mockUpsert).toHaveBeenCalledWith(
-      expect.objectContaining({
-        create: expect.objectContaining({
-          body: "Sunday Service starts in 1 hour",
-        }),
-      })
-    );
   });
 });
 

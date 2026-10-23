@@ -1,12 +1,10 @@
 "use server";
 
-import { updateTag } from "next/cache";
-import { auth } from "@/auth";
 import {
   registrationFormSchema,
   type RegistrationFormValues,
 } from "../validations/event";
-import { attendEvent, unattendEvent, registerEvent } from "../dal/attendance";
+import { attendEvent, unattendEvent } from "../lifecycle";
 import type { ResponseInput } from "../questions/validations";
 
 export interface AttendEventState {
@@ -18,47 +16,24 @@ export interface RegisterEventState {
   error?: string;
 }
 
-function invalidateAttendanceCaches(id: string, userId?: string) {
-  updateTag(`event-${id}`);
-  if (userId) {
-    updateTag(`user-attendance-${userId}-${id}`);
-    updateTag(`user-events-${userId}`);
-  }
-}
-
 export async function attendEventAction(
   eventId: string
 ): Promise<AttendEventState> {
-  const session = await auth();
-  if (!session?.user?.id) return { error: "You must be signed in." };
-
-  const result = await attendEvent(eventId, session.user.id);
-  if ("error" in result) return { error: result.error };
-
-  invalidateAttendanceCaches(eventId, session.user.id);
-  return {};
+  const result = await attendEvent(eventId);
+  return "error" in result ? { error: result.error } : {};
 }
 
 export async function unattendEventAction(
   eventId: string
 ): Promise<AttendEventState> {
-  const session = await auth();
-  if (!session?.user?.id) return { error: "You must be signed in." };
-
-  const result = await unattendEvent(eventId, session.user.id);
-  if ("error" in result) return { error: result.error };
-
-  invalidateAttendanceCaches(eventId, session.user.id);
-  return {};
+  const result = await unattendEvent(eventId);
+  return "error" in result ? { error: result.error } : {};
 }
 
 export async function registerEventAction(
   eventId: string,
   data: RegistrationFormValues
 ): Promise<RegisterEventState> {
-  const session = await auth();
-  if (!session?.user?.id) return { error: "You must be signed in." };
-
   const parsed = registrationFormSchema.safeParse(data);
   if (!parsed.success) return { error: "Invalid registration data." };
 
@@ -70,15 +45,11 @@ export async function registerEventAction(
     fileUrl: fileUrl ?? null,
   }));
 
-  const result = await registerEvent(eventId, session.user.id, {
+  const result = await attendEvent(eventId, {
     phone: parsed.data.phone,
     notes: parsed.data.notes,
     selectedDays: parsed.data.selectedDays,
     responses,
   });
-
-  if ("error" in result) return { error: result.error };
-
-  invalidateAttendanceCaches(eventId, session.user.id);
-  return { success: true };
+  return "error" in result ? { error: result.error } : { success: true };
 }

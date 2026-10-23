@@ -96,43 +96,24 @@ export async function queueNotificationForUsers(
   });
 }
 
-interface CancelInput {
-  userId: string;
-  type: NotificationType;
-  dedupeKey: string;
-}
-
-export async function cancelNotification(
-  input: CancelInput,
-  db: Db = prisma
-): Promise<void> {
-  await db.notification.updateMany({
-    where: {
-      userId: input.userId,
-      type: input.type,
-      dedupeKey: input.dedupeKey,
-      sentAt: null,
-      cancelledAt: null,
-    },
-    data: { cancelledAt: new Date() },
-  });
-}
-
 interface CancelManyInput {
   type: NotificationType;
   // One key, or several to cancel in a single statement.
   dedupeKey: string | string[];
+  // Only this user's; everyone's when omitted.
+  userId?: string;
 }
 
 export async function cancelManyNotifications(
   input: CancelManyInput,
   db: Db = prisma
 ): Promise<void> {
-  const { dedupeKey } = input;
+  const { dedupeKey, userId } = input;
   await db.notification.updateMany({
     where: {
       type: input.type,
       dedupeKey: Array.isArray(dedupeKey) ? { in: dedupeKey } : dedupeKey,
+      ...(userId ? { userId } : {}),
       sentAt: null,
       cancelledAt: null,
     },
@@ -144,24 +125,6 @@ interface EventRef {
   id: string;
   title: string;
   datetime: Date | null;
-}
-
-/**
- * Schedule an EVENT_REMINDER for a user attending an event.
- * Reads the user's hoursBeforeEvent preference. Skips if the reminder window has passed.
- * Upserts via dedupeKey=eventId so attending twice is safe.
- */
-export async function scheduleEventReminderNotification(
-  userId: string,
-  event: EventRef,
-  db: Db = prisma
-): Promise<void> {
-  const pref = await db.notificationPreference.findUnique({
-    where: { userId_type: { userId, type: NotificationType.EVENT_REMINDER } },
-    select: { config: true },
-  });
-
-  await queueReminder(userId, event, hoursFrom(pref?.config), db);
 }
 
 function reminderBody(title: string, hours: number): string {
@@ -218,16 +181,28 @@ interface LiveEventRef extends EventRef {
  * attendee has one pending reminder at their preferred time before it, with
  * its current title; otherwise none is pending. A reminder that has already
  * gone out is left alone, and none is queued once its time has passed.
+ *
+ * With `only`, just that user's reminder is synced, so one attendee joining
+ * or leaving touches one row: pass `attendeeIds` as `[userId]` while they
+ * attend, `[]` once they have left.
  */
 export async function syncEventReminders(
   event: LiveEventRef,
   attendeeIds: string[],
-  db: Db = prisma
+  db: Db = prisma,
+  only?: { userId: string }
 ): Promise<void> {
+  if (only && attendeeIds.some((id) => id !== only.userId)) {
+    throw new Error("syncEventReminders: attendeeIds outside `only`");
+  }
   // Withdraw everything pending, then queue what should be: queueNotification
   // revives a withdrawn row, so an unchanged reminder ends up as it was.
   await cancelManyNotifications(
-    { type: NotificationType.EVENT_REMINDER, dedupeKey: event.id },
+    {
+      type: NotificationType.EVENT_REMINDER,
+      dedupeKey: event.id,
+      userId: only?.userId,
+    },
     db
   );
   if (!event.live || !event.datetime || attendeeIds.length === 0) return;

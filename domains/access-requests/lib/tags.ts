@@ -4,10 +4,10 @@ import type { ResourceType } from "@prisma/client";
 // and the writer in domains/roles/access.ts both build them here.
 export const accessRequestTags = {
   mine: (type: ResourceType, resourceId: string, userId: string) =>
-    `approval-${type}-${resourceId}-${userId}`,
+    `access-request-mine-${type}-${resourceId}-${userId}`,
   pending: (type: ResourceType, resourceId: string) =>
-    `approval-pending-${type}-${resourceId}`,
+    `access-requests-pending-${type}-${resourceId}`,
   resolved: (type: ResourceType, resourceId: string) =>
-    `approval-resolved-${type}-${resourceId}`,
-  request: (requestId: string) => `approval-request-${requestId}`,
+    `access-requests-resolved-${type}-${resourceId}`,
+  request: (requestId: string) => `access-request-${requestId}`,
 };

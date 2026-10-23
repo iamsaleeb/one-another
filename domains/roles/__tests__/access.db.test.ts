@@ -35,7 +35,7 @@ const admin = () =>
   as("admin", { church: [{ churchId: "c1", role: "CHURCH_ADMIN" }] });
 
 const requestOf = (requesterId: string) =>
-  prisma.approvalRequest.findFirstOrThrow({ where: { requesterId } });
+  prisma.accessRequest.findFirstOrThrow({ where: { requesterId } });
 
 const eventRole = (userId: string, eventId = "e1") =>
   prisma.eventStaffAssignment
@@ -80,7 +80,7 @@ describe("requestAccess", () => {
       [C1, "EVENT_CREATOR"],
     ] as const) {
       expect(await requestAccess(resource, undefined, as("u2"))).toEqual({});
-      const request = await prisma.approvalRequest.findFirstOrThrow({
+      const request = await prisma.accessRequest.findFirstOrThrow({
         where: { requesterId: "u2", resourceType: resource.type },
       });
       expect(request).toMatchObject({ status: "PENDING", requestedRole: role });
@@ -91,7 +91,7 @@ describe("requestAccess", () => {
     expect(await requestAccess(E1, undefined, as(null))).toEqual({
       error: "You must be signed in.",
     });
-    expect(await prisma.approvalRequest.count()).toBe(0);
+    expect(await prisma.accessRequest.count()).toBe(0);
   });
 
   it("refuses a missing resource", async () => {
@@ -124,7 +124,7 @@ describe("requestAccess", () => {
     await reviewAccessRequest(id, "DENIED", admin());
 
     expect(await requestAccess(E1, "Please", as("u1"))).toEqual({});
-    expect(await prisma.approvalRequest.count()).toBe(1);
+    expect(await prisma.accessRequest.count()).toBe(1);
     expect(await requestOf("u1")).toMatchObject({
       id,
       status: "PENDING",
@@ -146,8 +146,8 @@ describe("reviewAccessRequest", () => {
       reviewedBy: "admin",
     });
     expect(revalidatePath).toHaveBeenCalledWith("/events/e1/helpers");
-    expect(updateTag).toHaveBeenCalledWith("approval-pending-EVENT-e1");
-    expect(updateTag).toHaveBeenCalledWith(`approval-request-${id}`);
+    expect(updateTag).toHaveBeenCalledWith("access-requests-pending-EVENT-e1");
+    expect(updateTag).toHaveBeenCalledWith(`access-request-${id}`);
   });
 
   it("denying gives nothing", async () => {
@@ -266,6 +266,29 @@ describe("revokeHelper", () => {
 
     expect(await eventRole("u1")).toBe("EVENT_MANAGER");
     expect((await requestOf("u1")).status).toBe("REVOKED");
+  });
+
+  it("keeps a role the request did not give", async () => {
+    // Given directly while the request was pending, so approving gave nothing.
+    const id = await pendingRequest(C1);
+    await grant(C1, "u1", "EVENT_CREATOR", admin());
+    await reviewAccessRequest(id, "APPROVED", admin());
+    expect((await requestOf("u1")).gaveGrant).toBe(false);
+
+    expect(await revokeHelper(id, admin())).toEqual({});
+
+    expect(await churchRole("u1")).toBe("EVENT_CREATOR");
+    expect((await requestOf("u1")).status).toBe("REVOKED");
+  });
+
+  it("takes back the Grant again after asking anew", async () => {
+    const id = await helper();
+    await revokeHelper(id, admin());
+    await requestAccess(E1, undefined, as("u1"));
+    await reviewAccessRequest(id, "APPROVED", admin());
+
+    expect(await revokeHelper(id, admin())).toEqual({});
+    expect(await eventRole("u1")).toBeNull();
   });
 
   it("refuses a request that is not approved", async () => {
@@ -405,12 +428,12 @@ describe("an Access request belongs to its resource", () => {
   it("is deleted with it", async () => {
     await pendingRequest(E1);
     await prisma.event.delete({ where: { id: "e1" } });
-    expect(await prisma.approvalRequest.count()).toBe(0);
+    expect(await prisma.accessRequest.count()).toBe(0);
   });
 
   it("points at exactly the resource its type names", async () => {
     await expect(
-      prisma.approvalRequest.create({
+      prisma.accessRequest.create({
         data: {
           requesterId: "u1",
           resourceType: "EVENT",

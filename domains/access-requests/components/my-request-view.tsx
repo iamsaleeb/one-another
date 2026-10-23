@@ -2,16 +2,16 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import type { ApprovalStatus, ResourceType } from "@prisma/client";
+import type { AccessRequestStatus, ResourceType } from "@prisma/client";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { cancelRequestAction } from "@/domains/approvals/actions/requests";
+import { cancelRequestAction } from "@/domains/access-requests/actions/requests";
 import { RequestTimeline } from "./request-timeline";
 import { RequestForm } from "./request-form";
 
 interface MyRequest {
   id: string;
-  status: ApprovalStatus;
+  status: AccessRequestStatus;
   createdAt: Date;
   reviewedAt: Date | null;
   message: string | null;
@@ -25,7 +25,11 @@ interface Props {
   onClose?: () => void;
 }
 
-const SHOW_FORM_STATUSES: ApprovalStatus[] = ["DENIED", "CANCELLED", "REVOKED"];
+const SHOW_FORM_STATUSES: AccessRequestStatus[] = [
+  "DENIED",
+  "CANCELLED",
+  "REVOKED",
+];
 
 export function MyRequestView({
   resourceType,

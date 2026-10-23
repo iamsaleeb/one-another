@@ -42,8 +42,8 @@ import { SaveEventButton } from "@/domains/events/components/save-event-button";
 import {
   getMyRequestForResource,
   getPendingRequestsForResource,
-  ApprovalMenuTrigger,
-} from "@/domains/approvals";
+  AccessMenuTrigger,
+} from "@/domains/access-requests";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -96,7 +96,7 @@ export default async function EventDetailPage({ params }: Props) {
   const canViewAttendees = ability.can("view_attendees", subject);
   const canManageStaff = ability.can("manage_staff", subject);
 
-  const [myApprovalRequest, pendingApprovalRequests] = await Promise.all([
+  const [myAccessRequest, pendingAccessRequests] = await Promise.all([
     userId
       ? getMyRequestForResource("EVENT", id, userId)
       : Promise.resolve(null),
@@ -136,14 +136,14 @@ export default async function EventDetailPage({ params }: Props) {
           initialSaved={isSaved}
           isAuthenticated={!!userId}
         />
-        <ApprovalMenuTrigger
+        <AccessMenuTrigger
           resourceType="EVENT"
           resourceId={id}
           resourceName={event.title}
           isAuthenticated={!!userId}
           hasContributorAccess={canEdit}
-          myRequest={myApprovalRequest ?? null}
-          pendingCount={pendingApprovalRequests.length}
+          myRequest={myAccessRequest ?? null}
+          pendingCount={pendingAccessRequests.length}
           isApprover={canManageStaff}
         />
       </div>

@@ -23,8 +23,8 @@ import { CADENCE_LABELS } from "@/lib/types/search";
 import {
   getMyRequestForResource,
   getPendingRequestsForResource,
-  ApprovalMenuTrigger,
-} from "@/domains/approvals";
+  AccessMenuTrigger,
+} from "@/domains/access-requests";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -62,7 +62,7 @@ export default async function SeriesDetailPage({ params }: Props) {
   const canManageHelpers = ability.can("manage_staff", seriesSubject(series));
   const isFollowing = myFollow !== null;
 
-  const [myApprovalRequest, pendingApprovalRequests] = await Promise.all([
+  const [myAccessRequest, pendingAccessRequests] = await Promise.all([
     userId
       ? getMyRequestForResource("SERIES", series.id, userId)
       : Promise.resolve(null),
@@ -76,14 +76,14 @@ export default async function SeriesDetailPage({ params }: Props) {
       <HeroBanner size="sm" photoUrl={series.photoUrl ?? undefined} />
 
       <div className="flex justify-end gap-2 px-4 pt-4">
-        <ApprovalMenuTrigger
+        <AccessMenuTrigger
           resourceType="SERIES"
           resourceId={series.id}
           resourceName={series.name}
           isAuthenticated={!!userId}
           hasContributorAccess={canAddSession}
-          myRequest={myApprovalRequest ?? null}
-          pendingCount={pendingApprovalRequests.length}
+          myRequest={myAccessRequest ?? null}
+          pendingCount={pendingAccessRequests.length}
           isApprover={canManageHelpers}
         />
       </div>

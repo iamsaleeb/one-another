@@ -3,8 +3,8 @@ import { formatDistanceToNow } from "date-fns";
 import { ChevronRight } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import type { ApprovalStatus } from "@prisma/client";
-import { ROLE_LABELS } from "@/domains/approvals/lib/labels";
+import type { AccessRequestStatus } from "@prisma/client";
+import { ROLE_LABELS } from "@/domains/access-requests/lib/labels";
 
 const STATUS_VARIANT: Record<
   string,
@@ -22,7 +22,7 @@ interface Props {
   requestedRole: string;
   message: string | null;
   createdAt: Date;
-  status: ApprovalStatus;
+  status: AccessRequestStatus;
 }
 
 export function HelperSummaryRow({

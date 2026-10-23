@@ -2,22 +2,22 @@
 
 import { formatDistanceToNow } from "date-fns";
 import { Check, Clock, X } from "lucide-react";
-import type { ApprovalStatus } from "@prisma/client";
+import type { AccessRequestStatus } from "@prisma/client";
 
 interface Props {
-  status: ApprovalStatus;
+  status: AccessRequestStatus;
   createdAt: Date;
   reviewedAt: Date | null;
 }
 
-const OUTCOME_LABELS: Partial<Record<ApprovalStatus, string>> = {
+const OUTCOME_LABELS: Partial<Record<AccessRequestStatus, string>> = {
   APPROVED: "Approved",
   DENIED: "Denied",
   CANCELLED: "Cancelled",
   REVOKED: "Revoked",
 };
 
-const OUTCOME_COLORS: Partial<Record<ApprovalStatus, string>> = {
+const OUTCOME_COLORS: Partial<Record<AccessRequestStatus, string>> = {
   APPROVED: "text-green-600",
   DENIED: "text-red-500",
   CANCELLED: "text-muted-foreground",

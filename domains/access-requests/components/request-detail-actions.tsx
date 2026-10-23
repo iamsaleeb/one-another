@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import type { ApprovalStatus } from "@prisma/client";
+import type { AccessRequestStatus } from "@prisma/client";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -18,11 +18,11 @@ import {
 import {
   reviewRequestAction,
   revokeAccessAction,
-} from "@/domains/approvals/actions/requests";
+} from "@/domains/access-requests/actions/requests";
 
 interface Props {
   requestId: string;
-  status: ApprovalStatus;
+  status: AccessRequestStatus;
   backHref: string;
 }
 

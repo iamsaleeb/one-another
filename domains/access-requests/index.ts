@@ -12,11 +12,11 @@ export {
   getMyRequestForResource,
   getPendingRequestsForResource,
   getResolvedRequestsForResource,
-  getApprovalRequestById,
+  getAccessRequestById,
 } from "./actions/data";
 
 // Components
-export { ApprovalMenuTrigger } from "./components/approval-menu-trigger";
+export { AccessMenuTrigger } from "./components/access-menu-trigger";
 
 // Types
-export type { ApprovalActionState } from "./lib/types";
+export type { AccessRequestActionState } from "./lib/types";

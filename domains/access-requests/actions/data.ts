@@ -6,7 +6,7 @@ import {
   getMyRequestForResource as dalGetMy,
   getPendingRequestsForResource as dalGetPending,
   getResolvedRequestsForResource as dalGetAll,
-  getApprovalRequestById as dalGetById,
+  getAccessRequestById as dalGetById,
 } from "../dal/requests";
 import { accessRequestTags } from "../lib/tags";
 
@@ -38,7 +38,7 @@ export async function getResolvedRequestsForResource(
   return dalGetAll(resourceType, resourceId);
 }
 
-export async function getApprovalRequestById(requestId: string) {
+export async function getAccessRequestById(requestId: string) {
   cacheTag(accessRequestTags.request(requestId));
   cacheLife("minutes");
   return dalGetById(requestId);

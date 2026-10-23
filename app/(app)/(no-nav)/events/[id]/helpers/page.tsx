@@ -6,8 +6,8 @@ import { getAbility, eventSubject } from "@/domains/roles";
 import {
   getPendingRequestsForResource,
   getResolvedRequestsForResource,
-} from "@/domains/approvals";
-import { HelpersTabs } from "@/domains/approvals/components/helpers-tabs";
+} from "@/domains/access-requests";
+import { HelpersTabs } from "@/domains/access-requests/components/helpers-tabs";
 
 interface Props {
   params: Promise<{ id: string }>;

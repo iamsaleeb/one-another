@@ -2,7 +2,7 @@ import "server-only";
 
 import { revalidatePath, updateTag } from "next/cache";
 import type {
-  ApprovalStatus,
+  AccessRequestStatus,
   ChurchRole,
   EventRole,
   Prisma,
@@ -10,8 +10,8 @@ import type {
   SeriesRole,
 } from "@prisma/client";
 import { prisma, type Db } from "@/lib/db";
-import { RESOURCE_PATHS } from "@/domains/approvals/lib/constants";
-import { accessRequestTags } from "@/domains/approvals/lib/tags";
+import { RESOURCE_PATHS } from "@/domains/access-requests/lib/constants";
+import { accessRequestTags } from "@/domains/access-requests/lib/tags";
 import {
   buildAbility,
   churchSubject,
@@ -261,7 +261,7 @@ export function requestResource(r: AccessResource) {
 function requestKey(
   r: AccessResource,
   requesterId: string
-): Prisma.ApprovalRequestWhereUniqueInput {
+): Prisma.AccessRequestWhereUniqueInput {
   switch (r.type) {
     case "EVENT":
       return { requesterId_eventId: { requesterId, eventId: r.id } };
@@ -296,6 +296,7 @@ const REQUEST = {
   eventId: true,
   seriesId: true,
   churchId: true,
+  gaveGrant: true,
 } as const;
 
 // ---------------------------------------------------------------------------
@@ -347,7 +348,7 @@ export async function requestAccess(
       return { error: "You already have access to this resource." };
 
     const key = requestKey(resource, userId);
-    const existing = await tx.approvalRequest.findUnique({
+    const existing = await tx.accessRequest.findUnique({
       where: key,
       select: { status: true },
     });
@@ -355,7 +356,7 @@ export async function requestAccess(
       return { error: "You already have a pending request." };
 
     const requestedRole = REQUESTED_ROLE[resource.type];
-    await tx.approvalRequest.upsert({
+    await tx.accessRequest.upsert({
       where: key,
       create: {
         requesterId: userId,
@@ -370,6 +371,7 @@ export async function requestAccess(
         requestedRole,
         reviewedBy: null,
         reviewedAt: null,
+        gaveGrant: false,
       },
     });
     return { resource, userId };
@@ -384,14 +386,14 @@ export async function cancelAccessRequest(
   if (!userId) return { error: "You must be signed in." };
 
   return change(async (tx) => {
-    const request = await tx.approvalRequest.findUnique({
+    const request = await tx.accessRequest.findUnique({
       where: { id: requestId },
       select: REQUEST,
     });
     if (!request) return { error: "Request not found." };
     if (request.requesterId !== userId) return { error: "Unauthorised." };
 
-    const { count } = await tx.approvalRequest.updateMany({
+    const { count } = await tx.accessRequest.updateMany({
       where: { id: requestId, status: "PENDING" },
       data: { status: "CANCELLED", reviewedAt: new Date() },
     });
@@ -403,14 +405,14 @@ export async function cancelAccessRequest(
 
 export async function reviewAccessRequest(
   requestId: string,
-  decision: Extract<ApprovalStatus, "APPROVED" | "DENIED">,
+  decision: Extract<AccessRequestStatus, "APPROVED" | "DENIED">,
   opts?: WriteOptions
 ): Promise<Failure | Done> {
   const { ability, userId } = await resolveWrite(opts);
   if (!userId) return { error: "Unauthorised." };
 
   return change(async (tx) => {
-    const request = await tx.approvalRequest.findUnique({
+    const request = await tx.accessRequest.findUnique({
       where: { id: requestId },
       select: REQUEST,
     });
@@ -424,7 +426,7 @@ export async function reviewAccessRequest(
     if ("error" in gate) return gate;
 
     // Claimed under the row lock: of two concurrent reviews, one wins.
-    const { count } = await tx.approvalRequest.updateMany({
+    const { count } = await tx.accessRequest.updateMany({
       where: { id: requestId, status: "PENDING" },
       data: { status: decision, reviewedBy: userId, reviewedAt: new Date() },
     });
@@ -433,23 +435,32 @@ export async function reviewAccessRequest(
     if (decision === "APPROVED") {
       // Nothing to give when the requester can already do what the role is
       // for, through a higher role here or a Grant that cascades from above.
+      // The request remembers whether it gave the Grant, so revoking it
+      // never takes a role it did not give.
       const requester = buildAbility(await loadGrants(request.requesterId));
-      if (!requester.can(HELPER_CAPABILITY[resource.type], gate.subject))
-        await raiseTo(
+      if (
+        !requester.can(HELPER_CAPABILITY[resource.type], gate.subject) &&
+        (await raiseTo(
           tx,
           resource,
           request.requesterId,
           request.requestedRole as Role,
           userId
-        );
+        ))
+      )
+        await tx.accessRequest.update({
+          where: { id: requestId },
+          data: { gaveGrant: true },
+        });
     }
 
     return { resource, userId: request.requesterId, requestId };
   });
 }
 
-// Takes back the Grant an approved Access request gave. A role the Helper
-// has been promoted to since is not the request's to take, so it stays.
+// Takes back the Grant an approved Access request gave. A role it did not
+// give (held already, or a promotion since) is not the request's to take, so
+// it stays.
 export async function revokeHelper(
   requestId: string,
   opts?: WriteOptions
@@ -458,7 +469,7 @@ export async function revokeHelper(
   if (!userId) return { error: "Unauthorised." };
 
   return change(async (tx) => {
-    const request = await tx.approvalRequest.findUnique({
+    const request = await tx.accessRequest.findUnique({
       where: { id: requestId },
       select: REQUEST,
     });
@@ -470,18 +481,19 @@ export async function revokeHelper(
     const gate = await managed(tx, ability, resource);
     if ("error" in gate) return gate;
 
-    const { count } = await tx.approvalRequest.updateMany({
+    const { count } = await tx.accessRequest.updateMany({
       where: { id: requestId, status: "APPROVED" },
       data: { status: "REVOKED", reviewedBy: userId, reviewedAt: new Date() },
     });
     if (count === 0) return { error: "Access is not currently approved." };
 
-    await deleteRole(
-      tx,
-      resource,
-      request.requesterId,
-      request.requestedRole as Role
-    );
+    if (request.gaveGrant)
+      await deleteRole(
+        tx,
+        resource,
+        request.requesterId,
+        request.requestedRole as Role
+      );
     return { resource, userId: request.requesterId, requestId };
   });
 }
@@ -531,13 +543,13 @@ export async function removeGrant(
       return { error: "Cannot remove a church admin." };
     await deleteRole(tx, resource, userId);
 
-    const approved = await tx.approvalRequest.findFirst({
+    const approved = await tx.accessRequest.findFirst({
       where: { requesterId: userId, ...requestResource(resource) },
       select: { id: true, status: true },
     });
     if (approved?.status !== "APPROVED") return { resource, userId };
 
-    await tx.approvalRequest.update({
+    await tx.accessRequest.update({
       where: { id: approved.id },
       data: { status: "REVOKED", reviewedBy: actorId, reviewedAt: new Date() },
     });

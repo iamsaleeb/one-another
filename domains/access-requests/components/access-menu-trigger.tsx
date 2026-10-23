@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { MoreHorizontal, Share2 } from "lucide-react";
-import type { ApprovalStatus, ResourceType } from "@prisma/client";
+import type { AccessRequestStatus, ResourceType } from "@prisma/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -12,12 +12,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { RESOURCE_PATHS } from "@/domains/approvals/lib/constants";
+import { RESOURCE_PATHS } from "@/domains/access-requests/lib/constants";
 import { MyRequestDrawer } from "./my-request-drawer";
 
 interface MyRequest {
   id: string;
-  status: ApprovalStatus;
+  status: AccessRequestStatus;
   createdAt: Date;
   reviewedAt: Date | null;
   message: string | null;
@@ -34,7 +34,7 @@ interface Props {
   isApprover: boolean;
 }
 
-export function ApprovalMenuTrigger({
+export function AccessMenuTrigger({
   resourceType,
   resourceId,
   resourceName,

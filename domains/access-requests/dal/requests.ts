@@ -10,7 +10,7 @@ export function getMyRequestForResource(
   resourceId: string,
   userId: string
 ) {
-  return prisma.approvalRequest.findFirst({
+  return prisma.accessRequest.findFirst({
     where: {
       requesterId: userId,
       ...requestResource({ type: resourceType, id: resourceId }),
@@ -22,7 +22,7 @@ export function getPendingRequestsForResource(
   resourceType: ResourceType,
   resourceId: string
 ) {
-  return prisma.approvalRequest.findMany({
+  return prisma.accessRequest.findMany({
     where: {
       ...requestResource({ type: resourceType, id: resourceId }),
       status: "PENDING",
@@ -36,7 +36,7 @@ export function getResolvedRequestsForResource(
   resourceType: ResourceType,
   resourceId: string
 ) {
-  return prisma.approvalRequest.findMany({
+  return prisma.accessRequest.findMany({
     where: {
       ...requestResource({ type: resourceType, id: resourceId }),
       status: { not: "PENDING" },
@@ -49,8 +49,8 @@ export function getResolvedRequestsForResource(
   });
 }
 
-export function getApprovalRequestById(id: string) {
-  return prisma.approvalRequest.findUnique({
+export function getAccessRequestById(id: string) {
+  return prisma.accessRequest.findUnique({
     where: { id },
     include: {
       requester: { select: { id: true, name: true, image: true } },

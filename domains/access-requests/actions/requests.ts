@@ -12,13 +12,13 @@ import {
   CancelRequestSchema,
   RevokeAccessSchema,
 } from "../validations/requests";
-import type { ApprovalActionState } from "../lib/types";
+import type { AccessRequestActionState } from "../lib/types";
 
 // Thin: parse, then hand the change to the Grant module (domains/roles/access).
 
 export async function submitRequestAction(
   input: unknown
-): Promise<ApprovalActionState> {
+): Promise<AccessRequestActionState> {
   const parsed = SubmitRequestSchema.safeParse(input);
   if (!parsed.success) return { error: "Invalid input." };
 
@@ -28,7 +28,7 @@ export async function submitRequestAction(
 
 export async function reviewRequestAction(
   input: unknown
-): Promise<ApprovalActionState> {
+): Promise<AccessRequestActionState> {
   const parsed = ReviewRequestSchema.safeParse(input);
   if (!parsed.success) return { error: "Invalid input." };
 
@@ -37,7 +37,7 @@ export async function reviewRequestAction(
 
 export async function cancelRequestAction(
   input: unknown
-): Promise<ApprovalActionState> {
+): Promise<AccessRequestActionState> {
   const parsed = CancelRequestSchema.safeParse(input);
   if (!parsed.success) return { error: "Invalid input." };
 
@@ -46,7 +46,7 @@ export async function cancelRequestAction(
 
 export async function revokeAccessAction(
   input: unknown
-): Promise<ApprovalActionState> {
+): Promise<AccessRequestActionState> {
   const parsed = RevokeAccessSchema.safeParse(input);
   if (!parsed.success) return { error: "Invalid input." };
 

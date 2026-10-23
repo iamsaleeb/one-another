@@ -120,17 +120,19 @@ export async function cancelNotification(
 
 interface CancelManyInput {
   type: NotificationType;
-  dedupeKey: string;
+  // One key, or several to cancel in a single statement.
+  dedupeKey: string | string[];
 }
 
 export async function cancelManyNotifications(
   input: CancelManyInput,
   db: Db = prisma
 ): Promise<void> {
+  const { dedupeKey } = input;
   await db.notification.updateMany({
     where: {
       type: input.type,
-      dedupeKey: input.dedupeKey,
+      dedupeKey: Array.isArray(dedupeKey) ? { in: dedupeKey } : dedupeKey,
       sentAt: null,
       cancelledAt: null,
     },

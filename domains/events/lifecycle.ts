@@ -576,7 +576,14 @@ export async function seriesDeleted(
   seriesId: string
 ): Promise<AfterCommit> {
   const events = await seriesEvents(tx, seriesId);
-  for (const e of events) await withdrawSeriesSession(tx, seriesId, e.id);
+  if (events.length > 0)
+    await cancelManyNotifications(
+      {
+        type: NotificationType.NEW_SERIES_SESSION,
+        dedupeKey: events.map((e) => seriesSessionKey(seriesId, e.id)),
+      },
+      tx
+    );
   await tx.event.updateMany({ where: { seriesId }, data: { seriesId: null } });
 
   return () =>

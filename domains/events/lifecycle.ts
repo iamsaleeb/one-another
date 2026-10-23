@@ -739,6 +739,27 @@ export async function unattendEvent(
 }
 
 // ---------------------------------------------------------------------------
+// A user's reminder preference changed
+//
+// Takes the caller's transaction, so the preference and the reminders that
+// follow from it commit together. Each upcoming Event the user attends gets
+// their reminder re-synced at the new lead time, including one the old lead
+// time had already skipped.
+
+export async function reminderPreferenceChanged(tx: Db, userId: string) {
+  const events = await tx.event.findMany({
+    where: {
+      attendees: { some: { userId } },
+      datetime: { gt: new Date() },
+      isDraft: false,
+      cancelledAt: null,
+    },
+    select: { id: true },
+  });
+  for (const { id } of events) await syncReminders(tx, id, { userId });
+}
+
+// ---------------------------------------------------------------------------
 // Series changes that reach their Events
 //
 // Trusted: the Series module has already checked that the user may delete or

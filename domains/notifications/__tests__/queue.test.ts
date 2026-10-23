@@ -20,14 +20,11 @@ import { prisma } from "@/lib/db";
 import {
   queueNotification,
   cancelManyNotifications,
-  updateUserReminderSchedule,
 } from "@/domains/notifications/queue";
 
 const mockUpsert = prisma.notification.upsert as jest.Mock;
 const mockCreate = prisma.notification.create as jest.Mock;
-const mockUpdate = prisma.notification.update as jest.Mock;
 const mockUpdateMany = prisma.notification.updateMany as jest.Mock;
-const mockFindMany = prisma.notification.findMany as jest.Mock;
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -113,50 +110,5 @@ describe("cancelManyNotifications", () => {
       },
       data: { cancelledAt: expect.any(Date) },
     });
-  });
-});
-
-describe("updateUserReminderSchedule", () => {
-  it("updates body and scheduledFor for each future pending reminder", async () => {
-    const futureEventDatetime = new Date(
-      Date.now() + 10 * 3_600_000
-    ).toISOString();
-    mockFindMany.mockResolvedValue([
-      {
-        id: "n-1",
-        data: {
-          eventTitle: "Morning Prayer",
-          eventDatetime: futureEventDatetime,
-        },
-      },
-    ]);
-    mockUpdate.mockResolvedValue({});
-
-    await updateUserReminderSchedule("u-1", 3);
-
-    expect(mockUpdate).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: { id: "n-1" },
-        data: expect.objectContaining({
-          body: "Morning Prayer starts in 3 hours",
-        }),
-      })
-    );
-  });
-
-  it("skips reminders where new scheduledFor would be in the past", async () => {
-    const nearFutureDatetime = new Date(
-      Date.now() + 1 * 3_600_000
-    ).toISOString(); // 1h from now
-    mockFindMany.mockResolvedValue([
-      {
-        id: "n-1",
-        data: { eventTitle: "Soon Event", eventDatetime: nearFutureDatetime },
-      },
-    ]);
-
-    await updateUserReminderSchedule("u-1", 4); // 4h offset > 1h until event → in the past
-
-    expect(mockUpdate).not.toHaveBeenCalled();
   });
 });

@@ -1,6 +1,9 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { processNotifications } from "@/domains/notifications/process";
 
+// Shorter than the worker lease, so a run never outlives its claims.
+export const maxDuration = 60;
+
 export async function GET(request: NextRequest) {
   if (process.env.NODE_ENV !== "development") {
     const secret = process.env.CRON_SECRET;

@@ -33,8 +33,8 @@ model User {
   platformRoles           PlatformRoleAssignment[]
   churchMemberships       ChurchMembership[]
   eventStaff              EventStaffAssignment[]
-  approvalRequests        ApprovalRequest[]      @relation("ApprovalRequests")
-  approvalReviews         ApprovalRequest[]      @relation("ApprovalReviews")
+  approvalRequests        ApprovalRequest[]        @relation("ApprovalRequests")
+  approvalReviews         ApprovalRequest[]        @relation("ApprovalReviews")
 
   @@map("users")
 }
@@ -80,15 +80,15 @@ model VerificationToken {
 }
 
 model Church {
-  id           String            @id @default(cuid())
+  id           String             @id @default(cuid())
   name         String
   address      String?
   phone        String?
   website      String?
   description  String
   founded      String?
-  createdAt    DateTime          @default(now()) @map("created_at")
-  updatedAt    DateTime          @updatedAt @map("updated_at")
+  createdAt    DateTime           @default(now()) @map("created_at")
+  updatedAt    DateTime           @updatedAt @map("updated_at")
   followers    ChurchFollower[]
   events       Event[]
   series       Series[]
@@ -110,18 +110,18 @@ model ServiceTime {
 }
 
 model Series {
-  id          String           @id @default(cuid())
+  id          String                  @id @default(cuid())
   name        String
   description String
   cadence     Cadence
   location    String
   host        String
   tag         String
-  photoUrl    String?          @map("photo_url")
-  churchId    String           @map("church_id")
-  createdById String?          @map("created_by_id")
-  createdAt   DateTime         @default(now()) @map("created_at")
-  updatedAt   DateTime         @updatedAt @map("updated_at")
+  photoUrl    String?                 @map("photo_url")
+  churchId    String                  @map("church_id")
+  createdById String?                 @map("created_by_id")
+  createdAt   DateTime                @default(now()) @map("created_at")
+  updatedAt   DateTime                @updatedAt @map("updated_at")
   events      Event[]
   church      Church                  @relation(fields: [churchId], references: [id])
   createdBy   User?                   @relation("UserSeries", fields: [createdById], references: [id])
@@ -134,28 +134,28 @@ model Series {
 }
 
 model Event {
-  id                   String          @id @default(cuid())
+  id                   String                 @id @default(cuid())
   datetime             DateTime?
   title                String
   location             String?
   host                 String?
   tag                  String
   description          String
-  photoUrl             String?         @map("photo_url")
-  isDraft              Boolean         @default(false) @map("is_draft")
-  requiresRegistration Boolean         @default(false) @map("requires_registration")
-  metadata             Json            @db.JsonB
+  photoUrl             String?                @map("photo_url")
+  isDraft              Boolean                @default(false) @map("is_draft")
+  requiresRegistration Boolean                @default(false) @map("requires_registration")
+  metadata             Json                   @db.JsonB
   price                String?
-  cancelledAt          DateTime?       @map("cancelled_at")
-  cancellationReason   String?         @map("cancellation_reason")
-  churchId             String          @map("church_id")
-  seriesId             String?         @map("series_id")
-  createdById          String?         @map("created_by_id")
-  createdAt            DateTime        @default(now()) @map("created_at")
-  updatedAt            DateTime        @updatedAt @map("updated_at")
-  church               Church          @relation(fields: [churchId], references: [id])
-  createdBy            User?           @relation("UserEvents", fields: [createdById], references: [id])
-  series               Series?         @relation(fields: [seriesId], references: [id])
+  cancelledAt          DateTime?              @map("cancelled_at")
+  cancellationReason   String?                @map("cancellation_reason")
+  churchId             String                 @map("church_id")
+  seriesId             String?                @map("series_id")
+  createdById          String?                @map("created_by_id")
+  createdAt            DateTime               @default(now()) @map("created_at")
+  updatedAt            DateTime               @updatedAt @map("updated_at")
+  church               Church                 @relation(fields: [churchId], references: [id])
+  createdBy            User?                  @relation("UserEvents", fields: [createdById], references: [id])
+  series               Series?                @relation(fields: [seriesId], references: [id])
   attendees            EventAttendee[]
   questions            EventQuestion[]
   savedBy              SavedEvent[]
@@ -298,6 +298,11 @@ model Notification {
   readAt       DateTime?        @map("read_at")
   cancelledAt  DateTime?        @map("cancelled_at")
   dedupeKey    String?          @map("dedupe_key")
+  // Worker lease: a run owns the row until then. Expired leases are reclaimed.
+  claimedUntil DateTime?        @map("claimed_until")
+  attempts     Int              @default(0)
+  // Push gave up after the last attempt; the row still reaches the inbox.
+  failedAt     DateTime?        @map("failed_at")
   createdAt    DateTime         @default(now()) @map("created_at")
   user         User             @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -326,7 +331,7 @@ model PlatformRoleAssignment {
   assignedAt DateTime     @default(now()) @map("assigned_at")
   assignedBy String?      @map("assigned_by")
 
-  user       User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@id([userId, role])
   @@map("platform_role_assignments")
@@ -339,8 +344,8 @@ model ChurchMembership {
   assignedAt DateTime   @default(now()) @map("assigned_at")
   assignedBy String?    @map("assigned_by")
 
-  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  church     Church     @relation(fields: [churchId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  church Church @relation(fields: [churchId], references: [id], onDelete: Cascade)
 
   @@id([userId, churchId])
   @@index([churchId])
@@ -354,8 +359,8 @@ model EventStaffAssignment {
   assignedAt DateTime  @default(now()) @map("assigned_at")
   assignedBy String?   @map("assigned_by")
 
-  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  event      Event     @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
 
   @@id([userId, eventId])
   @@index([eventId])
@@ -488,8 +493,8 @@ model ApprovalRequest {
   createdAt     DateTime       @default(now()) @map("created_at")
   updatedAt     DateTime       @updatedAt @map("updated_at")
 
-  requester     User           @relation("ApprovalRequests", fields: [requesterId], references: [id], onDelete: Cascade)
-  reviewer      User?          @relation("ApprovalReviews", fields: [reviewedBy], references: [id], onDelete: SetNull)
+  requester User  @relation("ApprovalRequests", fields: [requesterId], references: [id], onDelete: Cascade)
+  reviewer  User? @relation("ApprovalReviews", fields: [reviewedBy], references: [id], onDelete: SetNull)
 
   @@unique([requesterId, resourceType, resourceId])
   @@index([resourceType, resourceId, status])

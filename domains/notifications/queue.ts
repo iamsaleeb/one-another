@@ -48,7 +48,14 @@ export async function queueNotification(
     await db.notification.upsert({
       where: { userId_type_dedupeKey: { userId, type, dedupeKey } },
       create: { ...basePayload, dedupeKey },
-      update: { scheduledFor, cancelledAt: null, title, body, data: jsonData },
+      update: {
+        scheduledFor,
+        cancelledAt: null,
+        attempts: 0,
+        title,
+        body,
+        data: jsonData,
+      },
     });
   } else {
     await db.notification.create({
@@ -80,7 +87,14 @@ export async function queueNotificationForUsers(
 
   await db.notification.updateMany({
     where: { userId: { in: userIds }, type, dedupeKey },
-    data: { scheduledFor, cancelledAt: null, title, body, data: jsonData },
+    data: {
+      scheduledFor,
+      cancelledAt: null,
+      attempts: 0,
+      title,
+      body,
+      data: jsonData,
+    },
   });
   await db.notification.createMany({
     data: userIds.map((userId) => ({
@@ -234,42 +248,4 @@ export async function syncEventReminders(
     const hours = hoursFor.get(userId) ?? DEFAULT_HOURS_BEFORE_EVENT;
     await queueReminder(userId, event, hours, db, now);
   }
-}
-
-/**
- * Update scheduledFor + body on all a user's pending EVENT_REMINDER notifications
- * when they change their hoursBeforeEvent preference.
- */
-export async function updateUserReminderSchedule(
-  userId: string,
-  newHoursBeforeEvent: number
-): Promise<void> {
-  const pending = await prisma.notification.findMany({
-    where: {
-      userId,
-      type: NotificationType.EVENT_REMINDER,
-      sentAt: null,
-      cancelledAt: null,
-      scheduledFor: { gt: new Date() },
-    },
-    select: { id: true, data: true },
-  });
-
-  const updates = pending.flatMap((notif) => {
-    const data = (notif.data ?? {}) as Record<string, string>;
-    const eventDatetime = new Date(data.eventDatetime);
-    const newScheduledFor = subHours(eventDatetime, newHoursBeforeEvent);
-    if (newScheduledFor <= new Date()) return [];
-    return [
-      prisma.notification.update({
-        where: { id: notif.id },
-        data: {
-          scheduledFor: newScheduledFor,
-          body: reminderBody(data.eventTitle, newHoursBeforeEvent),
-        },
-      }),
-    ];
-  });
-
-  if (updates.length > 0) await prisma.$transaction(updates);
 }

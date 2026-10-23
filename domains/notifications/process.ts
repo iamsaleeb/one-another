@@ -17,6 +17,21 @@ const LEASE_MS = 2 * 60_000;
 // reaches the inbox.
 export const MAX_ATTEMPTS = 5;
 const CONCURRENCY = 20;
+// A hung push fails like any other and is retried, instead of stalling its
+// batch until the route times out. A slow push that lands after this may be
+// sent again: delivery is at-least-once.
+export const SEND_TIMEOUT_MS = 10_000;
+
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(
+      () => reject(new Error(`push timed out after ${ms}ms`)),
+      ms
+    );
+  });
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
+}
 
 interface Claimed {
   id: string;
@@ -26,12 +41,13 @@ interface Claimed {
   body: string;
   data: unknown;
   attempts: number;
+  scheduledFor: Date;
 }
 
-// Claims due rows nobody holds, oldest first. SKIP LOCKED lets concurrent runs
-// take disjoint batches instead of waiting on each other.
+// Claims the oldest due rows nobody holds, returned oldest first. SKIP LOCKED
+// lets concurrent runs take disjoint batches instead of waiting on each other.
 async function claimDue(now: Date, leaseUntil: Date): Promise<Claimed[]> {
-  return prisma.$queryRaw<Claimed[]>`
+  const rows = await prisma.$queryRaw<Claimed[]>`
     UPDATE notifications
     SET claimed_until = ${leaseUntil}, attempts = attempts + 1
     WHERE id IN (
@@ -45,7 +61,11 @@ async function claimDue(now: Date, leaseUntil: Date): Promise<Claimed[]> {
       FOR UPDATE SKIP LOCKED
     )
     RETURNING id, user_id AS "userId", type::text AS type, title, body, data,
-      attempts`;
+      attempts, scheduled_for AS "scheduledFor"`;
+  // RETURNING does not keep the subquery's order.
+  return rows.sort(
+    (a, b) => a.scheduledFor.getTime() - b.scheduledFor.getTime()
+  );
 }
 
 function stringData(data: unknown): Record<string, string> {
@@ -66,7 +86,8 @@ type Outcome = "release" | "retry";
 
 export async function processNotifications(
   sender: PushSender = firebaseSender,
-  now = new Date()
+  now = new Date(),
+  sendTimeoutMs = SEND_TIMEOUT_MS
 ): Promise<{ processed: number; failed: number }> {
   const leaseUntil = new Date(now.getTime() + LEASE_MS);
   const due = await claimDue(now, leaseUntil);
@@ -101,11 +122,14 @@ export async function processNotifications(
       return "release";
     }
     try {
-      const results = await sender.send(tokens, {
-        title: n.title,
-        body: n.body,
-        data: stringData(n.data),
-      });
+      const results = await withTimeout(
+        sender.send(tokens, {
+          title: n.title,
+          body: n.body,
+          data: stringData(n.data),
+        }),
+        sendTimeoutMs
+      );
       results.forEach((r, i) => r === "stale" && stale.add(tokens[i]));
       // Some device got it, or none of them exists any more.
       return results.includes("failed") && !results.includes("ok")
@@ -125,7 +149,24 @@ export async function processNotifications(
   // Each batch is marked as soon as it has gone out, so a crash resends at
   // most one batch.
   for (let i = 0; i < due.length; i += CONCURRENCY) {
-    const batch = due.slice(i, i + CONCURRENCY);
+    // Re-read the batch just before pushing it: a row cancelled since the
+    // claim is not pushed, and one refreshed since (its lease released) is
+    // left for a later run to claim at its new time.
+    const claimed = due.slice(i, i + CONCURRENCY);
+    const live = new Set(
+      (
+        await prisma.notification.findMany({
+          where: {
+            id: { in: claimed.map((n) => n.id) },
+            claimedUntil: leaseUntil,
+            cancelledAt: null,
+            sentAt: null,
+          },
+          select: { id: true },
+        })
+      ).map((n) => n.id)
+    );
+    const batch = claimed.filter((n) => live.has(n.id));
     const outcomes = await Promise.all(batch.map(deliver));
 
     const released = batch.filter((_, j) => outcomes[j] === "release");

@@ -93,28 +93,32 @@ export async function updateNotificationPreferenceAction(
   }
 
   const userId = session.user.id;
-  await prisma.$transaction(async (tx) => {
-    if (enabled && !config) {
-      // Nothing non-default to persist — delete the row so absence correctly
-      // signals "enabled" (true opt-out model). deleteMany is a no-op when absent.
-      await tx.notificationPreference.deleteMany({ where: { userId, type } });
-    } else {
-      // Disabled, or re-enabled with a custom config (e.g. hoursBeforeEvent) that
-      // needs to be remembered — persist the row.
-      const jsonConfig = config as Prisma.InputJsonValue | undefined;
-      await tx.notificationPreference.upsert({
-        where: { userId_type: { userId, type } },
-        update: { enabled, config: jsonConfig },
-        create: { userId, type, enabled, config: jsonConfig },
-      });
-    }
+  await prisma.$transaction(
+    async (tx) => {
+      if (enabled && !config) {
+        // Nothing non-default to persist — delete the row so absence correctly
+        // signals "enabled" (true opt-out model). deleteMany is a no-op when absent.
+        await tx.notificationPreference.deleteMany({ where: { userId, type } });
+      } else {
+        // Disabled, or re-enabled with a custom config (e.g. hoursBeforeEvent) that
+        // needs to be remembered — persist the row.
+        const jsonConfig = config as Prisma.InputJsonValue | undefined;
+        await tx.notificationPreference.upsert({
+          where: { userId_type: { userId, type } },
+          update: { enabled, config: jsonConfig },
+          create: { userId, type, enabled, config: jsonConfig },
+        });
+      }
 
-    // Any EVENT_REMINDER write can move the lead time, including back to the
-    // default when the row is deleted. Opting out is applied at send time.
-    if (type === NotificationType.EVENT_REMINDER) {
-      await reminderPreferenceChanged(tx, userId);
-    }
-  });
+      // Any EVENT_REMINDER write can move the lead time, including back to the
+      // default when the row is deleted. Opting out is applied at send time.
+      if (type === NotificationType.EVENT_REMINDER) {
+        await reminderPreferenceChanged(tx, userId);
+      }
+    },
+    // Re-syncing runs a few statements per upcoming Event the user attends.
+    { timeout: 15_000 }
+  );
 
   updateTag(`user-notifications-${userId}`);
   return {};

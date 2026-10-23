@@ -270,6 +270,69 @@ describe("processNotifications", () => {
     ).not.toBeNull();
   });
 
+  it("treats a hung push as a failure and retries it", async () => {
+    const n = await notify("u1");
+    const hung: PushSender = { send: () => new Promise(() => {}) };
+
+    expect(await processNotifications(hung, NOW, 50)).toEqual({
+      processed: 0,
+      failed: 0,
+    });
+    expect(await row(n.id)).toMatchObject({ sentAt: null, attempts: 1 });
+
+    const { sender, pushes } = fakeSender();
+    await processNotifications(sender, later(3));
+    expect(pushes).toHaveLength(1);
+  });
+
+  it("skips a row cancelled or refreshed after the claim, before its batch", async () => {
+    // One full batch, then the two rows that will change under the run.
+    await Promise.all(
+      Array.from({ length: 20 }, () =>
+        notify("u1", { scheduledFor: later(-10) })
+      )
+    );
+    const cancelled = await notify("u1");
+    await queueNotification({
+      userId: "u1",
+      type: "EVENT_REMINDER",
+      title: "Event Reminder",
+      body: "old",
+      scheduledFor: NOW,
+      dedupeKey: "e1",
+    });
+    let changed = false;
+    const pushes: string[] = [];
+    const sender: PushSender = {
+      async send(tokens, message) {
+        pushes.push(message.body);
+        if (!changed) {
+          changed = true;
+          await prisma.notification.update({
+            where: { id: cancelled.id },
+            data: { cancelledAt: NOW },
+          });
+          await queueNotification({
+            userId: "u1",
+            type: "EVENT_REMINDER",
+            title: "Event Reminder",
+            body: "moved",
+            scheduledFor: later(60),
+            dedupeKey: "e1",
+          });
+        }
+        return tokens.map(() => "ok" as const);
+      },
+    };
+
+    expect((await processNotifications(sender, NOW)).processed).toBe(20);
+    expect(pushes).toHaveLength(20);
+    expect((await row(cancelled.id)).sentAt).toBeNull();
+
+    await processNotifications(sender, later(60));
+    expect(pushes.slice(20)).toEqual(["moved"]);
+  });
+
   it("starts a refreshed notification's attempts again", async () => {
     await queueNotification({
       userId: "u1",

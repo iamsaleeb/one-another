@@ -18,6 +18,7 @@ import { SaveEventButton } from "@/domains/events/components/save-event-button";
 import { WHEN_LABELS, TYPE_LABELS, type WhenFilter } from "@/lib/types/search";
 import { searchParamsSchema } from "@/lib/validations/search";
 import { HomeEventTabs } from "@/domains/events/components/home-event-tabs";
+import { formatLocality } from "@/lib/address";
 import { auth } from "@/auth";
 
 export default async function Home({
@@ -141,10 +142,12 @@ export default async function Home({
                         <CardContent className="flex items-center justify-between p-4">
                           <div className="flex flex-col gap-1">
                             <p className="text-sm font-bold">{church.name}</p>
-                            <p className="text-muted-foreground flex items-center gap-1 text-xs">
-                              <MapPin className="size-3" />
-                              {church.address}
-                            </p>
+                            {church.address && (
+                              <p className="text-muted-foreground flex items-center gap-1 text-xs">
+                                <MapPin className="size-3" />
+                                {formatLocality(church.address)}
+                              </p>
+                            )}
                           </div>
                         </CardContent>
                       </Card>

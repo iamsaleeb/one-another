@@ -47,13 +47,22 @@ async function main() {
   await prisma.serviceTime.deleteMany();
   await prisma.user.deleteMany();
   await prisma.church.deleteMany();
+  await prisma.address.deleteMany();
 
   // ── Churches ─────────────────────────────────────────────────────────────────
 
   const stMary = await prisma.church.create({
     data: {
       name: "St. Mary & St. Athanasius Coptic Orthodox Church",
-      address: "4500 N Shepherd Dr, Houston, TX 77018",
+      address: {
+        create: {
+          street: "4500 N Shepherd Dr",
+          suburb: "Garden Oaks",
+          city: "Houston",
+          state: "TX",
+          postcode: "77018",
+        },
+      },
       phone: "(713) 555-0201",
       website: "stmaryhouston.org",
       description:
@@ -74,7 +83,15 @@ async function main() {
   const stGeorge = await prisma.church.create({
     data: {
       name: "St. George & St. Rueiss Coptic Orthodox Church",
-      address: "2200 Greenville Ave, Dallas, TX 75206",
+      address: {
+        create: {
+          street: "2200 Greenville Ave",
+          suburb: "Lower Greenville",
+          city: "Dallas",
+          state: "TX",
+          postcode: "75206",
+        },
+      },
       phone: "(214) 555-0342",
       website: "stgeorgedallas.org",
       description:
@@ -95,7 +112,15 @@ async function main() {
   const stMark = await prisma.church.create({
     data: {
       name: "St. Mark Coptic Orthodox Church",
-      address: "1010 Lamar Blvd, Austin, TX 78703",
+      address: {
+        create: {
+          street: "1010 Lamar Blvd",
+          suburb: "Clarksville",
+          city: "Austin",
+          state: "TX",
+          postcode: "78703",
+        },
+      },
       phone: "(512) 555-0478",
       website: "stmarkaustin.org",
       description:
@@ -115,7 +140,15 @@ async function main() {
   const archangel = await prisma.church.create({
     data: {
       name: "Archangel Michael & St. Peter Coptic Orthodox Church",
-      address: "890 Medical Dr, San Antonio, TX 78229",
+      address: {
+        create: {
+          street: "890 Medical Dr",
+          suburb: "Medical Center",
+          city: "San Antonio",
+          state: "TX",
+          postcode: "78229",
+        },
+      },
       phone: "(210) 555-0519",
       website: "archangelmichael-satx.org",
       description:
@@ -134,7 +167,15 @@ async function main() {
   const stPishoy = await prisma.church.create({
     data: {
       name: "St. Pishoy & St. Bishoy Coptic Orthodox Church",
-      address: "3200 Timberloch Pl, The Woodlands, TX 77380",
+      address: {
+        create: {
+          street: "3200 Timberloch Pl",
+          suburb: "The Woodlands",
+          city: "Houston",
+          state: "TX",
+          postcode: "77380",
+        },
+      },
       phone: "(832) 555-0633",
       website: "stpishoy-woodlands.org",
       description:
@@ -154,7 +195,15 @@ async function main() {
   const stAnthony = await prisma.church.create({
     data: {
       name: "St. Anthony & St. Paul Coptic Orthodox Church",
-      address: "5500 Boat Club Rd, Fort Worth, TX 76135",
+      address: {
+        create: {
+          street: "5500 Boat Club Rd",
+          suburb: "Lake Worth",
+          city: "Fort Worth",
+          state: "TX",
+          postcode: "76135",
+        },
+      },
       phone: "(817) 555-0744",
       website: "stanthony-fw.org",
       description:

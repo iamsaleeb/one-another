@@ -3,6 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { InfoField } from "@/components/ui/info-field";
 import type { getChurchById } from "@/domains/churches/actions/data";
+import { formatFullAddress } from "@/lib/address";
 
 type ChurchWithDetails = NonNullable<Awaited<ReturnType<typeof getChurchById>>>;
 
@@ -40,7 +41,7 @@ export function AboutTab({ church }: AboutTabProps) {
             )}
             {church.address && (
               <InfoField icon={MapPin} label="Address" iconClassName={muted}>
-                {church.address}
+                {formatFullAddress(church.address)}
               </InfoField>
             )}
             {church.phone && (

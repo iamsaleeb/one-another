@@ -86,7 +86,16 @@ export async function searchEventsAndChurches(filters: SearchFilters) {
   if (query) {
     churchWhere.OR = [
       { name: { contains: query, mode: "insensitive" } },
-      { address: { contains: query, mode: "insensitive" } },
+      {
+        address: {
+          OR: [
+            { street: { contains: query, mode: "insensitive" } },
+            { suburb: { contains: query, mode: "insensitive" } },
+            { city: { contains: query, mode: "insensitive" } },
+            { postcode: { contains: query, mode: "insensitive" } },
+          ],
+        },
+      },
     ];
   }
 
@@ -101,7 +110,11 @@ export async function searchEventsAndChurches(filters: SearchFilters) {
     shouldFetchChurches && (query || type === "churches")
       ? prisma.church.findMany({
           where: churchWhere,
-          select: { id: true, name: true, address: true },
+          select: {
+            id: true,
+            name: true,
+            address: { select: { suburb: true, city: true } },
+          },
         })
       : Promise.resolve([]),
   ]);

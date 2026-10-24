@@ -14,6 +14,7 @@ interface FollowButtonProps {
   isFollowing: boolean;
   isAuthenticated: boolean;
   loginUrl: string;
+  size?: "default" | "sm";
 }
 
 export function FollowButton({
@@ -21,6 +22,7 @@ export function FollowButton({
   isFollowing,
   isAuthenticated,
   loginUrl,
+  size = "default",
 }: FollowButtonProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -44,6 +46,7 @@ export function FollowButton({
       onClick={handleClick}
       disabled={isPending}
       variant={isFollowing ? "outline" : "default"}
+      size={size}
       className={isFollowing ? "gap-1.5" : ""}
     >
       {isFollowing && <Check className="size-4" />}

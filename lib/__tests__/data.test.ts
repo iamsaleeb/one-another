@@ -32,6 +32,7 @@ import {
   getChurches,
   getChurchById,
   getMyChurchFollow,
+  getMyFollowedChurchIds,
 } from "@/domains/churches/actions/data";
 import {
   getSeries,
@@ -80,7 +81,14 @@ const sampleEvent = {
 const sampleChurch = {
   id: "ch-1",
   name: "Grace Church",
-  address: "123 Church St",
+  address: {
+    id: "addr-1",
+    street: "123 Church St",
+    suburb: "Guildford",
+    city: "Sydney",
+    state: "NSW",
+    postcode: "2161",
+  },
   serviceTimes: [],
   events: [],
 };
@@ -152,15 +160,43 @@ describe("getMyEventAttendance", () => {
 });
 
 describe("getChurches", () => {
-  it("returns churches ordered by name with only id and name selected", async () => {
-    const minimalChurch = { id: "ch-1", name: "Grace Church" };
-    mockChurchFindMany.mockResolvedValue([minimalChurch]);
+  it("returns churches ordered by name with only list-card fields selected", async () => {
+    const listChurch = {
+      id: "ch-1",
+      name: "Grace Church",
+      photoUrl: null,
+      address: { suburb: "Guildford", city: "Sydney" },
+    };
+    mockChurchFindMany.mockResolvedValue([listChurch]);
     const result = await getChurches();
-    expect(result).toEqual([minimalChurch]);
+    expect(result).toEqual([listChurch]);
     expect(mockChurchFindMany).toHaveBeenCalledWith({
-      select: { id: true, name: true },
+      select: {
+        id: true,
+        name: true,
+        photoUrl: true,
+        address: { select: { suburb: true, city: true } },
+      },
       orderBy: { name: "asc" },
     });
+  });
+});
+
+describe("getMyFollowedChurchIds", () => {
+  it("returns the ids of churches the user follows", async () => {
+    mockChurchFollowerFindMany.mockResolvedValue([
+      { churchId: "ch-1" },
+      { churchId: "ch-2" },
+    ]);
+
+    const result = await getMyFollowedChurchIds("user-1");
+
+    expect(result).toEqual(["ch-1", "ch-2"]);
+    expect(mockChurchFollowerFindMany).toHaveBeenCalledWith({
+      where: { userId: "user-1" },
+      select: { churchId: true },
+    });
+    expect(cacheTag).toHaveBeenCalledWith("user-follows-user-1");
   });
 });
 
@@ -172,6 +208,7 @@ describe("getChurchById", () => {
     expect(mockChurchFindUnique).toHaveBeenCalledWith({
       where: { id: "ch-1" },
       include: {
+        address: true,
         serviceTimes: true,
         events: {
           where: { datetime: { gte: expect.any(Date) }, isDraft: false },
@@ -275,10 +312,23 @@ describe("searchEventsAndChurches", () => {
       where: {
         OR: [
           { name: { contains: "baptist", mode: "insensitive" } },
-          { address: { contains: "baptist", mode: "insensitive" } },
+          {
+            address: {
+              OR: [
+                { street: { contains: "baptist", mode: "insensitive" } },
+                { suburb: { contains: "baptist", mode: "insensitive" } },
+                { city: { contains: "baptist", mode: "insensitive" } },
+                { postcode: { contains: "baptist", mode: "insensitive" } },
+              ],
+            },
+          },
         ],
       },
-      select: { id: true, name: true, address: true },
+      select: {
+        id: true,
+        name: true,
+        address: { select: { suburb: true, city: true } },
+      },
     });
   });
 

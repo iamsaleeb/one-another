@@ -15,7 +15,8 @@ import {
   AccessMenuTrigger,
 } from "@/domains/access-requests";
 import { ChurchTabs } from "./_components/church-tabs";
-import { FollowButton } from "./_components/follow-button";
+import { FollowButton } from "@/domains/churches/components/follow-button";
+import { formatFullAddress } from "@/lib/address";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -45,6 +46,7 @@ export default async function ChurchDetailPage({ params }: Props) {
   if (!church) notFound();
 
   const isFollowing = myFollow !== null;
+  const fullAddress = church.address ? formatFullAddress(church.address) : null;
 
   const canManageMembers = ability.can("manage_members", churchSubject({ id }));
   const canCreateEvent = ability.can("create_event", churchSubject({ id }));
@@ -90,9 +92,9 @@ export default async function ChurchDetailPage({ params }: Props) {
                   </div>
                 </a>
               )}
-              {church.address && (
+              {fullAddress && (
                 <a
-                  href={`https://maps.google.com?q=${encodeURIComponent(church.address)}`}
+                  href={`https://maps.google.com?q=${encodeURIComponent(fullAddress)}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="Location"

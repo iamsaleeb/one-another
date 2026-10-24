@@ -11,7 +11,10 @@ import {
 } from "@/components/ui/tooltip";
 
 export type RoleBadgeRole =
-  "PLATFORM_ADMIN" | "CHURCH_ADMIN" | "EVENT_MANAGER" | "EVENT_CREATOR";
+  | "PLATFORM_ADMIN"
+  | "CHURCH_ADMIN"
+  | "EVENT_MANAGER"
+  | "EVENT_CREATOR";
 
 const ROLE_LABELS: Record<RoleBadgeRole, string> = {
   PLATFORM_ADMIN: "Platform Admin",

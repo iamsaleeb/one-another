@@ -10,9 +10,20 @@ export async function getChurches() {
   cacheTag("churches");
   cacheLife("hours");
   return prisma.church.findMany({
-    select: { id: true, name: true },
+    select: { id: true, name: true, address: true, photoUrl: true },
     orderBy: { name: "asc" },
   });
+}
+
+// Per-user followed church ids — short TTL, busted on follow/unfollow
+export async function getMyFollowedChurchIds(userId: string) {
+  cacheTag(`user-follows-${userId}`);
+  cacheLife("seconds");
+  const follows = await prisma.churchFollower.findMany({
+    where: { userId },
+    select: { churchId: true },
+  });
+  return follows.map((f) => f.churchId);
 }
 
 export async function getChurchById(id: string) {

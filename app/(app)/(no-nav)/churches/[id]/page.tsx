@@ -15,7 +15,7 @@ import {
   AccessMenuTrigger,
 } from "@/domains/access-requests";
 import { ChurchTabs } from "./_components/church-tabs";
-import { FollowButton } from "./_components/follow-button";
+import { FollowButton } from "@/domains/churches/components/follow-button";
 
 interface Props {
   params: Promise<{ id: string }>;

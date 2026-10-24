@@ -32,6 +32,7 @@ import {
   getChurches,
   getChurchById,
   getMyChurchFollow,
+  getMyFollowedChurchIds,
 } from "@/domains/churches/actions/data";
 import {
   getSeries,
@@ -152,15 +153,38 @@ describe("getMyEventAttendance", () => {
 });
 
 describe("getChurches", () => {
-  it("returns churches ordered by name with only id and name selected", async () => {
-    const minimalChurch = { id: "ch-1", name: "Grace Church" };
-    mockChurchFindMany.mockResolvedValue([minimalChurch]);
+  it("returns churches ordered by name with only list-card fields selected", async () => {
+    const listChurch = {
+      id: "ch-1",
+      name: "Grace Church",
+      address: "1 Main St",
+      photoUrl: null,
+    };
+    mockChurchFindMany.mockResolvedValue([listChurch]);
     const result = await getChurches();
-    expect(result).toEqual([minimalChurch]);
+    expect(result).toEqual([listChurch]);
     expect(mockChurchFindMany).toHaveBeenCalledWith({
-      select: { id: true, name: true },
+      select: { id: true, name: true, address: true, photoUrl: true },
       orderBy: { name: "asc" },
     });
+  });
+});
+
+describe("getMyFollowedChurchIds", () => {
+  it("returns the ids of churches the user follows", async () => {
+    mockChurchFollowerFindMany.mockResolvedValue([
+      { churchId: "ch-1" },
+      { churchId: "ch-2" },
+    ]);
+
+    const result = await getMyFollowedChurchIds("user-1");
+
+    expect(result).toEqual(["ch-1", "ch-2"]);
+    expect(mockChurchFollowerFindMany).toHaveBeenCalledWith({
+      where: { userId: "user-1" },
+      select: { churchId: true },
+    });
+    expect(cacheTag).toHaveBeenCalledWith("user-follows-user-1");
   });
 });
 

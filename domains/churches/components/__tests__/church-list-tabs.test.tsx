@@ -19,8 +19,18 @@ jest.mock("@/domains/churches/components/follow-button", () => ({
 jest.mock("lucide-react", () => ({ Church: () => null, MapPin: () => null }));
 
 const churches = [
-  { id: "ch-1", name: "Grace Church", address: "1 Main St", photoUrl: null },
-  { id: "ch-2", name: "Hope Church", address: null, photoUrl: null },
+  {
+    id: "ch-1",
+    name: "Grace Church",
+    photoUrl: null,
+    address: { suburb: "Guildford", city: "Sydney" },
+  },
+  {
+    id: "ch-2",
+    name: "Hope Church",
+    photoUrl: null,
+    address: null,
+  },
 ];
 
 describe("ChurchListTabs", () => {
@@ -34,7 +44,7 @@ describe("ChurchListTabs", () => {
     );
     expect(screen.getByText("Grace Church")).toBeInTheDocument();
     expect(screen.getByText("Hope Church")).toBeInTheDocument();
-    expect(screen.getByText("1 Main St")).toBeInTheDocument();
+    expect(screen.getByText("Guildford, Sydney")).toBeInTheDocument();
     expect(screen.getByTestId("follow-ch-1")).toHaveTextContent("Follow");
     expect(screen.getByTestId("follow-ch-2")).toHaveTextContent("Following");
   });

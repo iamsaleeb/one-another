@@ -14,8 +14,8 @@ const isActiveFilter = (v: string): v is ActiveFilter =>
 interface ChurchListItem {
   id: string;
   name: string;
-  address: string | null;
   photoUrl: string | null;
+  address: { suburb: string | null; city: string } | null;
 }
 
 interface ChurchListTabsProps {

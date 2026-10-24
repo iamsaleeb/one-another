@@ -82,7 +82,8 @@ model VerificationToken {
 model Church {
   id             String             @id @default(cuid())
   name           String
-  address        String?
+  addressId      String?            @unique @map("address_id")
+  address        Address?           @relation(fields: [addressId], references: [id], onDelete: SetNull)
   phone          String?
   website        String?
   photoUrl       String?            @map("photo_url")
@@ -98,6 +99,18 @@ model Church {
   accessRequests AccessRequest[]
 
   @@map("churches")
+}
+
+model Address {
+  id       String  @id @default(cuid())
+  street   String
+  suburb   String?
+  city     String
+  state    String?
+  postcode String?
+  church   Church?
+
+  @@map("addresses")
 }
 
 model ServiceTime {

@@ -81,7 +81,14 @@ const sampleEvent = {
 const sampleChurch = {
   id: "ch-1",
   name: "Grace Church",
-  address: "123 Church St",
+  address: {
+    id: "addr-1",
+    street: "123 Church St",
+    suburb: "Guildford",
+    city: "Sydney",
+    state: "NSW",
+    postcode: "2161",
+  },
   serviceTimes: [],
   events: [],
 };
@@ -157,14 +164,19 @@ describe("getChurches", () => {
     const listChurch = {
       id: "ch-1",
       name: "Grace Church",
-      address: "1 Main St",
       photoUrl: null,
+      address: { suburb: "Guildford", city: "Sydney" },
     };
     mockChurchFindMany.mockResolvedValue([listChurch]);
     const result = await getChurches();
     expect(result).toEqual([listChurch]);
     expect(mockChurchFindMany).toHaveBeenCalledWith({
-      select: { id: true, name: true, address: true, photoUrl: true },
+      select: {
+        id: true,
+        name: true,
+        photoUrl: true,
+        address: { select: { suburb: true, city: true } },
+      },
       orderBy: { name: "asc" },
     });
   });
@@ -196,6 +208,7 @@ describe("getChurchById", () => {
     expect(mockChurchFindUnique).toHaveBeenCalledWith({
       where: { id: "ch-1" },
       include: {
+        address: true,
         serviceTimes: true,
         events: {
           where: { datetime: { gte: expect.any(Date) }, isDraft: false },
@@ -299,10 +312,23 @@ describe("searchEventsAndChurches", () => {
       where: {
         OR: [
           { name: { contains: "baptist", mode: "insensitive" } },
-          { address: { contains: "baptist", mode: "insensitive" } },
+          {
+            address: {
+              OR: [
+                { street: { contains: "baptist", mode: "insensitive" } },
+                { suburb: { contains: "baptist", mode: "insensitive" } },
+                { city: { contains: "baptist", mode: "insensitive" } },
+                { postcode: { contains: "baptist", mode: "insensitive" } },
+              ],
+            },
+          },
         ],
       },
-      select: { id: true, name: true, address: true },
+      select: {
+        id: true,
+        name: true,
+        address: { select: { suburb: true, city: true } },
+      },
     });
   });
 

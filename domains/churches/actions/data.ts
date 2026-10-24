@@ -10,7 +10,12 @@ export async function getChurches() {
   cacheTag("churches");
   cacheLife("hours");
   return prisma.church.findMany({
-    select: { id: true, name: true, address: true, photoUrl: true },
+    select: {
+      id: true,
+      name: true,
+      photoUrl: true,
+      address: { select: { suburb: true, city: true } },
+    },
     orderBy: { name: "asc" },
   });
 }
@@ -32,6 +37,7 @@ export async function getChurchById(id: string) {
   return prisma.church.findUnique({
     where: { id },
     include: {
+      address: true,
       serviceTimes: true,
       events: {
         where: upcomingPublicEvents(),

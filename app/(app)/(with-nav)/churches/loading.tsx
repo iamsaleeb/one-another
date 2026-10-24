@@ -6,10 +6,10 @@ export default function ChurchesLoading() {
     <div className="flex flex-col">
       <PageHeader title="Churches" />
       <div className="flex flex-col gap-3 px-4 py-2">
-        <Skeleton className="h-28 w-full rounded-2xl" />
-        <Skeleton className="h-28 w-full rounded-2xl" />
-        <Skeleton className="h-28 w-full rounded-2xl" />
-        <Skeleton className="h-28 w-full rounded-2xl" />
+        <Skeleton className="h-26 w-full rounded-2xl" />
+        <Skeleton className="h-26 w-full rounded-2xl" />
+        <Skeleton className="h-26 w-full rounded-2xl" />
+        <Skeleton className="h-26 w-full rounded-2xl" />
       </div>
     </div>
   );

@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.19.0](https://github.com/iamsaleeb/one-another/compare/one-another-v0.18.0...one-another-v0.19.0) (2026-10-24)
+
+
+### Features
+
+* **churches:** church list with All/Following tabs, photo cards and structured addresses ([#149](https://github.com/iamsaleeb/one-another/issues/149)) ([4fc00b4](https://github.com/iamsaleeb/one-another/commit/4fc00b413419e887d8b828c4389af31fbb48e67f))
+
+
+### Bug Fixes
+
+* **events:** reminders and notices follow the Event's state ([#144](https://github.com/iamsaleeb/one-another/issues/144)) ([4e759c3](https://github.com/iamsaleeb/one-another/commit/4e759c32be6f16f14683d29140bbb6cc7a647455))
+* **events:** run publish side effects when the wizard publishes ([#139](https://github.com/iamsaleeb/one-another/issues/139)) ([5d09fa3](https://github.com/iamsaleeb/one-another/commit/5d09fa3ca478646c46f00666d0917dd31a82b11d))
+* **notifications:** worker claims what it sends ([#147](https://github.com/iamsaleeb/one-another/issues/147)) ([3e343ff](https://github.com/iamsaleeb/one-another/commit/3e343ff17a116ed86628772b69cda36693feee90))
+* **series:** deleting or moving a Series carries its Events along ([#145](https://github.com/iamsaleeb/one-another/issues/145)) ([fb0220f](https://github.com/iamsaleeb/one-another/commit/fb0220f33d27aef546e9e887715e1abad785a0dc))
+* **ui:** sync sidebar outline variant with latest shadcn ([#142](https://github.com/iamsaleeb/one-another/issues/142)) ([974e834](https://github.com/iamsaleeb/one-another/commit/974e834d4e669b51593d886c585188592bc5b68a))
+
 ## [0.18.0](https://github.com/iamsaleeb/one-another/compare/one-another-v0.17.0...one-another-v0.18.0) (2026-10-21)
 
 

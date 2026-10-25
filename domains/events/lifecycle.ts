@@ -54,12 +54,13 @@ const TRANSACTION = { timeout: 15_000 };
 // ---------------------------------------------------------------------------
 // Input: one normaliser for create and save
 
-interface Placement {
+// The Event's Owning Church, and its Series if it is a session of one.
+interface Home {
   churchId: string;
   seriesId: string | null;
 }
 
-interface Normalised extends Placement {
+interface Normalised extends Home {
   fields: Omit<
     Prisma.EventUncheckedCreateInput,
     "churchId" | "seriesId" | "isDraft" | "createdById"
@@ -325,7 +326,7 @@ export async function createEvent(
   const isDraft = input.isDraft ?? false;
 
   const result = await prisma.$transaction(
-    async (tx): Promise<LifecycleError | ({ id: string } & Placement)> => {
+    async (tx): Promise<LifecycleError | ({ id: string } & Home)> => {
       const n = await normalise(tx, input, isDraft);
       if (failed(n)) return n;
       const { churchId, seriesId } = n;
@@ -762,20 +763,16 @@ export async function reminderPreferenceChanged(tx: Db, userId: string) {
 
 type AfterCommit = () => void;
 
-function seriesEvents(tx: Db, seriesId: string) {
-  return tx.event.findMany({
-    where: { seriesId },
-    select: { id: true, churchId: true },
-  });
-}
-
 // The Series is about to be deleted: its Events stay, as standalone Events in
 // the same Church, and its followers hear nothing more about them.
 export async function seriesDeleted(
   tx: Db,
   seriesId: string
 ): Promise<AfterCommit> {
-  const events = await seriesEvents(tx, seriesId);
+  const events = await tx.event.findMany({
+    where: { seriesId },
+    select: { id: true, churchId: true },
+  });
   if (events.length > 0)
     await cancelManyNotifications(
       {

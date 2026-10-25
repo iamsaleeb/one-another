@@ -37,7 +37,7 @@ const seriesInput = (churchId: string) => ({
   churchId,
 });
 
-// Admin of both Churches, so moves between them are allowed.
+// Admin of both Churches, so a Series staying put is never down to permission.
 const admin = () =>
   as("admin", {
     church: [

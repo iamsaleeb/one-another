@@ -4,7 +4,9 @@ import { redirect } from "next/navigation";
 import { getSessionUserId } from "@/domains/roles/lib/get-ability";
 import {
   createSeriesSchema,
+  updateSeriesSchema,
   type CreateSeriesInput,
+  type UpdateSeriesInput,
 } from "../validations/series";
 import {
   createSeries,
@@ -32,11 +34,11 @@ export async function createSeriesAction(
 
 export async function updateSeriesAction(
   id: string,
-  data: CreateSeriesInput
+  data: UpdateSeriesInput
 ): Promise<ActionResult> {
   if (!(await getSessionUserId())) return { error: "Unauthorised." };
 
-  const parsed = createSeriesSchema.safeParse(data);
+  const parsed = updateSeriesSchema.safeParse(data);
   if (!parsed.success)
     return { fieldErrors: parsed.error.flatten().fieldErrors };
 

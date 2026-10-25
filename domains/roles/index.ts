@@ -8,5 +8,4 @@ export {
 export type { Action, AppAbility } from "./lib/ability";
 export { getAbility, getSessionUserId } from "./lib/get-ability";
 export { getChurchTargets } from "./lib/scopes";
-export { canPlace, placementTargets, type Placed } from "./lib/placement";
 export type { Grants } from "./lib/grants";

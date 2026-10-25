@@ -14,13 +14,11 @@ import {
   scopedTo as scopedToType,
   type WriteOptions,
 } from "@/domains/roles/lib/scoped-writes";
-import { canPlace } from "@/domains/roles/lib/placement";
-import {
-  seriesDeleted,
-  seriesMovedChurch,
-  type LifecycleError,
-} from "@/domains/events/lifecycle";
-import type { CreateSeriesInput } from "./validations/series";
+import { seriesDeleted, type LifecycleError } from "@/domains/events/lifecycle";
+import type {
+  CreateSeriesInput,
+  UpdateSeriesInput,
+} from "./validations/series";
 
 // The Series lifecycle (see GLOSSARY.md): every change to a Series, and
 // everything that must follow from it. A change commits together with what it
@@ -90,7 +88,7 @@ function invalidateFollowing(seriesId: string, userId: string) {
 // ---------------------------------------------------------------------------
 // Transitions
 
-function fields(input: CreateSeriesInput) {
+function fields(input: UpdateSeriesInput) {
   const { name, description, cadence, location, host, tag, photoUrl } = input;
   return {
     name,
@@ -121,37 +119,28 @@ export async function createSeries(
   return { id };
 }
 
-// Every save of a Series' form. Changing its Church moves the Series, and its
-// Events with it.
+// Every save of a Series' form. A Series stays in the Church it was created
+// in, so a save never moves it or its Events.
 export async function saveSeries(
   id: string,
-  input: CreateSeriesInput,
+  input: UpdateSeriesInput,
   opts?: WriteOptions
 ): Promise<LifecycleError | Done> {
   const { ability } = await resolveWrite(opts);
-  const { churchId } = input;
 
   const result = await prisma.$transaction(async (tx) => {
     const existing = await findForAction(tx, ability, "update", id);
     if ("error" in existing) return existing;
 
-    const moved = churchId !== existing.churchId;
-    if (moved && !canPlace(ability, { type: "Series", id, churchId }))
-      return { error: "Unauthorised." };
-
     await tx.series.update({
       where: scopedTo(ability, "update", id),
-      data: { ...fields(input), churchId },
+      data: fields(input),
     });
-    const afterCommit = moved
-      ? await seriesMovedChurch(tx, id, churchId)
-      : undefined;
-    return { churchIds: [existing.churchId, churchId], afterCommit };
+    return existing;
   });
   if (failed(result)) return result;
 
-  result.afterCommit?.();
-  invalidate({ id, churchIds: result.churchIds });
+  invalidate({ id, churchIds: [result.churchId] });
   return {};
 }
 

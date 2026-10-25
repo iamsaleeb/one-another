@@ -14,7 +14,6 @@ import {
   scopedTo as scopedToType,
   type WriteOptions,
 } from "@/domains/roles/lib/scoped-writes";
-import { canPlace } from "@/domains/roles/lib/placement";
 import { grantCreator } from "@/domains/roles/access";
 import {
   cancelManyNotifications,
@@ -378,16 +377,27 @@ export async function saveEvent(
       });
       if ("error" in existing) return existing;
 
+      // An Event's Series is fixed when it is created, and its Church once it
+      // has been published (see Owning Church in GLOSSARY.md). A draft may
+      // still change Church: that places it afresh, so it needs the authority
+      // to create an Event there.
       const isDraft = input.isDraft ?? existing.isDraft;
-      const n = await normalise(tx, input, isDraft);
+      const n = await normalise(
+        tx,
+        {
+          ...input,
+          seriesId: existing.seriesId ?? undefined,
+          churchId: existing.isDraft ? input.churchId : existing.churchId,
+        },
+        isDraft
+      );
       if (failed(n)) return n;
       const { churchId, seriesId } = n;
 
-      const moved =
-        churchId !== existing.churchId || seriesId !== existing.seriesId;
+      const moved = churchId !== existing.churchId;
       if (
         moved &&
-        !canPlace(ability, { type: "Event", id, churchId, seriesId })
+        !ability.can("create", eventSubject({ churchId, seriesId: null }))
       )
         return { error: "Unauthorised." };
 
@@ -410,15 +420,17 @@ export async function saveEvent(
         where: scopedTo(ability, "update", id),
         data: { ...n.fields, isDraft, churchId, seriesId },
       });
+      // As if created there: the mover keeps editing it.
+      if (moved) await grantCreator(tx, ability, userId, id, churchId);
       if (input.questions !== undefined)
         await syncEventQuestions(id, input.questions, userId, tx);
 
       await syncReminders(tx, id);
 
-      // An Event leaving its Series, or going back to draft, must not leave
-      // behind a pending "new session" notice for that Series' followers.
-      if (existing.seriesId && (existing.seriesId !== seriesId || unpublishing))
-        await withdrawSeriesSession(tx, existing.seriesId, id);
+      // A session going back to draft must not leave behind a pending
+      // "new session" notice for its Series' followers.
+      if (seriesId && unpublishing)
+        await withdrawSeriesSession(tx, seriesId, id);
       // A session that just became public is news to its Series' followers.
       if (publishing && seriesId)
         await notifySeriesFollowers(tx, seriesId, n.fields.title, id);
@@ -426,7 +438,7 @@ export async function saveEvent(
       return {
         id,
         churchIds: [existing.churchId, churchId],
-        seriesIds: [existing.seriesId, seriesId],
+        seriesIds: [seriesId],
         listsChanged: publishing || unpublishing,
       };
     },
@@ -741,11 +753,12 @@ export async function reminderPreferenceChanged(tx: Db, userId: string) {
 // ---------------------------------------------------------------------------
 // Series changes that reach their Events
 //
-// Trusted: the Series module has already checked that the user may delete or
-// move the Series. A second Ability check here would refuse a Church admin
+// Trusted: the Series lifecycle has already checked that the user may delete
+// the Series. A second Ability check here would refuse a Church admin
 // whenever one of the Events carries someone else's Creator Grant, breaking
-// the very cascade these keep. Each takes the Series module's transaction, so
-// it only runs inside one, and returns what to invalidate once that commits.
+// the very cascade this keeps. It takes the Series lifecycle's transaction,
+// so it only runs inside one, and returns what to invalidate once that
+// commits.
 
 type AfterCommit = () => void;
 
@@ -779,27 +792,6 @@ export async function seriesDeleted(
         id: e.id,
         churchIds: [e.churchId],
         seriesIds: [seriesId],
-      }))
-    );
-}
-
-// The Series moved Church: an Event in a Series always lives in that Series'
-// Church, so its Events move too and the Role cascade follows them.
-export async function seriesMovedChurch(
-  tx: Db,
-  seriesId: string,
-  churchId: string
-): Promise<AfterCommit> {
-  const events = await seriesEvents(tx, seriesId);
-  await tx.event.updateMany({ where: { seriesId }, data: { churchId } });
-
-  return () =>
-    invalidate(
-      ...events.map((e) => ({
-        id: e.id,
-        churchIds: [e.churchId, churchId],
-        seriesIds: [seriesId],
-        listsChanged: true,
       }))
     );
 }

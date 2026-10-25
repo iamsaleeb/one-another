@@ -8,8 +8,8 @@ import { getQuestionLibraryForUser } from "@/domains/events/questions/dal";
 import {
   eventSubject,
   getAbility,
+  getChurchTargets,
   getSessionUserId,
-  placementTargets,
 } from "@/domains/roles";
 import { parseEventMetadata } from "@/domains/events/validations/event";
 import { PageHeader } from "@/components/ui/page-header";
@@ -31,22 +31,20 @@ export default async function EditEventPage({ params }: Props) {
   if (!event) notFound();
   if (!ability.can("update", eventSubject(event))) notFound();
 
-  const [churches, questions, libraryItems, questionsLocked] =
-    await Promise.all([
-      placementTargets(
-        ability,
-        {
-          type: "Event",
-          id: event.id,
-          churchId: event.churchId,
-          seriesId: event.seriesId,
-        },
-        event.church
-      ),
+  // A published Event stays in its Church; a draft may move to any Church the
+  // user may create an Event in.
+  const [targets, questions, libraryItems, questionsLocked] = await Promise.all(
+    [
+      event.isDraft ? getChurchTargets("create_event", ability) : [],
       getEventQuestions(id),
       getQuestionLibraryForUser(userId),
       hasEventResponses(id),
-    ]);
+    ]
+  );
+  const churches =
+    event.church && !targets.some((c) => c.id === event.churchId)
+      ? [event.church, ...targets]
+      : targets;
 
   const datetimeISO = event.datetime?.toISOString() ?? "";
   const { registration, camp } = parseEventMetadata(event.metadata);
@@ -58,6 +56,7 @@ export default async function EditEventPage({ params }: Props) {
         <EventWizard
           eventId={event.id}
           churches={churches}
+          fixedChurch={event.isDraft ? null : event.church}
           libraryItems={libraryItems}
           questionsLocked={questionsLocked}
           series={

@@ -30,10 +30,16 @@ interface StepBasicsProps {
     churchId: string;
     churchName: string;
   } | null;
+  // A published Event stays in its Church, so the Church is shown, not edited.
+  fixedChurch?: { id: string; name: string } | null;
 }
 
-export function StepBasics({ churches, series }: StepBasicsProps) {
+export function StepBasics({ churches, series, fixedChurch }: StepBasicsProps) {
   const form = useFormContext<CreateEventInput>();
+  // A session lives in its Series' Church.
+  const shownChurch = series
+    ? { id: series.churchId, name: series.churchName }
+    : fixedChurch;
 
   return (
     <div className="flex flex-col gap-5">
@@ -121,17 +127,15 @@ export function StepBasics({ churches, series }: StepBasicsProps) {
         )}
       />
 
-      {series ? (
+      {shownChurch ? (
         <div className="grid gap-1.5">
           <FormLabel>Church</FormLabel>
-          <Select value={series.churchId} disabled>
+          <Select value={shownChurch.id} disabled>
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value={series.churchId}>
-                {series.churchName}
-              </SelectItem>
+              <SelectItem value={shownChurch.id}>{shownChurch.name}</SelectItem>
             </SelectContent>
           </Select>
         </div>

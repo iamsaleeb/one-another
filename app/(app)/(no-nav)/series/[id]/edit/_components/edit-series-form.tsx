@@ -22,8 +22,8 @@ import {
 } from "@/components/ui/form";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
-  createSeriesSchema,
-  type CreateSeriesInput,
+  updateSeriesSchema,
+  type UpdateSeriesInput,
 } from "@/domains/series/validations/series";
 import { updateSeriesAction } from "@/domains/series/actions/series";
 import { PhotoUploadField } from "@/components/photo-upload-field";
@@ -49,27 +49,27 @@ interface SeriesData {
   location: string;
   host: string;
   tag: string;
-  churchId?: string | null;
   photoUrl?: string | null;
 }
 
+// A Series stays in the Church it was created in, so the Church is shown,
+// not edited.
 export function EditSeriesForm({
   series,
-  churches,
+  church,
 }: {
   series: SeriesData;
-  churches: Church[];
+  church: Church;
 }) {
-  const form = useForm<CreateSeriesInput>({
-    resolver: zodResolver(createSeriesSchema),
+  const form = useForm<UpdateSeriesInput>({
+    resolver: zodResolver(updateSeriesSchema),
     defaultValues: {
       name: series.name,
       description: series.description,
-      cadence: series.cadence as CreateSeriesInput["cadence"],
+      cadence: series.cadence as UpdateSeriesInput["cadence"],
       location: series.location,
       host: series.host,
       tag: series.tag,
-      churchId: series.churchId ?? "",
       photoUrl: series.photoUrl ?? undefined,
     },
   });
@@ -83,7 +83,7 @@ export function EditSeriesForm({
     }
     if (result?.fieldErrors) {
       Object.entries(result.fieldErrors).forEach(([field, msgs]) =>
-        form.setError(field as keyof CreateSeriesInput, { message: msgs[0] })
+        form.setError(field as keyof UpdateSeriesInput, { message: msgs[0] })
       );
     }
   });
@@ -186,34 +186,17 @@ export function EditSeriesForm({
         />
 
         {/* Organisation */}
-        <FormField
-          control={form.control}
-          name="churchId"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Church</FormLabel>
-              <Select
-                onValueChange={field.onChange}
-                defaultValue={field.value}
-                disabled={isSubmitting}
-              >
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a church" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {churches.map((church) => (
-                    <SelectItem key={church.id} value={church.id}>
-                      {church.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        <div className="grid gap-1.5">
+          <FormLabel>Church</FormLabel>
+          <Select value={church.id} disabled>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={church.id}>{church.name}</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
 
         {/* Pattern */}
         <FormField

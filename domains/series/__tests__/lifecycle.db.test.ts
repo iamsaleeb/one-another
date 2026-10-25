@@ -8,7 +8,6 @@ jest.mock("@/domains/roles/lib/get-ability", () => ({
 
 import { updateTag } from "next/cache";
 import { prisma } from "@/lib/db";
-import { eventSubject } from "@/domains/roles/lib/ability";
 import {
   createSeries,
   deleteSeries,
@@ -134,52 +133,19 @@ describe("saving a Series", () => {
   });
 });
 
-describe("moving a Series to another Church", () => {
-  it("moves its Events with it, so the Role cascade follows", async () => {
+describe("a Series' Church", () => {
+  it("stays the same, whatever Church was sent, and its Events stay too", async () => {
+    // The form sends no Church; a stray one from any other caller is ignored.
     expect(await saveSeries("s1", seriesInput("c2"), admin())).toEqual({});
 
-    const events = await prisma.event.findMany();
-    expect(events.map((e) => e.churchId)).toEqual(["c2", "c2"]);
-
-    // The new Church's admins now reach them; the old Church's do not.
-    const newAdmin = as("x", {
-      church: [{ churchId: "c2", role: "CHURCH_ADMIN" }],
-    });
-    const oldAdmin = as("y", {
-      church: [{ churchId: "c1", role: "CHURCH_ADMIN" }],
-    });
-    expect(newAdmin.ability.can("update", eventSubject(events[0]))).toBe(true);
-    expect(oldAdmin.ability.can("update", eventSubject(events[0]))).toBe(false);
-  });
-
-  it("makes both Churches' pages and its Events' pages stale", async () => {
-    await saveSeries("s1", seriesInput("c2"), admin());
-
-    expect(staleTags()).toEqual(
-      expect.arrayContaining(["event-e1", "event-e2", "church-c1", "church-c2"])
-    );
-  });
-
-  it("leaves its Events alone when the Church does not change", async () => {
-    await saveSeries("s1", seriesInput("c1"), admin());
-
-    expect(staleTags()).not.toContain("event-e1");
-  });
-
-  it("moves nothing when refused", async () => {
-    const onlyC1 = as("admin", {
-      church: [{ churchId: "c1", role: "CHURCH_ADMIN" }],
-    });
-    expect(await saveSeries("s1", seriesInput("c2"), onlyC1)).toEqual({
-      error: "Unauthorised.",
-    });
     expect(await prisma.series.findUnique({ where: { id: "s1" } })).toEqual(
-      expect.objectContaining({ churchId: "c1", name: "Series s1" })
+      expect.objectContaining({ churchId: "c1", name: "Youth Night" })
     );
     expect((await prisma.event.findMany()).map((e) => e.churchId)).toEqual([
       "c1",
       "c1",
     ]);
+    expect(staleTags()).not.toContain("church-c2");
   });
 });
 

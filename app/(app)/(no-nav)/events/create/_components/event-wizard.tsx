@@ -42,6 +42,7 @@ interface Series {
 interface EventWizardProps {
   churches: Church[];
   series?: Series | null;
+  fixedChurch?: Church | null;
   eventId?: string;
   defaultValues?: Partial<CreateEventInput> & { datetimeISO?: string };
   libraryItems?: LibraryItem[];
@@ -64,6 +65,7 @@ interface WizardStep {
 export function EventWizard({
   churches,
   series,
+  fixedChurch,
   eventId,
   defaultValues,
   libraryItems,
@@ -280,7 +282,13 @@ export function EventWizard({
   const renderStep = () => {
     switch (currentStepKey) {
       case "basics":
-        return <StepBasics churches={churches} series={series} />;
+        return (
+          <StepBasics
+            churches={churches}
+            series={series}
+            fixedChurch={fixedChurch}
+          />
+        );
       case "whenWhere":
         return <StepWhenWhere />;
       case "registration":

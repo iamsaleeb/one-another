@@ -29,7 +29,7 @@ export function signInAs(userId: string | null, userGrants: Grants = grants()) {
 }
 
 // Evaluates a Prisma `where` (including CASL accessibleBy output) in JS.
-export function matchesWhere(where: object | undefined, row: object): boolean {
+function matchesWhere(where: object | undefined, row: object): boolean {
   if (!where) return true;
   return Boolean(prismaQuery(where as Record<string, unknown>)(row));
 }

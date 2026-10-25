@@ -20,7 +20,7 @@ const CONCURRENCY = 20;
 // A hung push fails like any other and is retried, instead of stalling its
 // batch until the route times out. A slow push that lands after this may be
 // sent again: delivery is at-least-once.
-export const SEND_TIMEOUT_MS = 10_000;
+const SEND_TIMEOUT_MS = 10_000;
 
 function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   let timer: ReturnType<typeof setTimeout> | undefined;

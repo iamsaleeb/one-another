@@ -14,6 +14,7 @@ import {
   scopedTo as scopedToType,
   type WriteOptions,
 } from "@/domains/roles/lib/scoped-writes";
+import { canPlace } from "@/domains/roles/lib/placement";
 import { grantCreator } from "@/domains/roles/access";
 import {
   cancelManyNotifications,
@@ -382,17 +383,11 @@ export async function saveEvent(
       if (failed(n)) return n;
       const { churchId, seriesId } = n;
 
-      // Moving an Event needs authority to place one at the destination, and
-      // the user must still be able to edit it once it lands there: otherwise
-      // the move would lock them out of their own Event.
       const moved =
         churchId !== existing.churchId || seriesId !== existing.seriesId;
       if (
         moved &&
-        !(
-          ability.can("create", eventSubject({ churchId, seriesId })) &&
-          ability.can("update", eventSubject({ id, churchId, seriesId }))
-        )
+        !canPlace(ability, { type: "Event", id, churchId, seriesId })
       )
         return { error: "Unauthorised." };
 

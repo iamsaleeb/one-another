@@ -8,8 +8,8 @@ import { getQuestionLibraryForUser } from "@/domains/events/questions/dal";
 import {
   eventSubject,
   getAbility,
-  getChurchTargets,
   getSessionUserId,
+  placementTargets,
 } from "@/domains/roles";
 import { parseEventMetadata } from "@/domains/events/validations/event";
 import { PageHeader } from "@/components/ui/page-header";
@@ -31,25 +31,22 @@ export default async function EditEventPage({ params }: Props) {
   if (!event) notFound();
   if (!ability.can("update", eventSubject(event))) notFound();
 
-  // Church dropdown: its own Church, plus those updateEvent would let it move
-  // to (the user may place an Event there and still edit it afterwards).
-  const [placeable, questions, libraryItems, questionsLocked] =
+  const [churches, questions, libraryItems, questionsLocked] =
     await Promise.all([
-      getChurchTargets("create_event", ability),
+      placementTargets(
+        ability,
+        {
+          type: "Event",
+          id: event.id,
+          churchId: event.churchId,
+          seriesId: event.seriesId,
+        },
+        event.church
+      ),
       getEventQuestions(id),
       getQuestionLibraryForUser(userId),
       hasEventResponses(id),
     ]);
-  const targets = placeable.filter((c) =>
-    ability.can(
-      "update",
-      eventSubject({ id: event.id, churchId: c.id, seriesId: null })
-    )
-  );
-  const churches =
-    event.church && !targets.some((c) => c.id === event.churchId)
-      ? [event.church, ...targets]
-      : targets;
 
   const datetimeISO = event.datetime?.toISOString() ?? "";
   const { registration, camp } = parseEventMetadata(event.metadata);

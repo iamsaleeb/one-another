@@ -2,8 +2,8 @@ import { notFound, redirect } from "next/navigation";
 import { getSeriesById } from "@/domains/series/actions/data";
 import {
   getAbility,
-  getChurchTargets,
   getSessionUserId,
+  placementTargets,
   seriesSubject,
 } from "@/domains/roles";
 import { PageHeader } from "@/components/ui/page-header";
@@ -25,11 +25,11 @@ export default async function EditSeriesPage({ params }: Props) {
   if (!series) notFound();
   if (!ability.can("update", seriesSubject(series))) notFound();
 
-  // Church dropdown: Churches the Series could be moved to, plus its own.
-  const targets = await getChurchTargets("create_series", ability);
-  const churches = targets.some((c) => c.id === series.churchId)
-    ? targets
-    : [series.church, ...targets];
+  const churches = await placementTargets(
+    ability,
+    { type: "Series", id: series.id, churchId: series.churchId },
+    series.church
+  );
 
   return (
     <div className="mx-auto max-w-lg">

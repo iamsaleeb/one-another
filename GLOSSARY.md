@@ -8,6 +8,10 @@ Churches publish Events and Series; members follow, attend and help run them. Th
 Every change to an Event's state, and everything that must follow from it: reminders, Series-follower notices, the Creator Grant, and which pages go stale. An Attendee joining or leaving is such a change. A change and its consequences commit together or not at all.
 _Avoid_: publish side effects, event hooks
 
+**Series lifecycle**:
+Every change to a Series, and everything that must follow from it: its Events moving Church with it or becoming standalone Events when it is deleted, followers coming and going, and which pages go stale. A change and what it does to the Series' Events commit together or not at all.
+_Avoid_: series DAL, series cache
+
 **Attendee**:
 A user attending an Event. On an Event that requires registration, attending means registering: the Event's capacity, camp days and required questions decide whether they may join, however they ask. Attending again updates the registration; it never counts twice.
 _Avoid_: RSVP, registrant (as a separate concept), guest
@@ -29,6 +33,10 @@ _Avoid_: permissions, access list
 **Role cascade**:
 A Grant reaches down the hierarchy: a Church Grant covers every Series and Event in that Church, and a Series Grant covers every Event in that Series.
 _Avoid_: inheritance
+
+**Placement**:
+Which Church (and Series) an Event or Series sits in. Moving one takes the Capability to create one at the destination and to still edit it once it lands there, so a move never locks its mover out. The Church dropdown on an edit page offers exactly the moves a save accepts.
+_Avoid_: target, destination (as a separate concept)
 
 **Access request**:
 A user asking for a Grant on one Church, Series or Event. Someone who may manage that resource's Helpers approves or denies it; approving gives the Grant, and revoking takes back only the Grant it gave.

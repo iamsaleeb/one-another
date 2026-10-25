@@ -53,7 +53,7 @@ const rank = (type: ResourceType, role: string) =>
   RANKS[type].indexOf(role as Role);
 
 // The role an Access request asks for.
-export const REQUESTED_ROLE = {
+const REQUESTED_ROLE = {
   EVENT: "EVENT_EDITOR",
   SERIES: "SERIES_SESSION_CREATOR",
   CHURCH: "EVENT_CREATOR",
@@ -281,7 +281,7 @@ interface RequestRow {
 
 // The resource an Access request is on. The CHECK constraint guarantees
 // exactly one id is set.
-export function resourceOf(request: RequestRow): AccessResource {
+function resourceOf(request: RequestRow): AccessResource {
   const id = request.eventId ?? request.seriesId ?? request.churchId;
   if (!id) throw new Error("Access request has no resource");
   return { type: request.resourceType, id };

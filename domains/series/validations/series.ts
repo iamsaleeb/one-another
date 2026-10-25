@@ -12,3 +12,8 @@ export const createSeriesSchema = z.object({
 });
 
 export type CreateSeriesInput = z.infer<typeof createSeriesSchema>;
+
+// A Series stays in the Church it was created in, so a save carries no Church.
+export const updateSeriesSchema = createSeriesSchema.omit({ churchId: true });
+
+export type UpdateSeriesInput = z.infer<typeof updateSeriesSchema>;

@@ -121,7 +121,7 @@ export function buildAbility(grants: Grants | null): AppAbility {
 
 // Typed subjects. Each requires every field the rules read, so a record loaded
 // with a too-narrow `select` fails to compile instead of silently denying.
-// An Event without `id` is a placement target ("could an Event go here?").
+// An Event without `id` asks "could a new Event be created here?".
 export function eventSubject(
   event: Pick<Event, "churchId" | "seriesId"> & { id?: string }
 ) {

@@ -31,20 +31,15 @@ export default async function EditEventPage({ params }: Props) {
   if (!event) notFound();
   if (!ability.can("update", eventSubject(event))) notFound();
 
-  // Church dropdown: its own Church, plus those updateEvent would let it move
-  // to (the user may place an Event there and still edit it afterwards).
-  const [placeable, questions, libraryItems, questionsLocked] =
-    await Promise.all([
-      getChurchTargets("create_event", ability),
+  // A published Event stays in its Church; a draft may move to any Church the
+  // user may create an Event in.
+  const [targets, questions, libraryItems, questionsLocked] = await Promise.all(
+    [
+      event.isDraft ? getChurchTargets("create_event", ability) : [],
       getEventQuestions(id),
       getQuestionLibraryForUser(userId),
       hasEventResponses(id),
-    ]);
-  const targets = placeable.filter((c) =>
-    ability.can(
-      "update",
-      eventSubject({ id: event.id, churchId: c.id, seriesId: null })
-    )
+    ]
   );
   const churches =
     event.church && !targets.some((c) => c.id === event.churchId)
@@ -61,6 +56,7 @@ export default async function EditEventPage({ params }: Props) {
         <EventWizard
           eventId={event.id}
           churches={churches}
+          fixedChurch={event.isDraft ? null : event.church}
           libraryItems={libraryItems}
           questionsLocked={questionsLocked}
           series={

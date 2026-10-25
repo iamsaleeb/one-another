@@ -1,11 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { getSeriesById } from "@/domains/series/actions/data";
-import {
-  getAbility,
-  getChurchTargets,
-  getSessionUserId,
-  seriesSubject,
-} from "@/domains/roles";
+import { getAbility, getSessionUserId, seriesSubject } from "@/domains/roles";
 import { PageHeader } from "@/components/ui/page-header";
 import { EditSeriesForm } from "./_components/edit-series-form";
 
@@ -25,12 +20,6 @@ export default async function EditSeriesPage({ params }: Props) {
   if (!series) notFound();
   if (!ability.can("update", seriesSubject(series))) notFound();
 
-  // Church dropdown: Churches the Series could be moved to, plus its own.
-  const targets = await getChurchTargets("create_series", ability);
-  const churches = targets.some((c) => c.id === series.churchId)
-    ? targets
-    : [series.church, ...targets];
-
   return (
     <div className="mx-auto max-w-lg">
       <PageHeader title="Edit Series" />
@@ -45,10 +34,9 @@ export default async function EditSeriesPage({ params }: Props) {
               location: series.location,
               host: series.host,
               tag: series.tag,
-              churchId: series.churchId,
               photoUrl: series.photoUrl,
             }}
-            churches={churches}
+            church={series.church}
           />
         </div>
       </div>

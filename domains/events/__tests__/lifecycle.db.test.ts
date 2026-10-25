@@ -233,82 +233,86 @@ describe("saveEvent", () => {
     ).toMatchObject({ title: "Changed" });
   });
 
-  it("refuses to move an Event where the user could not place one", async () => {
-    await makeEvent({ id: "e1", churchId: "c1" });
-    expect(
-      await saveEvent(
-        "e1",
-        input({ churchId: "c2" }),
-        as("u1", { event: [{ eventId: "e1", role: "EVENT_EDITOR" }] })
-      )
-    ).toEqual({ error: "Unauthorised." });
-  });
+  describe("Owning Church", () => {
+    const bothChurches = () =>
+      as("admin", {
+        church: [
+          { churchId: "c1", role: "CHURCH_ADMIN" },
+          { churchId: "c2", role: "CHURCH_ADMIN" },
+        ],
+      });
+    const home = async () =>
+      prisma.event.findUniqueOrThrow({
+        where: { id: "e1" },
+        select: { churchId: true, seriesId: true },
+      });
 
-  it("refuses a move that would lock the user out of their Event", async () => {
-    // May create in s3 and edit e1 where it is, but not edit it in c2.
-    await makeEvent({ id: "e1", churchId: "c1", seriesId: "s1" });
-    expect(
-      await saveEvent(
-        "e1",
-        input({ seriesId: "s3" }),
-        as("u1", {
-          series: [
-            { seriesId: "s1", role: "SERIES_MANAGER" },
-            { seriesId: "s3", role: "SERIES_SESSION_CREATOR" },
-          ],
-        })
-      )
-    ).toEqual({ error: "Unauthorised." });
-  });
-
-  it("lets a creator who keeps an Event Grant move it", async () => {
-    await makeEvent({ id: "e1", churchId: "c1", seriesId: "s1" });
-    expect(
-      await saveEvent(
-        "e1",
-        input({ seriesId: "s3" }),
-        as("u1", {
-          series: [{ seriesId: "s3", role: "SERIES_SESSION_CREATOR" }],
-          event: [{ eventId: "e1", role: "EVENT_EDITOR" }],
-        })
-      )
-    ).toEqual({});
-    expect(
-      await prisma.event.findUniqueOrThrow({ where: { id: "e1" } })
-    ).toMatchObject({ churchId: "c2", seriesId: "s3" });
-    expect(staleTags()).toEqual(
-      expect.arrayContaining([
-        "church-c1",
-        "church-c2",
-        "series-s1",
-        "series-s3",
-      ])
-    );
-  });
-
-  it("withdraws the old Series' new-session notice when a session leaves it", async () => {
-    await makeEvent({
-      id: "e1",
-      churchId: "c1",
-      seriesId: "s1",
-      datetime: START,
-    });
-    await follow("s1", "u1");
-    await prisma.notification.create({
-      data: {
-        userId: "u1",
-        type: "NEW_SERIES_SESSION",
-        title: "New Session Added",
-        body: "",
-        scheduledFor: new Date(),
-        dedupeKey: "s1:e1",
-      },
+    it("keeps a published Event in its Church, whatever Church was sent", async () => {
+      await makeEvent({ id: "e1", churchId: "c1" });
+      expect(
+        await saveEvent("e1", input({ churchId: "c2" }), bothChurches())
+      ).toEqual({});
+      expect(await home()).toEqual({ churchId: "c1", seriesId: null });
     });
 
-    expect(await saveEvent("e1", input({ seriesId: "s2" }), admin())).toEqual(
-      {}
-    );
-    expect(await pending("NEW_SERIES_SESSION")).toEqual([]);
+    it("keeps a session in its Series, whatever Series was sent", async () => {
+      await makeEvent({ id: "e1", churchId: "c1", seriesId: "s1" });
+      expect(
+        await saveEvent("e1", input({ seriesId: "s3" }), bothChurches())
+      ).toEqual({});
+      expect(await home()).toEqual({ churchId: "c1", seriesId: "s1" });
+    });
+
+    it("keeps a standalone Event standalone", async () => {
+      await makeEvent({ id: "e1", churchId: "c1", isDraft: true });
+      expect(
+        await saveEvent(
+          "e1",
+          input({ isDraft: true, seriesId: "s1" }),
+          bothChurches()
+        )
+      ).toEqual({});
+      expect(await home()).toEqual({ churchId: "c1", seriesId: null });
+    });
+
+    it("lets a draft change Church, giving the mover the Creator Grant there", async () => {
+      // Edits e1 only through the c1 Grant, so without the Creator Grant the
+      // move to c2 would lock them out.
+      await makeEvent({ id: "e1", churchId: "c1", isDraft: true });
+      expect(
+        await saveEvent(
+          "e1",
+          input({ isDraft: true, churchId: "c2" }),
+          as("u1", {
+            church: [
+              { churchId: "c1", role: "EVENT_MANAGER" },
+              { churchId: "c2", role: "EVENT_CREATOR" },
+            ],
+          })
+        )
+      ).toEqual({});
+      expect(await home()).toEqual({ churchId: "c2", seriesId: null });
+      expect(
+        await prisma.eventStaffAssignment.findMany({ where: { eventId: "e1" } })
+      ).toEqual([
+        expect.objectContaining({ userId: "u1", role: "EVENT_EDITOR" }),
+      ]);
+      expect(staleTags()).toEqual(
+        expect.arrayContaining(["church-c1", "church-c2"])
+      );
+    });
+
+    it("refuses to move a draft where the user may not create Events", async () => {
+      await makeEvent({ id: "e1", churchId: "c1", isDraft: true });
+      expect(
+        await saveEvent(
+          "e1",
+          input({ isDraft: true, churchId: "c2" }),
+          as("u1", { event: [{ eventId: "e1", role: "EVENT_EDITOR" }] })
+        )
+      ).toEqual({ error: "Unauthorised." });
+      expect(await home()).toEqual({ churchId: "c1", seriesId: null });
+    });
   });
 
   it("syncs questions for a trusted caller without a library owner", async () => {

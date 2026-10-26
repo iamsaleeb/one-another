@@ -30,8 +30,9 @@ import {
 } from "@/domains/events/validations/event";
 import { getAbility, getSessionUserId, eventSubject } from "@/domains/roles";
 import { EventDatetime } from "@/domains/events/components/event-datetime";
-import { hasHappened } from "@/domains/events/lib/happened";
-import { formatDateOnly, parseDateOfBirth } from "@/lib/datetime";
+import { hasHappened } from "@/domains/events/lib/timing";
+import { LiveBadge } from "@/domains/events/components/live-badge";
+import { getEventDays } from "@/lib/datetime";
 import { InfoField } from "@/components/ui/info-field";
 import { HeroBanner } from "@/components/ui/hero-banner";
 import { DeleteEventButton } from "./_components/delete-event-button";
@@ -125,6 +126,12 @@ export default async function EventDetailPage({ params }: Props) {
   ]);
 
   const { registration, camp } = parseEventMetadata(event.metadata);
+  // The days a camp open to partial attendance can be attended: its start to
+  // its end, like any Event's.
+  const campDays =
+    camp?.allowPartialRegistration && event.datetime && event.endDatetime
+      ? getEventDays(event.datetime, event.endDatetime)
+      : [];
   const myAttendeeMeta = myAttendance
     ? parseEventAttendeeMetadata(myAttendance.metadata)
     : undefined;
@@ -178,7 +185,10 @@ export default async function EventDetailPage({ params }: Props) {
         {/* Info card */}
         <div className="shadow-card flex flex-col gap-4 rounded-2xl bg-white p-5">
           <div className="flex items-start justify-between gap-2">
-            <h1 className="text-xl leading-snug font-bold">{event.title}</h1>
+            <div className="flex flex-col items-start gap-2">
+              <LiveBadge event={event} />
+              <h1 className="text-xl leading-snug font-bold">{event.title}</h1>
+            </div>
             {canEdit && (
               <div className="flex shrink-0 flex-col items-end gap-2">
                 <div className="flex items-center gap-2">
@@ -235,20 +245,15 @@ export default async function EventDetailPage({ params }: Props) {
             <InfoField icon={User} label="Host">
               {event.host ?? "TBD"}
             </InfoField>
-            <InfoField icon={Calendar} label={camp ? "Dates" : "Date & Time"}>
-              {camp ? (
-                <span>
-                  <EventDatetime datetime={event.datetime} />
-                  {camp.endDate && (
-                    <>
-                      {" "}
-                      &rarr; {formatDateOnly(parseDateOfBirth(camp.endDate))}
-                    </>
-                  )}
-                </span>
-              ) : (
+            <InfoField icon={Calendar} label="Date & Time">
+              <span className="flex flex-col">
                 <EventDatetime datetime={event.datetime} />
-              )}
+                {event.endDatetime && (
+                  <span>
+                    &rarr; <EventDatetime datetime={event.endDatetime} />
+                  </span>
+                )}
+              </span>
             </InfoField>
             <InfoField icon={MapPin} label="Location">
               {event.location ?? "TBD"}
@@ -279,13 +284,7 @@ export default async function EventDetailPage({ params }: Props) {
         </div>
 
         {/* Camp agenda */}
-        {camp && camp.agenda.length > 0 && (
-          <CampAgenda
-            agenda={camp.agenda}
-            startDate={event.datetime?.toISOString().slice(0, 10) ?? ""}
-            endDate={camp.endDate}
-          />
-        )}
+        {camp && camp.agenda.length > 0 && <CampAgenda agenda={camp.agenda} />}
       </div>
 
       <EventActionBar
@@ -303,8 +302,7 @@ export default async function EventDetailPage({ params }: Props) {
         isCancelled={!!event.cancelledAt}
         isDraft={event.isDraft}
         attendees={attendees}
-        camp={camp}
-        campStartDate={event.datetime?.toISOString().slice(0, 10) ?? ""}
+        campDays={campDays}
         questions={questions}
         existingResponses={myResponses}
         existingSelectedDays={myAttendeeMeta?.selectedDays}

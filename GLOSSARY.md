@@ -21,8 +21,12 @@ A published Event has happened once its start time has passed. It is then read-o
 _Avoid_: past event, expired, finished
 
 **Published**:
-An Event others can see and attend; until then it is a draft. Publishing is one-way: a published Event never goes back to draft and is never deleted. Cancelling is how it is called off. An Event can only be published with a start time still to come.
-_Avoid_: live, public
+An Event others can see and attend; until then it is a draft. Publishing is one-way: a published Event never goes back to draft and is never deleted. Cancelling is how it is called off. An Event can only be published with a start time still to come and an end after it. Every Event, camps included, has one start and one end; a camp's days run from its start to its end.
+_Avoid_: public
+
+**Live**:
+A published Event is Live from its start until its end, unless it has been cancelled. Lists show an Event until it ends, so a Live Event stays listed, marked Live in place of its Category.
+_Avoid_: ongoing, in progress, happening now
 
 **Series lifecycle**:
 Every change to a Series, and everything that must follow from it: its Events becoming standalone Events in the same Church when it is deleted, followers coming and going, and which pages go stale. A change and what it does to the Series' Events commit together or not at all.

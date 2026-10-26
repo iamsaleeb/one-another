@@ -8,6 +8,9 @@ export const createEventSchema = z.object({
   date: z.iso.date(),
   time: z.iso.time(),
   datetimeISO: z.iso.datetime().optional(),
+  endDate: z.iso.date(),
+  endTime: z.iso.time(),
+  endDatetimeISO: z.iso.datetime().optional(),
   location: z.string().min(1, "Location is required"),
   host: z.string().min(1, "Host is required"),
   tag: z.string().min(1, "Category is required"),
@@ -27,8 +30,8 @@ export const createEventSchema = z.object({
     .optional(),
   isDraft: z.boolean().optional(),
   photoUrl: z.url().optional(),
-  // Camp-specific fields (only used when tag === "Camp")
-  campEndDate: z.iso.date().optional(),
+  // Camp-specific fields (only used when tag === "Camp"). A camp's days run
+  // from its start to its end, like any Event's.
   campAllowPartialRegistration: z.boolean().optional(),
   campAgenda: z
     .array(
@@ -49,6 +52,8 @@ export type CreateEventInput = z.infer<typeof createEventSchema>;
 export const saveDraftSchema = createEventSchema.extend({
   date: z.string().optional().default(""),
   time: z.string().optional().default(""),
+  endDate: z.string().optional().default(""),
+  endTime: z.string().optional().default(""),
   location: z.string().optional().default(""),
   host: z.string().optional().default(""),
   description: z.string().optional().default(""),
@@ -100,7 +105,6 @@ export interface EventMetadata {
     collectNotes: boolean;
   };
   camp?: {
-    endDate: string;
     allowPartialRegistration: boolean;
     agenda: CampAgendaItem[];
   };
@@ -127,7 +131,6 @@ const eventMetadataSchema = z
       .catch(makeRegistrationDefault),
     camp: z
       .object({
-        endDate: z.string(),
         allowPartialRegistration: z.boolean().default(false),
         agenda: z
           .array(

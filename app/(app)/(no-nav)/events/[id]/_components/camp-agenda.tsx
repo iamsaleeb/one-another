@@ -2,8 +2,6 @@ import type { CampAgendaItem } from "@/domains/events/validations/event";
 
 interface CampAgendaProps {
   agenda: CampAgendaItem[];
-  startDate: string;
-  endDate: string;
 }
 
 function formatCampDate(isoDate: string): string {
@@ -24,9 +22,7 @@ function formatAgendaTime(time?: string): string | null {
   return `${hour}:${String(m).padStart(2, "0")} ${period}`;
 }
 
-export function CampAgenda({ agenda, endDate }: CampAgendaProps) {
-  if (agenda.length === 0 && !endDate) return null;
-
+export function CampAgenda({ agenda }: CampAgendaProps) {
   // Group items by date
   const grouped = new Map<string, CampAgendaItem[]>();
   const sorted = [...agenda].sort((a, b) => a.date.localeCompare(b.date));

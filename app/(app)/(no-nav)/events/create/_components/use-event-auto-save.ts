@@ -4,7 +4,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { UseFormReturn } from "react-hook-form";
 import { toast } from "sonner";
 import { saveDraftAction } from "@/domains/events/actions/crud";
-import { localInputsToUtcDate } from "@/lib/datetime";
+import { withInstants } from "./with-instants";
 import type { CreateEventInput } from "@/domains/events/validations/event";
 
 export type AutoSaveStatus = "idle" | "saving" | "saved";
@@ -92,16 +92,7 @@ export function useEventAutoSave({
       if (!draftIdRef.current && !data.title && !data.description && !data.tag)
         return;
 
-      const payload =
-        data.date && data.time
-          ? {
-              ...data,
-              datetimeISO: localInputsToUtcDate(
-                data.date,
-                data.time
-              ).toISOString(),
-            }
-          : data;
+      const payload = withInstants(data);
 
       hasPendingRef.current = false;
       autoSaveInFlightRef.current = true;

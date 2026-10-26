@@ -11,10 +11,10 @@ describe("public Event visibility", () => {
     expect(isPubliclyVisible({ isDraft: true })).toBe(false);
   });
 
-  it("upcoming public Events start now or later", () => {
+  it("upcoming public Events have not ended yet, so Live ones stay listed", () => {
     const before = Date.now();
     const where = upcomingPublicEvents();
     expect(where.isDraft).toBe(false);
-    expect(where.datetime.gte.getTime()).toBeGreaterThanOrEqual(before);
+    expect(where.endDatetime.gt.getTime()).toBeGreaterThanOrEqual(before);
   });
 });

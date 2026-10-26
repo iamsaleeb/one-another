@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useForm, useWatch, Controller, type Path } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Check, Loader2 } from "lucide-react";
@@ -26,13 +26,12 @@ import {
 import {
   registrationFormSchema,
   type RegistrationFormValues,
-  type EventMetadata,
 } from "@/domains/events/validations/event";
 import {
   QuestionType,
   type Question,
 } from "@/domains/events/questions/validations";
-import { getCampDays, formatDayLabel } from "@/lib/datetime";
+import { formatDayLabel } from "@/lib/datetime";
 import { QuestionsForm } from "./questions-form";
 
 interface RegistrationDrawerProps {
@@ -44,8 +43,8 @@ interface RegistrationDrawerProps {
   collectNotes: boolean;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  camp?: EventMetadata["camp"];
-  campStartDate?: string;
+  // The days a camp open to partial attendance can be attended; empty otherwise.
+  campDays: string[];
   questions?: Question[];
   existingResponses?: Record<
     string,
@@ -117,25 +116,15 @@ export function RegistrationDrawer({
   collectNotes,
   open,
   onOpenChange,
-  camp,
-  campStartDate,
+  campDays,
   questions,
   existingResponses,
   existingSelectedDays,
 }: RegistrationDrawerProps) {
   const safeQuestions = questions ?? [];
 
-  const showPartialDays =
-    camp?.allowPartialRegistration === true &&
-    !!campStartDate &&
-    !!camp.endDate;
-  const allDays = useMemo(
-    () =>
-      showPartialDays && campStartDate && camp?.endDate
-        ? getCampDays(campStartDate, camp.endDate)
-        : [],
-    [showPartialDays, campStartDate, camp]
-  );
+  const showPartialDays = campDays.length > 0;
+  const allDays = campDays;
 
   const hasQuestions = safeQuestions.length > 0;
   const hasOptionalFields = collectPhone || collectNotes || showPartialDays;

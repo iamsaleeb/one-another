@@ -42,6 +42,8 @@ export function StepReview({
     tag,
     date,
     time,
+    endDate,
+    endTime,
     location,
     host,
     churchId,
@@ -51,7 +53,6 @@ export function StepReview({
     capacity,
     collectPhone,
     collectNotes,
-    campEndDate,
     campAllowPartialRegistration,
     campAgenda,
   } = useWatch({ control });
@@ -59,10 +60,10 @@ export function StepReview({
   const isCamp = tag === "Camp";
   const isDisabled = isPublishing || isSaving;
 
-  const formatDatetime = () => {
-    if (!date) return "Not set";
-    if (!time) return date;
-    return `${date} at ${time}`;
+  const formatDatetime = (day?: string, at?: string) => {
+    if (!day) return "Not set";
+    if (!at) return day;
+    return `${day} at ${at}`;
   };
 
   return (
@@ -95,7 +96,8 @@ export function StepReview({
           When &amp; Where
         </p>
         <div className="flex flex-col gap-1">
-          <p className="text-sm">{formatDatetime()}</p>
+          <p className="text-sm">Starts {formatDatetime(date, time)}</p>
+          <p className="text-sm">Ends {formatDatetime(endDate, endTime)}</p>
           <p className="text-muted-foreground text-sm">
             {location || "No location"}
           </p>
@@ -178,12 +180,6 @@ export function StepReview({
               Camp
             </p>
             <div className="flex flex-col gap-1">
-              <p className="text-sm">
-                End date:{" "}
-                <span className="text-muted-foreground">
-                  {campEndDate || "Not set"}
-                </span>
-              </p>
               <p className="text-sm">
                 Allow partial attendance:{" "}
                 <span className="text-muted-foreground">

@@ -3,6 +3,7 @@ import "server-only";
 import { updateTag } from "next/cache";
 import { NotificationType, type Prisma } from "@prisma/client";
 import { prisma, type Db } from "@/lib/db";
+import { getEventDays } from "@/lib/datetime";
 import {
   eventSubject,
   type Action,
@@ -20,7 +21,7 @@ import {
   queueNotificationForUsers,
   syncEventReminders,
 } from "@/domains/notifications/queue";
-import { hasHappened } from "./lib/happened";
+import { hasHappened } from "./lib/timing";
 import { isPubliclyVisible } from "./lib/visibility";
 import { syncEventQuestions } from "./questions/dal";
 import { checkAnswers, saveAnswers } from "./questions/responses";
@@ -53,6 +54,7 @@ function failed<T extends object>(
 const TRANSACTION = { timeout: 15_000 };
 
 const IN_THE_PAST = "Date must be in the future";
+const END_BEFORE_START = "End must be after the start";
 const HAPPENED = "This event has already happened.";
 const PUBLISHED_DRAFT = "A published event cannot go back to draft.";
 const PUBLISHED_DELETE = "A published event cannot be deleted.";
@@ -73,10 +75,14 @@ interface Normalised extends Home {
   >;
 }
 
-function parseDatetime(input: CreateEventInput): Date | null | "invalid" {
-  const raw =
-    input.datetimeISO ||
-    (input.date && input.time ? `${input.date}T${input.time}` : null);
+// The wizard sends both the browser's ISO instant and the raw inputs; the
+// instant wins, since only the browser knows the user's timezone.
+function parseDatetime(
+  iso: string | undefined,
+  date: string | undefined,
+  time: string | undefined
+): Date | null | "invalid" {
+  const raw = iso || (date && time ? `${date}T${time}` : null);
   if (!raw) return null;
   const datetime = new Date(raw);
   return Number.isNaN(datetime.getTime()) ? "invalid" : datetime;
@@ -90,9 +96,16 @@ async function normalise(
   input: CreateEventInput,
   isDraft: boolean
 ): Promise<Normalised | LifecycleError> {
-  const datetime = parseDatetime(input);
+  const datetime = parseDatetime(input.datetimeISO, input.date, input.time);
   if (datetime === "invalid")
     return { fieldErrors: { date: ["Invalid date or time"] } };
+  const endDatetime = parseDatetime(
+    input.endDatetimeISO,
+    input.endDate,
+    input.endTime
+  );
+  if (endDatetime === "invalid")
+    return { fieldErrors: { endDate: ["Invalid end date or time"] } };
 
   // An Event in a Series always lives in that Series' Church.
   const seriesId = input.seriesId || null;
@@ -114,13 +127,11 @@ async function normalise(
     // Event is always still to come.
     if (datetime && datetime <= new Date())
       return { fieldErrors: { date: [IN_THE_PAST] } };
+    if (datetime && endDatetime && endDatetime <= datetime)
+      return { fieldErrors: { endDate: [END_BEFORE_START] } };
   }
 
   const isCamp = input.tag === "Camp";
-  if (isCamp && !input.campEndDate && !isDraft)
-    return {
-      fieldErrors: { campEndDate: ["End date is required for camp events"] },
-    };
 
   const registers = input.requiresRegistration ?? false;
   return {
@@ -129,6 +140,7 @@ async function normalise(
     fields: {
       title: input.title || "",
       datetime,
+      endDatetime,
       location: input.location || null,
       host: input.host || null,
       tag: input.tag || "",
@@ -140,10 +152,9 @@ async function normalise(
           collectPhone: registers ? (input.collectPhone ?? false) : false,
           collectNotes: registers ? (input.collectNotes ?? false) : false,
         },
-        ...(isCamp && input.campEndDate
+        ...(isCamp
           ? {
               camp: {
-                endDate: input.campEndDate,
                 allowPartialRegistration:
                   input.campAllowPartialRegistration ?? false,
                 agenda: input.campAgenda ?? [],
@@ -588,18 +599,19 @@ async function lockEvent(tx: Db, id: string) {
 // A camp open to partial registration keeps only the chosen days inside it.
 function campDays(
   datetime: Date | null,
+  endDatetime: Date | null,
   camp: EventMetadata["camp"],
   selected: string[] = []
 ): { error: string } | { days?: string[] } {
-  if (!camp?.allowPartialRegistration || !camp.endDate) return {};
-  if (!datetime) {
+  if (!camp?.allowPartialRegistration) return {};
+  if (!datetime || !endDatetime) {
     return {
       error:
-        "This camp event is missing a start date, so partial registration is unavailable.",
+        "This camp event is missing its dates, so partial registration is unavailable.",
     };
   }
-  const start = datetime.toISOString().slice(0, 10);
-  const days = selected.filter((d) => d >= start && d <= camp.endDate);
+  const open = new Set(getEventDays(datetime, endDatetime));
+  const days = selected.filter((d) => open.has(d));
   if (days.length === 0) {
     return { error: "Please select at least one valid day to attend." };
   }
@@ -640,6 +652,7 @@ export async function attendEvent(
           isDraft: true,
           cancelledAt: true,
           datetime: true,
+          endDatetime: true,
           requiresRegistration: true,
           metadata: true,
         },
@@ -662,6 +675,7 @@ export async function attendEvent(
         const meta = parseEventMetadata(event.metadata);
         const camp = campDays(
           event.datetime,
+          event.endDatetime,
           meta.camp,
           registration.selectedDays
         );

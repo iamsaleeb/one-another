@@ -211,7 +211,7 @@ describe("getChurchById", () => {
         address: true,
         serviceTimes: true,
         events: {
-          where: { datetime: { gte: expect.any(Date) }, isDraft: false },
+          where: { endDatetime: { gt: expect.any(Date) }, isDraft: false },
           orderBy: { datetime: "asc" },
           take: 20,
         },
@@ -222,7 +222,7 @@ describe("getChurchById", () => {
               select: {
                 events: {
                   where: {
-                    datetime: { gte: expect.any(Date) },
+                    endDatetime: { gt: expect.any(Date) },
                     isDraft: false,
                   },
                 },
@@ -290,7 +290,7 @@ describe("searchEventsAndChurches", () => {
     expect(mockEventFindMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: expect.objectContaining({
-          datetime: expect.objectContaining({ gte: expect.any(Date) }),
+          endDatetime: expect.objectContaining({ gt: expect.any(Date) }),
           OR: [
             { title: { contains: "worship", mode: "insensitive" } },
             { location: { contains: "worship", mode: "insensitive" } },
@@ -387,7 +387,7 @@ describe("getSeries", () => {
         _count: {
           select: {
             events: {
-              where: { datetime: { gte: expect.any(Date) }, isDraft: false },
+              where: { endDatetime: { gt: expect.any(Date) }, isDraft: false },
             },
           },
         },
@@ -418,7 +418,7 @@ describe("getSeriesById", () => {
       include: {
         church: { select: { id: true, name: true } },
         events: {
-          where: { datetime: { gte: expect.any(Date) }, isDraft: false },
+          where: { endDatetime: { gt: expect.any(Date) }, isDraft: false },
           orderBy: { datetime: "asc" },
         },
         _count: { select: { followers: true } },
@@ -482,7 +482,7 @@ describe("getSeriesNotByCreator", () => {
         _count: {
           select: {
             events: {
-              where: { datetime: { gte: expect.any(Date) }, isDraft: false },
+              where: { endDatetime: { gt: expect.any(Date) }, isDraft: false },
             },
           },
         },
@@ -569,7 +569,7 @@ describe("getUserFollowedSeries", () => {
         _count: {
           select: {
             events: {
-              where: { datetime: { gte: expect.any(Date) }, isDraft: false },
+              where: { endDatetime: { gt: expect.any(Date) }, isDraft: false },
             },
           },
         },
@@ -700,7 +700,7 @@ describe("getFollowedChurchEventsPaged", () => {
         where: expect.objectContaining({
           church: { followers: { some: { userId: "user-1" } } },
           isDraft: false,
-          datetime: { gte: expect.any(Date) },
+          endDatetime: { gt: expect.any(Date) },
         }),
         orderBy: { datetime: "asc" },
         take: 11,
@@ -790,7 +790,7 @@ describe("getOtherChurchEventsPaged", () => {
         where: expect.objectContaining({
           church: { followers: { none: { userId: "user-1" } } },
           isDraft: false,
-          datetime: { gte: expect.any(Date) },
+          endDatetime: { gt: expect.any(Date) },
         }),
       })
     );
@@ -807,7 +807,7 @@ describe("getOtherChurchEventsPaged", () => {
       expect.objectContaining({
         where: expect.objectContaining({
           isDraft: false,
-          datetime: { gte: expect.any(Date) },
+          endDatetime: { gt: expect.any(Date) },
         }),
       })
     );

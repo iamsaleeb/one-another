@@ -8,10 +8,11 @@ export const publishedEvent = {
   isDraft: false,
 } satisfies Prisma.EventWhereInput;
 
-// What public lists show: published Events that have not started yet.
+// What public lists show: published Events that have not ended yet, so a Live
+// Event stays listed until it is over.
 export function upcomingPublicEvents() {
   return {
-    datetime: { gte: new Date() },
+    endDatetime: { gt: new Date() },
     ...publishedEvent,
   } satisfies Prisma.EventWhereInput;
 }

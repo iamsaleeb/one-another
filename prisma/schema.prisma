@@ -152,6 +152,7 @@ model Series {
 model Event {
   id                   String                 @id @default(cuid())
   datetime             DateTime?
+  endDatetime          DateTime?              @map("end_datetime")
   title                String
   location             String?
   host                 String?
@@ -179,6 +180,7 @@ model Event {
   accessRequests       AccessRequest[]
 
   @@index([datetime, isDraft])
+  @@index([endDatetime, isDraft])
   @@index([churchId])
   @@index([seriesId])
   @@index([createdById])

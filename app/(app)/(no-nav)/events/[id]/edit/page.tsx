@@ -12,7 +12,7 @@ import {
   getSessionUserId,
 } from "@/domains/roles";
 import { parseEventMetadata } from "@/domains/events/validations/event";
-import { hasHappened } from "@/domains/events/lib/happened";
+import { hasHappened } from "@/domains/events/lib/timing";
 import { PageHeader } from "@/components/ui/page-header";
 import { EventWizard } from "@/app/(app)/(no-nav)/events/create/_components/event-wizard";
 
@@ -76,6 +76,7 @@ export default async function EditEventPage({ params }: Props) {
           defaultValues={{
             title: event.title,
             datetimeISO,
+            endDatetimeISO: event.endDatetime?.toISOString() ?? "",
             location: event.location ?? "",
             host: event.host ?? "",
             tag: event.tag,
@@ -89,7 +90,6 @@ export default async function EditEventPage({ params }: Props) {
             price: event.price ?? undefined,
             isDraft: event.isDraft,
             photoUrl: event.photoUrl ?? undefined,
-            campEndDate: camp?.endDate ?? undefined,
             campAllowPartialRegistration:
               camp?.allowPartialRegistration ?? false,
             campAgenda: camp?.agenda ?? [],

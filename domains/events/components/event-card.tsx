@@ -2,12 +2,14 @@ import Link from "next/link";
 import Image from "next/image";
 import { Card, CardContent } from "@/components/ui/card";
 import { EventDatetime } from "./event-datetime";
+import { LiveBadge } from "./live-badge";
 import { TAG_COLORS, type Category } from "@/lib/types/search";
 
 interface EventCardProps {
   event: {
     id: string;
     datetime: Date | null;
+    endDatetime: Date | null;
     title: string;
     churchName: string;
     host: string | null;
@@ -59,19 +61,28 @@ export function EventCard({
                     Cancelled
                   </span>
                 ) : (
-                  (() => {
-                    const colors = TAG_COLORS[event.tag as Category] ?? {
-                      bg: "bg-primary/10",
-                      text: "text-primary",
-                    };
-                    return (
-                      <span
-                        className={`rounded-full ${colors.bg} px-2.5 py-1 text-xs font-medium ${colors.text} whitespace-nowrap`}
-                      >
-                        {event.badge}
-                      </span>
-                    );
-                  })()
+                  // A Live Event shows "Live" in place of its Category.
+                  <LiveBadge
+                    event={{
+                      isDraft: false,
+                      datetime: event.datetime,
+                      endDatetime: event.endDatetime,
+                    }}
+                  >
+                    {(() => {
+                      const colors = TAG_COLORS[event.tag as Category] ?? {
+                        bg: "bg-primary/10",
+                        text: "text-primary",
+                      };
+                      return (
+                        <span
+                          className={`rounded-full ${colors.bg} px-2.5 py-1 text-xs font-medium ${colors.text} whitespace-nowrap`}
+                        >
+                          {event.badge}
+                        </span>
+                      );
+                    })()}
+                  </LiveBadge>
                 )}
               </div>
               <p className="text-lg leading-snug font-bold">{event.title}</p>

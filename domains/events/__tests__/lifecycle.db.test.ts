@@ -41,13 +41,18 @@ const staleTags = () => (updateTag as jest.Mock).mock.calls.map((c) => c[0]);
 const START = new Date("2030-06-01T10:00:00.000Z");
 const REMINDER_AT = new Date("2030-06-01T08:00:00.000Z"); // default 2h before
 
-// A complete Event, as the wizard sends it.
+// A complete Event, as the wizard sends it. Moving the start moves the end
+// with it, two hours later, unless the end is given.
 function input(over: Partial<CreateEventInput> = {}): CreateEventInput {
+  const start = over.datetimeISO ? new Date(over.datetimeISO) : START;
   return {
     title: "Sunday Worship",
     date: "2030-06-01",
     time: "10:00",
     datetimeISO: START.toISOString(),
+    endDate: "2030-06-01",
+    endTime: "12:00",
+    endDatetimeISO: new Date(start.getTime() + 2 * 3_600_000).toISOString(),
     location: "Main Hall",
     host: "Pastor John",
     tag: "Worship",
@@ -524,19 +529,62 @@ describe("publishing needs a start time still to come", () => {
   });
 });
 
+describe("an Event's end", () => {
+  const stored = () => prisma.event.findUniqueOrThrow({ where: { id: "e1" } });
+
+  it("is stored with its start", async () => {
+    await makeEvent({ id: "e1", churchId: "c1", isDraft: true });
+    await saveEvent("e1", input({ isDraft: false }), admin());
+    expect(await stored()).toMatchObject({
+      datetime: START,
+      endDatetime: new Date("2030-06-01T12:00:00.000Z"),
+    });
+  });
+
+  it("is needed to publish", async () => {
+    await makeEvent({ id: "e1", churchId: "c1", isDraft: true });
+    expect(
+      await saveEvent(
+        "e1",
+        input({ isDraft: false, endDate: "", endTime: "", endDatetimeISO: "" }),
+        admin()
+      )
+    ).toHaveProperty("fieldErrors.endDate");
+  });
+
+  it("must come after the start to publish", async () => {
+    await makeEvent({ id: "e1", churchId: "c1", isDraft: true });
+    expect(
+      await saveEvent(
+        "e1",
+        input({ isDraft: false, endDatetimeISO: START.toISOString() }),
+        admin()
+      )
+    ).toEqual({ fieldErrors: { endDate: ["End must be after the start"] } });
+    expect(await stored()).toMatchObject({ isDraft: true });
+  });
+
+  it("gives a camp its days, with no separate end date", async () => {
+    await makeEvent({ id: "e1", churchId: "c1", isDraft: true });
+    await saveEvent(
+      "e1",
+      input({ tag: "Camp", campAllowPartialRegistration: true }),
+      admin()
+    );
+    expect((await stored()).metadata).toMatchObject({
+      camp: { allowPartialRegistration: true, agenda: [] },
+    });
+    expect((await stored()).metadata).not.toHaveProperty("camp.endDate");
+  });
+});
+
 describe("Category", () => {
   const category = async () =>
     (await prisma.event.findUniqueOrThrow({ where: { id: "e1" } })).tag;
 
   it("is fixed once published, whatever Category was sent", async () => {
     await makeEvent({ id: "e1", churchId: "c1", datetime: START });
-    expect(
-      await saveEvent(
-        "e1",
-        input({ tag: "Camp", campEndDate: "2030-06-03" }),
-        admin()
-      )
-    ).toEqual({});
+    expect(await saveEvent("e1", input({ tag: "Camp" }), admin())).toEqual({});
     expect(await category()).toBe("Worship");
     expect(
       await prisma.event.findUniqueOrThrow({ where: { id: "e1" } })

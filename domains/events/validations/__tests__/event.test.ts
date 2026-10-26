@@ -8,6 +8,8 @@ const validInput = {
   title: "Sunday Worship",
   date: "2026-04-06",
   time: "09:00",
+  endDate: "2026-04-06",
+  endTime: "11:00",
   location: "Main Hall",
   host: "Pastor John",
   tag: "Youth Meeting",
@@ -229,13 +231,11 @@ describe("parseEventMetadata", () => {
         collectNotes: false,
       },
       camp: {
-        endDate: "2026-08-10",
         allowPartialRegistration: true,
         agenda: [{ id: "1", date: "2026-08-09", title: "Morning session" }],
       },
     });
     expect(result.camp).toEqual({
-      endDate: "2026-08-10",
       allowPartialRegistration: true,
       agenda: [{ id: "1", date: "2026-08-09", title: "Morning session" }],
     });
@@ -248,7 +248,7 @@ describe("parseEventMetadata", () => {
         collectPhone: false,
         collectNotes: false,
       },
-      camp: { endDate: "2026-08-10", agenda: [] },
+      camp: { agenda: [] },
     });
     expect(result.camp?.allowPartialRegistration).toBe(false);
   });
@@ -272,7 +272,7 @@ describe("parseEventMetadata", () => {
         collectPhone: false,
         collectNotes: false,
       },
-      camp: { endDate: "2026-08-10", agenda: "not-an-array" },
+      camp: { agenda: "not-an-array" },
     });
     expect(result.camp).toBeDefined();
     expect(result.camp?.agenda).toEqual([]);

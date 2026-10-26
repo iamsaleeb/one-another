@@ -8,7 +8,6 @@ import { AttendButton } from "./attend-button";
 import { RegistrationDrawer } from "./registration-drawer";
 import { AttendeesDrawer } from "./attendees-drawer";
 import type { getEventAttendees } from "@/domains/events/actions/data";
-import type { EventMetadata } from "@/domains/events/validations/event";
 import type { Question } from "@/domains/events/questions/validations";
 
 interface EventActionBarProps {
@@ -26,8 +25,8 @@ interface EventActionBarProps {
   isDraft?: boolean;
   isAuthenticated: boolean;
   attendees?: Awaited<ReturnType<typeof getEventAttendees>>;
-  camp?: EventMetadata["camp"];
-  campStartDate?: string;
+  // The days a camp open to partial attendance can be attended; empty otherwise.
+  campDays: string[];
   questions?: Question[];
   existingResponses?: Record<
     string,
@@ -51,8 +50,7 @@ export function EventActionBar({
   isDraft,
   isAuthenticated,
   attendees,
-  camp,
-  campStartDate,
+  campDays,
   questions,
   existingResponses,
   existingSelectedDays,
@@ -156,8 +154,7 @@ export function EventActionBar({
           collectNotes={collectNotes}
           open={drawerOpen}
           onOpenChange={setDrawerOpen}
-          camp={camp}
-          campStartDate={campStartDate}
+          campDays={campDays}
           questions={questions}
           existingResponses={existingResponses}
           existingSelectedDays={existingSelectedDays}
@@ -173,8 +170,7 @@ export function EventActionBar({
           open={attendeesDrawerOpen}
           onOpenChange={setAttendeesDrawerOpen}
           questionCount={requiresRegistration ? (questions?.length ?? 0) : 0}
-          camp={camp}
-          campStartDate={campStartDate}
+          campDays={campDays}
         />
       )}
     </>

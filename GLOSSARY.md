@@ -17,8 +17,12 @@ The kind of Event, such as Worship or Camp; stored as its `tag`. Fixed once the 
 _Avoid_: type, tag (outside code)
 
 **Happened**:
-A published Event has happened once its start time has passed. It is then read-only: it can no longer be edited, cancelled, un-cancelled or unpublished, only deleted. An Event can only be published with a start time still to come.
+A published Event has happened once its start time has passed. It is then read-only: it can no longer be edited, cancelled or un-cancelled.
 _Avoid_: past event, expired, finished
+
+**Published**:
+An Event others can see and attend; until then it is a draft. Publishing is one-way: a published Event never goes back to draft and is never deleted. Cancelling is how it is called off. An Event can only be published with a start time still to come.
+_Avoid_: live, public
 
 **Series lifecycle**:
 Every change to a Series, and everything that must follow from it: its Events becoming standalone Events in the same Church when it is deleted, followers coming and going, and which pages go stale. A change and what it does to the Series' Events commit together or not at all.

@@ -12,7 +12,7 @@ interface StepReviewProps {
   onSaveDraft: () => void;
   isPublishing: boolean;
   isSaving: boolean;
-  isDraftEvent?: boolean;
+  published?: boolean;
   churches: Array<{ id: string; name: string }>;
 }
 
@@ -21,7 +21,7 @@ export function StepReview({
   onSaveDraft,
   isPublishing,
   isSaving,
-  isDraftEvent,
+  published,
   churches,
 }: StepReviewProps) {
   const { control } = useFormContext<CreateEventInput>();
@@ -197,21 +197,26 @@ export function StepReview({
           onClick={onPublish}
           disabled={isDisabled}
         >
-          {isPublishing ? "Publishing..." : "Publish Event"}
+          {published
+            ? isPublishing
+              ? "Saving..."
+              : "Save Changes"
+            : isPublishing
+              ? "Publishing..."
+              : "Publish Event"}
         </Button>
-        <Button
-          type="button"
-          variant="outline"
-          className="w-full"
-          onClick={onSaveDraft}
-          disabled={isDisabled}
-        >
-          {isSaving
-            ? "Saving..."
-            : isDraftEvent
-              ? "Save Draft"
-              : "Save as Draft"}
-        </Button>
+        {/* A published Event never goes back to draft. */}
+        {!published && (
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full"
+            onClick={onSaveDraft}
+            disabled={isDisabled}
+          >
+            {isSaving ? "Saving..." : "Save Draft"}
+          </Button>
+        )}
       </div>
     </div>
   );

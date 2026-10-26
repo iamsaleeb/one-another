@@ -54,6 +54,8 @@ const TRANSACTION = { timeout: 15_000 };
 
 const IN_THE_PAST = "Date must be in the future";
 const HAPPENED = "This event has already happened.";
+const PUBLISHED_DRAFT = "A published event cannot go back to draft.";
+const PUBLISHED_DELETE = "A published event cannot be deleted.";
 
 // ---------------------------------------------------------------------------
 // Input: one normaliser for create and save
@@ -263,12 +265,10 @@ async function syncReminders(
 
 const cancelledKey = (eventId: string) => `cancelled:${eventId}`;
 
-// A deleted Event has no page to link to, so its notice carries no eventId.
 async function notifyAttendeesCancelled(
   db: Db,
   eventId: string,
-  title: string,
-  { link }: { link: boolean }
+  title: string
 ) {
   await queueNotificationForUsers(
     await attendeeIds(db, eventId),
@@ -276,9 +276,7 @@ async function notifyAttendeesCancelled(
       type: NotificationType.EVENT_CANCELLED,
       title: "Event Cancelled",
       body: `${title} has been cancelled`,
-      data: link
-        ? { type: "event_cancelled", eventId }
-        : { type: "event_cancelled" },
+      data: { type: "event_cancelled", eventId },
       dedupeKey: cancelledKey(eventId),
     },
     db
@@ -366,10 +364,10 @@ export async function createEvent(
   return { id: result.id };
 }
 
-// Every save of an Event's form, auto-save included. Publishing and
-// unpublishing are changes of `isDraft` within a save (the wizard publishes
-// by saving), so they are detected here rather than called separately. An
-// omitted isDraft keeps the current state.
+// Every save of an Event's form, auto-save included. Publishing is a change
+// of `isDraft` within a save (the wizard publishes by saving), so it is
+// detected here rather than called separately. It is one-way: a published
+// Event never goes back to draft. An omitted isDraft keeps the current state.
 export async function saveEvent(
   id: string,
   input: CreateEventInput,
@@ -390,6 +388,7 @@ export async function saveEvent(
 
       // An Event that has happened is read-only (see GLOSSARY.md).
       if (hasHappened(existing)) return { error: HAPPENED };
+      if (!existing.isDraft && input.isDraft) return { error: PUBLISHED_DRAFT };
 
       // An Event's Series is fixed when it is created, and its Church and
       // Category once it has been published (see Owning Church and Category
@@ -417,9 +416,8 @@ export async function saveEvent(
         return { error: "Unauthorised." };
 
       const publishing = existing.isDraft && !isDraft;
-      const unpublishing = !existing.isDraft && isDraft;
       if (
-        (publishing || unpublishing) &&
+        publishing &&
         !ability.can(
           "publish",
           eventSubject({
@@ -442,10 +440,6 @@ export async function saveEvent(
 
       await syncReminders(tx, id);
 
-      // A session going back to draft must not leave behind a pending
-      // "new session" notice for its Series' followers.
-      if (seriesId && unpublishing)
-        await withdrawSeriesSession(tx, seriesId, id);
       // A session that just became public is news to its Series' followers.
       if (publishing && seriesId)
         await notifySeriesFollowers(tx, seriesId, n.fields.title, id);
@@ -454,7 +448,7 @@ export async function saveEvent(
         id,
         churchIds: [existing.churchId, churchId],
         seriesIds: [seriesId],
-        listsChanged: publishing || unpublishing,
+        listsChanged: publishing,
       };
     },
     TRANSACTION
@@ -491,7 +485,7 @@ export async function cancelEvent(
       await syncReminders(tx, id);
       // Uncancelling does not send it again: "new session" would be stale.
       if (event.seriesId) await withdrawSeriesSession(tx, event.seriesId, id);
-      await notifyAttendeesCancelled(tx, id, event.title, { link: true });
+      await notifyAttendeesCancelled(tx, id, event.title);
 
       return { id, churchIds: [event.churchId], seriesIds: [event.seriesId] };
     },
@@ -548,31 +542,16 @@ export async function deleteEvent(
       const event = await findForAction(tx, ability, "delete", id, {
         churchId: true,
         seriesId: true,
-        title: true,
         isDraft: true,
-        cancelledAt: true,
-        datetime: true,
       });
       if ("error" in event) return event;
+      // Only a draft is deleted (see Published in GLOSSARY.md). No one can
+      // have attended it or heard about it, so nothing follows.
+      if (!event.isDraft) return { error: PUBLISHED_DELETE };
 
-      // Attendees of an Event still to come would otherwise just turn up.
-      const upcoming =
-        !event.isDraft &&
-        !event.cancelledAt &&
-        !!event.datetime &&
-        event.datetime > new Date();
-      if (upcoming)
-        await notifyAttendeesCancelled(tx, id, event.title, { link: false });
-      if (event.seriesId) await withdrawSeriesSession(tx, event.seriesId, id);
       await tx.event.delete({ where: scopedTo(ability, "delete", id) });
-      await syncReminders(tx, id);
 
-      return {
-        id,
-        churchIds: [event.churchId],
-        seriesIds: [event.seriesId],
-        listsChanged: true,
-      };
+      return { id, churchIds: [event.churchId], seriesIds: [event.seriesId] };
     },
     TRANSACTION
   );

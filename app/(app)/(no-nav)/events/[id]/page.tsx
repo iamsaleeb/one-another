@@ -94,7 +94,8 @@ export default async function EventDetailPage({ params }: Props) {
 
   const subject = eventSubject(event);
   const canEdit = ability.can("update", subject);
-  const canDelete = ability.can("delete", subject);
+  // Only a draft is deleted; a published Event is cancelled instead.
+  const canDelete = event.isDraft && ability.can("delete", subject);
   const canViewAttendees = ability.can("view_attendees", subject);
   const canManageStaff = ability.can("manage_staff", subject);
 

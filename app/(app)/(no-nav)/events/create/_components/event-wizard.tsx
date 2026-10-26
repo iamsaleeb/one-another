@@ -120,8 +120,10 @@ export function EventWizard({
       isBusy: isSaving || isPublishing,
     });
 
+  // Editing an Event that is already published: it stays published and keeps
+  // its Category.
+  const published = defaultValues?.isDraft === false;
   const tag = useWatch({ control: form.control, name: "tag" });
-  const isDraft = useWatch({ control: form.control, name: "isDraft" });
   const requiresRegistration = useWatch({
     control: form.control,
     name: "requiresRegistration",
@@ -281,7 +283,7 @@ export function EventWizard({
         return;
       }
       markPublished();
-      toast.success("Event published!");
+      toast.success(published ? "Changes saved" : "Event published!");
       router.push(`/events/${id}`);
     } finally {
       setIsPublishing(false);
@@ -299,7 +301,7 @@ export function EventWizard({
             churches={churches}
             series={series}
             fixedChurch={fixedChurch}
-            categoryLocked={defaultValues?.isDraft === false}
+            categoryLocked={published}
           />
         );
       case "whenWhere":
@@ -322,7 +324,7 @@ export function EventWizard({
             onSaveDraft={handleSaveDraft}
             isPublishing={isPublishing}
             isSaving={isSaving}
-            isDraftEvent={!!isDraft}
+            published={published}
             churches={churches}
           />
         );

@@ -392,14 +392,17 @@ describe("saveEvent", () => {
       expect(await prisma.notification.count()).toBe(2);
     });
 
-    it("unpublishing withdraws reminders and the new-session notice", async () => {
+    it("a published Event never goes back to draft", async () => {
       await saveEvent("e1", input({ seriesId: "s1", isDraft: false }), admin());
       expect(
         await saveEvent("e1", input({ seriesId: "s1", isDraft: true }), admin())
-      ).toEqual({});
+      ).toEqual({ error: "A published event cannot go back to draft." });
 
-      expect(await pending("EVENT_REMINDER")).toEqual([]);
-      expect(await pending("NEW_SERIES_SESSION")).toEqual([]);
+      expect(
+        await prisma.event.findUniqueOrThrow({ where: { id: "e1" } })
+      ).toMatchObject({ isDraft: false });
+      expect(await pending("EVENT_REMINDER")).toHaveLength(1);
+      expect(await pending("NEW_SERIES_SESSION")).toHaveLength(1);
     });
 
     it("an omitted isDraft keeps the current state and queues nothing", async () => {
@@ -582,13 +585,6 @@ describe("an Event that has happened", () => {
     });
   });
 
-  it("cannot be unpublished", async () => {
-    expect(await saveEvent("e1", input({ isDraft: true }), admin())).toEqual({
-      error: "This event has already happened.",
-    });
-    expect(await event()).toMatchObject({ isDraft: false });
-  });
-
   it("cannot be cancelled or un-cancelled", async () => {
     expect(await cancelEvent("e1", "Rain", admin())).toEqual({
       error: "This event has already happened.",
@@ -601,10 +597,6 @@ describe("an Event that has happened", () => {
       error: "This event has already happened.",
     });
     expect(await event()).toMatchObject({ cancellationReason: "Rain" });
-  });
-
-  it("can still be deleted", async () => {
-    expect(await deleteEvent("e1", admin())).toEqual({});
   });
 });
 
@@ -757,17 +749,6 @@ describe("reminders follow the Event", () => {
 
     expect(await pending("EVENT_REMINDER")).toEqual([]);
   });
-
-  it("deleting a published Event tells its attendees, without a link", async () => {
-    await deleteEvent("e1", admin());
-
-    const [notice] = await pending("EVENT_CANCELLED");
-    expect(notice).toMatchObject({
-      userId: "u1",
-      body: "Picnic has been cancelled",
-    });
-    expect(notice.data).not.toHaveProperty("eventId");
-  });
 });
 
 describe("deleteEvent", () => {
@@ -779,21 +760,25 @@ describe("deleteEvent", () => {
       isDraft: true,
       datetime: START,
     });
-    await attend("e1", "u1");
-    await follow("s1", "u2");
-    await saveEvent("e1", input({ seriesId: "s1", isDraft: false }), admin());
     jest.clearAllMocks();
   });
 
-  it("deletes the Event and withdraws what was queued for it", async () => {
+  it("deletes a draft", async () => {
     expect(await deleteEvent("e1", admin())).toEqual({});
 
     expect(await prisma.event.count()).toBe(0);
-    expect(await pending("EVENT_REMINDER")).toEqual([]);
-    expect(await pending("NEW_SERIES_SESSION")).toEqual([]);
     expect(staleTags()).toEqual(
-      expect.arrayContaining(["churches", "church-c1", "series-s1"])
+      expect.arrayContaining(["event-e1", "church-c1", "series-s1"])
     );
+  });
+
+  it("never deletes a published Event", async () => {
+    await saveEvent("e1", input({ seriesId: "s1", isDraft: false }), admin());
+
+    expect(await deleteEvent("e1", admin())).toEqual({
+      error: "A published event cannot be deleted.",
+    });
+    expect(await prisma.event.count()).toBe(1);
   });
 
   it("refuses a user with no Grant and deletes nothing", async () => {

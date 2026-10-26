@@ -20,6 +20,11 @@ function past(days: number, time = "10:00"): Date {
   return future(-days, time);
 }
 
+// Every Event has an end; most end a few hours after they start.
+function hoursAfter(start: Date, hours: number): Date {
+  return new Date(start.getTime() + hours * 60 * 60 * 1000);
+}
+
 function futureDate(days: number): string {
   const d = new Date();
   d.setDate(d.getDate() + days);
@@ -344,6 +349,7 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: past(21, "22:00"),
+      endDatetime: hoursAfter(past(21, "22:00"), 3),
       title: "Lenten Tasbeha — Week 1: Repentance",
       location: "Main Hall",
       host: "Fr. Bishoy Lamie",
@@ -365,6 +371,7 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: past(14, "22:00"),
+      endDatetime: hoursAfter(past(14, "22:00"), 3),
       title: "Lenten Tasbeha — Week 2: The Cross",
       location: "Main Hall",
       host: "Fr. Bishoy Lamie",
@@ -386,6 +393,7 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: future(7, "22:00"),
+      endDatetime: hoursAfter(future(7, "22:00"), 3),
       title: "Lenten Tasbeha — Week 3: The Resurrection",
       location: "Main Hall",
       host: "Fr. Bishoy Lamie",
@@ -407,6 +415,7 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: future(14, "22:00"),
+      endDatetime: hoursAfter(future(14, "22:00"), 3),
       title: "Lenten Tasbeha — Week 4: The Ascension",
       location: "Main Hall",
       host: "Fr. Bishoy Lamie",
@@ -430,6 +439,7 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: past(28, "19:00"),
+      endDatetime: hoursAfter(past(28, "19:00"), 1.5),
       title: "Book of Acts — Session 1: Pentecost & the Birth of the Church",
       location: "Youth Hall",
       host: "Deacon Mina Nashed",
@@ -451,6 +461,7 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: future(10, "19:00"),
+      endDatetime: hoursAfter(future(10, "19:00"), 1.5),
       title: "Book of Acts — Session 2: Stephen, the First Martyr",
       location: "Youth Hall",
       host: "Deacon Mina Nashed",
@@ -472,6 +483,7 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: future(24, "19:00"),
+      endDatetime: hoursAfter(future(24, "19:00"), 1.5),
       title: "Book of Acts — Session 3: Philip & the Ethiopian Eunuch",
       location: "Youth Hall",
       host: "Deacon Mina Nashed",
@@ -493,6 +505,7 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: future(38, "19:00"),
+      endDatetime: hoursAfter(future(38, "19:00"), 1.5),
       title: "Book of Acts — Session 4: St. Paul's First Missionary Journey",
       location: "Youth Hall",
       host: "Deacon Mina Nashed",
@@ -514,6 +527,7 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: future(52, "19:00"),
+      endDatetime: hoursAfter(future(52, "19:00"), 1.5),
       title: "Book of Acts — Session 5: The Jerusalem Council",
       location: "Youth Hall",
       host: "Deacon Mina Nashed",
@@ -537,6 +551,7 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: past(35, "18:00"),
+      endDatetime: hoursAfter(past(35, "18:00"), 2),
       title: "Servants Formation — Month 1: The Theology of Service",
       location: "Conference Room",
       host: "Fr. Antonious Farag",
@@ -558,6 +573,7 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: future(8, "18:00"),
+      endDatetime: hoursAfter(future(8, "18:00"), 2),
       title: "Servants Formation — Month 2: Confession & Spiritual Direction",
       location: "Conference Room",
       host: "Fr. Antonious Farag",
@@ -579,6 +595,7 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: future(38, "18:00"),
+      endDatetime: hoursAfter(future(38, "18:00"), 2),
       title: "Servants Formation — Month 3: Leading Bible Studies",
       location: "Conference Room",
       host: "Fr. Antonious Farag",
@@ -600,6 +617,7 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: future(68, "18:00"),
+      endDatetime: hoursAfter(future(68, "18:00"), 2),
       title: "Servants Formation — Month 4: Youth Ministry in Practice",
       location: "Conference Room",
       host: "Fr. Antonious Farag",
@@ -623,6 +641,7 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: past(63, "10:00"),
+      endDatetime: hoursAfter(past(63, "10:00"), 3),
       title:
         "Sunday School Training — Session 1: Foundations of Coptic Pedagogy",
       location: "Education Wing",
@@ -645,6 +664,7 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: past(28, "10:00"),
+      endDatetime: hoursAfter(past(28, "10:00"), 3),
       title:
         "Sunday School Training — Session 2: Age-Appropriate Lesson Planning",
       location: "Education Wing",
@@ -667,6 +687,7 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: future(15, "10:00"),
+      endDatetime: hoursAfter(future(15, "10:00"), 3),
       title:
         "Sunday School Training — Session 3: Classroom Management & Discipline",
       location: "Education Wing",
@@ -689,6 +710,7 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: future(45, "10:00"),
+      endDatetime: hoursAfter(future(45, "10:00"), 3),
       title:
         "Sunday School Training — Session 4: Storytelling & the Church Fathers",
       location: "Education Wing",
@@ -711,6 +733,7 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: future(75, "10:00"),
+      endDatetime: hoursAfter(future(75, "10:00"), 3),
       title:
         "Sunday School Training — Session 5: Parent Engagement & Communication",
       location: "Education Wing",
@@ -735,6 +758,7 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: past(42, "18:30"),
+      endDatetime: hoursAfter(past(42, "18:30"), 2),
       title: "Marriage Prep — Session 1: The Theology of Coptic Marriage",
       location: "Conference Room",
       host: "Fr. Antonious Farag",
@@ -756,6 +780,7 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: future(6, "18:30"),
+      endDatetime: hoursAfter(future(6, "18:30"), 2),
       title: "Marriage Prep — Session 2: Communication & Conflict",
       location: "Conference Room",
       host: "Dr. Nadia Habib",
@@ -777,6 +802,7 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: future(20, "18:30"),
+      endDatetime: hoursAfter(future(20, "18:30"), 2),
       title: "Marriage Prep — Session 3: Finances & Shared Life",
       location: "Conference Room",
       host: "Fr. Antonious Farag & Dr. Nadia Habib",
@@ -798,6 +824,7 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: future(34, "18:30"),
+      endDatetime: hoursAfter(future(34, "18:30"), 2),
       title:
         "Marriage Prep — Session 4: Family Planning & Raising Children in Faith",
       location: "Conference Room",
@@ -820,6 +847,7 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: future(48, "18:30"),
+      endDatetime: hoursAfter(future(48, "18:30"), 2),
       title: "Marriage Prep — Session 5: The Sacramental Life of the Home",
       location: "Conference Room",
       host: "Fr. Antonious Farag",
@@ -843,6 +871,7 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: past(56, "19:00"),
+      endDatetime: hoursAfter(past(56, "19:00"), 1.5),
       title: "Desert Fathers — Month 1: The Sayings of Abba Anthony",
       location: "Library Room",
       host: "Fr. Demetrius Botros",
@@ -864,6 +893,7 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: past(14, "19:00"),
+      endDatetime: hoursAfter(past(14, "19:00"), 1.5),
       title: "Desert Fathers — Month 2: Abba Macarius & the Life of Scetis",
       location: "Library Room",
       host: "Fr. Demetrius Botros",
@@ -885,6 +915,7 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: future(16, "19:00"),
+      endDatetime: hoursAfter(future(16, "19:00"), 1.5),
       title: "Desert Fathers — Month 3: Abba Pishoy & the Monastic Ideal",
       location: "Library Room",
       host: "Fr. Demetrius Botros",
@@ -906,6 +937,7 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: future(46, "19:00"),
+      endDatetime: hoursAfter(future(46, "19:00"), 1.5),
       title: "Desert Fathers — Month 4: The Sayings of the Mothers (Ammas)",
       location: "Library Room",
       host: "Fr. Demetrius Botros",
@@ -929,6 +961,7 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: past(63, "18:00"),
+      endDatetime: hoursAfter(past(63, "18:00"), 1.5),
       title: "Coptic Language — Class 1: The Alphabet & Phonology",
       location: "Classroom B",
       host: "Cantor George Mikhail",
@@ -950,6 +983,7 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: past(42, "18:00"),
+      endDatetime: hoursAfter(past(42, "18:00"), 1.5),
       title: "Coptic Language — Class 2: Liturgical Responses",
       location: "Classroom B",
       host: "Cantor George Mikhail",
@@ -971,6 +1005,7 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: past(21, "18:00"),
+      endDatetime: hoursAfter(past(21, "18:00"), 1.5),
       title: "Coptic Language — Class 3: The Lord's Prayer in Coptic",
       location: "Classroom B",
       host: "Cantor George Mikhail",
@@ -992,6 +1027,7 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: future(7, "18:00"),
+      endDatetime: hoursAfter(future(7, "18:00"), 1.5),
       title: "Coptic Language — Class 4: Hymn Study — Pi-Oik",
       location: "Classroom B",
       host: "Cantor George Mikhail",
@@ -1013,6 +1049,7 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: future(21, "18:00"),
+      endDatetime: hoursAfter(future(21, "18:00"), 1.5),
       title: "Coptic Language — Class 5: Verbs & Tenses",
       location: "Classroom B",
       host: "Cantor George Mikhail",
@@ -1034,6 +1071,7 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: future(35, "18:00"),
+      endDatetime: hoursAfter(future(35, "18:00"), 1.5),
       title: "Coptic Language — Class 6: Reading the Agpeya",
       location: "Classroom B",
       host: "Cantor George Mikhail",
@@ -1055,6 +1093,7 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: future(49, "18:00"),
+      endDatetime: hoursAfter(future(49, "18:00"), 1.5),
       title: "Coptic Language — Class 7: Doxologies of the Saints",
       location: "Classroom B",
       host: "Cantor George Mikhail",
@@ -1078,6 +1117,7 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: past(35, "19:30"),
+      endDatetime: hoursAfter(past(35, "19:30"), 2),
       title: "Young Adults — Session 1: What Does It Mean to Be Coptic?",
       location: "Fellowship Hall",
       host: "Deacon Mina Nashed",
@@ -1099,6 +1139,7 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: past(7, "19:30"),
+      endDatetime: hoursAfter(past(7, "19:30"), 2),
       title: "Young Adults — Session 2: Vocation — Work, Faith & Purpose",
       location: "Fellowship Hall",
       host: "Deacon Mina Nashed",
@@ -1120,6 +1161,7 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: future(14, "19:30"),
+      endDatetime: hoursAfter(future(14, "19:30"), 2),
       title: "Young Adults — Session 3: Relationships, Dating & the Church",
       location: "Fellowship Hall",
       host: "Deacon Mina Nashed",
@@ -1141,6 +1183,7 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: future(28, "19:30"),
+      endDatetime: hoursAfter(future(28, "19:30"), 2),
       title: "Young Adults — Session 4: Doubt, Faith & Intellectual Honesty",
       location: "Fellowship Hall",
       host: "Deacon Mina Nashed",
@@ -1162,6 +1205,7 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: future(42, "19:30"),
+      endDatetime: hoursAfter(future(42, "19:30"), 2),
       title:
         "Young Adults — Session 5: Service — Finding Your Place in the Church",
       location: "Fellowship Hall",
@@ -1186,6 +1230,7 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: past(28, "19:00"),
+      endDatetime: hoursAfter(past(28, "19:00"), 1.5),
       title: "Pastoral Talk — Month 1: The Sacrament of Confession",
       location: "Main Hall",
       host: "Fr. Marcos Khalil",
@@ -1207,6 +1252,7 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: future(13, "19:00"),
+      endDatetime: hoursAfter(future(13, "19:00"), 1.5),
       title: "Pastoral Talk — Month 2: The Fasting Life",
       location: "Main Hall",
       host: "Fr. Marcos Khalil",
@@ -1228,6 +1274,7 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: future(43, "19:00"),
+      endDatetime: hoursAfter(future(43, "19:00"), 1.5),
       title: "Pastoral Talk — Month 3: Raising Children in the Faith",
       location: "Main Hall",
       host: "Fr. Marcos Khalil",
@@ -1249,6 +1296,7 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: future(73, "19:00"),
+      endDatetime: hoursAfter(future(73, "19:00"), 1.5),
       title: "Pastoral Talk — Month 4: Preparing for Death & Eternal Life",
       location: "Main Hall",
       host: "Fr. Marcos Khalil",
@@ -1273,6 +1321,7 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: future(5, "07:00"),
+      endDatetime: hoursAfter(future(5, "07:00"), 3),
       title: "Feast of the Annunciation — Divine Liturgy",
       location: "Sanctuary",
       host: "Fr. Bishoy Lamie",
@@ -1293,6 +1342,7 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: future(12, "18:00"),
+      endDatetime: hoursAfter(future(12, "18:00"), 2),
       title: 'Women of the Church — Monthly Meeting: "Prayer in the Home"',
       location: "Fellowship Hall",
       host: "Tasoni Mariam Lamie",
@@ -1313,6 +1363,7 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: future(20, "17:00"),
+      endDatetime: hoursAfter(future(20, "17:00"), 3),
       title: 'Youth Talent Night — "Glory in the Making"',
       location: "Main Hall",
       host: "Maryam Iskander",
@@ -1334,6 +1385,7 @@ async function main() {
   const orientationEvent = await prisma.event.create({
     data: {
       datetime: future(18, "17:00"),
+      endDatetime: hoursAfter(future(18, "17:00"), 2),
       title: "New Servants Orientation Evening",
       location: "Main Hall",
       host: "Fr. Antonious Farag",
@@ -1351,6 +1403,7 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: future(11, "08:00"),
+      endDatetime: hoursAfter(future(11, "08:00"), 8),
       title: "Deacons Training Day — Liturgical Rites & Responses",
       location: "Sanctuary",
       host: "Fr. Antonious Farag",
@@ -1368,6 +1421,7 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: past(10, "18:30"),
+      endDatetime: hoursAfter(past(10, "18:30"), 2),
       title: "Annual Vestry Meeting — St. George Church",
       location: "Conference Room",
       host: "Fr. Antonious Farag",
@@ -1388,6 +1442,7 @@ async function main() {
   const parishRetreatEvent = await prisma.event.create({
     data: {
       datetime: future(25, "08:00"),
+      endDatetime: hoursAfter(future(25, "08:00"), 9),
       title: 'Parish Day Retreat — "Stillness & the City"',
       location: "Holy Cross Retreat Center, Cedar Hill, TX",
       host: "Fr. Antonious Farag",
@@ -1406,6 +1461,7 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: past(12, "19:00"),
+      endDatetime: hoursAfter(past(12, "19:00"), 2),
       title: 'Youth Halaqa: "Who Is the Holy Spirit?"',
       location: "Youth Hall",
       host: "Deacon Mina Nashed",
@@ -1426,6 +1482,7 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: past(20, "18:30"),
+      endDatetime: hoursAfter(past(20, "18:30"), 2),
       title: "Annual Vestry Meeting — St. Mark Church",
       location: "Main Hall",
       host: "Fr. Cyril Mikhail",
@@ -1446,6 +1503,7 @@ async function main() {
   const hikeEvent = await prisma.event.create({
     data: {
       datetime: future(9, "07:30"),
+      endDatetime: hoursAfter(future(9, "07:30"), 4),
       title: "Youth Sunrise Hike — Barton Creek Greenbelt",
       location: "Barton Creek Greenbelt, Austin, TX",
       host: "Deacon Mina Nashed",
@@ -1463,6 +1521,7 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: future(16, "21:30"),
+      endDatetime: hoursAfter(future(16, "21:30"), 3.5),
       title: "Friday Midnight Praise — Feast of St. Mark",
       location: "Sanctuary",
       host: "Fr. Cyril Mikhail",
@@ -1483,6 +1542,7 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: future(45, "11:00"),
+      endDatetime: hoursAfter(future(45, "11:00"), 5),
       title: "Annual Church Family Picnic",
       location: "Zilker Park, Austin, TX",
       host: "St. Mark Parish Committee",
@@ -1504,6 +1564,7 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: past(45, "19:00"),
+      endDatetime: hoursAfter(past(45, "19:00"), 1.5),
       title: '"The Life of St. Moses the Black" — Evening Lecture',
       location: "Main Hall",
       host: "Dr. Hany Takla",
@@ -1524,6 +1585,7 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: future(4, "07:00"),
+      endDatetime: hoursAfter(future(4, "07:00"), 3),
       title: "Feast of St. Anthony the Great — Divine Liturgy",
       location: "Sanctuary",
       host: "Fr. Boulos Samir",
@@ -1544,6 +1606,7 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: future(30, "18:00"),
+      endDatetime: hoursAfter(future(30, "18:00"), 3),
       title: "Parish Community Dinner — Spring Gathering",
       location: "Fellowship Hall",
       host: "Archangel Michael Parish Committee",
@@ -1564,6 +1627,7 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: past(3, "18:00"),
+      endDatetime: hoursAfter(past(3, "18:00"), 3),
       title: "Summer Fundraiser Dinner — CANCELLED",
       location: "Fellowship Hall",
       host: "Fr. Boulos Samir",
@@ -1588,6 +1652,7 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: past(5, "07:00"),
+      endDatetime: hoursAfter(past(5, "07:00"), 3),
       title: "Divine Liturgy — Feast of St. Pishoy",
       location: "Sanctuary",
       host: "Fr. Demetrius Botros",
@@ -1608,6 +1673,7 @@ async function main() {
   const iconEvent = await prisma.event.create({
     data: {
       datetime: future(18, "10:00"),
+      endDatetime: hoursAfter(future(18, "10:00"), 6),
       title: 'Icon Writing Workshop — "The Theotokos Hodegetria"',
       location: "Fellowship Hall",
       host: "Iconographer Bishoy Ayad",
@@ -1626,6 +1692,7 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: future(26, "09:00"),
+      endDatetime: hoursAfter(future(26, "09:00"), 7),
       title: "Youth Soccer Tournament — St. Pishoy Cup",
       location: "Northgate Sports Complex, The Woodlands, TX",
       host: "St. Pishoy Youth Committee",
@@ -1644,6 +1711,7 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: future(7, "07:00"),
+      endDatetime: hoursAfter(future(7, "07:00"), 4),
       title: "Feast of St. Anthony — Divine Liturgy & Breakfast",
       location: "Sanctuary",
       host: "Fr. Marcos Khalil",
@@ -1664,6 +1732,7 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: future(22, "18:30"),
+      endDatetime: hoursAfter(future(22, "18:30"), 2.5),
       title: 'Marriage Enrichment Evening — "The Art of Forgiveness"',
       location: "Fellowship Hall",
       host: "Fr. Marcos Khalil & Dr. Nadia Habib",
@@ -1684,6 +1753,7 @@ async function main() {
   const womensEvent = await prisma.event.create({
     data: {
       datetime: future(40, "08:00"),
+      endDatetime: hoursAfter(future(40, "08:00"), 8),
       title: 'Women\'s Day of Reflection — "Mary at the Foot of the Cross"',
       location: "St. Anthony Church",
       host: "Tasoni Irene Khalil",
@@ -1698,10 +1768,34 @@ async function main() {
     },
   });
 
+  // Live when seeded: started half an hour ago, ends in an hour and a half.
+  const liveStart = new Date(Date.now() - 30 * 60 * 1000);
+  await prisma.event.create({
+    data: {
+      datetime: liveStart,
+      endDatetime: hoursAfter(liveStart, 2),
+      title: "Midweek Bible Study — The Gospel of St. John",
+      location: "Fellowship Hall",
+      host: "Fr. Bishoy Lamie",
+      tag: "Bible Study",
+      description:
+        'Our weekly study through the Gospel of St. John. Tonight: "I am the Bread of Life" (John 6). Come as you are, bring a Bible, and stay for tea afterwards. All are welcome.',
+      metadata: {
+        registration: {
+          capacity: null,
+          collectPhone: false,
+          collectNotes: false,
+        },
+      },
+      churchId: stMary.id,
+    },
+  });
+
   // Cross-church event
   await prisma.event.create({
     data: {
       datetime: future(60, "08:00"),
+      endDatetime: future(61, "17:00"),
       title: "Texas Coptic Youth Conference 2026",
       location: "St. Mary Church, Houston, TX",
       host: "Diocese of the Southern USA Youth Committee",
@@ -1728,6 +1822,7 @@ async function main() {
   const campEvent = await prisma.event.create({
     data: {
       datetime: future(campDay, "08:00"),
+      endDatetime: future(campDay + 4, "14:00"),
       title: 'St. Mary Summer Camp 2026 — "Called by Name"',
       location: "Lakeview Christian Retreat Center, Waco, TX",
       host: "Fr. Bishoy Lamie",
@@ -1739,7 +1834,6 @@ async function main() {
       metadata: {
         registration: { capacity: 120, collectPhone: true, collectNotes: true },
         camp: {
-          endDate: futureDate(campDay + 4),
           allowPartialRegistration: true,
           agenda: [
             {
@@ -1916,6 +2010,7 @@ async function main() {
   const retreatEvent = await prisma.event.create({
     data: {
       datetime: future(retreatDay, "15:00"),
+      endDatetime: future(retreatDay + 2, "14:00"),
       title: 'St. Pishoy Youth Retreat 2026 — "The Desert Within"',
       location: "Camp Eagle, Marble Falls, TX",
       host: "Fr. Demetrius Botros",
@@ -1927,7 +2022,6 @@ async function main() {
       metadata: {
         registration: { capacity: 60, collectPhone: true, collectNotes: true },
         camp: {
-          endDate: futureDate(retreatDay + 2),
           allowPartialRegistration: false,
           agenda: [
             {

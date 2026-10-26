@@ -12,6 +12,7 @@ import {
   getSessionUserId,
 } from "@/domains/roles";
 import { parseEventMetadata } from "@/domains/events/validations/event";
+import { hasHappened } from "@/domains/events/lib/happened";
 import { PageHeader } from "@/components/ui/page-header";
 import { EventWizard } from "@/app/(app)/(no-nav)/events/create/_components/event-wizard";
 
@@ -30,6 +31,8 @@ export default async function EditEventPage({ params }: Props) {
   if (!userId) redirect("/");
   if (!event) notFound();
   if (!ability.can("update", eventSubject(event))) notFound();
+  // An Event that has happened is read-only.
+  if (hasHappened(event)) redirect(`/events/${id}`);
 
   // A published Event stays in its Church; a draft may move to any Church the
   // user may create an Event in.

@@ -20,6 +20,7 @@ import {
   queueNotificationForUsers,
   syncEventReminders,
 } from "@/domains/notifications/queue";
+import { hasHappened } from "./lib/happened";
 import { isPubliclyVisible } from "./lib/visibility";
 import { syncEventQuestions } from "./questions/dal";
 import { checkAnswers, saveAnswers } from "./questions/responses";
@@ -50,6 +51,9 @@ function failed<T extends object>(
 
 // Fan-out to every follower of a large Series stays inside one transaction.
 const TRANSACTION = { timeout: 15_000 };
+
+const IN_THE_PAST = "Date must be in the future";
+const HAPPENED = "This event has already happened.";
 
 // ---------------------------------------------------------------------------
 // Input: one normaliser for create and save
@@ -104,6 +108,10 @@ async function normalise(
     const complete = createEventSchema.safeParse(input);
     if (!complete.success)
       return { fieldErrors: complete.error.flatten().fieldErrors };
+    // An Event that has happened is never saved through here, so a published
+    // Event is always still to come.
+    if (datetime && datetime <= new Date())
+      return { fieldErrors: { date: [IN_THE_PAST] } };
   }
 
   const isCamp = input.tag === "Camp";
@@ -375,13 +383,18 @@ export async function saveEvent(
         churchId: true,
         isDraft: true,
         seriesId: true,
+        tag: true,
+        datetime: true,
       });
       if ("error" in existing) return existing;
 
-      // An Event's Series is fixed when it is created, and its Church once it
-      // has been published (see Owning Church in GLOSSARY.md). A draft may
-      // still change Church: that places it afresh, so it needs the authority
-      // to create an Event there.
+      // An Event that has happened is read-only (see GLOSSARY.md).
+      if (hasHappened(existing)) return { error: HAPPENED };
+
+      // An Event's Series is fixed when it is created, and its Church and
+      // Category once it has been published (see Owning Church and Category
+      // in GLOSSARY.md). A draft may still change Church: that places it
+      // afresh, so it needs the authority to create an Event there.
       const isDraft = input.isDraft ?? existing.isDraft;
       const n = await normalise(
         tx,
@@ -389,6 +402,7 @@ export async function saveEvent(
           ...input,
           seriesId: existing.seriesId ?? undefined,
           churchId: existing.isDraft ? input.churchId : existing.churchId,
+          tag: existing.isDraft ? input.tag : existing.tag,
         },
         isDraft
       );
@@ -464,8 +478,11 @@ export async function cancelEvent(
         churchId: true,
         title: true,
         seriesId: true,
+        isDraft: true,
+        datetime: true,
       });
       if ("error" in event) return event;
+      if (hasHappened(event)) return { error: HAPPENED };
 
       await tx.event.update({
         where: scopedTo(ability, "update", id),
@@ -497,8 +514,11 @@ export async function uncancelEvent(
       const event = await findForAction(tx, ability, "update", id, {
         churchId: true,
         seriesId: true,
+        isDraft: true,
+        datetime: true,
       });
       if ("error" in event) return event;
+      if (hasHappened(event)) return { error: HAPPENED };
 
       await tx.event.update({
         where: scopedTo(ability, "update", id),

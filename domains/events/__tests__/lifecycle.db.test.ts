@@ -484,6 +484,130 @@ describe("saveEvent", () => {
   });
 });
 
+describe("publishing needs a start time still to come", () => {
+  const PAST = new Date("2020-06-01T10:00:00.000Z");
+  const past = { date: "2020-06-01", datetimeISO: PAST.toISOString() };
+
+  it("refuses to create a published Event in the past", async () => {
+    expect(await createEvent(input(past), admin())).toEqual({
+      fieldErrors: { date: ["Date must be in the future"] },
+    });
+    expect(await prisma.event.count()).toBe(0);
+  });
+
+  it("refuses to publish a draft dated in the past", async () => {
+    await makeEvent({ id: "e1", churchId: "c1", isDraft: true });
+    expect(
+      await saveEvent("e1", input({ ...past, isDraft: false }), admin())
+    ).toHaveProperty("fieldErrors.date");
+    expect(
+      await prisma.event.findUniqueOrThrow({ where: { id: "e1" } })
+    ).toMatchObject({ isDraft: true });
+  });
+
+  it("refuses to move a published Event into the past", async () => {
+    await makeEvent({ id: "e1", churchId: "c1", datetime: START });
+    expect(await saveEvent("e1", input(past), admin())).toHaveProperty(
+      "fieldErrors.date"
+    );
+    expect(
+      await prisma.event.findUniqueOrThrow({ where: { id: "e1" } })
+    ).toMatchObject({ datetime: START });
+  });
+
+  it("lets a draft keep a past date", async () => {
+    await makeEvent({ id: "e1", churchId: "c1", isDraft: true });
+    expect(await saveEvent("e1", input(past), admin())).toEqual({});
+  });
+});
+
+describe("Category", () => {
+  const category = async () =>
+    (await prisma.event.findUniqueOrThrow({ where: { id: "e1" } })).tag;
+
+  it("is fixed once published, whatever Category was sent", async () => {
+    await makeEvent({ id: "e1", churchId: "c1", datetime: START });
+    expect(
+      await saveEvent(
+        "e1",
+        input({ tag: "Camp", campEndDate: "2030-06-03" }),
+        admin()
+      )
+    ).toEqual({});
+    expect(await category()).toBe("Worship");
+    expect(
+      await prisma.event.findUniqueOrThrow({ where: { id: "e1" } })
+    ).not.toHaveProperty("metadata.camp");
+  });
+
+  it("may still change on a draft", async () => {
+    await makeEvent({ id: "e1", churchId: "c1", isDraft: true });
+    await saveEvent("e1", input({ tag: "Youth" }), admin());
+    expect(await category()).toBe("Youth");
+  });
+});
+
+describe("an Event that has happened", () => {
+  const PAST = new Date("2020-06-01T10:00:00.000Z");
+
+  beforeEach(async () => {
+    await makeEvent({
+      id: "e1",
+      churchId: "c1",
+      title: "Picnic",
+      description: "Before",
+      datetime: PAST,
+    });
+  });
+
+  const event = () => prisma.event.findUniqueOrThrow({ where: { id: "e1" } });
+
+  it("cannot be edited", async () => {
+    expect(
+      await saveEvent(
+        "e1",
+        input({ title: "Renamed", description: "After" }),
+        admin()
+      )
+    ).toEqual({ error: "This event has already happened." });
+    expect(await event()).toMatchObject({
+      title: "Picnic",
+      description: "Before",
+    });
+  });
+
+  it("refuses a user with no Grant as unauthorised", async () => {
+    expect(await saveEvent("e1", input(), as("u2"))).toEqual({
+      error: "Unauthorised.",
+    });
+  });
+
+  it("cannot be unpublished", async () => {
+    expect(await saveEvent("e1", input({ isDraft: true }), admin())).toEqual({
+      error: "This event has already happened.",
+    });
+    expect(await event()).toMatchObject({ isDraft: false });
+  });
+
+  it("cannot be cancelled or un-cancelled", async () => {
+    expect(await cancelEvent("e1", "Rain", admin())).toEqual({
+      error: "This event has already happened.",
+    });
+    await prisma.event.update({
+      where: { id: "e1" },
+      data: { cancelledAt: PAST, cancellationReason: "Rain" },
+    });
+    expect(await uncancelEvent("e1", admin())).toEqual({
+      error: "This event has already happened.",
+    });
+    expect(await event()).toMatchObject({ cancellationReason: "Rain" });
+  });
+
+  it("can still be deleted", async () => {
+    expect(await deleteEvent("e1", admin())).toEqual({});
+  });
+});
+
 describe("cancelEvent and uncancelEvent", () => {
   beforeEach(async () => {
     await makeEvent({ id: "e1", churchId: "c1", datetime: START });

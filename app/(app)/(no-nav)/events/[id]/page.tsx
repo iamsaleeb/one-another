@@ -30,6 +30,7 @@ import {
 } from "@/domains/events/validations/event";
 import { getAbility, getSessionUserId, eventSubject } from "@/domains/roles";
 import { EventDatetime } from "@/domains/events/components/event-datetime";
+import { hasHappened } from "@/domains/events/lib/happened";
 import { formatDateOnly, parseDateOfBirth } from "@/lib/datetime";
 import { InfoField } from "@/components/ui/info-field";
 import { HeroBanner } from "@/components/ui/hero-banner";
@@ -89,6 +90,7 @@ export default async function EventDetailPage({ params }: Props) {
   if (!event) notFound();
 
   const isAttending = myAttendance !== null;
+  const happened = hasHappened(event);
 
   const subject = eventSubject(event);
   const canEdit = ability.can("update", subject);
@@ -179,17 +181,20 @@ export default async function EventDetailPage({ params }: Props) {
             {canEdit && (
               <div className="flex shrink-0 flex-col items-end gap-2">
                 <div className="flex items-center gap-2">
-                  <Button
-                    asChild
-                    variant="outline"
-                    size="icon"
-                    className="size-9"
-                  >
-                    <Link href={`/events/${id}/edit`} aria-label="Edit event">
-                      <Pencil className="size-4" />
-                    </Link>
-                  </Button>
-                  {event.cancelledAt ? (
+                  {/* An Event that has happened is read-only. */}
+                  {!happened && (
+                    <Button
+                      asChild
+                      variant="outline"
+                      size="icon"
+                      className="size-9"
+                    >
+                      <Link href={`/events/${id}/edit`} aria-label="Edit event">
+                        <Pencil className="size-4" />
+                      </Link>
+                    </Button>
+                  )}
+                  {happened ? null : event.cancelledAt ? (
                     <UncancelEventButton eventId={id} />
                   ) : (
                     <CancelEventButton eventId={id} />

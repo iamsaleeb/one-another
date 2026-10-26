@@ -201,6 +201,15 @@ export function EventWizard({
     if (!step) return;
     const valid = await form.trigger(step.fields);
     if (!valid) return;
+    // Only an Event still to come can be published, so catch a past date here
+    // rather than at the last step.
+    if (step.key === "whenWhere") {
+      const { date, time } = form.getValues();
+      if (localInputsToUtcDate(date, time) <= new Date()) {
+        form.setError("date", { message: "Date must be in the future" });
+        return;
+      }
+    }
     // campEndDate is optional in schema (allows partial drafts) but required to publish
     if (step.key === "campDetails" && !form.getValues("campEndDate")) {
       form.setError("campEndDate", {
@@ -265,7 +274,10 @@ export function EventWizard({
         return;
       }
       if (result && "fieldErrors" in result) {
-        toast.error("Please review all fields before publishing.");
+        toast.error(
+          Object.values(result.fieldErrors ?? {}).flat()[0] ??
+            "Please review all fields before publishing."
+        );
         return;
       }
       markPublished();
@@ -287,6 +299,7 @@ export function EventWizard({
             churches={churches}
             series={series}
             fixedChurch={fixedChurch}
+            categoryLocked={defaultValues?.isDraft === false}
           />
         );
       case "whenWhere":

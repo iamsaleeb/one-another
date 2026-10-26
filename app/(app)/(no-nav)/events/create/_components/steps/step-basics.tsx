@@ -32,9 +32,16 @@ interface StepBasicsProps {
   } | null;
   // A published Event stays in its Church, so the Church is shown, not edited.
   fixedChurch?: { id: string; name: string } | null;
+  // A published Event keeps its Category.
+  categoryLocked?: boolean;
 }
 
-export function StepBasics({ churches, series, fixedChurch }: StepBasicsProps) {
+export function StepBasics({
+  churches,
+  series,
+  fixedChurch,
+  categoryLocked,
+}: StepBasicsProps) {
   const form = useFormContext<CreateEventInput>();
   // A session lives in its Series' Church.
   const shownChurch = series
@@ -108,7 +115,11 @@ export function StepBasics({ churches, series, fixedChurch }: StepBasicsProps) {
         render={({ field }) => (
           <FormItem>
             <FormLabel>Category</FormLabel>
-            <Select onValueChange={field.onChange} defaultValue={field.value}>
+            <Select
+              onValueChange={field.onChange}
+              defaultValue={field.value}
+              disabled={categoryLocked}
+            >
               <FormControl>
                 <SelectTrigger>
                   <SelectValue placeholder="Select a category" />

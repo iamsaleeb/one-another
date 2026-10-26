@@ -12,6 +12,14 @@ _Avoid_: publish side effects, event hooks
 The Church an Event or Series belongs to; every one has exactly one. A Series' Owning Church is fixed when it is created. An Event's is fixed once it is first published: a draft may still change Church, which needs the Capability to create an Event there and gives the mover the Creator Grant as if they had created it there. Whether an Event is a session of a Series, and of which, is fixed when it is created.
 _Avoid_: placement, moving an Event
 
+**Category**:
+The kind of Event, such as Worship or Camp; stored as its `tag`. Fixed once the Event is first published, since what a Camp collects at registration depends on it. A draft may still change Category.
+_Avoid_: type, tag (outside code)
+
+**Happened**:
+A published Event has happened once its start time has passed. It is then read-only: it can no longer be edited, cancelled, un-cancelled or unpublished, only deleted. An Event can only be published with a start time still to come.
+_Avoid_: past event, expired, finished
+
 **Series lifecycle**:
 Every change to a Series, and everything that must follow from it: its Events becoming standalone Events in the same Church when it is deleted, followers coming and going, and which pages go stale. A change and what it does to the Series' Events commit together or not at all.
 _Avoid_: series DAL, series cache

@@ -287,7 +287,7 @@ async function main() {
       cadence: "BIWEEKLY",
       location: "Conference Room",
       host: "Fr. Antonious Farag & Dr. Nadia Habib",
-      tag: "Parish Meeting",
+      tag: "Bible Study",
       churchId: stGeorge.id,
     },
   });
@@ -313,7 +313,7 @@ async function main() {
       cadence: "WEEKLY",
       location: "Classroom B",
       host: "Cantor George Mikhail",
-      tag: "Parish Meeting",
+      tag: "Bible Study",
       churchId: stPishoy.id,
     },
   });
@@ -326,7 +326,7 @@ async function main() {
       cadence: "BIWEEKLY",
       location: "Fellowship Hall",
       host: "Deacon Mina Nashed",
-      tag: "Young Adults",
+      tag: "Youth Meeting",
       churchId: stMark.id,
     },
   });
@@ -339,7 +339,7 @@ async function main() {
       cadence: "MONTHLY",
       location: "Main Hall",
       host: "Fr. Marcos Khalil",
-      tag: "Parish Meeting",
+      tag: "Bible Study",
       churchId: stAnthony.id,
     },
   });
@@ -762,7 +762,7 @@ async function main() {
       title: "Marriage Prep — Session 1: The Theology of Coptic Marriage",
       location: "Conference Room",
       host: "Fr. Antonious Farag",
-      tag: "Parish Meeting",
+      tag: "Bible Study",
       description:
         "The first session established the theological foundation — marriage as a sacrament, the roles of husband and wife in the Coptic tradition, and the eschatological dimension of Christian matrimony. Fr. Antonious walked through the wedding liturgy and its hidden depths.",
       metadata: {
@@ -784,7 +784,7 @@ async function main() {
       title: "Marriage Prep — Session 2: Communication & Conflict",
       location: "Conference Room",
       host: "Dr. Nadia Habib",
-      tag: "Parish Meeting",
+      tag: "Bible Study",
       description:
         "Dr. Nadia Habib leads this session on the dynamics of healthy communication in marriage — listening deeply, expressing needs clearly, and navigating conflict without contempt. Includes practical exercises for couples to try at home.",
       metadata: {
@@ -806,7 +806,7 @@ async function main() {
       title: "Marriage Prep — Session 3: Finances & Shared Life",
       location: "Conference Room",
       host: "Fr. Antonious Farag & Dr. Nadia Habib",
-      tag: "Parish Meeting",
+      tag: "Bible Study",
       description:
         "A joint session on the practical side of shared life — budgeting, debt, financial goals, and how to make decisions together. Fr. Antonious opens with a reflection on stewardship and generosity as spiritual disciplines for married couples.",
       metadata: {
@@ -829,7 +829,7 @@ async function main() {
         "Marriage Prep — Session 4: Family Planning & Raising Children in Faith",
       location: "Conference Room",
       host: "Fr. Antonious Farag",
-      tag: "Parish Meeting",
+      tag: "Bible Study",
       description:
         "An open discussion on family planning from a Coptic perspective, followed by a panel of parents from St. George sharing how they raise children in the faith — from baptism and chrismation through teenage years.",
       metadata: {
@@ -851,7 +851,7 @@ async function main() {
       title: "Marriage Prep — Session 5: The Sacramental Life of the Home",
       location: "Conference Room",
       host: "Fr. Antonious Farag",
-      tag: "Parish Meeting",
+      tag: "Bible Study",
       description:
         "The closing session brings everything together — confession, communion, fasting, prayer, and how the rhythms of the Coptic calendar shape a Christian home. Culminates in a blessing prayer for all the couples completing the course.",
       metadata: {
@@ -965,7 +965,7 @@ async function main() {
       title: "Coptic Language — Class 1: The Alphabet & Phonology",
       location: "Classroom B",
       host: "Cantor George Mikhail",
-      tag: "Parish Meeting",
+      tag: "Bible Study",
       description:
         "Our first class introduced the Coptic alphabet (Bohairic dialect) — its 32 letters, their Coptic and Greek origins, and the unique sounds of the language. Students learned to read their names in Coptic script.",
       metadata: {
@@ -987,7 +987,7 @@ async function main() {
       title: "Coptic Language — Class 2: Liturgical Responses",
       location: "Classroom B",
       host: "Cantor George Mikhail",
-      tag: "Parish Meeting",
+      tag: "Bible Study",
       description:
         "Students began learning the most common liturgical responses — Pi-epnevma, Axios, Kyrie Eleison — their meaning, pronunciation, and context in the Divine Liturgy. We also covered basic grammar patterns.",
       metadata: {
@@ -1009,7 +1009,7 @@ async function main() {
       title: "Coptic Language — Class 3: The Lord's Prayer in Coptic",
       location: "Classroom B",
       host: "Cantor George Mikhail",
-      tag: "Parish Meeting",
+      tag: "Bible Study",
       description:
         "This class centered on the Lord's Prayer (Ti-eprosevkhi) — learning it word by word, parsing its vocabulary, and memorizing it as a living prayer. Students also practiced the Coptic numbers 1–20.",
       metadata: {
@@ -1031,7 +1031,7 @@ async function main() {
       title: "Coptic Language — Class 4: Hymn Study — Pi-Oik",
       location: "Classroom B",
       host: "Cantor George Mikhail",
-      tag: "Parish Meeting",
+      tag: "Bible Study",
       description:
         "A deep dive into the hymn Pi-Oik Ente Pivot — Bread of the Father. Students will parse each line, learn the vocabulary, and practice singing it in Bohairic. Cantor George will explain the hymn's theological content and its place in the liturgy.",
       metadata: {
@@ -1053,7 +1053,7 @@ async function main() {
       title: "Coptic Language — Class 5: Verbs & Tenses",
       location: "Classroom B",
       host: "Cantor George Mikhail",
-      tag: "Parish Meeting",
+      tag: "Bible Study",
       description:
         "An introduction to Coptic verb structure — the present, future, and imperative tenses. We focus on verbs that appear frequently in liturgy and scripture, giving students a grammatical foundation for reading simple Coptic texts.",
       metadata: {
@@ -1075,7 +1075,7 @@ async function main() {
       title: "Coptic Language — Class 6: Reading the Agpeya",
       location: "Classroom B",
       host: "Cantor George Mikhail",
-      tag: "Parish Meeting",
+      tag: "Bible Study",
       description:
         "Students will read the Third Hour prayer of the Agpeya directly from the Coptic text, supported by an interlinear translation. The goal is to experience the Agpeya in its original language for the first time.",
       metadata: {
@@ -1097,7 +1097,7 @@ async function main() {
       title: "Coptic Language — Class 7: Doxologies of the Saints",
       location: "Classroom B",
       host: "Cantor George Mikhail",
-      tag: "Parish Meeting",
+      tag: "Bible Study",
       description:
         "We explore the structure of Coptic doxologies — the poetic hymns that honor each saint. Students will learn the doxology of St. Mary (Epchois ari-epinivi) and the doxology of our patron St. Pishoy, then compare their literary structures.",
       metadata: {
@@ -1121,7 +1121,7 @@ async function main() {
       title: "Young Adults — Session 1: What Does It Mean to Be Coptic?",
       location: "Fellowship Hall",
       host: "Deacon Mina Nashed",
-      tag: "Young Adults",
+      tag: "Youth Meeting",
       description:
         "Our inaugural Young Adults gathering opened with a shared meal and an honest conversation: what does it actually mean to be Coptic Orthodox in Austin today? A wide-ranging discussion on identity, belonging, and faith.",
       metadata: {
@@ -1143,7 +1143,7 @@ async function main() {
       title: "Young Adults — Session 2: Vocation — Work, Faith & Purpose",
       location: "Fellowship Hall",
       host: "Deacon Mina Nashed",
-      tag: "Young Adults",
+      tag: "Youth Meeting",
       description:
         "How do we integrate our faith with our careers, ambitions, and sense of calling? Deacon Mina led a discussion drawing on St. Paul's theology of vocation and a panel of young professionals sharing their own journeys.",
       metadata: {
@@ -1165,7 +1165,7 @@ async function main() {
       title: "Young Adults — Session 3: Relationships, Dating & the Church",
       location: "Fellowship Hall",
       host: "Deacon Mina Nashed",
-      tag: "Young Adults",
+      tag: "Youth Meeting",
       description:
         "An open and honest conversation about relationships, dating as a Coptic Christian, the pressure of marriage expectations, and what the Church actually teaches — and doesn't teach — on these questions.",
       metadata: {
@@ -1187,7 +1187,7 @@ async function main() {
       title: "Young Adults — Session 4: Doubt, Faith & Intellectual Honesty",
       location: "Fellowship Hall",
       host: "Deacon Mina Nashed",
-      tag: "Young Adults",
+      tag: "Youth Meeting",
       description:
         "A session for those wrestling with questions about faith — can doubt be part of the spiritual life? We look at the tradition of apophatic theology, the role of the intellect in Orthodox Christianity, and how to hold faith and reason together.",
       metadata: {
@@ -1210,7 +1210,7 @@ async function main() {
         "Young Adults — Session 5: Service — Finding Your Place in the Church",
       location: "Fellowship Hall",
       host: "Deacon Mina Nashed",
-      tag: "Young Adults",
+      tag: "Youth Meeting",
       description:
         "How do young adults get connected to serving in the Church? Deacon Mina maps out the different ministries at St. Mark, shares how to discern your gifts, and facilitates small group conversations about barriers to involvement.",
       metadata: {
@@ -1234,7 +1234,7 @@ async function main() {
       title: "Pastoral Talk — Month 1: The Sacrament of Confession",
       location: "Main Hall",
       host: "Fr. Marcos Khalil",
-      tag: "Parish Meeting",
+      tag: "Bible Study",
       description:
         "Fr. Marcos opened the series with a deep exploration of confession — not as a transaction, but as a sacramental encounter with the healing Christ. He addressed common fears, misconceptions, and the gift of having a spiritual father.",
       metadata: {
@@ -1256,7 +1256,7 @@ async function main() {
       title: "Pastoral Talk — Month 2: The Fasting Life",
       location: "Main Hall",
       host: "Fr. Marcos Khalil",
-      tag: "Parish Meeting",
+      tag: "Bible Study",
       description:
         "An exploration of the Coptic fasting tradition — the seven fasts, the theology of bodily discipline, and how fasting unites body and soul in the praise of God. Fr. Marcos addresses practical questions about fasting for working adults and families.",
       metadata: {
@@ -1278,7 +1278,7 @@ async function main() {
       title: "Pastoral Talk — Month 3: Raising Children in the Faith",
       location: "Main Hall",
       host: "Fr. Marcos Khalil",
-      tag: "Parish Meeting",
+      tag: "Bible Study",
       description:
         "A talk for the whole parish — parents, grandparents, singles — on the community's shared responsibility for raising the next generation. Fr. Marcos draws on the Church Fathers and takes questions from the congregation.",
       metadata: {
@@ -1300,7 +1300,7 @@ async function main() {
       title: "Pastoral Talk — Month 4: Preparing for Death & Eternal Life",
       location: "Main Hall",
       host: "Fr. Marcos Khalil",
-      tag: "Parish Meeting",
+      tag: "Bible Study",
       description:
         "A talk on the Coptic Church's vision of death, resurrection, and eternal life. Fr. Marcos addresses grief, caring for the dying, the rites of burial, and how the hope of resurrection shapes the way we live now.",
       metadata: {
@@ -1325,7 +1325,7 @@ async function main() {
       title: "Feast of the Annunciation — Divine Liturgy",
       location: "Sanctuary",
       host: "Fr. Bishoy Lamie",
-      tag: "Feast Day",
+      tag: "Bible Study",
       description:
         "Come celebrate the Feast of the Annunciation with a solemn Divine Liturgy in honor of the Virgin St. Mary. The service will be conducted in Coptic, Arabic, and English. All are welcome.",
       metadata: {
@@ -1346,7 +1346,7 @@ async function main() {
       title: 'Women of the Church — Monthly Meeting: "Prayer in the Home"',
       location: "Fellowship Hall",
       host: "Tasoni Mariam Lamie",
-      tag: "Women's Meeting",
+      tag: "Bible Study",
       description:
         "The monthly women's meeting at St. Mary, led by Tasoni Mariam. This month's topic is building a culture of prayer in the family home — morning prayers, evening prayers, and the Agpeya as a family practice. Light refreshments provided.",
       metadata: {
@@ -1425,7 +1425,7 @@ async function main() {
       title: "Annual Vestry Meeting — St. George Church",
       location: "Conference Room",
       host: "Fr. Antonious Farag",
-      tag: "Parish Meeting",
+      tag: "Servants Meeting",
       description:
         "The annual vestry meeting reviewed the church's financial report for the year, approved the 2026 budget, elected two new board members, and received updates on the fellowship hall renovation project.",
       metadata: {
@@ -1446,7 +1446,7 @@ async function main() {
       title: 'Parish Day Retreat — "Stillness & the City"',
       location: "Holy Cross Retreat Center, Cedar Hill, TX",
       host: "Fr. Antonious Farag",
-      tag: "Retreat",
+      tag: "Bible Study",
       description:
         "A full Saturday of silence, prayer, and spiritual renewal at the Holy Cross Retreat Center. The day includes Agpeya prayers, a morning talk by Fr. Antonious on the interior life, a silent lunch, and small group confession opportunities. No phones — just presence.",
       requiresRegistration: true,
@@ -1486,7 +1486,7 @@ async function main() {
       title: "Annual Vestry Meeting — St. Mark Church",
       location: "Main Hall",
       host: "Fr. Cyril Mikhail",
-      tag: "Parish Meeting",
+      tag: "Servants Meeting",
       description:
         "The annual vestry meeting reviewed the church's financial report, elected new board members, and discussed the renovation project for the baptistry. Minutes are available from the church office.",
       metadata: {
@@ -1525,7 +1525,7 @@ async function main() {
       title: "Friday Midnight Praise — Feast of St. Mark",
       location: "Sanctuary",
       host: "Fr. Cyril Mikhail",
-      tag: "Feast Day",
+      tag: "Bible Study",
       description:
         "A special Midnight Praise (Tasbeha) celebrating the Feast of St. Mark the Evangelist, founder of the Coptic Church. The praises will be led by the church choir in Coptic and Arabic, with a short homily on the witness of St. Mark.",
       metadata: {
@@ -1546,7 +1546,7 @@ async function main() {
       title: "Annual Church Family Picnic",
       location: "Zilker Park, Austin, TX",
       host: "St. Mark Parish Committee",
-      tag: "Social",
+      tag: "Youth Meeting",
       description:
         "Our beloved annual picnic at Zilker Park — a day for the whole St. Mark family to enjoy food, games, fellowship, and the outdoors. Bring your family, your appetite, and a side dish to share. Kids' games, volleyball, and prizes.",
       metadata: {
@@ -1568,7 +1568,7 @@ async function main() {
       title: '"The Life of St. Moses the Black" — Evening Lecture',
       location: "Main Hall",
       host: "Dr. Hany Takla",
-      tag: "Lecture",
+      tag: "Bible Study",
       description:
         "Dr. Hany Takla of the St. Shenouda Coptic Society delivered a compelling lecture on the life and legacy of St. Moses the Black — from bandit to monk to martyr. His story is a testament to the transforming grace of God and the ascetic tradition of the Desert Fathers.",
       metadata: {
@@ -1589,7 +1589,7 @@ async function main() {
       title: "Feast of St. Anthony the Great — Divine Liturgy",
       location: "Sanctuary",
       host: "Fr. Boulos Samir",
-      tag: "Feast Day",
+      tag: "Bible Study",
       description:
         "A solemn Divine Liturgy commemorating St. Anthony the Great, father of monasticism, on his feast day. Fr. Boulos will preach on the radical witness of Anthony's life and its meaning for Christians in the modern world. All are welcome.",
       metadata: {
@@ -1610,7 +1610,7 @@ async function main() {
       title: "Parish Community Dinner — Spring Gathering",
       location: "Fellowship Hall",
       host: "Archangel Michael Parish Committee",
-      tag: "Social",
+      tag: "Youth Meeting",
       description:
         "The quarterly community dinner for the parish family of Archangel Michael Church. Each family is invited to bring a dish representing their heritage. An evening of food, fellowship, and gratitude for our diverse community.",
       metadata: {
@@ -1631,7 +1631,7 @@ async function main() {
       title: "Summer Fundraiser Dinner — CANCELLED",
       location: "Fellowship Hall",
       host: "Fr. Boulos Samir",
-      tag: "Social",
+      tag: "Youth Meeting",
       description:
         "Our annual summer fundraiser dinner to support the church's building fund. Unfortunately this event was cancelled due to a scheduling conflict with the diocese retreat. A new date will be announced soon.",
       cancelledAt: past(10),
@@ -1656,7 +1656,7 @@ async function main() {
       title: "Divine Liturgy — Feast of St. Pishoy",
       location: "Sanctuary",
       host: "Fr. Demetrius Botros",
-      tag: "Feast Day",
+      tag: "Bible Study",
       description:
         "Our patronal feast — the Feast of Abba Pishoy the Great. The Divine Liturgy was celebrated in Bohairic Coptic and English, followed by a parish luncheon. The day marked the 14th anniversary of our church's founding.",
       metadata: {
@@ -1677,7 +1677,7 @@ async function main() {
       title: 'Icon Writing Workshop — "The Theotokos Hodegetria"',
       location: "Fellowship Hall",
       host: "Iconographer Bishoy Ayad",
-      tag: "Workshop",
+      tag: "Bible Study",
       description:
         "A full-day introduction to Coptic iconography. Iconographer Bishoy Ayad will guide participants through the theology of icons and the step-by-step process of creating a small icon of the Hodegetria — the Virgin Mary pointing to Christ. All materials provided.",
       requiresRegistration: true,
@@ -1715,7 +1715,7 @@ async function main() {
       title: "Feast of St. Anthony — Divine Liturgy & Breakfast",
       location: "Sanctuary",
       host: "Fr. Marcos Khalil",
-      tag: "Feast Day",
+      tag: "Bible Study",
       description:
         "Celebrating the feast of our patron St. Anthony the Great with a solemn Divine Liturgy followed by a parish breakfast. Fr. Marcos will preach on Anthony's encounter with God in the desert and its meaning for our own spiritual journey.",
       metadata: {
@@ -1736,7 +1736,7 @@ async function main() {
       title: 'Marriage Enrichment Evening — "The Art of Forgiveness"',
       location: "Fellowship Hall",
       host: "Fr. Marcos Khalil & Dr. Nadia Habib",
-      tag: "Parish Meeting",
+      tag: "Bible Study",
       description:
         "A one-evening marriage enrichment event for married couples of all ages. Fr. Marcos leads with a reflection on forgiveness in the sacramental life of a Christian marriage, followed by a workshop session facilitated by Dr. Nadia Habib. Light dinner at 6:30 PM.",
       metadata: {
@@ -1757,7 +1757,7 @@ async function main() {
       title: 'Women\'s Day of Reflection — "Mary at the Foot of the Cross"',
       location: "St. Anthony Church",
       host: "Tasoni Irene Khalil",
-      tag: "Women's Meeting",
+      tag: "Bible Study",
       description:
         "A Saturday day of reflection for the women of St. Anthony Church and invited guests. Tasoni Irene leads the morning with Agpeya prayers, a meditation on the Virgin Mary's witness at Golgotha, and small group discussions. Lunch provided.",
       requiresRegistration: true,

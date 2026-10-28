@@ -41,7 +41,7 @@ export function CreateEventFAB({
             <Link
               href="/series/create"
               onClick={() => setOpen(false)}
-              className="flex items-center gap-2 rounded-full bg-white px-4 py-2.5 text-sm font-medium shadow-lg transition-transform hover:scale-105 active:scale-95"
+              className="bg-card flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-medium shadow-lg transition-transform hover:scale-105 active:scale-95"
             >
               <Repeat className="text-primary size-4" />
               New Series
@@ -50,7 +50,7 @@ export function CreateEventFAB({
           <Link
             href="/events/create"
             onClick={() => setOpen(false)}
-            className="flex items-center gap-2 rounded-full bg-white px-4 py-2.5 text-sm font-medium shadow-lg transition-transform hover:scale-105 active:scale-95"
+            className="bg-card flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-medium shadow-lg transition-transform hover:scale-105 active:scale-95"
           >
             <CalendarPlus className="text-primary size-4" />
             New Event

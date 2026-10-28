@@ -34,7 +34,7 @@ export function StepCampDetails() {
         control={form.control}
         name="campAllowPartialRegistration"
         render={({ field }) => (
-          <FormItem className="flex items-center justify-between gap-3 rounded-xl border bg-white px-4 py-3">
+          <FormItem className="bg-card flex items-center justify-between gap-3 rounded-xl border px-4 py-3">
             <div>
               <p className="text-sm font-medium">Allow Partial Attendance</p>
               <p className="text-muted-foreground text-xs">
@@ -65,7 +65,7 @@ export function StepCampDetails() {
         {fields.map((field, index) => (
           <div
             key={field.id}
-            className="flex flex-col gap-2 rounded-xl border bg-white px-3 py-3"
+            className="bg-card flex flex-col gap-2 rounded-xl border px-3 py-3"
           >
             <div className="flex items-center justify-between">
               <p className="text-muted-foreground text-xs font-medium">

@@ -91,8 +91,8 @@ export function MyRequestView({
       )}
 
       {status === "APPROVED" && (
-        <div className="rounded-lg bg-green-50 p-3">
-          <p className="text-sm font-medium text-green-700">
+        <div className="bg-success/10 rounded-lg p-3">
+          <p className="text-success text-sm font-medium">
             You now have access
           </p>
         </div>

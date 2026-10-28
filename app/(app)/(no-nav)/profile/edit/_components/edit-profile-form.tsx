@@ -1,5 +1,6 @@
 "use client";
 
+import { Card } from "@/components/ui/card";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
@@ -75,7 +76,7 @@ export function EditProfileForm({ defaultValues }: EditProfileFormProps) {
         onSubmit={form.handleSubmit(onSubmit)}
         className="flex flex-col gap-4"
       >
-        <div className="shadow-card flex flex-col gap-5 rounded-2xl bg-white p-5">
+        <Card className="gap-5 p-5">
           {/* Photo */}
           <FormField
             control={form.control}
@@ -197,7 +198,7 @@ export function EditProfileForm({ defaultValues }: EditProfileFormProps) {
               </FormItem>
             )}
           />
-        </div>
+        </Card>
 
         {form.formState.errors.root && (
           <p className="text-destructive text-center text-sm">

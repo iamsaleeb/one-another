@@ -3,6 +3,8 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Bookmark } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import {
   saveEventAction,
   unsaveEventAction,
@@ -48,17 +50,21 @@ export function SaveEventButton({
   }
 
   return (
-    <button
+    <Button
+      variant="ghost"
+      size="icon-sm"
       onClick={handleClick}
       disabled={isPending}
       aria-label={saved ? "Unsave event" : "Save event"}
       aria-pressed={saved}
-      className="p-1 disabled:opacity-50"
       type="button"
     >
       <Bookmark
-        className={`size-5 transition-colors ${saved ? "fill-foreground text-foreground" : "text-muted-foreground"}`}
+        className={cn(
+          "size-5 transition-colors",
+          saved ? "fill-foreground text-foreground" : "text-muted-foreground"
+        )}
       />
-    </button>
+    </Button>
   );
 }

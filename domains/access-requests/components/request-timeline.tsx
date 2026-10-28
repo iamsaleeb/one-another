@@ -18,8 +18,8 @@ const OUTCOME_LABELS: Partial<Record<AccessRequestStatus, string>> = {
 };
 
 const OUTCOME_COLORS: Partial<Record<AccessRequestStatus, string>> = {
-  APPROVED: "text-green-600",
-  DENIED: "text-red-500",
+  APPROVED: "text-success",
+  DENIED: "text-destructive",
   CANCELLED: "text-muted-foreground",
   REVOKED: "text-muted-foreground",
 };
@@ -36,7 +36,7 @@ export function RequestTimeline({ status, createdAt, reviewedAt }: Props) {
       <div className="flex items-start gap-3">
         <div className="flex flex-col items-center">
           <div className="bg-primary flex size-6 items-center justify-center rounded-full">
-            <Check className="size-3.5 text-white" />
+            <Check className="text-primary-foreground size-3.5" />
           </div>
           <div
             className="bg-border my-1 w-px flex-1"
@@ -57,14 +57,14 @@ export function RequestTimeline({ status, createdAt, reviewedAt }: Props) {
           <div
             className={`flex size-6 items-center justify-center rounded-full border-2 ${
               isPending
-                ? "border-amber-400 bg-amber-50"
+                ? "border-warning bg-warning/10"
                 : "bg-primary border-primary"
             }`}
           >
             {isPending ? (
-              <Clock className="size-3.5 text-amber-500" />
+              <Clock className="text-warning size-3.5" />
             ) : (
-              <Check className="size-3.5 text-white" />
+              <Check className="text-primary-foreground size-3.5" />
             )}
           </div>
           {isResolved && (
@@ -91,7 +91,7 @@ export function RequestTimeline({ status, createdAt, reviewedAt }: Props) {
             <div
               className={`flex size-6 items-center justify-center rounded-full ${
                 status === "APPROVED"
-                  ? "bg-green-500"
+                  ? "bg-success"
                   : "bg-muted border-muted-foreground border-2"
               }`}
             >

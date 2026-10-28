@@ -282,24 +282,26 @@ export function UnifiedAuthForm({
                     </Button>
                     <div className="text-muted-foreground text-center text-sm">
                       Didn&apos;t receive a code?{" "}
-                      <button
+                      <Button
                         type="button"
+                        variant="link"
                         onClick={handleResend}
                         disabled={cooldown > 0}
-                        className="hover:text-primary underline underline-offset-4 disabled:cursor-not-allowed disabled:opacity-50"
+                        className="text-muted-foreground hover:text-primary h-auto p-0 underline"
                       >
                         {cooldown > 0
                           ? `Resend in ${cooldown}s`
                           : "Resend code"}
-                      </button>
+                      </Button>
                     </div>
-                    <button
+                    <Button
                       type="button"
+                      variant="link"
                       onClick={handleBack}
-                      className="text-muted-foreground hover:text-primary text-center text-sm underline underline-offset-4"
+                      className="text-muted-foreground hover:text-primary h-auto p-0 underline"
                     >
                       Use a different email
-                    </button>
+                    </Button>
                   </div>
                 </form>
               </Form>

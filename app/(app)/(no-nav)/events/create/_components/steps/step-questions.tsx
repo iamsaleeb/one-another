@@ -84,7 +84,7 @@ export function StepQuestions({ libraryItems, locked }: StepQuestionsProps) {
         {fields.map((field, index) => (
           <div
             key={field.id}
-            className="flex items-start justify-between gap-2 rounded-xl border bg-white px-3 py-3"
+            className="bg-card flex items-start justify-between gap-2 rounded-xl border px-3 py-3"
           >
             <div className="flex min-w-0 flex-1 flex-col gap-1">
               <p className="line-clamp-2 text-sm font-medium">{field.label}</p>

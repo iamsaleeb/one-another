@@ -1,5 +1,6 @@
 "use client";
 
+import { Card } from "@/components/ui/card";
 import { useActionState } from "react";
 import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -39,7 +40,7 @@ export function AdminChurchCard({ church }: AdminChurchCardProps) {
   );
 
   return (
-    <div className="shadow-card flex flex-col gap-5 rounded-2xl bg-white p-5">
+    <Card className="gap-5 p-5">
       <h2 className="text-base font-semibold">{church.name}</h2>
 
       {/* Organisers list */}
@@ -94,7 +95,7 @@ export function AdminChurchCard({ church }: AdminChurchCardProps) {
           <p className="text-destructive text-xs">{removeState.error}</p>
         )}
         {removeState.success && (
-          <p className="text-xs text-green-600">{removeState.success}</p>
+          <p className="text-success text-xs">{removeState.success}</p>
         )}
       </div>
 
@@ -121,9 +122,9 @@ export function AdminChurchCard({ church }: AdminChurchCardProps) {
           <p className="text-destructive text-xs">{addState.error}</p>
         )}
         {addState.success && (
-          <p className="text-xs text-green-600">{addState.success}</p>
+          <p className="text-success text-xs">{addState.success}</p>
         )}
       </form>
-    </div>
+    </Card>
   );
 }

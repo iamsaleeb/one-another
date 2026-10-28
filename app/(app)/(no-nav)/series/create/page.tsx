@@ -1,3 +1,4 @@
+import { Card } from "@/components/ui/card";
 import { redirect } from "next/navigation";
 import { CreateSeriesForm } from "./_components/create-series-form";
 import { PageHeader } from "@/components/ui/page-header";
@@ -13,9 +14,9 @@ export default async function CreateSeriesPage() {
     <div className="mx-auto max-w-lg">
       <PageHeader title="Create Series" />
       <div className="px-4 pb-6">
-        <div className="shadow-card rounded-2xl bg-white p-5">
+        <Card className="gap-0 p-5">
           <CreateSeriesForm churches={churches} />
-        </div>
+        </Card>
       </div>
     </div>
   );

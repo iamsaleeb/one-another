@@ -19,7 +19,7 @@ export default function InboxLoading() {
     <div className="flex flex-col">
       <PageHeader title="Inbox" />
       <div className="px-4">
-        <div className="shadow-card divide-border divide-y overflow-hidden rounded-2xl bg-white">
+        <div className="shadow-card divide-border bg-card divide-y overflow-hidden rounded-2xl">
           <NotificationRowSkeleton />
           <NotificationRowSkeleton />
           <NotificationRowSkeleton />

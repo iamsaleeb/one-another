@@ -29,7 +29,7 @@ export function AboutTab({ church }: AboutTabProps) {
       {/* Details */}
       <section>
         <h2 className="mb-3 text-lg font-bold">Details</h2>
-        <Card className="shadow-card rounded-2xl border-0 bg-white">
+        <Card>
           <CardContent className="space-y-4 px-4 py-3">
             <InfoField icon={Users} label="Followers" iconClassName={muted}>
               {church._count.followers.toLocaleString()}

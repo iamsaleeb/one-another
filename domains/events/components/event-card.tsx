@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
+import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { EventDatetime } from "./event-datetime";
 import { LiveBadge } from "./live-badge";
@@ -31,7 +32,7 @@ export function EventCard({
   return (
     <div className="relative">
       <Link href={`/events/${event.id}`}>
-        <Card className="shadow-card overflow-hidden rounded-2xl border-0 bg-white py-0">
+        <Card className="overflow-hidden py-0">
           <div className="flex flex-col">
             {event.photoUrl && (
               <div className="relative h-44 w-full">
@@ -53,13 +54,11 @@ export function EventCard({
                   <EventDatetime datetime={event.datetime} />
                 </p>
                 {event.isDraft ? (
-                  <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-medium whitespace-nowrap text-amber-700">
-                    Draft
-                  </span>
+                  <Badge variant="warning">Draft</Badge>
                 ) : event.cancelledAt ? (
-                  <span className="bg-destructive/10 text-destructive rounded-full px-2.5 py-1 text-xs font-medium whitespace-nowrap">
+                  <Badge className="bg-destructive/10 text-destructive">
                     Cancelled
-                  </span>
+                  </Badge>
                 ) : (
                   // A Live Event shows "Live" in place of its Category.
                   <LiveBadge
@@ -70,16 +69,14 @@ export function EventCard({
                     }}
                   >
                     {(() => {
-                      const colors = TAG_COLORS[event.tag as Category] ?? {
-                        bg: "bg-primary/10",
-                        text: "text-primary",
-                      };
+                      const colors = TAG_COLORS[event.tag as Category];
                       return (
-                        <span
-                          className={`rounded-full ${colors.bg} px-2.5 py-1 text-xs font-medium ${colors.text} whitespace-nowrap`}
+                        <Badge
+                          variant="soft"
+                          className={colors && `${colors.bg} ${colors.text}`}
                         >
                           {event.badge}
-                        </span>
+                        </Badge>
                       );
                     })()}
                   </LiveBadge>

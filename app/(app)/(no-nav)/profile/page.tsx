@@ -1,3 +1,4 @@
+import { Card } from "@/components/ui/card";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { auth } from "@/auth";
@@ -51,7 +52,7 @@ export default async function ProfilePage() {
     <div className="bg-background">
       <div className="flex flex-col gap-4 px-4 pt-6 pb-28">
         {/* Profile header */}
-        <div className="shadow-card flex items-center gap-4 rounded-2xl bg-white p-5">
+        <Card className="flex-row items-center gap-4 p-5">
           <Avatar className="size-16 shrink-0 rounded-xl text-xl">
             <AvatarImage src={user?.image ?? ""} className="object-cover" />
             <AvatarFallback className="bg-primary text-primary-foreground rounded-xl font-bold">
@@ -67,11 +68,11 @@ export default async function ProfilePage() {
             </p>
             {badgeRole && <RoleBadge role={badgeRole} />}
           </div>
-        </div>
+        </Card>
 
         {/* Info card — only shown when supplementary details exist */}
         {(dbUser?.phone || dbUser?.dateOfBirth) && (
-          <div className="shadow-card divide-border divide-y overflow-hidden rounded-2xl bg-white">
+          <div className="shadow-card divide-border bg-card divide-y overflow-hidden rounded-2xl">
             {dbUser.phone && (
               <div className="px-4 py-3">
                 <InfoField
@@ -98,7 +99,7 @@ export default async function ProfilePage() {
         )}
 
         {/* Settings */}
-        <div className="shadow-card divide-border divide-y overflow-hidden rounded-2xl bg-white">
+        <div className="shadow-card divide-border bg-card divide-y overflow-hidden rounded-2xl">
           <div className="flex items-center gap-2 px-4 py-3">
             <Settings className="text-primary h-3.5 w-3.5" />
             <span className="text-sm font-semibold">Settings</span>
@@ -124,7 +125,7 @@ export default async function ProfilePage() {
         </div>
 
         {/* Legal */}
-        <div className="shadow-card divide-border divide-y overflow-hidden rounded-2xl bg-white">
+        <div className="shadow-card divide-border bg-card divide-y overflow-hidden rounded-2xl">
           <div className="flex items-center gap-2 px-4 py-3">
             <ScrollText className="text-primary h-3.5 w-3.5" />
             <span className="text-sm font-semibold">Legal</span>
@@ -156,7 +157,7 @@ export default async function ProfilePage() {
         </div>
 
         {/* Account */}
-        <div className="shadow-card divide-border divide-y overflow-hidden rounded-2xl bg-white">
+        <div className="shadow-card divide-border bg-card divide-y overflow-hidden rounded-2xl">
           <div className="flex items-center gap-2 px-4 py-3">
             <UserCog className="text-primary h-3.5 w-3.5" aria-hidden="true" />
             <span className="text-sm font-semibold">Account</span>

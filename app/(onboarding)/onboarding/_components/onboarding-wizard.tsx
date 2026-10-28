@@ -1,5 +1,6 @@
 "use client";
 
+import { Card } from "@/components/ui/card";
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
@@ -291,9 +292,7 @@ export function OnboardingWizard({ callbackUrl }: { callbackUrl?: string }) {
           className="flex flex-col gap-5"
           onSubmit={(e) => e.preventDefault()}
         >
-          <div className="shadow-card rounded-2xl bg-white p-5">
-            {renderStep()}
-          </div>
+          <Card className="gap-0 p-5">{renderStep()}</Card>
 
           {form.formState.errors.root && (
             <p className="text-destructive text-center text-sm">

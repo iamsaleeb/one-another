@@ -1,3 +1,4 @@
+import { Card } from "@/components/ui/card";
 import { notFound, redirect } from "next/navigation";
 import { getSeriesById } from "@/domains/series/actions/data";
 import { getAbility, getSessionUserId, seriesSubject } from "@/domains/roles";
@@ -24,7 +25,7 @@ export default async function EditSeriesPage({ params }: Props) {
     <div className="mx-auto max-w-lg">
       <PageHeader title="Edit Series" />
       <div className="px-4 pb-6">
-        <div className="shadow-card rounded-2xl bg-white p-5">
+        <Card className="gap-0 p-5">
           <EditSeriesForm
             series={{
               id: series.id,
@@ -38,7 +39,7 @@ export default async function EditSeriesPage({ params }: Props) {
             }}
             church={series.church}
           />
-        </div>
+        </Card>
       </div>
     </div>
   );

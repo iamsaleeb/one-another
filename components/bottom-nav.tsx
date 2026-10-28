@@ -49,7 +49,7 @@ export function BottomNav({
     : publicTabs;
 
   return (
-    <nav className="pb-safe fixed right-0 bottom-0 left-0 z-50 bg-white shadow-[0px_-2px_31px_0px_#0000001A]">
+    <nav className="pb-safe bg-card fixed right-0 bottom-0 left-0 z-50 shadow-[0px_-2px_31px_0px_#0000001A]">
       <div className="flex h-16 items-center justify-around px-2">
         {tabs.map(({ label, href, icon: Icon }) => {
           const isActive = pathname === href;

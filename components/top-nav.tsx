@@ -41,13 +41,15 @@ export function TopNav({ user }: TopNavProps) {
     <header className="bg-primary pt-safe sticky top-0 z-50">
       <div className="flex h-14 items-center justify-between px-4">
         {showBackButton ? (
-          <button
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={() => router.back()}
-            className="text-primary-foreground flex items-center"
+            className="text-primary-foreground hover:bg-primary/80 hover:text-primary-foreground -ml-2"
             aria-label="Go back"
           >
-            <ChevronLeft className="h-6 w-6" />
-          </button>
+            <ChevronLeft className="size-6" />
+          </Button>
         ) : (
           <Link
             href="/"
@@ -85,7 +87,7 @@ export function TopNav({ user }: TopNavProps) {
       </div>
 
       {!showBackButton && (
-        <div className="border-border border-b bg-white px-4 py-2.5">
+        <div className="border-border bg-card border-b px-4 py-2.5">
           <Suspense fallback={<SearchBar />}>
             <SearchBarWithParams />
           </Suspense>

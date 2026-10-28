@@ -26,7 +26,7 @@ function TopNavFallback() {
   return (
     <header className="bg-primary pt-safe sticky top-0 z-50">
       <div className="h-14" />
-      <div className="border-border border-b bg-white px-4 py-2.5">
+      <div className="border-border bg-card border-b px-4 py-2.5">
         <div className="bg-muted/60 h-10 w-full rounded-full" />
       </div>
     </header>

@@ -3,6 +3,7 @@ import { getSeries } from "@/domains/series/actions/data";
 import { PageHeader } from "@/components/ui/page-header";
 import { Empty, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
 import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { CADENCE_LABELS } from "@/lib/types/search";
 
 export default async function SeriesPage() {
@@ -22,12 +23,12 @@ export default async function SeriesPage() {
         ) : (
           allSeries.map((s) => (
             <Link key={s.id} href={`/series/${s.id}`}>
-              <Card className="shadow-card rounded-2xl border-0 bg-white py-0">
+              <Card className="py-0">
                 <CardContent className="flex flex-col gap-1.5 p-4">
                   <div className="flex items-center justify-between">
-                    <span className="bg-primary/10 text-primary rounded-full px-2.5 py-1 text-xs font-medium whitespace-nowrap">
+                    <Badge variant="soft">
                       {CADENCE_LABELS[s.cadence] ?? s.cadence}
-                    </span>
+                    </Badge>
                     <span className="text-muted-foreground text-xs">
                       {s._count.events} upcoming
                     </span>

@@ -147,7 +147,7 @@ export default async function Home({
                   </h2>
                   {filteredChurches.map((church) => (
                     <Link key={church.id} href={`/churches/${church.id}`}>
-                      <Card className="shadow-card rounded-2xl border-0 bg-white py-0">
+                      <Card className="py-0">
                         <CardContent className="flex items-center justify-between p-4">
                           <div className="flex flex-col gap-1">
                             <p className="text-sm font-bold">{church.name}</p>

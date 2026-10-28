@@ -98,7 +98,7 @@ export function NotificationList({
 
   return (
     <div className="flex flex-col gap-4 px-4 pb-6">
-      <div className="shadow-card divide-border divide-y overflow-hidden rounded-2xl bg-white">
+      <div className="shadow-card divide-border bg-card divide-y overflow-hidden rounded-2xl">
         {displayed.map((n) => (
           <NotificationItem key={n.id} notification={n} />
         ))}

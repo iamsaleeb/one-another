@@ -23,7 +23,7 @@ export function ChurchCard({
   const location = church.address ? formatLocality(church.address) : "";
 
   return (
-    <Card className="shadow-card relative isolate flex-row gap-3 rounded-2xl border-0 bg-white p-3">
+    <Card className="relative isolate flex-row gap-3 p-3">
       <div className="relative size-20 shrink-0 overflow-hidden rounded-xl">
         {church.photoUrl ? (
           <Image

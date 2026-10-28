@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Repeat } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import {
   Empty,
   EmptyHeader,
@@ -34,12 +35,12 @@ export function SeriesTab({ series }: SeriesTabProps) {
         <div className="flex flex-col gap-3">
           {series.map((s) => (
             <Link key={s.id} href={`/series/${s.id}`}>
-              <Card className="shadow-card rounded-2xl border-0 bg-white py-0">
+              <Card className="py-0">
                 <CardContent className="flex flex-col gap-1.5 p-4">
                   <div className="flex items-center justify-between">
-                    <span className="bg-primary/10 text-primary rounded-full px-2.5 py-1 text-xs font-medium whitespace-nowrap">
+                    <Badge variant="soft">
                       {CADENCE_LABELS[s.cadence] ?? s.cadence}
-                    </span>
+                    </Badge>
                     <span className="text-muted-foreground text-xs">
                       {s._count.events} upcoming
                     </span>

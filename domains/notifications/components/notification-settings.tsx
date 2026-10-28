@@ -99,7 +99,7 @@ export function NotificationSettings({ preferences }: Props) {
         return (
           <div
             key={key}
-            className="shadow-card overflow-hidden rounded-2xl bg-white"
+            className="shadow-card bg-card overflow-hidden rounded-2xl"
           >
             <div className="flex items-start justify-between gap-3 px-4 py-3">
               <div className="min-w-0 flex-1">

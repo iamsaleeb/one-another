@@ -1,24 +1,28 @@
 "use client";
 
 import { useState } from "react";
-import { cn } from "@/lib/utils";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+  InputGroupText,
+} from "@/components/ui/input-group";
 
-interface PriceInputProps {
+type PriceInputProps = Omit<
+  React.ComponentProps<"input">,
+  "value" | "onChange" | "onBlur"
+> & {
   value?: string | null;
   onChange?: (value: string) => void;
   onBlur?: () => void;
-  name?: string;
-  disabled?: boolean;
-  className?: string;
-}
+};
 
 export function PriceInput({
   value,
   onChange,
   onBlur,
-  name,
-  disabled,
   className,
+  ...props
 }: PriceInputProps) {
   const [displayValue, setDisplayValue] = useState(() => {
     if (!value) return "";
@@ -49,26 +53,19 @@ export function PriceInput({
   }
 
   return (
-    <div
-      className={cn(
-        "border-input bg-background ring-offset-background focus-within:ring-ring flex h-10 w-full rounded-md border text-sm focus-within:ring-2 focus-within:ring-offset-2",
-        className
-      )}
-    >
-      <span className="text-muted-foreground border-input bg-muted flex items-center rounded-l-md border-r px-3 select-none">
-        A$
-      </span>
-      <input
-        name={name}
+    <InputGroup className={className}>
+      <InputGroupAddon>
+        <InputGroupText>A$</InputGroupText>
+      </InputGroupAddon>
+      <InputGroupInput
+        {...props}
         type="text"
         inputMode="decimal"
         value={displayValue}
         onChange={handleChange}
         onBlur={handleBlur}
         placeholder="0.00"
-        disabled={disabled}
-        className="placeholder:text-muted-foreground flex-1 bg-transparent px-3 outline-none disabled:cursor-not-allowed disabled:opacity-50"
       />
-    </div>
+    </InputGroup>
   );
 }

@@ -6,6 +6,8 @@ import { Capacitor, type PluginListenerHandle } from "@capacitor/core";
 import { PushNotifications } from "@capacitor/push-notifications";
 import { FCM } from "@capacitor-community/fcm";
 import { toast } from "sonner";
+import { isAppPath } from "../lib/app-path";
+import { rememberDeviceToken } from "../lib/device-token";
 
 export function PushNotificationProvider() {
   const router = useRouter();
@@ -43,7 +45,9 @@ export function PushNotificationProvider() {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ token: fcmToken, platform }),
               });
-              if (!res.ok) {
+              if (res.ok) {
+                rememberDeviceToken(fcmToken);
+              } else {
                 const body = await res.text().catch(() => "(unreadable)");
                 console.error(
                   `Failed to register push token: ${res.status} ${res.statusText} — ${body}`
@@ -80,7 +84,9 @@ export function PushNotificationProvider() {
           "pushNotificationActionPerformed",
           (notification) => {
             const data = notification.notification.data;
-            if (data?.eventId) {
+            if (isAppPath(data?.url)) {
+              router.push(data.url);
+            } else if (data?.eventId) {
               router.push(`/events/${data.eventId}`);
             } else if (data?.seriesId) {
               router.push(`/series/${data.seriesId}`);

@@ -31,7 +31,7 @@ import {
 } from "@/domains/events/validations/event";
 import { getAbility, getSessionUserId, eventSubject } from "@/domains/roles";
 import { EventDatetime } from "@/domains/events/components/event-datetime";
-import { hasHappened } from "@/domains/events/lib/timing";
+import { hasEnded, hasHappened } from "@/domains/events/lib/timing";
 import { LiveBadge } from "@/domains/events/components/live-badge";
 import { getEventDays } from "@/lib/datetime";
 import { InfoField } from "@/components/info-field";
@@ -131,7 +131,7 @@ export default async function EventDetailPage({ params }: Props) {
   // its end, like any Event's.
   const campDays =
     camp?.allowPartialRegistration && event.datetime && event.endDatetime
-      ? getEventDays(event.datetime, event.endDatetime)
+      ? getEventDays(event.datetime, event.endDatetime, event.timezone)
       : [];
   const myAttendeeMeta = myAttendance
     ? parseEventAttendeeMetadata(myAttendance.metadata)
@@ -302,6 +302,7 @@ export default async function EventDetailPage({ params }: Props) {
         price={event.price}
         isCancelled={!!event.cancelledAt}
         isDraft={event.isDraft}
+        isEnded={hasEnded(event)}
         attendees={attendees}
         campDays={campDays}
         questions={questions}

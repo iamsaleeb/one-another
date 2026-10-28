@@ -238,6 +238,19 @@ describe("saveEvent", () => {
     ).toMatchObject({ title: "Changed" });
   });
 
+  it("records the timezone a save names, and keeps it when one names none or an unknown one", async () => {
+    await makeEvent({ id: "e1", churchId: "c1" });
+    const timezone = async () =>
+      (await prisma.event.findUniqueOrThrow({ where: { id: "e1" } })).timezone;
+
+    await saveEvent("e1", input({ timezone: "Australia/Sydney" }), admin());
+    expect(await timezone()).toBe("Australia/Sydney");
+
+    await saveEvent("e1", input(), admin());
+    await saveEvent("e1", input({ timezone: "Not/AZone" }), admin());
+    expect(await timezone()).toBe("Australia/Sydney");
+  });
+
   describe("Owning Church", () => {
     const bothChurches = () =>
       as("admin", {

@@ -11,6 +11,8 @@ export const createEventSchema = z.object({
   endDate: z.iso.date(),
   endTime: z.iso.time(),
   endDatetimeISO: z.iso.datetime().optional(),
+  // The browser's IANA timezone; an unknown one is ignored.
+  timezone: z.string().max(64).optional(),
   location: z.string().min(1, "Location is required"),
   host: z.string().min(1, "Host is required"),
   tag: z.string().min(1, "Category is required"),

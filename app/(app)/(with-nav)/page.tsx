@@ -26,7 +26,9 @@ import { WHEN_LABELS, TYPE_LABELS, type WhenFilter } from "@/lib/types/search";
 import { searchParamsSchema } from "@/lib/validations/search";
 import { HomeEventTabs } from "@/domains/events/components/home-event-tabs";
 import { formatLocality } from "@/lib/address";
+import { cookies } from "next/headers";
 import { auth } from "@/auth";
+import { TIME_ZONE_COOKIE } from "@/lib/search-range";
 
 export default async function Home({
   searchParams,
@@ -45,6 +47,10 @@ export default async function Home({
   const hasFilters = !!(query || type !== "all" || when || category);
 
   const userId = (await auth())?.user?.id ?? null;
+  // "Today" and "This Weekend" are the searcher's days (see SearchBar).
+  const timeZone = when
+    ? (await cookies()).get(TIME_ZONE_COOKIE)?.value
+    : undefined;
 
   const [searchResults, followedPage, otherPage, savedPage] = await Promise.all(
     [
@@ -54,6 +60,7 @@ export default async function Home({
             type,
             when: when as WhenFilter | undefined,
             category: category ?? "",
+            timeZone,
           })
         : Promise.resolve(null),
       !hasFilters && userId

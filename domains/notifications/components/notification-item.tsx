@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { type ElementType } from "react";
-import { Bell, CalendarX, Repeat } from "lucide-react";
+import { Bell, CalendarX, Repeat, UserCheck, UserPlus } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import {
   Item,
@@ -11,16 +11,20 @@ import {
   ItemTitle,
 } from "@/components/ui/item";
 import type { InboxNotification } from "@/domains/notifications/inbox";
+import { isAppPath } from "@/domains/notifications/lib/app-path";
 
 const TYPE_ICON: Record<string, ElementType> = {
   EVENT_REMINDER: Bell,
   NEW_SERIES_SESSION: Repeat,
   EVENT_CANCELLED: CalendarX,
+  ROLE_REQUEST_RECEIVED: UserPlus,
+  ROLE_REQUEST_OUTCOME: UserCheck,
 };
 
 function getHref(data: unknown): string | null {
   if (!data || typeof data !== "object" || Array.isArray(data)) return null;
   const d = data as Record<string, unknown>;
+  if (isAppPath(d.url)) return d.url;
   if (typeof d.eventId === "string") return `/events/${d.eventId}`;
   if (typeof d.seriesId === "string") return `/series/${d.seriesId}`;
   return null;

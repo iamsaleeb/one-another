@@ -3,7 +3,7 @@ import "server-only";
 import { updateTag } from "next/cache";
 import { NotificationType, type Prisma } from "@prisma/client";
 import { prisma, type Db } from "@/lib/db";
-import { getEventDays } from "@/lib/datetime";
+import { getEventDays, isValidTimeZone } from "@/lib/datetime";
 import {
   eventSubject,
   type Action,
@@ -21,7 +21,7 @@ import {
   queueNotificationForUsers,
   syncEventReminders,
 } from "@/domains/notifications/queue";
-import { hasHappened } from "./lib/timing";
+import { hasEnded, hasHappened } from "./lib/timing";
 import { isPubliclyVisible } from "./lib/visibility";
 import { syncEventQuestions } from "./questions/dal";
 import { checkAnswers, saveAnswers } from "./questions/responses";
@@ -141,6 +141,12 @@ async function normalise(
       title: input.title || "",
       datetime,
       endDatetime,
+      // Kept as it was when the save names no zone, or one this runtime
+      // does not know.
+      timezone:
+        input.timezone && isValidTimeZone(input.timezone)
+          ? input.timezone
+          : undefined,
       location: input.location || null,
       host: input.host || null,
       tag: input.tag || "",
@@ -590,6 +596,7 @@ export interface Registration {
 
 const SIGNED_OUT = "You must be signed in.";
 const CANCELLED = "This event has been cancelled.";
+const ENDED = "This event has ended.";
 const FULLY_BOOKED = "Sorry, this event is fully booked.";
 
 async function lockEvent(tx: Db, id: string) {
@@ -598,8 +605,15 @@ async function lockEvent(tx: Db, id: string) {
 
 // A camp open to partial registration keeps only the chosen days inside it.
 function campDays(
-  datetime: Date | null,
-  endDatetime: Date | null,
+  {
+    datetime,
+    endDatetime,
+    timezone,
+  }: {
+    datetime: Date | null;
+    endDatetime: Date | null;
+    timezone: string | null;
+  },
   camp: EventMetadata["camp"],
   selected: string[] = []
 ): { error: string } | { days?: string[] } {
@@ -610,7 +624,7 @@ function campDays(
         "This camp event is missing its dates, so partial registration is unavailable.",
     };
   }
-  const open = new Set(getEventDays(datetime, endDatetime));
+  const open = new Set(getEventDays(datetime, endDatetime, timezone));
   const days = selected.filter((d) => open.has(d));
   if (days.length === 0) {
     return { error: "Please select at least one valid day to attend." };
@@ -653,6 +667,7 @@ export async function attendEvent(
           cancelledAt: true,
           datetime: true,
           endDatetime: true,
+          timezone: true,
           requiresRegistration: true,
           metadata: true,
         },
@@ -661,6 +676,8 @@ export async function attendEvent(
         return { error: "Event not found." };
       }
       if (event.cancelledAt) return { error: CANCELLED };
+      // A Live Event can still be joined, an ended one cannot.
+      if (hasEnded(event)) return { error: ENDED };
 
       const existing = await tx.eventAttendee.findUnique({
         where: { eventId_userId: { eventId: id, userId } },
@@ -673,12 +690,7 @@ export async function attendEvent(
         }
       } else {
         const meta = parseEventMetadata(event.metadata);
-        const camp = campDays(
-          event.datetime,
-          event.endDatetime,
-          meta.camp,
-          registration.selectedDays
-        );
+        const camp = campDays(event, meta.camp, registration.selectedDays);
         if ("error" in camp) return camp;
         const answers = await checkAnswers(
           tx,

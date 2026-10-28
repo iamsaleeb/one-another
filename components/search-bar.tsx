@@ -24,6 +24,7 @@ import {
   type TypeFilter,
   type Category,
 } from "@/lib/types/search";
+import { TIME_ZONE_COOKIE } from "@/lib/search-range";
 
 interface SearchBarProps {
   initialQuery?: string;
@@ -99,6 +100,13 @@ export function SearchBar({
       setCategory(initialCategory);
     if (prevInitial.initialType !== initialType) setType(initialType);
   }
+
+  // Tell the server this browser's timezone, so "Today" and "This Weekend"
+  // are the searcher's days.
+  useEffect(() => {
+    const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    document.cookie = `${TIME_ZONE_COOKIE}=${encodeURIComponent(zone)}; path=/; max-age=31536000; samesite=lax`;
+  }, []);
 
   // Close dropdown on Escape
   useEffect(() => {

@@ -100,6 +100,31 @@ describe("getEventDays", () => {
     ).toEqual(["2026-08-07", "2026-08-08", "2026-08-09"]);
   });
 
+  it("takes the days in the Event's timezone", () => {
+    // Saturday 9am to Sunday 3pm in Sydney is Friday 22:00 to Sunday 04:00 UTC.
+    const start = new Date("2026-08-07T23:00:00.000Z");
+    const end = new Date("2026-08-09T05:00:00.000Z");
+    expect(getEventDays(start, end, "Australia/Sydney")).toEqual([
+      "2026-08-08",
+      "2026-08-09",
+    ]);
+    expect(getEventDays(start, end)).toEqual([
+      "2026-08-07",
+      "2026-08-08",
+      "2026-08-09",
+    ]);
+  });
+
+  it("falls back to UTC for an unknown timezone", () => {
+    expect(
+      getEventDays(
+        new Date("2026-08-07T23:00:00.000Z"),
+        new Date("2026-08-07T23:30:00.000Z"),
+        "Not/AZone"
+      )
+    ).toEqual(["2026-08-07"]);
+  });
+
   it("returns a single day when the Event starts and ends on it", () => {
     expect(
       getEventDays(

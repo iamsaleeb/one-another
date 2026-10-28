@@ -73,6 +73,11 @@ export const saveDraftSchema = createEventSchema.extend({
 });
 export type SaveDraftInput = z.infer<typeof saveDraftSchema>;
 
+export const cancelEventSchema = z.object({
+  reason: z.string().trim().min(1, "Give attendees a reason"),
+});
+export type CancelEventInput = z.infer<typeof cancelEventSchema>;
+
 export const registrationFormSchema = z.object({
   phone: z
     .string()

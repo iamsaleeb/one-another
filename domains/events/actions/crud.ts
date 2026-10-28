@@ -1,8 +1,14 @@
 "use server";
 
+import { z } from "zod";
 import { redirect } from "next/navigation";
 import { getSessionUserId } from "@/domains/roles/lib/get-ability";
-import { saveDraftSchema, type SaveDraftInput } from "../validations/event";
+import {
+  cancelEventSchema,
+  saveDraftSchema,
+  type CancelEventInput,
+  type SaveDraftInput,
+} from "../validations/event";
 import {
   createEvent,
   saveEvent,
@@ -12,14 +18,20 @@ import {
 } from "../lifecycle";
 import type { ActionResult } from "@/lib/types/action";
 
+// Errors come back to the cancel dialog rather than redirecting, so the
+// organiser sees why it was refused.
 export async function cancelEventAction(
   id: string,
-  reason: string
-): Promise<void> {
+  data: CancelEventInput
+): Promise<ActionResult> {
   if (!(await getSessionUserId())) redirect("/");
 
-  const result = await cancelEvent(id, reason);
-  if ("error" in result) redirect("/organiser");
+  const parsed = cancelEventSchema.safeParse(data);
+  if (!parsed.success)
+    return { fieldErrors: z.flattenError(parsed.error).fieldErrors };
+
+  const result = await cancelEvent(id, parsed.data.reason);
+  if ("error" in result) return result;
 
   redirect(`/events/${id}`);
 }

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getSeries } from "@/domains/series/actions/data";
 import { PageHeader } from "@/components/ui/page-header";
+import { Empty, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
 import { Card, CardContent } from "@/components/ui/card";
 import { CADENCE_LABELS } from "@/lib/types/search";
 
@@ -13,9 +14,11 @@ export default async function SeriesPage() {
 
       <div className="flex flex-col gap-3 px-4 py-2">
         {allSeries.length === 0 ? (
-          <p className="text-muted-foreground py-8 text-center text-sm">
-            No series yet
-          </p>
+          <Empty>
+            <EmptyHeader>
+              <EmptyTitle>No series yet</EmptyTitle>
+            </EmptyHeader>
+          </Empty>
         ) : (
           allSeries.map((s) => (
             <Link key={s.id} href={`/series/${s.id}`}>

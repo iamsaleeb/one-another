@@ -3,12 +3,13 @@
 import { useState, useTransition } from "react";
 import { useForm, useWatch, Controller, type Path } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Check, Loader2 } from "lucide-react";
+import { Check } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Drawer,
@@ -320,9 +321,7 @@ export function RegistrationDrawer({
                 disabled={unattendPending}
                 className="text-destructive hover:text-destructive hover:bg-destructive/10 w-full text-xs"
               >
-                {unattendPending && (
-                  <Loader2 className="size-3.5 animate-spin" />
-                )}
+                {unattendPending && <Spinner className="size-3.5" />}
                 {unattendPending ? "Cancelling..." : "Cancel registration"}
               </Button>
             </DrawerFooter>
@@ -443,7 +442,7 @@ export function RegistrationDrawer({
                       }
                       className="w-full"
                     >
-                      {isPending && <Loader2 className="size-4 animate-spin" />}
+                      {isPending && <Spinner />}
                       Continue
                     </Button>
                   ) : (
@@ -453,7 +452,7 @@ export function RegistrationDrawer({
                       disabled={isPending}
                       className="w-full"
                     >
-                      {isPending && <Loader2 className="size-4 animate-spin" />}
+                      {isPending && <Spinner />}
                       {getSubmitLabel()}
                     </Button>
                   )}
@@ -485,7 +484,7 @@ export function RegistrationDrawer({
                       disabled={isPending}
                       className="flex-1"
                     >
-                      {isPending && <Loader2 className="size-4 animate-spin" />}
+                      {isPending && <Spinner />}
                       {getSubmitLabel()}
                     </Button>
                   ) : (

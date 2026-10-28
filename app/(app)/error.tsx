@@ -2,6 +2,13 @@
 
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyTitle,
+} from "@/components/ui/empty";
 
 export default function AppError({
   error,
@@ -15,14 +22,18 @@ export default function AppError({
   }, [error]);
 
   return (
-    <div className="flex flex-col items-center justify-center gap-4 px-4 py-20 text-center">
-      <p className="text-base font-semibold">Something went wrong</p>
-      <p className="text-muted-foreground text-sm">
-        An error occurred while loading this page.
-      </p>
-      <Button onClick={unstable_retry} variant="outline" size="sm">
-        Try again
-      </Button>
-    </div>
+    <Empty>
+      <EmptyHeader>
+        <EmptyTitle>Something went wrong</EmptyTitle>
+        <EmptyDescription>
+          An error occurred while loading this page.
+        </EmptyDescription>
+      </EmptyHeader>
+      <EmptyContent>
+        <Button onClick={unstable_retry} variant="outline" size="sm">
+          Try again
+        </Button>
+      </EmptyContent>
+    </Empty>
   );
 }

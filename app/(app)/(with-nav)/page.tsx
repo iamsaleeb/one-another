@@ -1,5 +1,12 @@
 import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
 import { MapPin, SearchX } from "lucide-react";
 import { EventCard } from "@/domains/events/components/event-card";
 import { searchEventsAndChurches } from "@/domains/profile/actions/data";
@@ -88,13 +95,15 @@ export default async function Home({
       <div className="flex flex-col gap-6 px-4 py-2">
         {hasFilters ? (
           !hasResults ? (
-            <div className="flex flex-col items-center gap-3 py-16 text-center">
-              <SearchX className="text-muted-foreground/40 size-10" />
-              <p className="text-base font-semibold">No results found</p>
-              <p className="text-muted-foreground text-sm">
-                Try adjusting your filters
-              </p>
-            </div>
+            <Empty>
+              <EmptyHeader>
+                <EmptyMedia variant="icon">
+                  <SearchX />
+                </EmptyMedia>
+                <EmptyTitle>No results found</EmptyTitle>
+                <EmptyDescription>Try adjusting your filters</EmptyDescription>
+              </EmptyHeader>
+            </Empty>
           ) : (
             <>
               {filteredEvents && filteredEvents.length > 0 && (

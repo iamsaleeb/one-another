@@ -1,7 +1,12 @@
 import Link from "next/link";
 import { Repeat } from "lucide-react";
 import { InfiniteEventList } from "@/domains/events/components/infinite-event-list";
-import { EmptyState } from "@/components/empty-state";
+import {
+  Empty,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
 import { Card, CardContent } from "@/components/ui/card";
 import { loadMoreCommunityEventsAction } from "@/domains/events/actions/pagination";
 import type { getSeriesNotByCreator } from "@/domains/series/actions/data";
@@ -29,7 +34,14 @@ export function CommunityTab({ items, cursor, series }: CommunityTabProps) {
       <section className="flex flex-col gap-3">
         <h2 className="text-base font-semibold">Series</h2>
         {series.length === 0 ? (
-          <EmptyState icon={Repeat} label="No series from others" />
+          <Empty>
+            <EmptyHeader>
+              <EmptyMedia variant="icon">
+                <Repeat />
+              </EmptyMedia>
+              <EmptyTitle>No series from others</EmptyTitle>
+            </EmptyHeader>
+          </Empty>
         ) : (
           series.map((s) => (
             <Link key={s.id} href={`/series/${s.id}`}>

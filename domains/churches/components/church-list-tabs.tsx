@@ -2,6 +2,12 @@
 
 import { useState } from "react";
 import { Church } from "lucide-react";
+import {
+  Empty,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { ChurchCard } from "./church-card";
 import { FollowButton } from "./follow-button";
@@ -67,14 +73,18 @@ export function ChurchListTabs({
       )}
 
       {visible.length === 0 ? (
-        <div className="flex flex-col items-center gap-3 py-16 text-center">
-          <Church className="text-muted-foreground/40 size-10" />
-          <p className="text-muted-foreground text-sm">
-            {active === "following"
-              ? "You're not following any churches yet"
-              : "No churches yet"}
-          </p>
-        </div>
+        <Empty>
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <Church />
+            </EmptyMedia>
+            <EmptyTitle>
+              {active === "following"
+                ? "You're not following any churches yet"
+                : "No churches yet"}
+            </EmptyTitle>
+          </EmptyHeader>
+        </Empty>
       ) : (
         <div className="flex flex-col gap-3">
           {visible.map((church, index) => (

@@ -3,6 +3,12 @@
 import { Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
+  Empty,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
+import {
   Drawer,
   DrawerContent,
   DrawerHeader,
@@ -59,14 +65,14 @@ export function AttendeesDrawer({
 
         <div className="flex max-h-[60vh] flex-col gap-3 overflow-y-auto px-4 pb-2">
           {count === 0 ? (
-            <div className="flex flex-col items-center gap-3 py-8">
-              <div className="bg-muted flex size-12 items-center justify-center rounded-full">
-                <Users className="text-muted-foreground size-6" />
-              </div>
-              <p className="text-muted-foreground text-center text-sm">
-                No one has signed up yet
-              </p>
-            </div>
+            <Empty>
+              <EmptyHeader>
+                <EmptyMedia variant="icon">
+                  <Users />
+                </EmptyMedia>
+                <EmptyTitle>No one has signed up yet</EmptyTitle>
+              </EmptyHeader>
+            </Empty>
           ) : (
             attendees.map((a) => {
               const attendeeMeta = parseEventAttendeeMetadata(a.metadata);

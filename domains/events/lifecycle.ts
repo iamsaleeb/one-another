@@ -3,6 +3,7 @@ import "server-only";
 import { updateTag } from "next/cache";
 import { NotificationType, type Prisma } from "@prisma/client";
 import { prisma, type Db } from "@/lib/db";
+import { getEventDays } from "@/lib/datetime";
 import {
   eventSubject,
   type Action,
@@ -20,6 +21,7 @@ import {
   queueNotificationForUsers,
   syncEventReminders,
 } from "@/domains/notifications/queue";
+import { hasHappened } from "./lib/timing";
 import { isPubliclyVisible } from "./lib/visibility";
 import { syncEventQuestions } from "./questions/dal";
 import { checkAnswers, saveAnswers } from "./questions/responses";
@@ -51,6 +53,12 @@ function failed<T extends object>(
 // Fan-out to every follower of a large Series stays inside one transaction.
 const TRANSACTION = { timeout: 15_000 };
 
+const IN_THE_PAST = "Date must be in the future";
+const END_BEFORE_START = "End must be after the start";
+const HAPPENED = "This event has already happened.";
+const PUBLISHED_DRAFT = "A published event cannot go back to draft.";
+const PUBLISHED_DELETE = "A published event cannot be deleted.";
+
 // ---------------------------------------------------------------------------
 // Input: one normaliser for create and save
 
@@ -67,10 +75,14 @@ interface Normalised extends Home {
   >;
 }
 
-function parseDatetime(input: CreateEventInput): Date | null | "invalid" {
-  const raw =
-    input.datetimeISO ||
-    (input.date && input.time ? `${input.date}T${input.time}` : null);
+// The wizard sends both the browser's ISO instant and the raw inputs; the
+// instant wins, since only the browser knows the user's timezone.
+function parseDatetime(
+  iso: string | undefined,
+  date: string | undefined,
+  time: string | undefined
+): Date | null | "invalid" {
+  const raw = iso || (date && time ? `${date}T${time}` : null);
   if (!raw) return null;
   const datetime = new Date(raw);
   return Number.isNaN(datetime.getTime()) ? "invalid" : datetime;
@@ -84,9 +96,16 @@ async function normalise(
   input: CreateEventInput,
   isDraft: boolean
 ): Promise<Normalised | LifecycleError> {
-  const datetime = parseDatetime(input);
+  const datetime = parseDatetime(input.datetimeISO, input.date, input.time);
   if (datetime === "invalid")
     return { fieldErrors: { date: ["Invalid date or time"] } };
+  const endDatetime = parseDatetime(
+    input.endDatetimeISO,
+    input.endDate,
+    input.endTime
+  );
+  if (endDatetime === "invalid")
+    return { fieldErrors: { endDate: ["Invalid end date or time"] } };
 
   // An Event in a Series always lives in that Series' Church.
   const seriesId = input.seriesId || null;
@@ -104,13 +123,15 @@ async function normalise(
     const complete = createEventSchema.safeParse(input);
     if (!complete.success)
       return { fieldErrors: complete.error.flatten().fieldErrors };
+    // An Event that has happened is never saved through here, so a published
+    // Event is always still to come.
+    if (datetime && datetime <= new Date())
+      return { fieldErrors: { date: [IN_THE_PAST] } };
+    if (datetime && endDatetime && endDatetime <= datetime)
+      return { fieldErrors: { endDate: [END_BEFORE_START] } };
   }
 
   const isCamp = input.tag === "Camp";
-  if (isCamp && !input.campEndDate && !isDraft)
-    return {
-      fieldErrors: { campEndDate: ["End date is required for camp events"] },
-    };
 
   const registers = input.requiresRegistration ?? false;
   return {
@@ -119,6 +140,7 @@ async function normalise(
     fields: {
       title: input.title || "",
       datetime,
+      endDatetime,
       location: input.location || null,
       host: input.host || null,
       tag: input.tag || "",
@@ -130,10 +152,9 @@ async function normalise(
           collectPhone: registers ? (input.collectPhone ?? false) : false,
           collectNotes: registers ? (input.collectNotes ?? false) : false,
         },
-        ...(isCamp && input.campEndDate
+        ...(isCamp
           ? {
               camp: {
-                endDate: input.campEndDate,
                 allowPartialRegistration:
                   input.campAllowPartialRegistration ?? false,
                 agenda: input.campAgenda ?? [],
@@ -255,12 +276,10 @@ async function syncReminders(
 
 const cancelledKey = (eventId: string) => `cancelled:${eventId}`;
 
-// A deleted Event has no page to link to, so its notice carries no eventId.
 async function notifyAttendeesCancelled(
   db: Db,
   eventId: string,
-  title: string,
-  { link }: { link: boolean }
+  title: string
 ) {
   await queueNotificationForUsers(
     await attendeeIds(db, eventId),
@@ -268,9 +287,7 @@ async function notifyAttendeesCancelled(
       type: NotificationType.EVENT_CANCELLED,
       title: "Event Cancelled",
       body: `${title} has been cancelled`,
-      data: link
-        ? { type: "event_cancelled", eventId }
-        : { type: "event_cancelled" },
+      data: { type: "event_cancelled", eventId },
       dedupeKey: cancelledKey(eventId),
     },
     db
@@ -358,10 +375,10 @@ export async function createEvent(
   return { id: result.id };
 }
 
-// Every save of an Event's form, auto-save included. Publishing and
-// unpublishing are changes of `isDraft` within a save (the wizard publishes
-// by saving), so they are detected here rather than called separately. An
-// omitted isDraft keeps the current state.
+// Every save of an Event's form, auto-save included. Publishing is a change
+// of `isDraft` within a save (the wizard publishes by saving), so it is
+// detected here rather than called separately. It is one-way: a published
+// Event never goes back to draft. An omitted isDraft keeps the current state.
 export async function saveEvent(
   id: string,
   input: CreateEventInput,
@@ -375,13 +392,19 @@ export async function saveEvent(
         churchId: true,
         isDraft: true,
         seriesId: true,
+        tag: true,
+        datetime: true,
       });
       if ("error" in existing) return existing;
 
-      // An Event's Series is fixed when it is created, and its Church once it
-      // has been published (see Owning Church in GLOSSARY.md). A draft may
-      // still change Church: that places it afresh, so it needs the authority
-      // to create an Event there.
+      // An Event that has happened is read-only (see GLOSSARY.md).
+      if (hasHappened(existing)) return { error: HAPPENED };
+      if (!existing.isDraft && input.isDraft) return { error: PUBLISHED_DRAFT };
+
+      // An Event's Series is fixed when it is created, and its Church and
+      // Category once it has been published (see Owning Church and Category
+      // in GLOSSARY.md). A draft may still change Church: that places it
+      // afresh, so it needs the authority to create an Event there.
       const isDraft = input.isDraft ?? existing.isDraft;
       const n = await normalise(
         tx,
@@ -389,6 +412,7 @@ export async function saveEvent(
           ...input,
           seriesId: existing.seriesId ?? undefined,
           churchId: existing.isDraft ? input.churchId : existing.churchId,
+          tag: existing.isDraft ? input.tag : existing.tag,
         },
         isDraft
       );
@@ -403,9 +427,8 @@ export async function saveEvent(
         return { error: "Unauthorised." };
 
       const publishing = existing.isDraft && !isDraft;
-      const unpublishing = !existing.isDraft && isDraft;
       if (
-        (publishing || unpublishing) &&
+        publishing &&
         !ability.can(
           "publish",
           eventSubject({
@@ -428,10 +451,6 @@ export async function saveEvent(
 
       await syncReminders(tx, id);
 
-      // A session going back to draft must not leave behind a pending
-      // "new session" notice for its Series' followers.
-      if (seriesId && unpublishing)
-        await withdrawSeriesSession(tx, seriesId, id);
       // A session that just became public is news to its Series' followers.
       if (publishing && seriesId)
         await notifySeriesFollowers(tx, seriesId, n.fields.title, id);
@@ -440,7 +459,7 @@ export async function saveEvent(
         id,
         churchIds: [existing.churchId, churchId],
         seriesIds: [seriesId],
-        listsChanged: publishing || unpublishing,
+        listsChanged: publishing,
       };
     },
     TRANSACTION
@@ -464,8 +483,11 @@ export async function cancelEvent(
         churchId: true,
         title: true,
         seriesId: true,
+        isDraft: true,
+        datetime: true,
       });
       if ("error" in event) return event;
+      if (hasHappened(event)) return { error: HAPPENED };
 
       await tx.event.update({
         where: scopedTo(ability, "update", id),
@@ -474,7 +496,7 @@ export async function cancelEvent(
       await syncReminders(tx, id);
       // Uncancelling does not send it again: "new session" would be stale.
       if (event.seriesId) await withdrawSeriesSession(tx, event.seriesId, id);
-      await notifyAttendeesCancelled(tx, id, event.title, { link: true });
+      await notifyAttendeesCancelled(tx, id, event.title);
 
       return { id, churchIds: [event.churchId], seriesIds: [event.seriesId] };
     },
@@ -497,8 +519,11 @@ export async function uncancelEvent(
       const event = await findForAction(tx, ability, "update", id, {
         churchId: true,
         seriesId: true,
+        isDraft: true,
+        datetime: true,
       });
       if ("error" in event) return event;
+      if (hasHappened(event)) return { error: HAPPENED };
 
       await tx.event.update({
         where: scopedTo(ability, "update", id),
@@ -528,31 +553,16 @@ export async function deleteEvent(
       const event = await findForAction(tx, ability, "delete", id, {
         churchId: true,
         seriesId: true,
-        title: true,
         isDraft: true,
-        cancelledAt: true,
-        datetime: true,
       });
       if ("error" in event) return event;
+      // Only a draft is deleted (see Published in GLOSSARY.md). No one can
+      // have attended it or heard about it, so nothing follows.
+      if (!event.isDraft) return { error: PUBLISHED_DELETE };
 
-      // Attendees of an Event still to come would otherwise just turn up.
-      const upcoming =
-        !event.isDraft &&
-        !event.cancelledAt &&
-        !!event.datetime &&
-        event.datetime > new Date();
-      if (upcoming)
-        await notifyAttendeesCancelled(tx, id, event.title, { link: false });
-      if (event.seriesId) await withdrawSeriesSession(tx, event.seriesId, id);
       await tx.event.delete({ where: scopedTo(ability, "delete", id) });
-      await syncReminders(tx, id);
 
-      return {
-        id,
-        churchIds: [event.churchId],
-        seriesIds: [event.seriesId],
-        listsChanged: true,
-      };
+      return { id, churchIds: [event.churchId], seriesIds: [event.seriesId] };
     },
     TRANSACTION
   );
@@ -589,18 +599,19 @@ async function lockEvent(tx: Db, id: string) {
 // A camp open to partial registration keeps only the chosen days inside it.
 function campDays(
   datetime: Date | null,
+  endDatetime: Date | null,
   camp: EventMetadata["camp"],
   selected: string[] = []
 ): { error: string } | { days?: string[] } {
-  if (!camp?.allowPartialRegistration || !camp.endDate) return {};
-  if (!datetime) {
+  if (!camp?.allowPartialRegistration) return {};
+  if (!datetime || !endDatetime) {
     return {
       error:
-        "This camp event is missing a start date, so partial registration is unavailable.",
+        "This camp event is missing its dates, so partial registration is unavailable.",
     };
   }
-  const start = datetime.toISOString().slice(0, 10);
-  const days = selected.filter((d) => d >= start && d <= camp.endDate);
+  const open = new Set(getEventDays(datetime, endDatetime));
+  const days = selected.filter((d) => open.has(d));
   if (days.length === 0) {
     return { error: "Please select at least one valid day to attend." };
   }
@@ -641,6 +652,7 @@ export async function attendEvent(
           isDraft: true,
           cancelledAt: true,
           datetime: true,
+          endDatetime: true,
           requiresRegistration: true,
           metadata: true,
         },
@@ -663,6 +675,7 @@ export async function attendEvent(
         const meta = parseEventMetadata(event.metadata);
         const camp = campDays(
           event.datetime,
+          event.endDatetime,
           meta.camp,
           registration.selectedDays
         );

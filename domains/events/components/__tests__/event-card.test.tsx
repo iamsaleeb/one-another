@@ -1,9 +1,10 @@
-import { render, screen } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 import { EventCard } from "@/domains/events/components/event-card";
 
 const sampleEvent = {
   id: "evt-1",
   datetime: new Date("2026-03-16T09:00"),
+  endDatetime: new Date("2026-03-16T11:00"),
   title: "Sunday Worship Service",
   churchName: "Grace Church",
   host: "Pastor John",
@@ -76,5 +77,39 @@ describe("EventCard", () => {
     render(<EventCard event={activeEvent} />);
     expect(screen.getByText("Youth Meeting")).toBeInTheDocument();
     expect(screen.queryByText("Cancelled")).not.toBeInTheDocument();
+  });
+
+  describe("while the Event is Live", () => {
+    const now = Date.now();
+    const liveEvent = {
+      ...sampleEvent,
+      datetime: new Date(now - 60_000),
+      endDatetime: new Date(now + 60_000),
+    };
+
+    it("shows Live in place of the Category", () => {
+      render(<EventCard event={liveEvent} />);
+      expect(screen.getByText("Live")).toBeInTheDocument();
+      expect(screen.queryByText("Youth Meeting")).not.toBeInTheDocument();
+    });
+
+    it("shows Cancelled, not Live, for a cancelled Event", () => {
+      render(<EventCard event={{ ...liveEvent, cancelledAt: new Date() }} />);
+      expect(screen.getByText("Cancelled")).toBeInTheDocument();
+      expect(screen.queryByText("Live")).not.toBeInTheDocument();
+    });
+
+    it("goes back to the Category once it ends", () => {
+      jest.useFakeTimers({ now });
+      try {
+        render(<EventCard event={liveEvent} />);
+        expect(screen.getByText("Live")).toBeInTheDocument();
+        act(() => jest.advanceTimersByTime(60_001));
+        expect(screen.queryByText("Live")).not.toBeInTheDocument();
+        expect(screen.getByText("Youth Meeting")).toBeInTheDocument();
+      } finally {
+        jest.useRealTimers();
+      }
+    });
   });
 });

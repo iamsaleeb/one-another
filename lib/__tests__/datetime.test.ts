@@ -4,7 +4,7 @@ import {
   localInputsToUtcDate,
   parseDateOfBirth,
   subHours,
-  getCampDays,
+  getEventDays,
   formatDayLabel,
   formatDayShort,
 } from "@/lib/datetime";
@@ -90,21 +90,32 @@ describe("subHours", () => {
   });
 });
 
-describe("getCampDays", () => {
-  it("returns all dates inclusive between start and end", () => {
-    expect(getCampDays("2026-08-07", "2026-08-09")).toEqual([
-      "2026-08-07",
-      "2026-08-08",
-      "2026-08-09",
-    ]);
+describe("getEventDays", () => {
+  it("returns every day from the start to the end inclusive", () => {
+    expect(
+      getEventDays(
+        new Date("2026-08-07T09:00:00.000Z"),
+        new Date("2026-08-09T15:00:00.000Z")
+      )
+    ).toEqual(["2026-08-07", "2026-08-08", "2026-08-09"]);
   });
 
-  it("returns a single date when start equals end", () => {
-    expect(getCampDays("2026-08-07", "2026-08-07")).toEqual(["2026-08-07"]);
+  it("returns a single day when the Event starts and ends on it", () => {
+    expect(
+      getEventDays(
+        new Date("2026-08-07T09:00:00.000Z"),
+        new Date("2026-08-07T11:00:00.000Z")
+      )
+    ).toEqual(["2026-08-07"]);
   });
 
-  it("returns empty array when end is before start", () => {
-    expect(getCampDays("2026-08-09", "2026-08-07")).toEqual([]);
+  it("returns no days when the end is before the start", () => {
+    expect(
+      getEventDays(
+        new Date("2026-08-09T09:00:00.000Z"),
+        new Date("2026-08-07T09:00:00.000Z")
+      )
+    ).toEqual([]);
   });
 });
 

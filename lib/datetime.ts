@@ -82,11 +82,14 @@ export function parseDateOfBirth(dateStr: string): Date {
 /** Subtract hours from a Date — replaces raw getTime() arithmetic. */
 export { subHours };
 
-/** Returns all ISO dates (YYYY-MM-DD) between startDate and endDate inclusive. */
-export function getCampDays(startDate: string, endDate: string): string[] {
+/**
+ * Returns the calendar days (YYYY-MM-DD) an Event spans, from its start to its
+ * end inclusive. Days are taken in UTC, so they match on server and client.
+ */
+export function getEventDays(start: Date, endAt: Date): string[] {
   const days: string[] = [];
-  const current = new Date(`${startDate}T12:00:00.000Z`);
-  const end = new Date(`${endDate}T12:00:00.000Z`);
+  const current = new Date(`${start.toISOString().slice(0, 10)}T12:00:00.000Z`);
+  const end = new Date(`${endAt.toISOString().slice(0, 10)}T12:00:00.000Z`);
   while (current <= end) {
     days.push(current.toISOString().slice(0, 10));
     current.setUTCDate(current.getUTCDate() + 1);

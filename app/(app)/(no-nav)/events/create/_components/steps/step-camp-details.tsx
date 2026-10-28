@@ -17,7 +17,9 @@ import type { CreateEventInput } from "@/domains/events/validations/event";
 
 export function StepCampDetails() {
   const form = useFormContext<CreateEventInput>();
+  // A camp's days run from the Event's start to its end.
   const startDate = useWatch({ control: form.control, name: "date" });
+  const endDate = useWatch({ control: form.control, name: "endDate" });
 
   const { fields, append, remove } = useFieldArray({
     control: form.control,
@@ -27,25 +29,6 @@ export function StepCampDetails() {
   return (
     <div className="border-primary/20 bg-primary/5 flex flex-col gap-4 rounded-2xl border-2 px-4 py-4">
       <p className="text-primary text-sm font-semibold">Camp Details</p>
-
-      <FormField
-        control={form.control}
-        name="campEndDate"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>End Date</FormLabel>
-            <FormControl>
-              <Input
-                type="date"
-                min={startDate ?? undefined}
-                {...field}
-                value={field.value ?? ""}
-              />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
 
       <FormField
         control={form.control}
@@ -109,7 +92,8 @@ export function StepCampDetails() {
                     <FormControl>
                       <Input
                         type="date"
-                        min={startDate ?? undefined}
+                        min={startDate || undefined}
+                        max={endDate || undefined}
                         {...f}
                         value={f.value ?? ""}
                       />

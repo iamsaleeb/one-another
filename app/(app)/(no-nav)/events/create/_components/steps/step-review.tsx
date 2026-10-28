@@ -5,6 +5,17 @@ import { useFormContext, useWatch } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import type { CreateEventInput } from "@/domains/events/validations/event";
 
 interface StepReviewProps {
@@ -12,7 +23,7 @@ interface StepReviewProps {
   onSaveDraft: () => void;
   isPublishing: boolean;
   isSaving: boolean;
-  isDraftEvent?: boolean;
+  published?: boolean;
   churches: Array<{ id: string; name: string }>;
 }
 
@@ -21,7 +32,7 @@ export function StepReview({
   onSaveDraft,
   isPublishing,
   isSaving,
-  isDraftEvent,
+  published,
   churches,
 }: StepReviewProps) {
   const { control } = useFormContext<CreateEventInput>();
@@ -31,6 +42,8 @@ export function StepReview({
     tag,
     date,
     time,
+    endDate,
+    endTime,
     location,
     host,
     churchId,
@@ -40,7 +53,6 @@ export function StepReview({
     capacity,
     collectPhone,
     collectNotes,
-    campEndDate,
     campAllowPartialRegistration,
     campAgenda,
   } = useWatch({ control });
@@ -48,10 +60,10 @@ export function StepReview({
   const isCamp = tag === "Camp";
   const isDisabled = isPublishing || isSaving;
 
-  const formatDatetime = () => {
-    if (!date) return "Not set";
-    if (!time) return date;
-    return `${date} at ${time}`;
+  const formatDatetime = (day?: string, at?: string) => {
+    if (!day) return "Not set";
+    if (!at) return day;
+    return `${day} at ${at}`;
   };
 
   return (
@@ -84,7 +96,8 @@ export function StepReview({
           When &amp; Where
         </p>
         <div className="flex flex-col gap-1">
-          <p className="text-sm">{formatDatetime()}</p>
+          <p className="text-sm">Starts {formatDatetime(date, time)}</p>
+          <p className="text-sm">Ends {formatDatetime(endDate, endTime)}</p>
           <p className="text-muted-foreground text-sm">
             {location || "No location"}
           </p>
@@ -168,12 +181,6 @@ export function StepReview({
             </p>
             <div className="flex flex-col gap-1">
               <p className="text-sm">
-                End date:{" "}
-                <span className="text-muted-foreground">
-                  {campEndDate || "Not set"}
-                </span>
-              </p>
-              <p className="text-sm">
                 Allow partial attendance:{" "}
                 <span className="text-muted-foreground">
                   {campAllowPartialRegistration ? "Yes" : "No"}
@@ -191,27 +198,61 @@ export function StepReview({
       )}
 
       <div className="flex flex-col gap-2 pt-2">
-        <Button
-          type="button"
-          className="w-full"
-          onClick={onPublish}
-          disabled={isDisabled}
-        >
-          {isPublishing ? "Publishing..." : "Publish Event"}
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          className="w-full"
-          onClick={onSaveDraft}
-          disabled={isDisabled}
-        >
-          {isSaving
-            ? "Saving..."
-            : isDraftEvent
-              ? "Save Draft"
-              : "Save as Draft"}
-        </Button>
+        {published ? (
+          <Button
+            type="button"
+            className="w-full"
+            onClick={onPublish}
+            disabled={isDisabled}
+          >
+            {isPublishing ? "Saving..." : "Save Changes"}
+          </Button>
+        ) : (
+          // Publishing is one-way, so it is confirmed first.
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button type="button" className="w-full" disabled={isDisabled}>
+                {isPublishing ? "Publishing..." : "Publish Event"}
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Publish this event?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Once published, it&apos;s visible to everyone and people can
+                  start attending. You won&apos;t be able to:
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <ul className="text-muted-foreground list-disc pl-5 text-sm">
+                <li>turn it back into a draft</li>
+                <li>delete it</li>
+                <li>change its church or category</li>
+              </ul>
+              <p className="text-muted-foreground text-sm">
+                If plans change, you can still edit the details or cancel the
+                event, and attendees will be told.
+              </p>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Keep editing</AlertDialogCancel>
+                <AlertDialogAction onClick={onPublish}>
+                  Publish
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        )}
+        {/* A published Event never goes back to draft. */}
+        {!published && (
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full"
+            onClick={onSaveDraft}
+            disabled={isDisabled}
+          >
+            {isSaving ? "Saving..." : "Save Draft"}
+          </Button>
+        )}
       </div>
     </div>
   );

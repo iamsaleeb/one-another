@@ -18,6 +18,8 @@ import { attendEvent, cancelEvent, unattendEvent } from "../lifecycle";
 const staleTags = () => (updateTag as jest.Mock).mock.calls.map((c) => c[0]);
 
 const START = new Date("2030-06-01T10:00:00.000Z");
+// Ends two days later, so as a camp it runs 1 to 3 June.
+const CAMP_END = new Date("2030-06-03T15:00:00.000Z");
 const REMINDER_AT = new Date("2030-06-01T08:00:00.000Z"); // default 2h before
 
 const attendees = (eventId = "e1") =>
@@ -35,6 +37,7 @@ function makeRegistrationEvent(
     id: "e1",
     churchId: "c1",
     datetime: START,
+    endDatetime: CAMP_END,
     requiresRegistration: true,
     metadata: {
       registration: { capacity, collectPhone: true, collectNotes: true },
@@ -322,7 +325,6 @@ describe("attendEvent on an Event that requires registration", () => {
   describe("camp with partial registration", () => {
     const camp = {
       camp: {
-        endDate: "2030-06-03",
         allowPartialRegistration: true,
         agenda: [],
       },

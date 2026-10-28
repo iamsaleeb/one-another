@@ -41,13 +41,18 @@ const staleTags = () => (updateTag as jest.Mock).mock.calls.map((c) => c[0]);
 const START = new Date("2030-06-01T10:00:00.000Z");
 const REMINDER_AT = new Date("2030-06-01T08:00:00.000Z"); // default 2h before
 
-// A complete Event, as the wizard sends it.
+// A complete Event, as the wizard sends it. Moving the start moves the end
+// with it, two hours later, unless the end is given.
 function input(over: Partial<CreateEventInput> = {}): CreateEventInput {
+  const start = over.datetimeISO ? new Date(over.datetimeISO) : START;
   return {
     title: "Sunday Worship",
     date: "2030-06-01",
     time: "10:00",
     datetimeISO: START.toISOString(),
+    endDate: "2030-06-01",
+    endTime: "12:00",
+    endDatetimeISO: new Date(start.getTime() + 2 * 3_600_000).toISOString(),
     location: "Main Hall",
     host: "Pastor John",
     tag: "Worship",
@@ -392,14 +397,17 @@ describe("saveEvent", () => {
       expect(await prisma.notification.count()).toBe(2);
     });
 
-    it("unpublishing withdraws reminders and the new-session notice", async () => {
+    it("a published Event never goes back to draft", async () => {
       await saveEvent("e1", input({ seriesId: "s1", isDraft: false }), admin());
       expect(
         await saveEvent("e1", input({ seriesId: "s1", isDraft: true }), admin())
-      ).toEqual({});
+      ).toEqual({ error: "A published event cannot go back to draft." });
 
-      expect(await pending("EVENT_REMINDER")).toEqual([]);
-      expect(await pending("NEW_SERIES_SESSION")).toEqual([]);
+      expect(
+        await prisma.event.findUniqueOrThrow({ where: { id: "e1" } })
+      ).toMatchObject({ isDraft: false });
+      expect(await pending("EVENT_REMINDER")).toHaveLength(1);
+      expect(await pending("NEW_SERIES_SESSION")).toHaveLength(1);
     });
 
     it("an omitted isDraft keeps the current state and queues nothing", async () => {
@@ -481,6 +489,162 @@ describe("saveEvent", () => {
       expect(await prisma.notification.count()).toBe(0);
       expect(updateTag).not.toHaveBeenCalled();
     });
+  });
+});
+
+describe("publishing needs a start time still to come", () => {
+  const PAST = new Date("2020-06-01T10:00:00.000Z");
+  const past = { date: "2020-06-01", datetimeISO: PAST.toISOString() };
+
+  it("refuses to create a published Event in the past", async () => {
+    expect(await createEvent(input(past), admin())).toEqual({
+      fieldErrors: { date: ["Date must be in the future"] },
+    });
+    expect(await prisma.event.count()).toBe(0);
+  });
+
+  it("refuses to publish a draft dated in the past", async () => {
+    await makeEvent({ id: "e1", churchId: "c1", isDraft: true });
+    expect(
+      await saveEvent("e1", input({ ...past, isDraft: false }), admin())
+    ).toHaveProperty("fieldErrors.date");
+    expect(
+      await prisma.event.findUniqueOrThrow({ where: { id: "e1" } })
+    ).toMatchObject({ isDraft: true });
+  });
+
+  it("refuses to move a published Event into the past", async () => {
+    await makeEvent({ id: "e1", churchId: "c1", datetime: START });
+    expect(await saveEvent("e1", input(past), admin())).toHaveProperty(
+      "fieldErrors.date"
+    );
+    expect(
+      await prisma.event.findUniqueOrThrow({ where: { id: "e1" } })
+    ).toMatchObject({ datetime: START });
+  });
+
+  it("lets a draft keep a past date", async () => {
+    await makeEvent({ id: "e1", churchId: "c1", isDraft: true });
+    expect(await saveEvent("e1", input(past), admin())).toEqual({});
+  });
+});
+
+describe("an Event's end", () => {
+  const stored = () => prisma.event.findUniqueOrThrow({ where: { id: "e1" } });
+
+  it("is stored with its start", async () => {
+    await makeEvent({ id: "e1", churchId: "c1", isDraft: true });
+    await saveEvent("e1", input({ isDraft: false }), admin());
+    expect(await stored()).toMatchObject({
+      datetime: START,
+      endDatetime: new Date("2030-06-01T12:00:00.000Z"),
+    });
+  });
+
+  it("is needed to publish", async () => {
+    await makeEvent({ id: "e1", churchId: "c1", isDraft: true });
+    expect(
+      await saveEvent(
+        "e1",
+        input({ isDraft: false, endDate: "", endTime: "", endDatetimeISO: "" }),
+        admin()
+      )
+    ).toHaveProperty("fieldErrors.endDate");
+  });
+
+  it("must come after the start to publish", async () => {
+    await makeEvent({ id: "e1", churchId: "c1", isDraft: true });
+    expect(
+      await saveEvent(
+        "e1",
+        input({ isDraft: false, endDatetimeISO: START.toISOString() }),
+        admin()
+      )
+    ).toEqual({ fieldErrors: { endDate: ["End must be after the start"] } });
+    expect(await stored()).toMatchObject({ isDraft: true });
+  });
+
+  it("gives a camp its days, with no separate end date", async () => {
+    await makeEvent({ id: "e1", churchId: "c1", isDraft: true });
+    await saveEvent(
+      "e1",
+      input({ tag: "Camp", campAllowPartialRegistration: true }),
+      admin()
+    );
+    expect((await stored()).metadata).toMatchObject({
+      camp: { allowPartialRegistration: true, agenda: [] },
+    });
+    expect((await stored()).metadata).not.toHaveProperty("camp.endDate");
+  });
+});
+
+describe("Category", () => {
+  const category = async () =>
+    (await prisma.event.findUniqueOrThrow({ where: { id: "e1" } })).tag;
+
+  it("is fixed once published, whatever Category was sent", async () => {
+    await makeEvent({ id: "e1", churchId: "c1", datetime: START });
+    expect(await saveEvent("e1", input({ tag: "Camp" }), admin())).toEqual({});
+    expect(await category()).toBe("Worship");
+    expect(
+      await prisma.event.findUniqueOrThrow({ where: { id: "e1" } })
+    ).not.toHaveProperty("metadata.camp");
+  });
+
+  it("may still change on a draft", async () => {
+    await makeEvent({ id: "e1", churchId: "c1", isDraft: true });
+    await saveEvent("e1", input({ tag: "Youth" }), admin());
+    expect(await category()).toBe("Youth");
+  });
+});
+
+describe("an Event that has happened", () => {
+  const PAST = new Date("2020-06-01T10:00:00.000Z");
+
+  beforeEach(async () => {
+    await makeEvent({
+      id: "e1",
+      churchId: "c1",
+      title: "Picnic",
+      description: "Before",
+      datetime: PAST,
+    });
+  });
+
+  const event = () => prisma.event.findUniqueOrThrow({ where: { id: "e1" } });
+
+  it("cannot be edited", async () => {
+    expect(
+      await saveEvent(
+        "e1",
+        input({ title: "Renamed", description: "After" }),
+        admin()
+      )
+    ).toEqual({ error: "This event has already happened." });
+    expect(await event()).toMatchObject({
+      title: "Picnic",
+      description: "Before",
+    });
+  });
+
+  it("refuses a user with no Grant as unauthorised", async () => {
+    expect(await saveEvent("e1", input(), as("u2"))).toEqual({
+      error: "Unauthorised.",
+    });
+  });
+
+  it("cannot be cancelled or un-cancelled", async () => {
+    expect(await cancelEvent("e1", "Rain", admin())).toEqual({
+      error: "This event has already happened.",
+    });
+    await prisma.event.update({
+      where: { id: "e1" },
+      data: { cancelledAt: PAST, cancellationReason: "Rain" },
+    });
+    expect(await uncancelEvent("e1", admin())).toEqual({
+      error: "This event has already happened.",
+    });
+    expect(await event()).toMatchObject({ cancellationReason: "Rain" });
   });
 });
 
@@ -633,17 +797,6 @@ describe("reminders follow the Event", () => {
 
     expect(await pending("EVENT_REMINDER")).toEqual([]);
   });
-
-  it("deleting a published Event tells its attendees, without a link", async () => {
-    await deleteEvent("e1", admin());
-
-    const [notice] = await pending("EVENT_CANCELLED");
-    expect(notice).toMatchObject({
-      userId: "u1",
-      body: "Picnic has been cancelled",
-    });
-    expect(notice.data).not.toHaveProperty("eventId");
-  });
 });
 
 describe("deleteEvent", () => {
@@ -655,21 +808,25 @@ describe("deleteEvent", () => {
       isDraft: true,
       datetime: START,
     });
-    await attend("e1", "u1");
-    await follow("s1", "u2");
-    await saveEvent("e1", input({ seriesId: "s1", isDraft: false }), admin());
     jest.clearAllMocks();
   });
 
-  it("deletes the Event and withdraws what was queued for it", async () => {
+  it("deletes a draft", async () => {
     expect(await deleteEvent("e1", admin())).toEqual({});
 
     expect(await prisma.event.count()).toBe(0);
-    expect(await pending("EVENT_REMINDER")).toEqual([]);
-    expect(await pending("NEW_SERIES_SESSION")).toEqual([]);
     expect(staleTags()).toEqual(
-      expect.arrayContaining(["churches", "church-c1", "series-s1"])
+      expect.arrayContaining(["event-e1", "church-c1", "series-s1"])
     );
+  });
+
+  it("never deletes a published Event", async () => {
+    await saveEvent("e1", input({ seriesId: "s1", isDraft: false }), admin());
+
+    expect(await deleteEvent("e1", admin())).toEqual({
+      error: "A published event cannot be deleted.",
+    });
+    expect(await prisma.event.count()).toBe(1);
   });
 
   it("refuses a user with no Grant and deletes nothing", async () => {

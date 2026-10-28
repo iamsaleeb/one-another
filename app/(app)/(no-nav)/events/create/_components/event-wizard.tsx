@@ -18,6 +18,7 @@ import {
   saveEventEditsAction,
 } from "@/domains/events/actions/crud";
 import { localInputsToUtcDate, utcIsoToLocalInputs } from "@/lib/datetime";
+import { withInstants } from "./with-instants";
 import { WizardProgress } from "./wizard-progress";
 import { StepBasics } from "./steps/step-basics";
 import { StepWhenWhere } from "./steps/step-when-where";
@@ -44,7 +45,7 @@ interface EventWizardProps {
   series?: Series | null;
   fixedChurch?: Church | null;
   eventId?: string;
-  defaultValues?: Partial<CreateEventInput> & { datetimeISO?: string };
+  defaultValues?: Partial<CreateEventInput>;
   libraryItems?: LibraryItem[];
   questionsLocked?: boolean;
 }
@@ -76,15 +77,19 @@ export function EventWizard({
   const [isSaving, setIsSaving] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
 
-  const { datetimeISO, ...restDefaultValues } = defaultValues ?? {};
-  const seedDatetime = datetimeISO ? utcIsoToLocalInputs(datetimeISO) : null;
+  const { datetimeISO, endDatetimeISO, ...restDefaultValues } =
+    defaultValues ?? {};
+  const seedStart = datetimeISO ? utcIsoToLocalInputs(datetimeISO) : null;
+  const seedEnd = endDatetimeISO ? utcIsoToLocalInputs(endDatetimeISO) : null;
 
   const form = useForm<CreateEventInput>({
     resolver: zodResolver(createEventSchema) as Resolver<CreateEventInput>,
     defaultValues: defaultValues
       ? {
-          date: seedDatetime?.date ?? "",
-          time: seedDatetime?.time ?? "",
+          date: seedStart?.date ?? "",
+          time: seedStart?.time ?? "",
+          endDate: seedEnd?.date ?? "",
+          endTime: seedEnd?.time ?? "",
           questions: [],
           ...restDefaultValues,
         }
@@ -92,6 +97,8 @@ export function EventWizard({
           title: "",
           date: "",
           time: "",
+          endDate: "",
+          endTime: "",
           location: "",
           host: "",
           tag: "",
@@ -105,7 +112,6 @@ export function EventWizard({
           price: undefined,
           isDraft: false,
           photoUrl: undefined,
-          campEndDate: undefined,
           campAllowPartialRegistration: false,
           campAgenda: [],
           questions: [],
@@ -120,8 +126,10 @@ export function EventWizard({
       isBusy: isSaving || isPublishing,
     });
 
+  // Editing an Event that is already published: it stays published and keeps
+  // its Category.
+  const published = defaultValues?.isDraft === false;
   const tag = useWatch({ control: form.control, name: "tag" });
-  const isDraft = useWatch({ control: form.control, name: "isDraft" });
   const requiresRegistration = useWatch({
     control: form.control,
     name: "requiresRegistration",
@@ -136,7 +144,7 @@ export function EventWizard({
     {
       label: "When & Where",
       key: "whenWhere",
-      fields: ["date", "time", "location", "host"],
+      fields: ["date", "time", "endDate", "endTime", "location", "host"],
     },
     {
       label: "Registration",
@@ -163,11 +171,9 @@ export function EventWizard({
           {
             label: "Camp Details",
             key: "campDetails" as StepKey,
-            fields: [
-              "campEndDate",
-              "campAllowPartialRegistration",
-              "campAgenda",
-            ] as Array<keyof CreateEventInput>,
+            fields: ["campAllowPartialRegistration", "campAgenda"] as Array<
+              keyof CreateEventInput
+            >,
           },
         ]
       : []),
@@ -184,16 +190,7 @@ export function EventWizard({
     }
   }, [requiresRegistration, form]);
 
-  const buildData = (): CreateEventInput & { datetimeISO?: string } => {
-    const data = form.getValues();
-    if (data.date && data.time) {
-      return {
-        ...data,
-        datetimeISO: localInputsToUtcDate(data.date, data.time).toISOString(),
-      };
-    }
-    return data;
-  };
+  const buildData = () => withInstants(form.getValues());
 
   // Validate the current step's fields then advance — auto-save persists in the background
   const handleNext = async () => {
@@ -201,12 +198,19 @@ export function EventWizard({
     if (!step) return;
     const valid = await form.trigger(step.fields);
     if (!valid) return;
-    // campEndDate is optional in schema (allows partial drafts) but required to publish
-    if (step.key === "campDetails" && !form.getValues("campEndDate")) {
-      form.setError("campEndDate", {
-        message: "End date is required for camp events",
-      });
-      return;
+    // Only an Event still to come can be published, so catch a past date here
+    // rather than at the last step.
+    if (step.key === "whenWhere") {
+      const { date, time, endDate, endTime } = form.getValues();
+      const start = localInputsToUtcDate(date, time);
+      if (start <= new Date()) {
+        form.setError("date", { message: "Date must be in the future" });
+        return;
+      }
+      if (localInputsToUtcDate(endDate, endTime) <= start) {
+        form.setError("endDate", { message: "End must be after the start" });
+        return;
+      }
     }
     setStepIndex(currentStep + 1);
   };
@@ -265,11 +269,14 @@ export function EventWizard({
         return;
       }
       if (result && "fieldErrors" in result) {
-        toast.error("Please review all fields before publishing.");
+        toast.error(
+          Object.values(result.fieldErrors ?? {}).flat()[0] ??
+            "Please review all fields before publishing."
+        );
         return;
       }
       markPublished();
-      toast.success("Event published!");
+      toast.success(published ? "Changes saved" : "Event published!");
       router.push(`/events/${id}`);
     } finally {
       setIsPublishing(false);
@@ -287,6 +294,7 @@ export function EventWizard({
             churches={churches}
             series={series}
             fixedChurch={fixedChurch}
+            categoryLocked={published}
           />
         );
       case "whenWhere":
@@ -309,7 +317,7 @@ export function EventWizard({
             onSaveDraft={handleSaveDraft}
             isPublishing={isPublishing}
             isSaving={isSaving}
-            isDraftEvent={!!isDraft}
+            published={published}
             churches={churches}
           />
         );

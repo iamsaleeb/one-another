@@ -205,6 +205,7 @@ export async function getMySavedEventsPaged(
   const items = (hasMore ? rows.slice(0, PAGE_SIZE) : rows).map((r) => ({
     id: r.event.id,
     datetime: r.event.datetime,
+    endDatetime: r.event.endDatetime,
     title: r.event.title,
     tag: r.event.tag,
     host: r.event.host,

@@ -30,6 +30,7 @@ const makeItem = (id: string): EventCardItem => ({
   id,
   title: `Event ${id}`,
   datetime: null,
+  endDatetime: null,
   tag: "Worship",
   host: null,
   church: { name: "Test Church" },

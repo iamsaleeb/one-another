@@ -11,10 +11,7 @@ import {
   DrawerClose,
 } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
-import {
-  parseEventAttendeeMetadata,
-  type EventMetadata,
-} from "@/domains/events/validations/event";
+import { parseEventAttendeeMetadata } from "@/domains/events/validations/event";
 import type { getEventAttendees } from "@/domains/events/actions/data";
 import { formatDayShort } from "@/lib/datetime";
 
@@ -26,8 +23,8 @@ interface AttendeesDrawerProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   questionCount?: number;
-  camp?: EventMetadata["camp"];
-  campStartDate?: string;
+  // The days a camp open to partial attendance can be attended; empty otherwise.
+  campDays: string[];
 }
 
 export function AttendeesDrawer({
@@ -38,8 +35,7 @@ export function AttendeesDrawer({
   open,
   onOpenChange,
   questionCount,
-  camp,
-  campStartDate,
+  campDays,
 }: AttendeesDrawerProps) {
   const count = attendees.length;
   const noun = requiresRegistration
@@ -50,10 +46,7 @@ export function AttendeesDrawer({
       ? "attendee"
       : "attendees";
 
-  const showDays =
-    camp?.allowPartialRegistration === true &&
-    !!campStartDate &&
-    !!camp.endDate;
+  const showDays = campDays.length > 0;
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange} direction="bottom">

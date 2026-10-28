@@ -20,6 +20,11 @@ function past(days: number, time = "10:00"): Date {
   return future(-days, time);
 }
 
+// Every Event has an end; most end a few hours after they start.
+function hoursAfter(start: Date, hours: number): Date {
+  return new Date(start.getTime() + hours * 60 * 60 * 1000);
+}
+
 function futureDate(days: number): string {
   const d = new Date();
   d.setDate(d.getDate() + days);
@@ -282,7 +287,7 @@ async function main() {
       cadence: "BIWEEKLY",
       location: "Conference Room",
       host: "Fr. Antonious Farag & Dr. Nadia Habib",
-      tag: "Parish Meeting",
+      tag: "Bible Study",
       churchId: stGeorge.id,
     },
   });
@@ -308,7 +313,7 @@ async function main() {
       cadence: "WEEKLY",
       location: "Classroom B",
       host: "Cantor George Mikhail",
-      tag: "Parish Meeting",
+      tag: "Bible Study",
       churchId: stPishoy.id,
     },
   });
@@ -321,7 +326,7 @@ async function main() {
       cadence: "BIWEEKLY",
       location: "Fellowship Hall",
       host: "Deacon Mina Nashed",
-      tag: "Young Adults",
+      tag: "Youth Meeting",
       churchId: stMark.id,
     },
   });
@@ -334,7 +339,7 @@ async function main() {
       cadence: "MONTHLY",
       location: "Main Hall",
       host: "Fr. Marcos Khalil",
-      tag: "Parish Meeting",
+      tag: "Bible Study",
       churchId: stAnthony.id,
     },
   });
@@ -344,6 +349,7 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: past(21, "22:00"),
+      endDatetime: hoursAfter(past(21, "22:00"), 3),
       title: "Lenten Tasbeha — Week 1: Repentance",
       location: "Main Hall",
       host: "Fr. Bishoy Lamie",
@@ -365,6 +371,7 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: past(14, "22:00"),
+      endDatetime: hoursAfter(past(14, "22:00"), 3),
       title: "Lenten Tasbeha — Week 2: The Cross",
       location: "Main Hall",
       host: "Fr. Bishoy Lamie",
@@ -386,6 +393,7 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: future(7, "22:00"),
+      endDatetime: hoursAfter(future(7, "22:00"), 3),
       title: "Lenten Tasbeha — Week 3: The Resurrection",
       location: "Main Hall",
       host: "Fr. Bishoy Lamie",
@@ -407,6 +415,7 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: future(14, "22:00"),
+      endDatetime: hoursAfter(future(14, "22:00"), 3),
       title: "Lenten Tasbeha — Week 4: The Ascension",
       location: "Main Hall",
       host: "Fr. Bishoy Lamie",
@@ -430,6 +439,7 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: past(28, "19:00"),
+      endDatetime: hoursAfter(past(28, "19:00"), 1.5),
       title: "Book of Acts — Session 1: Pentecost & the Birth of the Church",
       location: "Youth Hall",
       host: "Deacon Mina Nashed",
@@ -451,6 +461,7 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: future(10, "19:00"),
+      endDatetime: hoursAfter(future(10, "19:00"), 1.5),
       title: "Book of Acts — Session 2: Stephen, the First Martyr",
       location: "Youth Hall",
       host: "Deacon Mina Nashed",
@@ -472,6 +483,7 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: future(24, "19:00"),
+      endDatetime: hoursAfter(future(24, "19:00"), 1.5),
       title: "Book of Acts — Session 3: Philip & the Ethiopian Eunuch",
       location: "Youth Hall",
       host: "Deacon Mina Nashed",
@@ -493,6 +505,7 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: future(38, "19:00"),
+      endDatetime: hoursAfter(future(38, "19:00"), 1.5),
       title: "Book of Acts — Session 4: St. Paul's First Missionary Journey",
       location: "Youth Hall",
       host: "Deacon Mina Nashed",
@@ -514,6 +527,7 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: future(52, "19:00"),
+      endDatetime: hoursAfter(future(52, "19:00"), 1.5),
       title: "Book of Acts — Session 5: The Jerusalem Council",
       location: "Youth Hall",
       host: "Deacon Mina Nashed",
@@ -537,6 +551,7 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: past(35, "18:00"),
+      endDatetime: hoursAfter(past(35, "18:00"), 2),
       title: "Servants Formation — Month 1: The Theology of Service",
       location: "Conference Room",
       host: "Fr. Antonious Farag",
@@ -558,6 +573,7 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: future(8, "18:00"),
+      endDatetime: hoursAfter(future(8, "18:00"), 2),
       title: "Servants Formation — Month 2: Confession & Spiritual Direction",
       location: "Conference Room",
       host: "Fr. Antonious Farag",
@@ -579,6 +595,7 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: future(38, "18:00"),
+      endDatetime: hoursAfter(future(38, "18:00"), 2),
       title: "Servants Formation — Month 3: Leading Bible Studies",
       location: "Conference Room",
       host: "Fr. Antonious Farag",
@@ -600,6 +617,7 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: future(68, "18:00"),
+      endDatetime: hoursAfter(future(68, "18:00"), 2),
       title: "Servants Formation — Month 4: Youth Ministry in Practice",
       location: "Conference Room",
       host: "Fr. Antonious Farag",
@@ -623,6 +641,7 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: past(63, "10:00"),
+      endDatetime: hoursAfter(past(63, "10:00"), 3),
       title:
         "Sunday School Training — Session 1: Foundations of Coptic Pedagogy",
       location: "Education Wing",
@@ -645,6 +664,7 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: past(28, "10:00"),
+      endDatetime: hoursAfter(past(28, "10:00"), 3),
       title:
         "Sunday School Training — Session 2: Age-Appropriate Lesson Planning",
       location: "Education Wing",
@@ -667,6 +687,7 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: future(15, "10:00"),
+      endDatetime: hoursAfter(future(15, "10:00"), 3),
       title:
         "Sunday School Training — Session 3: Classroom Management & Discipline",
       location: "Education Wing",
@@ -689,6 +710,7 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: future(45, "10:00"),
+      endDatetime: hoursAfter(future(45, "10:00"), 3),
       title:
         "Sunday School Training — Session 4: Storytelling & the Church Fathers",
       location: "Education Wing",
@@ -711,6 +733,7 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: future(75, "10:00"),
+      endDatetime: hoursAfter(future(75, "10:00"), 3),
       title:
         "Sunday School Training — Session 5: Parent Engagement & Communication",
       location: "Education Wing",
@@ -735,10 +758,11 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: past(42, "18:30"),
+      endDatetime: hoursAfter(past(42, "18:30"), 2),
       title: "Marriage Prep — Session 1: The Theology of Coptic Marriage",
       location: "Conference Room",
       host: "Fr. Antonious Farag",
-      tag: "Parish Meeting",
+      tag: "Bible Study",
       description:
         "The first session established the theological foundation — marriage as a sacrament, the roles of husband and wife in the Coptic tradition, and the eschatological dimension of Christian matrimony. Fr. Antonious walked through the wedding liturgy and its hidden depths.",
       metadata: {
@@ -756,10 +780,11 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: future(6, "18:30"),
+      endDatetime: hoursAfter(future(6, "18:30"), 2),
       title: "Marriage Prep — Session 2: Communication & Conflict",
       location: "Conference Room",
       host: "Dr. Nadia Habib",
-      tag: "Parish Meeting",
+      tag: "Bible Study",
       description:
         "Dr. Nadia Habib leads this session on the dynamics of healthy communication in marriage — listening deeply, expressing needs clearly, and navigating conflict without contempt. Includes practical exercises for couples to try at home.",
       metadata: {
@@ -777,10 +802,11 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: future(20, "18:30"),
+      endDatetime: hoursAfter(future(20, "18:30"), 2),
       title: "Marriage Prep — Session 3: Finances & Shared Life",
       location: "Conference Room",
       host: "Fr. Antonious Farag & Dr. Nadia Habib",
-      tag: "Parish Meeting",
+      tag: "Bible Study",
       description:
         "A joint session on the practical side of shared life — budgeting, debt, financial goals, and how to make decisions together. Fr. Antonious opens with a reflection on stewardship and generosity as spiritual disciplines for married couples.",
       metadata: {
@@ -798,11 +824,12 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: future(34, "18:30"),
+      endDatetime: hoursAfter(future(34, "18:30"), 2),
       title:
         "Marriage Prep — Session 4: Family Planning & Raising Children in Faith",
       location: "Conference Room",
       host: "Fr. Antonious Farag",
-      tag: "Parish Meeting",
+      tag: "Bible Study",
       description:
         "An open discussion on family planning from a Coptic perspective, followed by a panel of parents from St. George sharing how they raise children in the faith — from baptism and chrismation through teenage years.",
       metadata: {
@@ -820,10 +847,11 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: future(48, "18:30"),
+      endDatetime: hoursAfter(future(48, "18:30"), 2),
       title: "Marriage Prep — Session 5: The Sacramental Life of the Home",
       location: "Conference Room",
       host: "Fr. Antonious Farag",
-      tag: "Parish Meeting",
+      tag: "Bible Study",
       description:
         "The closing session brings everything together — confession, communion, fasting, prayer, and how the rhythms of the Coptic calendar shape a Christian home. Culminates in a blessing prayer for all the couples completing the course.",
       metadata: {
@@ -843,6 +871,7 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: past(56, "19:00"),
+      endDatetime: hoursAfter(past(56, "19:00"), 1.5),
       title: "Desert Fathers — Month 1: The Sayings of Abba Anthony",
       location: "Library Room",
       host: "Fr. Demetrius Botros",
@@ -864,6 +893,7 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: past(14, "19:00"),
+      endDatetime: hoursAfter(past(14, "19:00"), 1.5),
       title: "Desert Fathers — Month 2: Abba Macarius & the Life of Scetis",
       location: "Library Room",
       host: "Fr. Demetrius Botros",
@@ -885,6 +915,7 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: future(16, "19:00"),
+      endDatetime: hoursAfter(future(16, "19:00"), 1.5),
       title: "Desert Fathers — Month 3: Abba Pishoy & the Monastic Ideal",
       location: "Library Room",
       host: "Fr. Demetrius Botros",
@@ -906,6 +937,7 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: future(46, "19:00"),
+      endDatetime: hoursAfter(future(46, "19:00"), 1.5),
       title: "Desert Fathers — Month 4: The Sayings of the Mothers (Ammas)",
       location: "Library Room",
       host: "Fr. Demetrius Botros",
@@ -929,10 +961,11 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: past(63, "18:00"),
+      endDatetime: hoursAfter(past(63, "18:00"), 1.5),
       title: "Coptic Language — Class 1: The Alphabet & Phonology",
       location: "Classroom B",
       host: "Cantor George Mikhail",
-      tag: "Parish Meeting",
+      tag: "Bible Study",
       description:
         "Our first class introduced the Coptic alphabet (Bohairic dialect) — its 32 letters, their Coptic and Greek origins, and the unique sounds of the language. Students learned to read their names in Coptic script.",
       metadata: {
@@ -950,10 +983,11 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: past(42, "18:00"),
+      endDatetime: hoursAfter(past(42, "18:00"), 1.5),
       title: "Coptic Language — Class 2: Liturgical Responses",
       location: "Classroom B",
       host: "Cantor George Mikhail",
-      tag: "Parish Meeting",
+      tag: "Bible Study",
       description:
         "Students began learning the most common liturgical responses — Pi-epnevma, Axios, Kyrie Eleison — their meaning, pronunciation, and context in the Divine Liturgy. We also covered basic grammar patterns.",
       metadata: {
@@ -971,10 +1005,11 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: past(21, "18:00"),
+      endDatetime: hoursAfter(past(21, "18:00"), 1.5),
       title: "Coptic Language — Class 3: The Lord's Prayer in Coptic",
       location: "Classroom B",
       host: "Cantor George Mikhail",
-      tag: "Parish Meeting",
+      tag: "Bible Study",
       description:
         "This class centered on the Lord's Prayer (Ti-eprosevkhi) — learning it word by word, parsing its vocabulary, and memorizing it as a living prayer. Students also practiced the Coptic numbers 1–20.",
       metadata: {
@@ -992,10 +1027,11 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: future(7, "18:00"),
+      endDatetime: hoursAfter(future(7, "18:00"), 1.5),
       title: "Coptic Language — Class 4: Hymn Study — Pi-Oik",
       location: "Classroom B",
       host: "Cantor George Mikhail",
-      tag: "Parish Meeting",
+      tag: "Bible Study",
       description:
         "A deep dive into the hymn Pi-Oik Ente Pivot — Bread of the Father. Students will parse each line, learn the vocabulary, and practice singing it in Bohairic. Cantor George will explain the hymn's theological content and its place in the liturgy.",
       metadata: {
@@ -1013,10 +1049,11 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: future(21, "18:00"),
+      endDatetime: hoursAfter(future(21, "18:00"), 1.5),
       title: "Coptic Language — Class 5: Verbs & Tenses",
       location: "Classroom B",
       host: "Cantor George Mikhail",
-      tag: "Parish Meeting",
+      tag: "Bible Study",
       description:
         "An introduction to Coptic verb structure — the present, future, and imperative tenses. We focus on verbs that appear frequently in liturgy and scripture, giving students a grammatical foundation for reading simple Coptic texts.",
       metadata: {
@@ -1034,10 +1071,11 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: future(35, "18:00"),
+      endDatetime: hoursAfter(future(35, "18:00"), 1.5),
       title: "Coptic Language — Class 6: Reading the Agpeya",
       location: "Classroom B",
       host: "Cantor George Mikhail",
-      tag: "Parish Meeting",
+      tag: "Bible Study",
       description:
         "Students will read the Third Hour prayer of the Agpeya directly from the Coptic text, supported by an interlinear translation. The goal is to experience the Agpeya in its original language for the first time.",
       metadata: {
@@ -1055,10 +1093,11 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: future(49, "18:00"),
+      endDatetime: hoursAfter(future(49, "18:00"), 1.5),
       title: "Coptic Language — Class 7: Doxologies of the Saints",
       location: "Classroom B",
       host: "Cantor George Mikhail",
-      tag: "Parish Meeting",
+      tag: "Bible Study",
       description:
         "We explore the structure of Coptic doxologies — the poetic hymns that honor each saint. Students will learn the doxology of St. Mary (Epchois ari-epinivi) and the doxology of our patron St. Pishoy, then compare their literary structures.",
       metadata: {
@@ -1078,10 +1117,11 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: past(35, "19:30"),
+      endDatetime: hoursAfter(past(35, "19:30"), 2),
       title: "Young Adults — Session 1: What Does It Mean to Be Coptic?",
       location: "Fellowship Hall",
       host: "Deacon Mina Nashed",
-      tag: "Young Adults",
+      tag: "Youth Meeting",
       description:
         "Our inaugural Young Adults gathering opened with a shared meal and an honest conversation: what does it actually mean to be Coptic Orthodox in Austin today? A wide-ranging discussion on identity, belonging, and faith.",
       metadata: {
@@ -1099,10 +1139,11 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: past(7, "19:30"),
+      endDatetime: hoursAfter(past(7, "19:30"), 2),
       title: "Young Adults — Session 2: Vocation — Work, Faith & Purpose",
       location: "Fellowship Hall",
       host: "Deacon Mina Nashed",
-      tag: "Young Adults",
+      tag: "Youth Meeting",
       description:
         "How do we integrate our faith with our careers, ambitions, and sense of calling? Deacon Mina led a discussion drawing on St. Paul's theology of vocation and a panel of young professionals sharing their own journeys.",
       metadata: {
@@ -1120,10 +1161,11 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: future(14, "19:30"),
+      endDatetime: hoursAfter(future(14, "19:30"), 2),
       title: "Young Adults — Session 3: Relationships, Dating & the Church",
       location: "Fellowship Hall",
       host: "Deacon Mina Nashed",
-      tag: "Young Adults",
+      tag: "Youth Meeting",
       description:
         "An open and honest conversation about relationships, dating as a Coptic Christian, the pressure of marriage expectations, and what the Church actually teaches — and doesn't teach — on these questions.",
       metadata: {
@@ -1141,10 +1183,11 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: future(28, "19:30"),
+      endDatetime: hoursAfter(future(28, "19:30"), 2),
       title: "Young Adults — Session 4: Doubt, Faith & Intellectual Honesty",
       location: "Fellowship Hall",
       host: "Deacon Mina Nashed",
-      tag: "Young Adults",
+      tag: "Youth Meeting",
       description:
         "A session for those wrestling with questions about faith — can doubt be part of the spiritual life? We look at the tradition of apophatic theology, the role of the intellect in Orthodox Christianity, and how to hold faith and reason together.",
       metadata: {
@@ -1162,11 +1205,12 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: future(42, "19:30"),
+      endDatetime: hoursAfter(future(42, "19:30"), 2),
       title:
         "Young Adults — Session 5: Service — Finding Your Place in the Church",
       location: "Fellowship Hall",
       host: "Deacon Mina Nashed",
-      tag: "Young Adults",
+      tag: "Youth Meeting",
       description:
         "How do young adults get connected to serving in the Church? Deacon Mina maps out the different ministries at St. Mark, shares how to discern your gifts, and facilitates small group conversations about barriers to involvement.",
       metadata: {
@@ -1186,10 +1230,11 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: past(28, "19:00"),
+      endDatetime: hoursAfter(past(28, "19:00"), 1.5),
       title: "Pastoral Talk — Month 1: The Sacrament of Confession",
       location: "Main Hall",
       host: "Fr. Marcos Khalil",
-      tag: "Parish Meeting",
+      tag: "Bible Study",
       description:
         "Fr. Marcos opened the series with a deep exploration of confession — not as a transaction, but as a sacramental encounter with the healing Christ. He addressed common fears, misconceptions, and the gift of having a spiritual father.",
       metadata: {
@@ -1207,10 +1252,11 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: future(13, "19:00"),
+      endDatetime: hoursAfter(future(13, "19:00"), 1.5),
       title: "Pastoral Talk — Month 2: The Fasting Life",
       location: "Main Hall",
       host: "Fr. Marcos Khalil",
-      tag: "Parish Meeting",
+      tag: "Bible Study",
       description:
         "An exploration of the Coptic fasting tradition — the seven fasts, the theology of bodily discipline, and how fasting unites body and soul in the praise of God. Fr. Marcos addresses practical questions about fasting for working adults and families.",
       metadata: {
@@ -1228,10 +1274,11 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: future(43, "19:00"),
+      endDatetime: hoursAfter(future(43, "19:00"), 1.5),
       title: "Pastoral Talk — Month 3: Raising Children in the Faith",
       location: "Main Hall",
       host: "Fr. Marcos Khalil",
-      tag: "Parish Meeting",
+      tag: "Bible Study",
       description:
         "A talk for the whole parish — parents, grandparents, singles — on the community's shared responsibility for raising the next generation. Fr. Marcos draws on the Church Fathers and takes questions from the congregation.",
       metadata: {
@@ -1249,10 +1296,11 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: future(73, "19:00"),
+      endDatetime: hoursAfter(future(73, "19:00"), 1.5),
       title: "Pastoral Talk — Month 4: Preparing for Death & Eternal Life",
       location: "Main Hall",
       host: "Fr. Marcos Khalil",
-      tag: "Parish Meeting",
+      tag: "Bible Study",
       description:
         "A talk on the Coptic Church's vision of death, resurrection, and eternal life. Fr. Marcos addresses grief, caring for the dying, the rites of burial, and how the hope of resurrection shapes the way we live now.",
       metadata: {
@@ -1273,10 +1321,11 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: future(5, "07:00"),
+      endDatetime: hoursAfter(future(5, "07:00"), 3),
       title: "Feast of the Annunciation — Divine Liturgy",
       location: "Sanctuary",
       host: "Fr. Bishoy Lamie",
-      tag: "Feast Day",
+      tag: "Bible Study",
       description:
         "Come celebrate the Feast of the Annunciation with a solemn Divine Liturgy in honor of the Virgin St. Mary. The service will be conducted in Coptic, Arabic, and English. All are welcome.",
       metadata: {
@@ -1293,10 +1342,11 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: future(12, "18:00"),
+      endDatetime: hoursAfter(future(12, "18:00"), 2),
       title: 'Women of the Church — Monthly Meeting: "Prayer in the Home"',
       location: "Fellowship Hall",
       host: "Tasoni Mariam Lamie",
-      tag: "Women's Meeting",
+      tag: "Bible Study",
       description:
         "The monthly women's meeting at St. Mary, led by Tasoni Mariam. This month's topic is building a culture of prayer in the family home — morning prayers, evening prayers, and the Agpeya as a family practice. Light refreshments provided.",
       metadata: {
@@ -1313,6 +1363,7 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: future(20, "17:00"),
+      endDatetime: hoursAfter(future(20, "17:00"), 3),
       title: 'Youth Talent Night — "Glory in the Making"',
       location: "Main Hall",
       host: "Maryam Iskander",
@@ -1334,6 +1385,7 @@ async function main() {
   const orientationEvent = await prisma.event.create({
     data: {
       datetime: future(18, "17:00"),
+      endDatetime: hoursAfter(future(18, "17:00"), 2),
       title: "New Servants Orientation Evening",
       location: "Main Hall",
       host: "Fr. Antonious Farag",
@@ -1351,6 +1403,7 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: future(11, "08:00"),
+      endDatetime: hoursAfter(future(11, "08:00"), 8),
       title: "Deacons Training Day — Liturgical Rites & Responses",
       location: "Sanctuary",
       host: "Fr. Antonious Farag",
@@ -1368,10 +1421,11 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: past(10, "18:30"),
+      endDatetime: hoursAfter(past(10, "18:30"), 2),
       title: "Annual Vestry Meeting — St. George Church",
       location: "Conference Room",
       host: "Fr. Antonious Farag",
-      tag: "Parish Meeting",
+      tag: "Servants Meeting",
       description:
         "The annual vestry meeting reviewed the church's financial report for the year, approved the 2026 budget, elected two new board members, and received updates on the fellowship hall renovation project.",
       metadata: {
@@ -1388,10 +1442,11 @@ async function main() {
   const parishRetreatEvent = await prisma.event.create({
     data: {
       datetime: future(25, "08:00"),
+      endDatetime: hoursAfter(future(25, "08:00"), 9),
       title: 'Parish Day Retreat — "Stillness & the City"',
       location: "Holy Cross Retreat Center, Cedar Hill, TX",
       host: "Fr. Antonious Farag",
-      tag: "Retreat",
+      tag: "Bible Study",
       description:
         "A full Saturday of silence, prayer, and spiritual renewal at the Holy Cross Retreat Center. The day includes Agpeya prayers, a morning talk by Fr. Antonious on the interior life, a silent lunch, and small group confession opportunities. No phones — just presence.",
       requiresRegistration: true,
@@ -1406,6 +1461,7 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: past(12, "19:00"),
+      endDatetime: hoursAfter(past(12, "19:00"), 2),
       title: 'Youth Halaqa: "Who Is the Holy Spirit?"',
       location: "Youth Hall",
       host: "Deacon Mina Nashed",
@@ -1426,10 +1482,11 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: past(20, "18:30"),
+      endDatetime: hoursAfter(past(20, "18:30"), 2),
       title: "Annual Vestry Meeting — St. Mark Church",
       location: "Main Hall",
       host: "Fr. Cyril Mikhail",
-      tag: "Parish Meeting",
+      tag: "Servants Meeting",
       description:
         "The annual vestry meeting reviewed the church's financial report, elected new board members, and discussed the renovation project for the baptistry. Minutes are available from the church office.",
       metadata: {
@@ -1446,6 +1503,7 @@ async function main() {
   const hikeEvent = await prisma.event.create({
     data: {
       datetime: future(9, "07:30"),
+      endDatetime: hoursAfter(future(9, "07:30"), 4),
       title: "Youth Sunrise Hike — Barton Creek Greenbelt",
       location: "Barton Creek Greenbelt, Austin, TX",
       host: "Deacon Mina Nashed",
@@ -1463,10 +1521,11 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: future(16, "21:30"),
+      endDatetime: hoursAfter(future(16, "21:30"), 3.5),
       title: "Friday Midnight Praise — Feast of St. Mark",
       location: "Sanctuary",
       host: "Fr. Cyril Mikhail",
-      tag: "Feast Day",
+      tag: "Bible Study",
       description:
         "A special Midnight Praise (Tasbeha) celebrating the Feast of St. Mark the Evangelist, founder of the Coptic Church. The praises will be led by the church choir in Coptic and Arabic, with a short homily on the witness of St. Mark.",
       metadata: {
@@ -1483,10 +1542,11 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: future(45, "11:00"),
+      endDatetime: hoursAfter(future(45, "11:00"), 5),
       title: "Annual Church Family Picnic",
       location: "Zilker Park, Austin, TX",
       host: "St. Mark Parish Committee",
-      tag: "Social",
+      tag: "Youth Meeting",
       description:
         "Our beloved annual picnic at Zilker Park — a day for the whole St. Mark family to enjoy food, games, fellowship, and the outdoors. Bring your family, your appetite, and a side dish to share. Kids' games, volleyball, and prizes.",
       metadata: {
@@ -1504,10 +1564,11 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: past(45, "19:00"),
+      endDatetime: hoursAfter(past(45, "19:00"), 1.5),
       title: '"The Life of St. Moses the Black" — Evening Lecture',
       location: "Main Hall",
       host: "Dr. Hany Takla",
-      tag: "Lecture",
+      tag: "Bible Study",
       description:
         "Dr. Hany Takla of the St. Shenouda Coptic Society delivered a compelling lecture on the life and legacy of St. Moses the Black — from bandit to monk to martyr. His story is a testament to the transforming grace of God and the ascetic tradition of the Desert Fathers.",
       metadata: {
@@ -1524,10 +1585,11 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: future(4, "07:00"),
+      endDatetime: hoursAfter(future(4, "07:00"), 3),
       title: "Feast of St. Anthony the Great — Divine Liturgy",
       location: "Sanctuary",
       host: "Fr. Boulos Samir",
-      tag: "Feast Day",
+      tag: "Bible Study",
       description:
         "A solemn Divine Liturgy commemorating St. Anthony the Great, father of monasticism, on his feast day. Fr. Boulos will preach on the radical witness of Anthony's life and its meaning for Christians in the modern world. All are welcome.",
       metadata: {
@@ -1544,10 +1606,11 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: future(30, "18:00"),
+      endDatetime: hoursAfter(future(30, "18:00"), 3),
       title: "Parish Community Dinner — Spring Gathering",
       location: "Fellowship Hall",
       host: "Archangel Michael Parish Committee",
-      tag: "Social",
+      tag: "Youth Meeting",
       description:
         "The quarterly community dinner for the parish family of Archangel Michael Church. Each family is invited to bring a dish representing their heritage. An evening of food, fellowship, and gratitude for our diverse community.",
       metadata: {
@@ -1564,10 +1627,11 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: past(3, "18:00"),
+      endDatetime: hoursAfter(past(3, "18:00"), 3),
       title: "Summer Fundraiser Dinner — CANCELLED",
       location: "Fellowship Hall",
       host: "Fr. Boulos Samir",
-      tag: "Social",
+      tag: "Youth Meeting",
       description:
         "Our annual summer fundraiser dinner to support the church's building fund. Unfortunately this event was cancelled due to a scheduling conflict with the diocese retreat. A new date will be announced soon.",
       cancelledAt: past(10),
@@ -1588,10 +1652,11 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: past(5, "07:00"),
+      endDatetime: hoursAfter(past(5, "07:00"), 3),
       title: "Divine Liturgy — Feast of St. Pishoy",
       location: "Sanctuary",
       host: "Fr. Demetrius Botros",
-      tag: "Feast Day",
+      tag: "Bible Study",
       description:
         "Our patronal feast — the Feast of Abba Pishoy the Great. The Divine Liturgy was celebrated in Bohairic Coptic and English, followed by a parish luncheon. The day marked the 14th anniversary of our church's founding.",
       metadata: {
@@ -1608,10 +1673,11 @@ async function main() {
   const iconEvent = await prisma.event.create({
     data: {
       datetime: future(18, "10:00"),
+      endDatetime: hoursAfter(future(18, "10:00"), 6),
       title: 'Icon Writing Workshop — "The Theotokos Hodegetria"',
       location: "Fellowship Hall",
       host: "Iconographer Bishoy Ayad",
-      tag: "Workshop",
+      tag: "Bible Study",
       description:
         "A full-day introduction to Coptic iconography. Iconographer Bishoy Ayad will guide participants through the theology of icons and the step-by-step process of creating a small icon of the Hodegetria — the Virgin Mary pointing to Christ. All materials provided.",
       requiresRegistration: true,
@@ -1626,6 +1692,7 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: future(26, "09:00"),
+      endDatetime: hoursAfter(future(26, "09:00"), 7),
       title: "Youth Soccer Tournament — St. Pishoy Cup",
       location: "Northgate Sports Complex, The Woodlands, TX",
       host: "St. Pishoy Youth Committee",
@@ -1644,10 +1711,11 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: future(7, "07:00"),
+      endDatetime: hoursAfter(future(7, "07:00"), 4),
       title: "Feast of St. Anthony — Divine Liturgy & Breakfast",
       location: "Sanctuary",
       host: "Fr. Marcos Khalil",
-      tag: "Feast Day",
+      tag: "Bible Study",
       description:
         "Celebrating the feast of our patron St. Anthony the Great with a solemn Divine Liturgy followed by a parish breakfast. Fr. Marcos will preach on Anthony's encounter with God in the desert and its meaning for our own spiritual journey.",
       metadata: {
@@ -1664,10 +1732,11 @@ async function main() {
   await prisma.event.create({
     data: {
       datetime: future(22, "18:30"),
+      endDatetime: hoursAfter(future(22, "18:30"), 2.5),
       title: 'Marriage Enrichment Evening — "The Art of Forgiveness"',
       location: "Fellowship Hall",
       host: "Fr. Marcos Khalil & Dr. Nadia Habib",
-      tag: "Parish Meeting",
+      tag: "Bible Study",
       description:
         "A one-evening marriage enrichment event for married couples of all ages. Fr. Marcos leads with a reflection on forgiveness in the sacramental life of a Christian marriage, followed by a workshop session facilitated by Dr. Nadia Habib. Light dinner at 6:30 PM.",
       metadata: {
@@ -1684,10 +1753,11 @@ async function main() {
   const womensEvent = await prisma.event.create({
     data: {
       datetime: future(40, "08:00"),
+      endDatetime: hoursAfter(future(40, "08:00"), 8),
       title: 'Women\'s Day of Reflection — "Mary at the Foot of the Cross"',
       location: "St. Anthony Church",
       host: "Tasoni Irene Khalil",
-      tag: "Women's Meeting",
+      tag: "Bible Study",
       description:
         "A Saturday day of reflection for the women of St. Anthony Church and invited guests. Tasoni Irene leads the morning with Agpeya prayers, a meditation on the Virgin Mary's witness at Golgotha, and small group discussions. Lunch provided.",
       requiresRegistration: true,
@@ -1698,10 +1768,34 @@ async function main() {
     },
   });
 
+  // Live when seeded: started half an hour ago, ends in an hour and a half.
+  const liveStart = new Date(Date.now() - 30 * 60 * 1000);
+  await prisma.event.create({
+    data: {
+      datetime: liveStart,
+      endDatetime: hoursAfter(liveStart, 2),
+      title: "Midweek Bible Study — The Gospel of St. John",
+      location: "Fellowship Hall",
+      host: "Fr. Bishoy Lamie",
+      tag: "Bible Study",
+      description:
+        'Our weekly study through the Gospel of St. John. Tonight: "I am the Bread of Life" (John 6). Come as you are, bring a Bible, and stay for tea afterwards. All are welcome.',
+      metadata: {
+        registration: {
+          capacity: null,
+          collectPhone: false,
+          collectNotes: false,
+        },
+      },
+      churchId: stMary.id,
+    },
+  });
+
   // Cross-church event
   await prisma.event.create({
     data: {
       datetime: future(60, "08:00"),
+      endDatetime: future(61, "17:00"),
       title: "Texas Coptic Youth Conference 2026",
       location: "St. Mary Church, Houston, TX",
       host: "Diocese of the Southern USA Youth Committee",
@@ -1728,6 +1822,7 @@ async function main() {
   const campEvent = await prisma.event.create({
     data: {
       datetime: future(campDay, "08:00"),
+      endDatetime: future(campDay + 4, "14:00"),
       title: 'St. Mary Summer Camp 2026 — "Called by Name"',
       location: "Lakeview Christian Retreat Center, Waco, TX",
       host: "Fr. Bishoy Lamie",
@@ -1739,7 +1834,6 @@ async function main() {
       metadata: {
         registration: { capacity: 120, collectPhone: true, collectNotes: true },
         camp: {
-          endDate: futureDate(campDay + 4),
           allowPartialRegistration: true,
           agenda: [
             {
@@ -1916,6 +2010,7 @@ async function main() {
   const retreatEvent = await prisma.event.create({
     data: {
       datetime: future(retreatDay, "15:00"),
+      endDatetime: future(retreatDay + 2, "14:00"),
       title: 'St. Pishoy Youth Retreat 2026 — "The Desert Within"',
       location: "Camp Eagle, Marble Falls, TX",
       host: "Fr. Demetrius Botros",
@@ -1927,7 +2022,6 @@ async function main() {
       metadata: {
         registration: { capacity: 60, collectPhone: true, collectNotes: true },
         camp: {
-          endDate: futureDate(retreatDay + 2),
           allowPartialRegistration: false,
           agenda: [
             {

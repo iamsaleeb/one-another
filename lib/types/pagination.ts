@@ -1,6 +1,7 @@
 export interface EventCardItem {
   id: string;
   datetime: Date | null;
+  endDatetime: Date | null;
   title: string;
   tag: string;
   host: string | null;

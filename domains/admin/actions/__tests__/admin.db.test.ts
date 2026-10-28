@@ -15,12 +15,6 @@ import {
   removeOrganiserFromChurchAction,
 } from "../admin";
 
-function form(fields: Record<string, string>): FormData {
-  const fd = new FormData();
-  for (const [key, value] of Object.entries(fields)) fd.append(key, value);
-  return fd;
-}
-
 const role = (userId: string) =>
   prisma.churchMembership
     .findUnique({ where: { userId_churchId: { userId, churchId: "c1" } } })
@@ -42,20 +36,14 @@ beforeEach(async () => {
 describe("addOrganiserToChurchAction", () => {
   it("makes the account with that email an organiser", async () => {
     expect(
-      await addOrganiserToChurchAction(
-        {},
-        form({ churchId: "c1", email: " U1@test.local " })
-      )
+      await addOrganiserToChurchAction({ churchId: "c1", email: " U1@test.local " })
     ).toEqual({ success: "Organiser added successfully." });
     expect(await role("u1")).toBe("EVENT_MANAGER");
   });
 
   it("says so when they already organise it", async () => {
     expect(
-      await addOrganiserToChurchAction(
-        {},
-        form({ churchId: "c1", email: "admin@test.local" })
-      )
+      await addOrganiserToChurchAction({ churchId: "c1", email: "admin@test.local" })
     ).toEqual({ success: "User is already an organiser for this church." });
     expect(await role("admin")).toBe("CHURCH_ADMIN");
   });
@@ -63,19 +51,13 @@ describe("addOrganiserToChurchAction", () => {
   it("refuses before looking the email up", async () => {
     signInAs("u1");
     expect(
-      await addOrganiserToChurchAction(
-        {},
-        form({ churchId: "c1", email: "nobody@test.local" })
-      )
+      await addOrganiserToChurchAction({ churchId: "c1", email: "nobody@test.local" })
     ).toEqual({ error: "Unauthorised." });
   });
 
   it("reports an unknown email", async () => {
     expect(
-      await addOrganiserToChurchAction(
-        {},
-        form({ churchId: "c1", email: "nobody@test.local" })
-      )
+      await addOrganiserToChurchAction({ churchId: "c1", email: "nobody@test.local" })
     ).toEqual({ error: "No account found with that email." });
   });
 });
@@ -87,10 +69,7 @@ describe("removeOrganiserFromChurchAction", () => {
     });
 
     expect(
-      await removeOrganiserFromChurchAction(
-        {},
-        form({ churchId: "c1", targetUserId: "u1" })
-      )
+      await removeOrganiserFromChurchAction({ churchId: "c1", targetUserId: "u1" })
     ).toEqual({ success: "Organiser removed." });
     expect(await role("u1")).toBeNull();
   });
@@ -98,10 +77,7 @@ describe("removeOrganiserFromChurchAction", () => {
   it("refuses a guest", async () => {
     signInAs(null);
     expect(
-      await removeOrganiserFromChurchAction(
-        {},
-        form({ churchId: "c1", targetUserId: "admin" })
-      )
+      await removeOrganiserFromChurchAction({ churchId: "c1", targetUserId: "admin" })
     ).toEqual({ error: "Unauthorised." });
   });
 });

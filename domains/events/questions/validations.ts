@@ -39,6 +39,25 @@ export const questionSchema = z.object({
 
 export type QuestionInput = z.infer<typeof questionSchema>;
 
+// The question drawer's form. Options are objects so useFieldArray can key
+// them; blank ones are dropped on save.
+export const questionFormSchema = z
+  .object({
+    type: z.enum(QuestionType),
+    label: z.string().trim().min(1, "Question text is required"),
+    options: z.array(z.object({ value: z.string() })),
+    required: z.boolean(),
+    libraryItemId: z.string().optional(),
+  })
+  .refine(
+    (q) =>
+      q.type !== QuestionType.MULTIPLE_CHOICE ||
+      q.options.some((o) => o.value.trim().length > 0),
+    { path: ["options"], message: "Add at least one option" }
+  );
+
+export type QuestionFormInput = z.infer<typeof questionFormSchema>;
+
 export const responseValueSchema = z.object({
   answer: z.string().nullable().optional(),
   fileUrl: z.url().nullable().optional(),

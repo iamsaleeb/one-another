@@ -1,8 +1,10 @@
 "use client";
 
-import { Card } from "@/components/ui/card";
-import { useActionState } from "react";
+import { useState, useTransition } from "react";
+import { Controller, useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Trash2 } from "lucide-react";
+import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -20,6 +22,10 @@ import {
   removeOrganiserFromChurchAction,
   type AdminActionState,
 } from "@/domains/admin/actions/admin";
+import {
+  addOrganiserSchema,
+  type AddOrganiserInput,
+} from "@/domains/churches/validations/churches";
 
 interface Organiser {
   id: string;
@@ -35,18 +41,38 @@ interface AdminChurchCardProps {
   };
 }
 
-const initialState: AdminActionState = {};
-
 export function AdminChurchCard({ church }: AdminChurchCardProps) {
-  const [addState, addAction, addPending] = useActionState(
-    addOrganiserToChurchAction,
-    initialState
-  );
+  const form = useForm<AddOrganiserInput>({
+    resolver: zodResolver(addOrganiserSchema),
+    defaultValues: { churchId: church.id, email: "" },
+  });
+  const { isSubmitting } = form.formState;
+  const [addSuccess, setAddSuccess] = useState<string>();
 
-  const [removeState, removeAction, removePending] = useActionState(
-    removeOrganiserFromChurchAction,
-    initialState
-  );
+  const [removeState, setRemoveState] = useState<AdminActionState>({});
+  const [removePending, startRemove] = useTransition();
+
+  const onAdd = form.handleSubmit(async (data) => {
+    setAddSuccess(undefined);
+    const result = await addOrganiserToChurchAction(data);
+    if (result.error) {
+      form.setError("email", { message: result.error });
+      return;
+    }
+    form.reset({ churchId: church.id, email: "" });
+    setAddSuccess(result.success);
+  });
+
+  function handleRemove(targetUserId: string) {
+    startRemove(async () => {
+      setRemoveState(
+        await removeOrganiserFromChurchAction({
+          churchId: church.id,
+          targetUserId,
+        })
+      );
+    });
+  }
 
   return (
     <Card className="gap-5 p-5">
@@ -76,24 +102,17 @@ export function AdminChurchCard({ church }: AdminChurchCardProps) {
                   )}
                 </ItemContent>
                 <ItemActions>
-                  <form action={removeAction}>
-                    <input type="hidden" name="churchId" value={church.id} />
-                    <input
-                      type="hidden"
-                      name="targetUserId"
-                      value={organiser.id}
-                    />
-                    <Button
-                      type="submit"
-                      variant="ghost"
-                      size="icon"
-                      className="text-destructive hover:text-destructive size-8 shrink-0"
-                      disabled={removePending}
-                      aria-label={`Remove ${organiser.name ?? organiser.email}`}
-                    >
-                      <Trash2 className="size-4" />
-                    </Button>
-                  </form>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="text-destructive hover:text-destructive size-8 shrink-0"
+                    disabled={removePending}
+                    onClick={() => handleRemove(organiser.id)}
+                    aria-label={`Remove ${organiser.name ?? organiser.email}`}
+                  >
+                    <Trash2 className="size-4" />
+                  </Button>
                 </ItemActions>
               </Item>
             ))}
@@ -108,31 +127,33 @@ export function AdminChurchCard({ church }: AdminChurchCardProps) {
       </div>
 
       {/* Add organiser form */}
-      <form action={addAction} className="flex flex-col gap-3">
-        <input type="hidden" name="churchId" value={church.id} />
-        <Field data-invalid={!!addState.error}>
-          <FieldLabel htmlFor={`email-${church.id}`}>
-            Add organiser by email
-          </FieldLabel>
-          <ButtonGroup className="w-full">
-            <Input
-              id={`email-${church.id}`}
-              name="email"
-              type="email"
-              placeholder="organiser@example.com"
-              disabled={addPending}
-              aria-invalid={!!addState.error}
-              required
-            />
-            <Button type="submit" disabled={addPending}>
-              Add
-            </Button>
-          </ButtonGroup>
-          {addState.error && <FieldError>{addState.error}</FieldError>}
-        </Field>
-        {addState.success && (
-          <p className="text-success text-xs">{addState.success}</p>
-        )}
+      <form onSubmit={onAdd} noValidate className="flex flex-col gap-3">
+        <Controller
+          control={form.control}
+          name="email"
+          render={({ field, fieldState }) => (
+            <Field data-invalid={fieldState.invalid}>
+              <FieldLabel htmlFor={`email-${church.id}`}>
+                Add organiser by email
+              </FieldLabel>
+              <ButtonGroup className="w-full">
+                <Input
+                  id={`email-${church.id}`}
+                  type="email"
+                  placeholder="organiser@example.com"
+                  disabled={isSubmitting}
+                  aria-invalid={fieldState.invalid}
+                  {...field}
+                />
+                <Button type="submit" disabled={isSubmitting}>
+                  Add
+                </Button>
+              </ButtonGroup>
+              <FieldError errors={[fieldState.error]} />
+            </Field>
+          )}
+        />
+        {addSuccess && <p className="text-success text-xs">{addSuccess}</p>}
       </form>
     </Card>
   );

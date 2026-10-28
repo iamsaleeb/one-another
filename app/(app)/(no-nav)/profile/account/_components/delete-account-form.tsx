@@ -1,19 +1,13 @@
 "use client";
 
 import { useTransition } from "react";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
 import { deleteAccountAction } from "@/domains/auth/actions/auth";
 
 const CONFIRM_PHRASE = "delete my account";
@@ -41,34 +35,37 @@ export function DeleteAccountForm() {
   }
 
   return (
-    <Form {...form}>
+    <Card className="p-4">
       <form
         onSubmit={form.handleSubmit(onSubmit)}
-        className="shadow-card flex flex-col gap-4 rounded-2xl bg-white p-4"
+        className="flex flex-col gap-4"
       >
-        <FormField
+        <Controller
           control={form.control}
           name="confirm"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel className="text-muted-foreground text-sm">
+          render={({ field, fieldState }) => (
+            <Field data-invalid={fieldState.invalid}>
+              <FieldLabel
+                htmlFor={field.name}
+                className="text-muted-foreground block text-sm"
+              >
                 Type{" "}
                 <span className="text-foreground font-semibold">
                   {CONFIRM_PHRASE}
                 </span>{" "}
                 to confirm
-              </FormLabel>
-              <FormControl>
-                <Input
-                  {...field}
-                  placeholder={CONFIRM_PHRASE}
-                  autoComplete="off"
-                  spellCheck={false}
-                  disabled={isPending}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
+              </FieldLabel>
+              <Input
+                {...field}
+                id={field.name}
+                aria-invalid={fieldState.invalid}
+                placeholder={CONFIRM_PHRASE}
+                autoComplete="off"
+                spellCheck={false}
+                disabled={isPending}
+              />
+              <FieldError errors={[fieldState.error]} />
+            </Field>
           )}
         />
         <Button
@@ -80,6 +77,6 @@ export function DeleteAccountForm() {
           {isPending ? "Deleting…" : "Delete My Account"}
         </Button>
       </form>
-    </Form>
+    </Card>
   );
 }

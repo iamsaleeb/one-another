@@ -1,14 +1,22 @@
 "use client";
 
+import { Card } from "@/components/ui/card";
 import { useState, useEffect } from "react";
-import { useForm, useWatch, type Resolver } from "react-hook-form";
+import {
+  FormProvider,
+  useForm,
+  useWatch,
+  type Resolver,
+} from "react-hook-form";
 import { useEventAutoSave } from "./use-event-auto-save";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
-import { CloudUpload, Check, Loader2 } from "lucide-react";
-import { Form } from "@/components/ui/form";
+import { CloudUpload, Check } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 import {
   createEventSchema,
   type CreateEventInput,
@@ -335,32 +343,32 @@ export function EventWizard({
       />
 
       <div className="flex justify-center">
-        <div
-          className={`flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs transition-colors duration-300 ${
+        <Badge
+          variant={autoSaveStatus === "saved" ? "success" : "outline"}
+          className={cn(
+            "gap-1.5 px-3 py-1 transition-colors duration-300 [&>svg]:size-3.5",
             autoSaveStatus === "saved"
-              ? "border-green-200 bg-green-50 text-green-700"
-              : autoSaveStatus === "saving"
-                ? "border-border bg-muted/50 text-muted-foreground"
-                : "border-border bg-muted/50 text-muted-foreground"
-          }`}
+              ? "border-success/20"
+              : "bg-muted/50 text-muted-foreground"
+          )}
         >
           {autoSaveStatus === "saved" ? (
-            <Check className="size-3.5 shrink-0" />
+            <Check />
           ) : autoSaveStatus === "saving" ? (
-            <Loader2 className="size-3.5 shrink-0 animate-spin" />
+            <Spinner />
           ) : (
-            <CloudUpload className="size-3.5 shrink-0" />
+            <CloudUpload />
           )}
           {autoSaveStatus === "saving"
             ? "Saving..."
             : autoSaveStatus === "saved"
               ? "Progress saved"
               : "Auto-saving progress"}
-        </div>
+        </Badge>
       </div>
 
-      <div className="shadow-card rounded-2xl bg-white p-5">
-        <Form {...form}>
+      <Card className="gap-0 p-5">
+        <FormProvider {...form}>
           <form className="flex flex-col gap-5">
             {renderStep()}
 
@@ -382,8 +390,8 @@ export function EventWizard({
               </div>
             )}
           </form>
-        </Form>
-      </div>
+        </FormProvider>
+      </Card>
     </div>
   );
 }

@@ -1,8 +1,14 @@
 import Link from "next/link";
 import { Repeat } from "lucide-react";
 import { InfiniteEventList } from "@/domains/events/components/infinite-event-list";
-import { EmptyState } from "@/components/empty-state";
+import {
+  Empty,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
 import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { loadMoreManageableEventsAction } from "@/domains/events/actions/pagination";
 import type { ManageableSeries } from "@/domains/series/dal/manageable";
 import type { EventCardItem } from "@/lib/types/pagination";
@@ -29,16 +35,23 @@ export function MyContentTab({ items, cursor, series }: MyContentTabProps) {
       <section className="flex flex-col gap-3">
         <h2 className="text-base font-semibold">Series I Manage</h2>
         {series.length === 0 ? (
-          <EmptyState icon={Repeat} label="No series yet" />
+          <Empty>
+            <EmptyHeader>
+              <EmptyMedia variant="icon">
+                <Repeat />
+              </EmptyMedia>
+              <EmptyTitle>No series yet</EmptyTitle>
+            </EmptyHeader>
+          </Empty>
         ) : (
           series.map((s) => (
             <Link key={s.id} href={`/series/${s.id}`}>
-              <Card className="shadow-card rounded-2xl border-0 bg-white py-0">
+              <Card className="py-0">
                 <CardContent className="flex flex-col gap-1.5 p-4">
                   <div className="flex items-center justify-between">
-                    <span className="bg-primary/10 text-primary rounded-full px-2.5 py-1 text-xs font-medium whitespace-nowrap">
+                    <Badge variant="soft">
                       {CADENCE_LABELS[s.cadence] ?? s.cadence}
-                    </span>
+                    </Badge>
                     <span className="text-muted-foreground text-xs">
                       {s._count.events} upcoming
                     </span>

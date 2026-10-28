@@ -7,6 +7,8 @@ import { grant, MANAGE_HELPERS, removeGrant } from "@/domains/roles/access";
 import {
   addOrganiserSchema,
   removeOrganiserSchema,
+  type AddOrganiserInput,
+  type RemoveOrganiserInput,
 } from "@/domains/churches/validations/churches";
 
 export interface AdminActionState {
@@ -15,16 +17,12 @@ export interface AdminActionState {
 }
 
 export async function addOrganiserToChurchAction(
-  _prevState: AdminActionState,
-  formData: FormData
+  data: AddOrganiserInput
 ): Promise<AdminActionState> {
   const actorId = await getSessionUserId();
   if (!actorId) return { error: "Unauthorised." };
 
-  const parsed = addOrganiserSchema.safeParse({
-    churchId: formData.get("churchId"),
-    email: (formData.get("email") as string | null)?.trim().toLowerCase(),
-  });
+  const parsed = addOrganiserSchema.safeParse(data);
   if (!parsed.success)
     return { error: parsed.error.issues[0]?.message ?? "Invalid input." };
 
@@ -54,13 +52,9 @@ export async function addOrganiserToChurchAction(
 }
 
 export async function removeOrganiserFromChurchAction(
-  _prevState: AdminActionState,
-  formData: FormData
+  data: RemoveOrganiserInput
 ): Promise<AdminActionState> {
-  const parsed = removeOrganiserSchema.safeParse({
-    churchId: formData.get("churchId"),
-    targetUserId: formData.get("targetUserId"),
-  });
+  const parsed = removeOrganiserSchema.safeParse(data);
   if (!parsed.success) return { error: "Missing required fields." };
 
   const { churchId, targetUserId } = parsed.data;

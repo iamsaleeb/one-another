@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useSyncExternalStore } from "react";
+import { Badge } from "@/components/ui/badge";
 import { isLive } from "@/domains/events/lib/timing";
 
 interface LiveBadgeProps {
@@ -48,9 +49,9 @@ export function LiveBadge({ event, children = null }: LiveBadgeProps) {
 
   if (!live) return children;
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full bg-red-100 px-2.5 py-1 text-xs font-semibold whitespace-nowrap text-red-700">
-      <span className="size-1.5 animate-pulse rounded-full bg-red-600" />
+    <Badge className="bg-destructive/10 text-destructive gap-1.5 font-semibold">
+      <span className="bg-destructive size-1.5 animate-pulse rounded-full" />
       Live
-    </span>
+    </Badge>
   );
 }

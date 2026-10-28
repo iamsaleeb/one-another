@@ -1,3 +1,4 @@
+import { Card } from "@/components/ui/card";
 import type { CampAgendaItem } from "@/domains/events/validations/event";
 
 interface CampAgendaProps {
@@ -35,7 +36,7 @@ export function CampAgenda({ agenda }: CampAgendaProps) {
   if (grouped.size === 0) return null;
 
   return (
-    <div className="shadow-card flex flex-col gap-4 rounded-2xl bg-white p-5">
+    <Card className="gap-4 p-5">
       <p className="text-muted-foreground text-center text-sm font-bold tracking-widest uppercase">
         | Schedule |
       </p>
@@ -68,6 +69,6 @@ export function CampAgenda({ agenda }: CampAgendaProps) {
           </div>
         ))}
       </div>
-    </div>
+    </Card>
   );
 }

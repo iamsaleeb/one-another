@@ -1,7 +1,7 @@
 import { Calendar, Globe, MapPin, Phone, Users } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { InfoField } from "@/components/ui/info-field";
+import { InfoField } from "@/components/info-field";
 import type { getChurchById } from "@/domains/churches/actions/data";
 import { formatFullAddress } from "@/lib/address";
 
@@ -15,7 +15,7 @@ const muted = "w-4 h-4 text-muted-foreground shrink-0 mt-0.5";
 
 export function AboutTab({ church }: AboutTabProps) {
   return (
-    <div className="space-y-5">
+    <div className="flex flex-col gap-5">
       {/* Description */}
       <section>
         <h2 className="mb-2 text-lg font-bold">About</h2>
@@ -29,8 +29,8 @@ export function AboutTab({ church }: AboutTabProps) {
       {/* Details */}
       <section>
         <h2 className="mb-3 text-lg font-bold">Details</h2>
-        <Card className="shadow-card rounded-2xl border-0 bg-white">
-          <CardContent className="space-y-4 px-4 py-3">
+        <Card>
+          <CardContent className="flex flex-col gap-4 px-4 py-3">
             <InfoField icon={Users} label="Followers" iconClassName={muted}>
               {church._count.followers.toLocaleString()}
             </InfoField>

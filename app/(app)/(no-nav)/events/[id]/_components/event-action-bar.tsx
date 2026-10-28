@@ -91,7 +91,7 @@ export function EventActionBar({
 
   return (
     <>
-      <div className="pb-safe fixed right-0 bottom-0 left-0 z-10 bg-white shadow-[0px_-2px_31px_0px_#0000001A]">
+      <div className="pb-safe bg-card fixed right-0 bottom-0 left-0 z-10 shadow-[0px_-2px_31px_0px_#0000001A]">
         <div className="flex items-center justify-between gap-4 px-4 py-4">
           <div className="flex flex-col gap-0.5">
             <p className="text-muted-foreground text-xs">{infoLabel}</p>

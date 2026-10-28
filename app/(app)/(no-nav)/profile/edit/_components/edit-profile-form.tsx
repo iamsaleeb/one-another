@@ -1,9 +1,10 @@
 "use client";
 
+import { Card } from "@/components/ui/card";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { useForm } from "react-hook-form";
+import { Controller, FormProvider, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { format, parse } from "date-fns";
 import { CalendarIcon } from "lucide-react";
@@ -15,14 +16,7 @@ import {
 import { updateProfileAction } from "@/domains/profile/actions/profile";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import {
   Popover,
@@ -70,102 +64,106 @@ export function EditProfileForm({ defaultValues }: EditProfileFormProps) {
   }
 
   return (
-    <Form {...form}>
+    <FormProvider {...form}>
       <form
         onSubmit={form.handleSubmit(onSubmit)}
         className="flex flex-col gap-4"
       >
-        <div className="shadow-card flex flex-col gap-5 rounded-2xl bg-white p-5">
+        <Card className="gap-5 p-5">
           {/* Photo */}
-          <FormField
+          <Controller
             control={form.control}
             name="image"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Profile photo</FormLabel>
-                <FormControl>
-                  <PhotoUploadField
-                    variant="profile"
-                    value={field.value}
-                    onChange={field.onChange}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
+            render={({ field, fieldState }) => (
+              <Field data-invalid={fieldState.invalid}>
+                <FieldLabel htmlFor={field.name}>Profile photo</FieldLabel>
+                <PhotoUploadField
+                  id={field.name}
+                  aria-invalid={fieldState.invalid}
+                  variant="profile"
+                  value={field.value}
+                  onChange={field.onChange}
+                />
+                <FieldError errors={[fieldState.error]} />
+              </Field>
             )}
           />
 
           {/* Name */}
-          <FormField
+          <Controller
             control={form.control}
             name="name"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Full name</FormLabel>
-                <FormControl>
-                  <Input
-                    placeholder="Jane Doe"
-                    autoComplete="name"
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
+            render={({ field, fieldState }) => (
+              <Field data-invalid={fieldState.invalid}>
+                <FieldLabel htmlFor={field.name}>Full name</FieldLabel>
+                <Input
+                  id={field.name}
+                  aria-invalid={fieldState.invalid}
+                  placeholder="Jane Doe"
+                  autoComplete="name"
+                  {...field}
+                />
+                <FieldError errors={[fieldState.error]} />
+              </Field>
             )}
           />
 
           {/* Phone */}
-          <FormField
+          <Controller
             control={form.control}
             name="phone"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>
+            render={({ field, fieldState }) => (
+              <Field data-invalid={fieldState.invalid}>
+                <FieldLabel htmlFor={field.name}>
                   Phone number{" "}
                   <span className="text-muted-foreground font-normal">
                     (optional)
                   </span>
-                </FormLabel>
-                <FormControl>
-                  <Input type="tel" placeholder="+44 7700 900000" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
+                </FieldLabel>
+                <Input
+                  id={field.name}
+                  aria-invalid={fieldState.invalid}
+                  type="tel"
+                  placeholder="+44 7700 900000"
+                  {...field}
+                />
+                <FieldError errors={[fieldState.error]} />
+              </Field>
             )}
           />
 
           {/* Date of birth */}
-          <FormField
+          <Controller
             control={form.control}
             name="dateOfBirth"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>
+            render={({ field, fieldState }) => (
+              <Field data-invalid={fieldState.invalid}>
+                <FieldLabel htmlFor={field.name}>
                   Date of birth{" "}
                   <span className="text-muted-foreground font-normal">
                     (optional)
                   </span>
-                </FormLabel>
+                </FieldLabel>
                 <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
                   <PopoverTrigger asChild>
-                    <FormControl>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className={cn(
-                          "w-full justify-start text-left font-normal",
-                          !field.value && "text-muted-foreground"
-                        )}
-                      >
-                        <CalendarIcon className="mr-2 size-4 opacity-70" />
-                        {field.value
-                          ? format(
-                              parse(field.value, "yyyy-MM-dd", new Date()),
-                              "d MMMM yyyy"
-                            )
-                          : "Select date"}
-                      </Button>
-                    </FormControl>
+                    <Button
+                      id={field.name}
+                      aria-invalid={fieldState.invalid}
+                      type="button"
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !field.value && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 size-4 opacity-70" />
+                      {field.value
+                        ? format(
+                            parse(field.value, "yyyy-MM-dd", new Date()),
+                            "d MMMM yyyy"
+                          )
+                        : "Select date"}
+                    </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
                     <Calendar
@@ -193,11 +191,11 @@ export function EditProfileForm({ defaultValues }: EditProfileFormProps) {
                     />
                   </PopoverContent>
                 </Popover>
-                <FormMessage />
-              </FormItem>
+                <FieldError errors={[fieldState.error]} />
+              </Field>
             )}
           />
-        </div>
+        </Card>
 
         {form.formState.errors.root && (
           <p className="text-destructive text-center text-sm">
@@ -209,6 +207,6 @@ export function EditProfileForm({ defaultValues }: EditProfileFormProps) {
           {isPending ? "Saving…" : "Save changes"}
         </Button>
       </form>
-    </Form>
+    </FormProvider>
   );
 }

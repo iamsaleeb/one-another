@@ -3,6 +3,13 @@ import { formatDistanceToNow } from "date-fns";
 import { ChevronRight } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import {
+  Item,
+  ItemActions,
+  ItemContent,
+  ItemMedia,
+  ItemTitle,
+} from "@/components/ui/item";
 import type { AccessRequestStatus } from "@prisma/client";
 import { ROLE_LABELS } from "@/domains/access-requests/lib/labels";
 
@@ -37,50 +44,53 @@ export function HelperSummaryRow({
   const roleLabel = ROLE_LABELS[requestedRole] ?? requestedRole;
 
   return (
-    <Link
-      href={href}
-      className="hover:bg-muted/50 -mx-2 flex items-center gap-3 rounded-lg px-2 py-3 transition-colors"
-    >
-      <Avatar className="size-10 shrink-0">
-        {requester.image && (
-          <AvatarImage src={requester.image} alt={requester.name ?? ""} />
-        )}
-        <AvatarFallback>{initials}</AvatarFallback>
-      </Avatar>
+    <Item asChild size="sm" className="-mx-2 flex-nowrap gap-3 px-2">
+      <Link href={href}>
+        <ItemMedia>
+          <Avatar className="size-10">
+            {requester.image && (
+              <AvatarImage src={requester.image} alt={requester.name ?? ""} />
+            )}
+            <AvatarFallback>{initials}</AvatarFallback>
+          </Avatar>
+        </ItemMedia>
 
-      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-        <div className="flex items-center justify-between gap-2">
-          <p className="text-sm font-medium">{requester.name ?? "Unknown"}</p>
-          {status === "PENDING" ? (
-            <span
-              className="text-muted-foreground shrink-0 text-xs"
-              suppressHydrationWarning
-            >
-              {formatDistanceToNow(createdAt, { addSuffix: true })}
-            </span>
-          ) : (
-            <Badge
-              variant={STATUS_VARIANT[status] ?? "secondary"}
-              className="text-xs"
-            >
-              {status.charAt(0) + status.slice(1).toLowerCase()}
-            </Badge>
-          )}
-        </div>
-        <div className="flex items-center gap-1.5">
-          <span className="text-muted-foreground text-xs">{roleLabel}</span>
-          {message && (
-            <>
-              <span className="text-muted-foreground text-xs">·</span>
-              <span className="text-muted-foreground truncate text-xs">
-                {message}
+        <ItemContent className="min-w-0 gap-0.5">
+          <div className="flex items-center justify-between gap-2">
+            <ItemTitle>{requester.name ?? "Unknown"}</ItemTitle>
+            {status === "PENDING" ? (
+              <span
+                className="text-muted-foreground shrink-0 text-xs"
+                suppressHydrationWarning
+              >
+                {formatDistanceToNow(createdAt, { addSuffix: true })}
               </span>
-            </>
-          )}
-        </div>
-      </div>
+            ) : (
+              <Badge
+                variant={STATUS_VARIANT[status] ?? "secondary"}
+                className="text-xs"
+              >
+                {status.charAt(0) + status.slice(1).toLowerCase()}
+              </Badge>
+            )}
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="text-muted-foreground text-xs">{roleLabel}</span>
+            {message && (
+              <>
+                <span className="text-muted-foreground text-xs">·</span>
+                <span className="text-muted-foreground truncate text-xs">
+                  {message}
+                </span>
+              </>
+            )}
+          </div>
+        </ItemContent>
 
-      <ChevronRight className="text-muted-foreground size-4 shrink-0" />
-    </Link>
+        <ItemActions>
+          <ChevronRight className="text-muted-foreground size-4" />
+        </ItemActions>
+      </Link>
+    </Item>
   );
 }

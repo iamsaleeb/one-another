@@ -3,12 +3,20 @@
 import { useState, useTransition } from "react";
 import { useForm, useWatch, Controller, type Path } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Check, Loader2 } from "lucide-react";
+import { Check } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import {
+  Field,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+  FieldLegend,
+  FieldSet,
+} from "@/components/ui/field";
+import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Drawer,
@@ -320,9 +328,7 @@ export function RegistrationDrawer({
                 disabled={unattendPending}
                 className="text-destructive hover:text-destructive hover:bg-destructive/10 w-full text-xs"
               >
-                {unattendPending && (
-                  <Loader2 className="size-3.5 animate-spin" />
-                )}
+                {unattendPending && <Spinner className="size-3.5" />}
                 {unattendPending ? "Cancelling..." : "Cancel registration"}
               </Button>
             </DrawerFooter>
@@ -337,20 +343,22 @@ export function RegistrationDrawer({
               )}
 
               {!onQuestionStep && (
-                <div className="flex flex-col gap-4">
+                <FieldGroup className="gap-4">
                   {showPartialDays && allDays.length > 0 && (
                     <Controller
                       control={form.control}
                       name="selectedDays"
-                      render={({ field }) => (
-                        <div className="flex flex-col gap-2">
-                          <Label>Which days will you attend?</Label>
-                          <div className="flex flex-col gap-2 rounded-xl border px-3 py-3">
+                      render={({ field, fieldState }) => (
+                        <FieldSet data-invalid={fieldState.invalid}>
+                          <FieldLegend variant="label">
+                            Which days will you attend?
+                          </FieldLegend>
+                          <FieldGroup
+                            data-slot="checkbox-group"
+                            className="rounded-xl border px-3 py-3"
+                          >
                             {allDays.map((day) => (
-                              <div
-                                key={day}
-                                className="flex items-center gap-2.5"
-                              >
+                              <Field key={day} orientation="horizontal">
                                 <Checkbox
                                   id={`day-${day}`}
                                   checked={(field.value ?? []).includes(day)}
@@ -364,16 +372,17 @@ export function RegistrationDrawer({
                                   }}
                                   disabled={isPending}
                                 />
-                                <Label
+                                <FieldLabel
                                   htmlFor={`day-${day}`}
-                                  className="cursor-pointer text-sm font-normal"
+                                  className="font-normal"
                                 >
                                   {formatDayLabel(day)}
-                                </Label>
-                              </div>
+                                </FieldLabel>
+                              </Field>
                             ))}
-                          </div>
-                        </div>
+                          </FieldGroup>
+                          <FieldError errors={[fieldState.error]} />
+                        </FieldSet>
                       )}
                     />
                   )}
@@ -382,17 +391,19 @@ export function RegistrationDrawer({
                     <Controller
                       control={form.control}
                       name="phone"
-                      render={({ field }) => (
-                        <div className="grid gap-1.5">
-                          <Label htmlFor="phone">Phone number</Label>
+                      render={({ field, fieldState }) => (
+                        <Field data-invalid={fieldState.invalid}>
+                          <FieldLabel htmlFor="phone">Phone number</FieldLabel>
                           <Input
                             id="phone"
                             {...field}
+                            aria-invalid={fieldState.invalid}
                             type="tel"
                             placeholder="+44 7700 000000"
                             disabled={isPending}
                           />
-                        </div>
+                          <FieldError errors={[fieldState.error]} />
+                        </Field>
                       )}
                     />
                   )}
@@ -401,23 +412,25 @@ export function RegistrationDrawer({
                     <Controller
                       control={form.control}
                       name="notes"
-                      render={({ field }) => (
-                        <div className="grid gap-1.5">
-                          <Label htmlFor="notes">
+                      render={({ field, fieldState }) => (
+                        <Field data-invalid={fieldState.invalid}>
+                          <FieldLabel htmlFor="notes">
                             Dietary / accessibility needs
-                          </Label>
+                          </FieldLabel>
                           <Textarea
                             id="notes"
                             {...field}
+                            aria-invalid={fieldState.invalid}
                             rows={3}
                             placeholder="Let us know if you have any requirements..."
                             disabled={isPending}
                           />
-                        </div>
+                          <FieldError errors={[fieldState.error]} />
+                        </Field>
                       )}
                     />
                   )}
-                </div>
+                </FieldGroup>
               )}
 
               {onQuestionStep && hasQuestions && (
@@ -443,7 +456,7 @@ export function RegistrationDrawer({
                       }
                       className="w-full"
                     >
-                      {isPending && <Loader2 className="size-4 animate-spin" />}
+                      {isPending && <Spinner />}
                       Continue
                     </Button>
                   ) : (
@@ -453,7 +466,7 @@ export function RegistrationDrawer({
                       disabled={isPending}
                       className="w-full"
                     >
-                      {isPending && <Loader2 className="size-4 animate-spin" />}
+                      {isPending && <Spinner />}
                       {getSubmitLabel()}
                     </Button>
                   )}
@@ -485,7 +498,7 @@ export function RegistrationDrawer({
                       disabled={isPending}
                       className="flex-1"
                     >
-                      {isPending && <Loader2 className="size-4 animate-spin" />}
+                      {isPending && <Spinner />}
                       {getSubmitLabel()}
                     </Button>
                   ) : (

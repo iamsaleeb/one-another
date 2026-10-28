@@ -1,8 +1,9 @@
+import { Card } from "@/components/ui/card";
 import { notFound, redirect } from "next/navigation";
 import { getEventById } from "@/domains/events/actions/data";
 import { getEventResponses } from "@/domains/events/questions/actions";
 import { getAbility, eventSubject } from "@/domains/roles";
-import { PageHeader } from "@/components/ui/page-header";
+import { PageHeader } from "@/components/page-header";
 import { ResponsesTable } from "./_components/responses-table";
 
 interface Props {
@@ -32,19 +33,19 @@ export default async function EventResponsesPage({ params }: Props) {
 
       <div className="flex flex-col gap-6 px-4">
         {questions.length === 0 ? (
-          <div className="shadow-card flex flex-col items-center gap-3 rounded-2xl border bg-white p-8">
+          <Card className="items-center gap-3 p-8">
             <p className="text-muted-foreground text-center text-sm">
               This event has no custom questions.
             </p>
-          </div>
+          </Card>
         ) : (
-          <div className="shadow-card rounded-2xl border bg-white p-4">
+          <Card className="gap-0 p-4">
             <ResponsesTable
               questions={questions}
               attendees={attendees}
               eventTitle={event.title}
             />
-          </div>
+          </Card>
         )}
       </div>
     </div>

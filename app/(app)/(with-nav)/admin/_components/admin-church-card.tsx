@@ -1,15 +1,31 @@
 "use client";
 
-import { useActionState } from "react";
+import { useState, useTransition } from "react";
+import { Controller, useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Trash2 } from "lucide-react";
+import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import {
+  Item,
+  ItemActions,
+  ItemContent,
+  ItemDescription,
+  ItemGroup,
+  ItemTitle,
+} from "@/components/ui/item";
+import { ButtonGroup } from "@/components/ui/button-group";
+import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import {
   addOrganiserToChurchAction,
   removeOrganiserFromChurchAction,
   type AdminActionState,
 } from "@/domains/admin/actions/admin";
+import {
+  addOrganiserSchema,
+  type AddOrganiserInput,
+} from "@/domains/churches/validations/churches";
 
 interface Organiser {
   id: string;
@@ -25,21 +41,41 @@ interface AdminChurchCardProps {
   };
 }
 
-const initialState: AdminActionState = {};
-
 export function AdminChurchCard({ church }: AdminChurchCardProps) {
-  const [addState, addAction, addPending] = useActionState(
-    addOrganiserToChurchAction,
-    initialState
-  );
+  const form = useForm<AddOrganiserInput>({
+    resolver: zodResolver(addOrganiserSchema),
+    defaultValues: { churchId: church.id, email: "" },
+  });
+  const { isSubmitting } = form.formState;
+  const [addSuccess, setAddSuccess] = useState<string>();
 
-  const [removeState, removeAction, removePending] = useActionState(
-    removeOrganiserFromChurchAction,
-    initialState
-  );
+  const [removeState, setRemoveState] = useState<AdminActionState>({});
+  const [removePending, startRemove] = useTransition();
+
+  const onAdd = form.handleSubmit(async (data) => {
+    setAddSuccess(undefined);
+    const result = await addOrganiserToChurchAction(data);
+    if (result.error) {
+      form.setError("email", { message: result.error });
+      return;
+    }
+    form.reset({ churchId: church.id, email: "" });
+    setAddSuccess(result.success);
+  });
+
+  function handleRemove(targetUserId: string) {
+    startRemove(async () => {
+      setRemoveState(
+        await removeOrganiserFromChurchAction({
+          churchId: church.id,
+          targetUserId,
+        })
+      );
+    });
+  }
 
   return (
-    <div className="shadow-card flex flex-col gap-5 rounded-2xl bg-white p-5">
+    <Card className="gap-5 p-5">
       <h2 className="text-base font-semibold">{church.name}</h2>
 
       {/* Organisers list */}
@@ -52,78 +88,73 @@ export function AdminChurchCard({ church }: AdminChurchCardProps) {
             No organisers assigned yet.
           </p>
         ) : (
-          <ul className="flex flex-col gap-2">
+          <ItemGroup className="gap-2">
             {church.organisers.map((organiser) => (
-              <li
-                key={organiser.id}
-                className="flex items-center justify-between gap-2"
-              >
-                <div className="flex min-w-0 flex-col">
-                  <span className="truncate text-sm font-medium">
+              <Item key={organiser.id} role="listitem" className="gap-2 p-0">
+                <ItemContent className="min-w-0 gap-0">
+                  <ItemTitle className="w-full truncate">
                     {organiser.name ?? organiser.email}
-                  </span>
+                  </ItemTitle>
                   {organiser.name && (
-                    <span className="text-muted-foreground truncate text-xs">
+                    <ItemDescription className="truncate text-xs">
                       {organiser.email}
-                    </span>
+                    </ItemDescription>
                   )}
-                </div>
-                <form action={removeAction}>
-                  <input type="hidden" name="churchId" value={church.id} />
-                  <input
-                    type="hidden"
-                    name="targetUserId"
-                    value={organiser.id}
-                  />
+                </ItemContent>
+                <ItemActions>
                   <Button
-                    type="submit"
+                    type="button"
                     variant="ghost"
                     size="icon"
                     className="text-destructive hover:text-destructive size-8 shrink-0"
                     disabled={removePending}
+                    onClick={() => handleRemove(organiser.id)}
                     aria-label={`Remove ${organiser.name ?? organiser.email}`}
                   >
                     <Trash2 className="size-4" />
                   </Button>
-                </form>
-              </li>
+                </ItemActions>
+              </Item>
             ))}
-          </ul>
+          </ItemGroup>
         )}
         {removeState.error && (
           <p className="text-destructive text-xs">{removeState.error}</p>
         )}
         {removeState.success && (
-          <p className="text-xs text-green-600">{removeState.success}</p>
+          <p className="text-success text-xs">{removeState.success}</p>
         )}
       </div>
 
       {/* Add organiser form */}
-      <form action={addAction} className="flex flex-col gap-3">
-        <input type="hidden" name="churchId" value={church.id} />
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor={`email-${church.id}`}>Add organiser by email</Label>
-          <div className="flex gap-2">
-            <Input
-              id={`email-${church.id}`}
-              name="email"
-              type="email"
-              placeholder="organiser@example.com"
-              disabled={addPending}
-              required
-            />
-            <Button type="submit" disabled={addPending} className="shrink-0">
-              Add
-            </Button>
-          </div>
-        </div>
-        {addState.error && (
-          <p className="text-destructive text-xs">{addState.error}</p>
-        )}
-        {addState.success && (
-          <p className="text-xs text-green-600">{addState.success}</p>
-        )}
+      <form onSubmit={onAdd} noValidate className="flex flex-col gap-3">
+        <Controller
+          control={form.control}
+          name="email"
+          render={({ field, fieldState }) => (
+            <Field data-invalid={fieldState.invalid}>
+              <FieldLabel htmlFor={`email-${church.id}`}>
+                Add organiser by email
+              </FieldLabel>
+              <ButtonGroup className="w-full">
+                <Input
+                  id={`email-${church.id}`}
+                  type="email"
+                  placeholder="organiser@example.com"
+                  disabled={isSubmitting}
+                  aria-invalid={fieldState.invalid}
+                  {...field}
+                />
+                <Button type="submit" disabled={isSubmitting}>
+                  Add
+                </Button>
+              </ButtonGroup>
+              <FieldError errors={[fieldState.error]} />
+            </Field>
+          )}
+        />
+        {addSuccess && <p className="text-success text-xs">{addSuccess}</p>}
       </form>
-    </div>
+    </Card>
   );
 }

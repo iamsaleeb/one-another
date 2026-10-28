@@ -13,19 +13,12 @@ jest.mock("@/domains/events/components/save-event-button", () => ({
   SaveEventButton: () => null,
 }));
 
-// Mock EmptyState
-jest.mock("@/components/empty-state", () => ({
-  EmptyState: ({ label }: { label: string }) => (
-    <div data-testid="empty-state">{label}</div>
-  ),
-}));
-
 // Mock Skeleton
 jest.mock("@/components/ui/skeleton", () => ({
   Skeleton: () => <div data-testid="skeleton" />,
 }));
 
-// Mock lucide icon used by EmptyState
+// Mock lucide icon used by the empty state
 jest.mock("lucide-react", () => ({ CalendarDays: () => null }));
 
 const makeItem = (id: string): EventCardItem => ({
@@ -87,7 +80,7 @@ describe("InfiniteEventList", () => {
         emptyMessage="Nothing here"
       />
     );
-    expect(screen.getByTestId("empty-state")).toHaveTextContent("Nothing here");
+    expect(screen.getByText("Nothing here")).toBeInTheDocument();
   });
 
   it("does not show empty state when items exist", () => {
@@ -98,7 +91,9 @@ describe("InfiniteEventList", () => {
         loadMore={jest.fn()}
       />
     );
-    expect(screen.queryByTestId("empty-state")).not.toBeInTheDocument();
+    expect(
+      document.querySelector('[data-slot="empty"]')
+    ).not.toBeInTheDocument();
   });
 
   it("does not render sentinel when cursor is null", () => {

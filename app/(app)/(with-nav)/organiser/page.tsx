@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { getAbility, getSessionUserId, hasAnyGrant } from "@/domains/roles";
-import { PageHeader } from "@/components/ui/page-header";
+import { PageHeader } from "@/components/page-header";
 import { getEventsNotByCreatorPaged } from "@/domains/events/actions/data";
 import { getManageableEventsPaged } from "@/domains/events/dal/manageable";
 import { getSeriesNotByCreator } from "@/domains/series/actions/data";

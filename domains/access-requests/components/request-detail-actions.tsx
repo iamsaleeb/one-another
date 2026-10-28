@@ -132,10 +132,7 @@ export function RequestDetailActions({ requestId, status, backHref }: Props) {
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={handleRevoke}
-                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              >
+              <AlertDialogAction variant="destructive" onClick={handleRevoke}>
                 Revoke
               </AlertDialogAction>
             </AlertDialogFooter>

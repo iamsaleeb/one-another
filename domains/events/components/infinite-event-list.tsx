@@ -3,7 +3,12 @@
 import { useState, useEffect, useRef, useTransition } from "react";
 import { CalendarDays } from "lucide-react";
 import { EventCard } from "./event-card";
-import { EmptyState } from "@/components/empty-state";
+import {
+  Empty,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SaveEventButton } from "./save-event-button";
 import type { EventCardItem, LoadMoreFn } from "@/lib/types/pagination";
@@ -74,7 +79,16 @@ export function InfiniteEventList({
   const items = [...initialItems, ...extraItems];
 
   if (items.length === 0 && !cursor) {
-    return <EmptyState icon={CalendarDays} label={emptyMessage} />;
+    return (
+      <Empty>
+        <EmptyHeader>
+          <EmptyMedia variant="icon">
+            <CalendarDays />
+          </EmptyMedia>
+          <EmptyTitle>{emptyMessage}</EmptyTitle>
+        </EmptyHeader>
+      </Empty>
+    );
   }
 
   return (

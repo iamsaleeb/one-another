@@ -2,6 +2,8 @@
 "use client";
 
 import { useState } from "react";
+import { Controller, useFieldArray, useForm, useWatch } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Plus, Trash2 } from "lucide-react";
 import {
   Drawer,
@@ -21,12 +23,27 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
+import {
+  Field,
+  FieldContent,
+  FieldDescription,
+  FieldError,
+  FieldLabel,
+  FieldLegend,
+  FieldSet,
+} from "@/components/ui/field";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupButton,
+  InputGroupInput,
+} from "@/components/ui/input-group";
 import { LibraryDrawer } from "./library-drawer";
 import {
   QuestionType,
-  questionSchema,
+  questionFormSchema,
   TYPE_LABELS,
+  type QuestionFormInput,
   type QuestionInput,
   type LibraryItem,
 } from "@/domains/events/questions/validations";
@@ -39,6 +56,9 @@ interface QuestionDrawerProps {
   onSave: (question: Omit<QuestionInput, "order">) => void;
 }
 
+const toOptionFields = (options: string[] | undefined) =>
+  (options?.length ? options : [""]).map((value) => ({ value }));
+
 export function QuestionDrawer({
   open,
   onOpenChange,
@@ -46,187 +66,211 @@ export function QuestionDrawer({
   libraryItems,
   onSave,
 }: QuestionDrawerProps) {
-  const [label, setLabel] = useState(initial?.label ?? "");
-  const [type, setType] = useState<QuestionType>(
-    initial?.type ?? QuestionType.SHORT_TEXT
-  );
-  const [required, setRequired] = useState(initial?.required ?? false);
-  const [options, setOptions] = useState<Array<{ id: string; value: string }>>(
-    (initial?.options?.length ? initial.options : [""]).map((value) => ({
-      id: crypto.randomUUID(),
-      value,
-    }))
-  );
-  const [libraryItemId, setLibraryItemId] = useState<string | undefined>(
-    initial?.libraryItemId
-  );
+  const form = useForm<QuestionFormInput>({
+    resolver: zodResolver(questionFormSchema),
+    mode: "onChange",
+    defaultValues: {
+      type: initial?.type ?? QuestionType.SHORT_TEXT,
+      label: initial?.label ?? "",
+      options: toOptionFields(initial?.options),
+      required: initial?.required ?? false,
+      libraryItemId: initial?.libraryItemId,
+    },
+  });
+  const { fields, append, remove } = useFieldArray({
+    control: form.control,
+    name: "options",
+  });
+  const type = useWatch({ control: form.control, name: "type" });
   const [libraryOpen, setLibraryOpen] = useState(false);
 
   function handleLibrarySelect(item: LibraryItem) {
-    setLabel(item.label);
-    setType(item.type);
-    setOptions(
-      (item.options.length ? item.options : [""]).map((value) => ({
-        id: crypto.randomUUID(),
-        value,
-      }))
+    form.reset(
+      {
+        ...form.getValues(),
+        type: item.type,
+        label: item.label,
+        options: toOptionFields(item.options),
+        libraryItemId: item.id,
+      },
+      { keepDefaultValues: true }
     );
-    setLibraryItemId(item.id);
+    void form.trigger();
   }
 
-  const validOptions = options
-    .map((o) => o.value)
-    .filter((v) => v.trim().length > 0);
-  const canSave =
-    questionSchema.safeParse({
-      type,
-      label: label.trim(),
-      options: type === QuestionType.MULTIPLE_CHOICE ? validOptions : [],
-      required,
-      order: 0,
-    }).success &&
-    (type !== QuestionType.MULTIPLE_CHOICE || validOptions.length >= 1);
-
-  function handleSave() {
-    if (!canSave) return;
+  const onSubmit = form.handleSubmit((data) => {
     onSave({
       id: initial?.id,
-      type,
-      label: label.trim(),
-      options: type === QuestionType.MULTIPLE_CHOICE ? validOptions : [],
-      required,
-      libraryItemId,
+      type: data.type,
+      label: data.label,
+      options:
+        data.type === QuestionType.MULTIPLE_CHOICE
+          ? data.options.map((o) => o.value.trim()).filter(Boolean)
+          : [],
+      required: data.required,
+      libraryItemId: data.libraryItemId,
     });
-
     onOpenChange(false);
-  }
+  });
 
   return (
     <>
       <Drawer open={open} onOpenChange={onOpenChange} direction="bottom">
         <DrawerContent aria-describedby={undefined}>
-          <DrawerHeader>
-            <DrawerTitle>
-              {initial ? "Edit question" : "Add question"}
-            </DrawerTitle>
-          </DrawerHeader>
+          {/* The drawer is portalled, but React still bubbles its submit
+              event up to the event wizard's form, so stop it here. */}
+          <form
+            noValidate
+            className="flex min-h-0 flex-col"
+            onSubmit={(e) => {
+              e.stopPropagation();
+              void onSubmit(e);
+            }}
+          >
+            <DrawerHeader>
+              <DrawerTitle>
+                {initial ? "Edit question" : "Add question"}
+              </DrawerTitle>
+            </DrawerHeader>
 
-          <div className="flex max-h-[70vh] flex-col gap-4 overflow-y-auto px-4 pb-2">
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full"
-              onClick={() => setLibraryOpen(true)}
-            >
-              Pick from library
-            </Button>
+            <div className="flex max-h-[70vh] flex-col gap-4 overflow-y-auto px-4 pb-2">
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                onClick={() => setLibraryOpen(true)}
+              >
+                Pick from library
+              </Button>
 
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="q-label">Question</Label>
-              <Input
-                id="q-label"
-                placeholder="e.g. Do you have any dietary requirements?"
-                value={label}
-                onChange={(e) => setLabel(e.target.value)}
+              <Controller
+                control={form.control}
+                name="label"
+                render={({ field, fieldState }) => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel htmlFor="q-label">Question</FieldLabel>
+                    <Input
+                      id="q-label"
+                      aria-invalid={fieldState.invalid}
+                      placeholder="e.g. Do you have any dietary requirements?"
+                      {...field}
+                    />
+                    <FieldError errors={[fieldState.error]} />
+                  </Field>
+                )}
+              />
+
+              <Controller
+                control={form.control}
+                name="type"
+                render={({ field }) => (
+                  <Field>
+                    <FieldLabel htmlFor="q-type">Answer type</FieldLabel>
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger id="q-type">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Object.entries(TYPE_LABELS).map(([value, label]) => (
+                          <SelectItem key={value} value={value}>
+                            {label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </Field>
+                )}
+              />
+
+              {type === QuestionType.MULTIPLE_CHOICE && (
+                <FieldSet
+                  className="gap-2"
+                  data-invalid={!!form.formState.errors.options}
+                >
+                  <FieldLegend variant="label" className="mb-1">
+                    Options
+                  </FieldLegend>
+                  {fields.map((opt, i) => (
+                    <Controller
+                      key={opt.id}
+                      control={form.control}
+                      name={`options.${i}.value`}
+                      render={({ field }) => (
+                        <InputGroup>
+                          <InputGroupInput
+                            aria-label={`Option ${i + 1}`}
+                            placeholder={`Option ${i + 1}`}
+                            {...field}
+                          />
+                          {fields.length > 1 && (
+                            <InputGroupAddon align="inline-end">
+                              <InputGroupButton
+                                size="icon-xs"
+                                aria-label={`Remove option ${i + 1}`}
+                                className="text-destructive hover:text-destructive"
+                                onClick={() => remove(i)}
+                              >
+                                <Trash2 />
+                              </InputGroupButton>
+                            </InputGroupAddon>
+                          )}
+                        </InputGroup>
+                      )}
+                    />
+                  ))}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                    onClick={() => append({ value: "" })}
+                  >
+                    <Plus />
+                    Add option
+                  </Button>
+                  <FieldError errors={[form.formState.errors.options?.root]} />
+                </FieldSet>
+              )}
+
+              <Controller
+                control={form.control}
+                name="required"
+                render={({ field }) => (
+                  <Field
+                    orientation="horizontal"
+                    className="bg-background min-h-[56px] justify-between rounded-xl border px-4 py-3"
+                  >
+                    <FieldContent className="gap-0.5">
+                      <FieldLabel htmlFor="q-required">Required</FieldLabel>
+                      <FieldDescription className="text-xs">
+                        Attendee must answer this question
+                      </FieldDescription>
+                    </FieldContent>
+                    <Switch
+                      id="q-required"
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </Field>
+                )}
               />
             </div>
 
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="q-type">Answer type</Label>
-              <Select
-                value={type}
-                onValueChange={(v) => setType(v as QuestionType)}
+            <DrawerFooter>
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={!form.formState.isValid}
               >
-                <SelectTrigger id="q-type">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.entries(TYPE_LABELS).map(([value, label]) => (
-                    <SelectItem key={value} value={value}>
-                      {label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {type === QuestionType.MULTIPLE_CHOICE && (
-              <div className="flex flex-col gap-2">
-                <Label>Options</Label>
-                {options.map((opt, i) => (
-                  <div key={opt.id} className="flex gap-2">
-                    <Input
-                      placeholder={`Option ${i + 1}`}
-                      value={opt.value}
-                      onChange={(e) =>
-                        setOptions(
-                          options.map((o) =>
-                            o.id === opt.id
-                              ? { ...o, value: e.target.value }
-                              : o
-                          )
-                        )
-                      }
-                    />
-                    {options.length > 1 && (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="text-destructive hover:text-destructive size-10 shrink-0"
-                        onClick={() =>
-                          setOptions(options.filter((o) => o.id !== opt.id))
-                        }
-                      >
-                        <Trash2 className="size-4" />
-                      </Button>
-                    )}
-                  </div>
-                ))}
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="w-full"
-                  onClick={() =>
-                    setOptions([
-                      ...options,
-                      { id: crypto.randomUUID(), value: "" },
-                    ])
-                  }
-                >
-                  <Plus className="mr-1 size-4" />
-                  Add option
-                </Button>
-              </div>
-            )}
-
-            <div className="bg-background flex min-h-[56px] items-center justify-between gap-3 rounded-xl border px-4 py-3">
-              <div>
-                <p className="text-sm font-medium">Required</p>
-                <p className="text-muted-foreground text-xs">
-                  Attendee must answer this question
-                </p>
-              </div>
-              <Switch checked={required} onCheckedChange={setRequired} />
-            </div>
-          </div>
-
-          <DrawerFooter>
-            <Button
-              type="button"
-              className="w-full"
-              onClick={handleSave}
-              disabled={!canSave}
-            >
-              {initial ? "Save changes" : "Add question"}
-            </Button>
-            <DrawerClose asChild>
-              <Button variant="outline" className="w-full">
-                Cancel
+                {initial ? "Save changes" : "Add question"}
               </Button>
-            </DrawerClose>
-          </DrawerFooter>
+              <DrawerClose asChild>
+                <Button type="button" variant="outline" className="w-full">
+                  Cancel
+                </Button>
+              </DrawerClose>
+            </DrawerFooter>
+          </form>
         </DrawerContent>
       </Drawer>
 

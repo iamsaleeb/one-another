@@ -1,3 +1,5 @@
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { Church, MapPin, Pencil, Plus, Tag, User } from "lucide-react";
@@ -12,8 +14,8 @@ import {
   eventSubject,
   seriesSubject,
 } from "@/domains/roles";
-import { InfoField } from "@/components/ui/info-field";
-import { HeroBanner } from "@/components/ui/hero-banner";
+import { InfoField } from "@/components/info-field";
+import { HeroBanner } from "@/components/hero-banner";
 import { EventCard } from "@/domains/events/components/event-card";
 import { SaveEventButton } from "@/domains/events/components/save-event-button";
 import { Button } from "@/components/ui/button";
@@ -90,13 +92,13 @@ export default async function SeriesDetailPage({ params }: Props) {
 
       <div className="flex flex-col gap-4 px-4 pt-5 pb-28">
         {/* Info card */}
-        <div className="shadow-card flex flex-col gap-4 rounded-2xl bg-white p-5">
+        <Card className="gap-4 p-5">
           <div className="flex items-start justify-between gap-2">
             <h1 className="text-xl leading-snug font-bold">{series.name}</h1>
             <div className="flex shrink-0 items-center gap-2">
-              <span className="bg-primary/10 text-primary rounded-full px-2.5 py-1 text-xs font-medium whitespace-nowrap">
+              <Badge variant="soft">
                 {CADENCE_LABELS[series.cadence] ?? series.cadence}
-              </span>
+              </Badge>
               {canEdit && (
                 <Button
                   asChild
@@ -134,14 +136,14 @@ export default async function SeriesDetailPage({ params }: Props) {
               {series.tag}
             </InfoField>
           </div>
-        </div>
+        </Card>
 
         {/* Description card */}
-        <div className="shadow-card rounded-2xl bg-white p-5">
+        <Card className="gap-0 p-5">
           <p className="text-foreground text-sm leading-relaxed">
             {series.description}
           </p>
-        </div>
+        </Card>
 
         {/* Upcoming sessions */}
         <section className="flex flex-col gap-3">

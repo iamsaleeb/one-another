@@ -4,7 +4,7 @@ import {
   getMyFollowedChurchIds,
 } from "@/domains/churches/actions/data";
 import { ChurchListTabs } from "@/domains/churches/components/church-list-tabs";
-import { PageHeader } from "@/components/ui/page-header";
+import { PageHeader } from "@/components/page-header";
 
 export default async function ChurchesPage() {
   const userId = (await auth())?.user?.id ?? null;

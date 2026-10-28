@@ -13,7 +13,7 @@ import {
 } from "@/domains/roles";
 import { parseEventMetadata } from "@/domains/events/validations/event";
 import { hasHappened } from "@/domains/events/lib/timing";
-import { PageHeader } from "@/components/ui/page-header";
+import { PageHeader } from "@/components/page-header";
 import { EventWizard } from "@/app/(app)/(no-nav)/events/create/_components/event-wizard";
 
 interface Props {

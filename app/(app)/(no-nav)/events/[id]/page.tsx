@@ -1,3 +1,4 @@
+import { Card } from "@/components/ui/card";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import {
@@ -33,8 +34,8 @@ import { EventDatetime } from "@/domains/events/components/event-datetime";
 import { hasHappened } from "@/domains/events/lib/timing";
 import { LiveBadge } from "@/domains/events/components/live-badge";
 import { getEventDays } from "@/lib/datetime";
-import { InfoField } from "@/components/ui/info-field";
-import { HeroBanner } from "@/components/ui/hero-banner";
+import { InfoField } from "@/components/info-field";
+import { HeroBanner } from "@/components/hero-banner";
 import { DeleteEventButton } from "./_components/delete-event-button";
 import { CancelEventButton } from "./_components/cancel-event-button";
 import { UncancelEventButton } from "./_components/uncancel-event-button";
@@ -162,10 +163,10 @@ export default async function EventDetailPage({ params }: Props) {
       <div className="flex flex-col gap-4 px-4 pt-5 pb-28">
         {/* Draft banner */}
         {event.isDraft && (
-          <Alert className="border-amber-200 bg-amber-50 text-amber-700 [&>svg]:text-amber-600">
+          <Alert className="border-warning/30 bg-warning/10 text-warning [&>svg]:text-warning">
             <FileEdit className="size-4" />
             <AlertTitle>This event is a draft.</AlertTitle>
-            <AlertDescription className="text-amber-600/80">
+            <AlertDescription className="text-warning/80">
               Only organisers can see this page.
             </AlertDescription>
           </Alert>
@@ -183,7 +184,7 @@ export default async function EventDetailPage({ params }: Props) {
         )}
 
         {/* Info card */}
-        <div className="shadow-card flex flex-col gap-4 rounded-2xl bg-white p-5">
+        <Card className="gap-4 p-5">
           <div className="flex items-start justify-between gap-2">
             <div className="flex flex-col items-start gap-2">
               <LiveBadge event={event} />
@@ -269,7 +270,7 @@ export default async function EventDetailPage({ params }: Props) {
               </InfoField>
             )}
           </div>
-        </div>
+        </Card>
 
         {/* Tag label */}
         <p className="text-muted-foreground text-center text-xs font-bold tracking-widest uppercase">
@@ -277,11 +278,11 @@ export default async function EventDetailPage({ params }: Props) {
         </p>
 
         {/* Description card */}
-        <div className="shadow-card rounded-2xl bg-white p-5">
+        <Card className="gap-0 p-5">
           <p className="text-foreground text-sm leading-relaxed">
             {event.description}
           </p>
-        </div>
+        </Card>
 
         {/* Camp agenda */}
         {camp && camp.agenda.length > 0 && <CampAgenda agenda={camp.agenda} />}

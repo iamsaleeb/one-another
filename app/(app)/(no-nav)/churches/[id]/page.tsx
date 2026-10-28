@@ -64,7 +64,7 @@ export default async function ChurchDetailPage({ params }: Props) {
     <div className="bg-muted/20 pb-8">
       {/* Church Info Card */}
       <div className="px-4 pt-5 pb-3">
-        <Card className="bg-primary/5 overflow-hidden rounded-2xl border-0">
+        <Card className="bg-primary/5 overflow-hidden">
           <CardContent className="flex flex-col items-center gap-4 px-5 pt-6 pb-5">
             {/* Circular Avatar */}
             <Avatar className="ring-primary/10 size-24 ring-4">

@@ -131,12 +131,10 @@ describe("SearchBar — dropdown", () => {
   it("shows all when options in dropdown", async () => {
     setup();
     await userEvent.click(screen.getByPlaceholderText(/search events/i));
-    expect(screen.getByRole("button", { name: "Today" })).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: "Today" })).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: "Tomorrow" })).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: "Tomorrow" })
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: "This Weekend" })
+      screen.getByRole("radio", { name: "This Weekend" })
     ).toBeInTheDocument();
   });
 
@@ -144,15 +142,15 @@ describe("SearchBar — dropdown", () => {
     setup();
     await userEvent.click(screen.getByPlaceholderText(/search events/i));
     expect(
-      screen.getByRole("button", { name: "Youth Meeting" })
+      screen.getByRole("radio", { name: "Youth Meeting" })
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: "Bible Study" })
+      screen.getByRole("radio", { name: "Bible Study" })
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: "Servants Meeting" })
+      screen.getByRole("radio", { name: "Servants Meeting" })
     ).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Camp" })).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: "Camp" })).toBeInTheDocument();
   });
 
   it("closes on Escape key", async () => {
@@ -241,37 +239,36 @@ describe("SearchBar — when filter", () => {
   it('selects "today" and navigates', async () => {
     setup();
     await userEvent.click(screen.getByPlaceholderText(/search events/i));
-    await userEvent.click(screen.getByRole("button", { name: "Today" }));
+    await userEvent.click(screen.getByRole("radio", { name: "Today" }));
     expect(mockPush).toHaveBeenCalledWith("/?when=today");
   });
 
   it('selects "tomorrow" and navigates', async () => {
     setup();
     await userEvent.click(screen.getByPlaceholderText(/search events/i));
-    await userEvent.click(screen.getByRole("button", { name: "Tomorrow" }));
+    await userEvent.click(screen.getByRole("radio", { name: "Tomorrow" }));
     expect(mockPush).toHaveBeenCalledWith("/?when=tomorrow");
   });
 
   it('selects "weekend" and navigates', async () => {
     setup();
     await userEvent.click(screen.getByPlaceholderText(/search events/i));
-    await userEvent.click(screen.getByRole("button", { name: "This Weekend" }));
+    await userEvent.click(screen.getByRole("radio", { name: "This Weekend" }));
     expect(mockPush).toHaveBeenCalledWith("/?when=weekend");
   });
 
   it("deselects the active when filter when clicking it again", async () => {
     setup({ initialWhen: "today" });
     await userEvent.click(screen.getByPlaceholderText(/search events/i));
-    // FilterChip button (distinct from ActivePill span)
-    await userEvent.click(screen.getByRole("button", { name: "Today" }));
+    await userEvent.click(screen.getByRole("radio", { name: "Today" }));
     expect(mockPush).toHaveBeenCalledWith("/");
   });
 
-  it("shows active styling on the selected when chip", async () => {
+  it("marks the selected when chip as on", async () => {
     setup({ initialWhen: "tomorrow" });
     await userEvent.click(screen.getByPlaceholderText(/search events/i));
-    const chip = screen.getByRole("button", { name: "Tomorrow" });
-    expect(chip.className).toMatch(/bg-primary/);
+    const chip = screen.getByRole("radio", { name: "Tomorrow" });
+    expect(chip).toHaveAttribute("data-state", "on");
   });
 });
 
@@ -281,9 +278,7 @@ describe("SearchBar — category filter", () => {
   it("selects a category and navigates", async () => {
     setup();
     await userEvent.click(screen.getByPlaceholderText(/search events/i));
-    await userEvent.click(
-      screen.getByRole("button", { name: "Youth Meeting" })
-    );
+    await userEvent.click(screen.getByRole("radio", { name: "Youth Meeting" }));
     expect(mockPush).toHaveBeenCalledWith("/?category=Youth+Meeting");
   });
 
@@ -291,16 +286,17 @@ describe("SearchBar — category filter", () => {
     setup({ initialCategory: "Servants Meeting" });
     await userEvent.click(screen.getByPlaceholderText(/search events/i));
     await userEvent.click(
-      screen.getByRole("button", { name: "Servants Meeting" })
+      screen.getByRole("radio", { name: "Servants Meeting" })
     );
     expect(mockPush).toHaveBeenCalledWith("/");
   });
 
-  it("shows active styling on the selected category chip", async () => {
+  it("marks the selected category chip as on, in its Category colour", async () => {
     setup({ initialCategory: "Youth Meeting" });
     await userEvent.click(screen.getByPlaceholderText(/search events/i));
-    const chip = screen.getByRole("button", { name: "Youth Meeting" });
-    expect(chip.className).toMatch(/bg-blue-100/);
+    const chip = screen.getByRole("radio", { name: "Youth Meeting" });
+    expect(chip).toHaveAttribute("data-state", "on");
+    expect(chip).toHaveClass("data-[state=on]:bg-blue-100");
   });
 });
 

@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { useForm } from "react-hook-form";
+import { Controller, FormProvider, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { REGEXP_ONLY_DIGITS } from "input-otp";
 import { cn } from "@/lib/utils";
@@ -17,13 +17,11 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+  Field,
+  FieldError,
+  FieldLabel,
+  FieldSeparator,
+} from "@/components/ui/field";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   InputOTP,
@@ -153,7 +151,7 @@ export function UnifiedAuthForm({
               <CardDescription>Sign in or create your account</CardDescription>
             </CardHeader>
             <CardContent>
-              <Form {...emailForm}>
+              <FormProvider {...emailForm}>
                 <form onSubmit={onEmailSubmit} noValidate>
                   <div className="grid gap-6">
                     {emailForm.formState.errors.root && (
@@ -163,23 +161,23 @@ export function UnifiedAuthForm({
                         </AlertDescription>
                       </Alert>
                     )}
-                    <FormField
+                    <Controller
                       control={emailForm.control}
                       name="email"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Email</FormLabel>
-                          <FormControl>
-                            <Input
-                              type="email"
-                              placeholder="you@example.com"
-                              disabled={emailForm.formState.isSubmitting}
-                              autoComplete="email"
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
+                      render={({ field, fieldState }) => (
+                        <Field data-invalid={fieldState.invalid}>
+                          <FieldLabel htmlFor={field.name}>Email</FieldLabel>
+                          <Input
+                            id={field.name}
+                            aria-invalid={fieldState.invalid}
+                            type="email"
+                            placeholder="you@example.com"
+                            disabled={emailForm.formState.isSubmitting}
+                            autoComplete="email"
+                            {...field}
+                          />
+                          <FieldError errors={[fieldState.error]} />
+                        </Field>
                       )}
                     />
                     <Button
@@ -191,20 +189,13 @@ export function UnifiedAuthForm({
                         ? "Sending code..."
                         : "Continue"}
                     </Button>
-                    <div className="relative">
-                      <div className="absolute inset-0 flex items-center">
-                        <span className="w-full border-t" />
-                      </div>
-                      <div className="relative flex justify-center text-xs uppercase">
-                        <span className="bg-background text-muted-foreground px-2">
-                          Or continue with
-                        </span>
-                      </div>
-                    </div>
+                    <FieldSeparator className="*:data-[slot=field-separator-content]:bg-card text-xs uppercase">
+                      Or continue with
+                    </FieldSeparator>
                     <SocialAuthButtons />
                   </div>
                 </form>
-              </Form>
+              </FormProvider>
             </CardContent>
           </>
         ) : (
@@ -218,7 +209,7 @@ export function UnifiedAuthForm({
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Form {...otpForm}>
+              <FormProvider {...otpForm}>
                 <form onSubmit={onOtpSubmit}>
                   <div className="grid gap-6">
                     {otpForm.formState.errors.root && (
@@ -233,34 +224,37 @@ export function UnifiedAuthForm({
                         <AlertDescription>{resendError}</AlertDescription>
                       </Alert>
                     )}
-                    <FormField
+                    <Controller
                       control={otpForm.control}
                       name="otp"
-                      render={({ field }) => (
-                        <FormItem className="flex flex-col items-center gap-2">
-                          <FormControl>
-                            <InputOTP
-                              maxLength={6}
-                              pattern={REGEXP_ONLY_DIGITS}
-                              disabled={otpForm.formState.isSubmitting}
-                              onComplete={() => onOtpSubmit()}
-                              {...field}
-                            >
-                              <InputOTPGroup>
-                                <InputOTPSlot index={0} />
-                                <InputOTPSlot index={1} />
-                                <InputOTPSlot index={2} />
-                              </InputOTPGroup>
-                              <InputOTPSeparator />
-                              <InputOTPGroup>
-                                <InputOTPSlot index={3} />
-                                <InputOTPSlot index={4} />
-                                <InputOTPSlot index={5} />
-                              </InputOTPGroup>
-                            </InputOTP>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
+                      render={({ field, fieldState }) => (
+                        <Field
+                          data-invalid={fieldState.invalid}
+                          className="items-center gap-2 [&>*]:w-auto"
+                        >
+                          <InputOTP
+                            id={field.name}
+                            aria-invalid={fieldState.invalid}
+                            maxLength={6}
+                            pattern={REGEXP_ONLY_DIGITS}
+                            disabled={otpForm.formState.isSubmitting}
+                            onComplete={() => onOtpSubmit()}
+                            {...field}
+                          >
+                            <InputOTPGroup>
+                              <InputOTPSlot index={0} />
+                              <InputOTPSlot index={1} />
+                              <InputOTPSlot index={2} />
+                            </InputOTPGroup>
+                            <InputOTPSeparator />
+                            <InputOTPGroup>
+                              <InputOTPSlot index={3} />
+                              <InputOTPSlot index={4} />
+                              <InputOTPSlot index={5} />
+                            </InputOTPGroup>
+                          </InputOTP>
+                          <FieldError errors={[fieldState.error]} />
+                        </Field>
                       )}
                     />
                     {devMode && (
@@ -282,27 +276,29 @@ export function UnifiedAuthForm({
                     </Button>
                     <div className="text-muted-foreground text-center text-sm">
                       Didn&apos;t receive a code?{" "}
-                      <button
+                      <Button
                         type="button"
+                        variant="link"
                         onClick={handleResend}
                         disabled={cooldown > 0}
-                        className="hover:text-primary underline underline-offset-4 disabled:cursor-not-allowed disabled:opacity-50"
+                        className="text-muted-foreground hover:text-primary h-auto p-0 underline"
                       >
                         {cooldown > 0
                           ? `Resend in ${cooldown}s`
                           : "Resend code"}
-                      </button>
+                      </Button>
                     </div>
-                    <button
+                    <Button
                       type="button"
+                      variant="link"
                       onClick={handleBack}
-                      className="text-muted-foreground hover:text-primary text-center text-sm underline underline-offset-4"
+                      className="text-muted-foreground hover:text-primary h-auto p-0 underline"
                     >
                       Use a different email
-                    </button>
+                    </Button>
                   </div>
                 </form>
-              </Form>
+              </FormProvider>
             </CardContent>
           </>
         )}

@@ -129,13 +129,42 @@ describe("saveEventEditsAction", () => {
   });
 });
 
+describe("cancelEventAction", () => {
+  it("cancels with the trimmed reason and redirects to the Event", async () => {
+    mocked.cancelEvent.mockResolvedValue({});
+
+    expect(
+      await redirectedTo(() => cancelEventAction("evt-1", { reason: " Rain " }))
+    ).toBe("/events/evt-1");
+    expect(mocked.cancelEvent).toHaveBeenCalledWith("evt-1", "Rain");
+  });
+
+  it("returns lifecycle errors to the dialog", async () => {
+    mocked.cancelEvent.mockResolvedValue({ error: "Unauthorised." });
+
+    expect(await cancelEventAction("evt-1", { reason: "Rain" })).toEqual({
+      error: "Unauthorised.",
+    });
+  });
+
+  it("needs a reason", async () => {
+    const result = await cancelEventAction("evt-1", { reason: "  " });
+
+    expect(result.fieldErrors?.reason).toBeDefined();
+    expect(mocked.cancelEvent).not.toHaveBeenCalled();
+  });
+
+  it("redirects a guest home without acting", async () => {
+    mockSession.mockResolvedValue(null);
+
+    expect(
+      await redirectedTo(() => cancelEventAction("evt-1", { reason: "Rain" }))
+    ).toBe("/");
+    expect(mocked.cancelEvent).not.toHaveBeenCalled();
+  });
+});
+
 describe.each([
-  [
-    "cancelEventAction",
-    () => cancelEventAction("evt-1", "Rain"),
-    "cancelEvent",
-    "/events/evt-1",
-  ],
   [
     "uncancelEventAction",
     () => uncancelEventAction("evt-1"),

@@ -1,14 +1,24 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { Fragment, useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Bell, Inbox, Loader2 } from "lucide-react";
+import { Bell, Inbox } from "lucide-react";
 import { NotificationItem } from "@/domains/notifications/components/notification-item";
 import {
   markReadAction,
   loadMoreNotificationsAction,
 } from "@/domains/notifications/actions/notifications";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
+import { ItemGroup, ItemSeparator } from "@/components/ui/item";
+import { Spinner } from "@/components/ui/spinner";
 import type { InboxNotification } from "@/domains/notifications/inbox";
 import type { InboxFilter } from "./types";
 
@@ -51,13 +61,17 @@ export function NotificationList({
 
   if (filter === "requests") {
     return (
-      <div className="flex flex-col items-center gap-3 py-16 text-center">
-        <Inbox className="text-muted-foreground/40 size-10" />
-        <p className="text-base font-semibold">No requests yet</p>
-        <p className="text-muted-foreground text-sm">
-          Workflow approvals and other requests will appear here
-        </p>
-      </div>
+      <Empty>
+        <EmptyHeader>
+          <EmptyMedia variant="icon">
+            <Inbox />
+          </EmptyMedia>
+          <EmptyTitle>No requests yet</EmptyTitle>
+          <EmptyDescription>
+            Workflow approvals and other requests will appear here
+          </EmptyDescription>
+        </EmptyHeader>
+      </Empty>
     );
   }
 
@@ -68,27 +82,34 @@ export function NotificationList({
 
   if (displayed.length === 0) {
     return (
-      <div className="flex flex-col items-center gap-3 py-16 text-center">
-        <Bell className="text-muted-foreground/40 size-10" />
-        <p className="text-base font-semibold">
-          {filter === "unread"
-            ? "No unread notifications"
-            : "No notifications yet"}
-        </p>
-        <p className="text-muted-foreground text-sm">
-          You&apos;re all caught up
-        </p>
-      </div>
+      <Empty>
+        <EmptyHeader>
+          <EmptyMedia variant="icon">
+            <Bell />
+          </EmptyMedia>
+          <EmptyTitle>
+            {filter === "unread"
+              ? "No unread notifications"
+              : "No notifications yet"}
+          </EmptyTitle>
+          <EmptyDescription>You&apos;re all caught up</EmptyDescription>
+        </EmptyHeader>
+      </Empty>
     );
   }
 
   return (
     <div className="flex flex-col gap-4 px-4 pb-6">
-      <div className="shadow-card divide-border divide-y overflow-hidden rounded-2xl bg-white">
-        {displayed.map((n) => (
-          <NotificationItem key={n.id} notification={n} />
-        ))}
-      </div>
+      <Card className="gap-0 overflow-hidden py-0">
+        <ItemGroup>
+          {displayed.map((n, i) => (
+            <Fragment key={n.id}>
+              {i > 0 && <ItemSeparator />}
+              <NotificationItem notification={n} />
+            </Fragment>
+          ))}
+        </ItemGroup>
+      </Card>
       {hasMore && (
         <Button
           variant="outline"
@@ -98,7 +119,7 @@ export function NotificationList({
         >
           {isPending ? (
             <>
-              <Loader2 className="mr-2 size-4 animate-spin" />
+              <Spinner />
               Loading...
             </>
           ) : (

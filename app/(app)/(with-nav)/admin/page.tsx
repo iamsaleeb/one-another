@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { PageHeader } from "@/components/ui/page-header";
+import { PageHeader } from "@/components/page-header";
 import { getChurchesWithOrganisers } from "@/domains/churches/actions/data";
 import { getChurchTargets, getSessionUserId } from "@/domains/roles";
 import { AdminChurchCard } from "./_components/admin-church-card";

@@ -1,18 +1,23 @@
 "use client";
 
-import { useFormContext, useWatch, useFieldArray } from "react-hook-form";
+import {
+  Controller,
+  useFieldArray,
+  useFormContext,
+  useWatch,
+} from "react-hook-form";
 import { Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import {
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+  Field,
+  FieldContent,
+  FieldDescription,
+  FieldError,
+  FieldLabel,
+} from "@/components/ui/field";
 import type { CreateEventInput } from "@/domains/events/validations/event";
 
 export function StepCampDetails() {
@@ -30,24 +35,30 @@ export function StepCampDetails() {
     <div className="border-primary/20 bg-primary/5 flex flex-col gap-4 rounded-2xl border-2 px-4 py-4">
       <p className="text-primary text-sm font-semibold">Camp Details</p>
 
-      <FormField
+      <Controller
         control={form.control}
         name="campAllowPartialRegistration"
-        render={({ field }) => (
-          <FormItem className="flex items-center justify-between gap-3 rounded-xl border bg-white px-4 py-3">
-            <div>
-              <p className="text-sm font-medium">Allow Partial Attendance</p>
-              <p className="text-muted-foreground text-xs">
+        render={({ field, fieldState }) => (
+          <Field
+            data-invalid={fieldState.invalid}
+            orientation="horizontal"
+            className="bg-card items-center justify-between gap-3 rounded-xl border px-4 py-3"
+          >
+            <FieldContent className="gap-0.5">
+              <FieldLabel htmlFor={field.name}>
+                Allow Partial Attendance
+              </FieldLabel>
+              <FieldDescription className="text-xs">
                 Let attendees choose which days to attend
-              </p>
-            </div>
-            <FormControl>
-              <Switch
-                checked={field.value ?? false}
-                onCheckedChange={field.onChange}
-              />
-            </FormControl>
-          </FormItem>
+              </FieldDescription>
+            </FieldContent>
+            <Switch
+              id={field.name}
+              aria-invalid={fieldState.invalid}
+              checked={field.value ?? false}
+              onCheckedChange={field.onChange}
+            />
+          </Field>
         )}
       />
 
@@ -65,7 +76,7 @@ export function StepCampDetails() {
         {fields.map((field, index) => (
           <div
             key={field.id}
-            className="flex flex-col gap-2 rounded-xl border bg-white px-3 py-3"
+            className="bg-card flex flex-col gap-2 rounded-xl border px-3 py-3"
           >
             <div className="flex items-center justify-between">
               <p className="text-muted-foreground text-xs font-medium">
@@ -77,73 +88,91 @@ export function StepCampDetails() {
                 size="icon"
                 className="text-destructive hover:text-destructive size-7"
                 onClick={() => remove(index)}
+                aria-label={`Remove item ${index + 1}`}
               >
                 <Trash2 className="size-3.5" />
               </Button>
             </div>
 
             <div className="grid grid-cols-2 gap-2">
-              <FormField
+              <Controller
                 control={form.control}
                 name={`campAgenda.${index}.date`}
-                render={({ field: f }) => (
-                  <FormItem>
-                    <FormLabel className="text-xs">Date</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="date"
-                        min={startDate || undefined}
-                        max={endDate || undefined}
-                        {...f}
-                        value={f.value ?? ""}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
+                render={({ field: f, fieldState }) => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel htmlFor={f.name} className="text-xs">
+                      Date
+                    </FieldLabel>
+                    <Input
+                      id={f.name}
+                      aria-invalid={fieldState.invalid}
+                      type="date"
+                      min={startDate || undefined}
+                      max={endDate || undefined}
+                      {...f}
+                      value={f.value ?? ""}
+                    />
+                    <FieldError errors={[fieldState.error]} />
+                  </Field>
                 )}
               />
-              <FormField
+              <Controller
                 control={form.control}
                 name={`campAgenda.${index}.time`}
-                render={({ field: f }) => (
-                  <FormItem>
-                    <FormLabel className="text-xs">Time (optional)</FormLabel>
-                    <FormControl>
-                      <Input type="time" {...f} value={f.value ?? ""} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
+                render={({ field: f, fieldState }) => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel htmlFor={f.name} className="text-xs">
+                      Time (optional)
+                    </FieldLabel>
+                    <Input
+                      id={f.name}
+                      aria-invalid={fieldState.invalid}
+                      type="time"
+                      {...f}
+                      value={f.value ?? ""}
+                    />
+                    <FieldError errors={[fieldState.error]} />
+                  </Field>
                 )}
               />
             </div>
 
-            <FormField
+            <Controller
               control={form.control}
               name={`campAgenda.${index}.title`}
-              render={({ field: f }) => (
-                <FormItem>
-                  <FormLabel className="text-xs">Title</FormLabel>
-                  <FormControl>
-                    <Input placeholder="e.g. Morning worship" {...f} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
+              render={({ field: f, fieldState }) => (
+                <Field data-invalid={fieldState.invalid}>
+                  <FieldLabel htmlFor={f.name} className="text-xs">
+                    Title
+                  </FieldLabel>
+                  <Input
+                    id={f.name}
+                    aria-invalid={fieldState.invalid}
+                    placeholder="e.g. Morning worship"
+                    {...f}
+                  />
+                  <FieldError errors={[fieldState.error]} />
+                </Field>
               )}
             />
 
-            <FormField
+            <Controller
               control={form.control}
               name={`campAgenda.${index}.description`}
-              render={({ field: f }) => (
-                <FormItem>
-                  <FormLabel className="text-xs">
+              render={({ field: f, fieldState }) => (
+                <Field data-invalid={fieldState.invalid}>
+                  <FieldLabel htmlFor={f.name} className="text-xs">
                     Description (optional)
-                  </FormLabel>
-                  <FormControl>
-                    <Textarea rows={2} {...f} value={f.value ?? ""} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
+                  </FieldLabel>
+                  <Textarea
+                    id={f.name}
+                    aria-invalid={fieldState.invalid}
+                    rows={2}
+                    {...f}
+                    value={f.value ?? ""}
+                  />
+                  <FieldError errors={[fieldState.error]} />
+                </Field>
               )}
             />
           </div>

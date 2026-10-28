@@ -1,5 +1,12 @@
 import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
 import { MapPin, SearchX } from "lucide-react";
 import { EventCard } from "@/domains/events/components/event-card";
 import { searchEventsAndChurches } from "@/domains/profile/actions/data";
@@ -13,7 +20,7 @@ import {
   loadMoreOtherEventsAction,
   loadMoreMySavedEventsAction,
 } from "@/domains/events/actions/pagination";
-import { PageHeader } from "@/components/ui/page-header";
+import { PageHeader } from "@/components/page-header";
 import { SaveEventButton } from "@/domains/events/components/save-event-button";
 import { WHEN_LABELS, TYPE_LABELS, type WhenFilter } from "@/lib/types/search";
 import { searchParamsSchema } from "@/lib/validations/search";
@@ -88,13 +95,15 @@ export default async function Home({
       <div className="flex flex-col gap-6 px-4 py-2">
         {hasFilters ? (
           !hasResults ? (
-            <div className="flex flex-col items-center gap-3 py-16 text-center">
-              <SearchX className="text-muted-foreground/40 size-10" />
-              <p className="text-base font-semibold">No results found</p>
-              <p className="text-muted-foreground text-sm">
-                Try adjusting your filters
-              </p>
-            </div>
+            <Empty>
+              <EmptyHeader>
+                <EmptyMedia variant="icon">
+                  <SearchX />
+                </EmptyMedia>
+                <EmptyTitle>No results found</EmptyTitle>
+                <EmptyDescription>Try adjusting your filters</EmptyDescription>
+              </EmptyHeader>
+            </Empty>
           ) : (
             <>
               {filteredEvents && filteredEvents.length > 0 && (
@@ -138,7 +147,7 @@ export default async function Home({
                   </h2>
                   {filteredChurches.map((church) => (
                     <Link key={church.id} href={`/churches/${church.id}`}>
-                      <Card className="shadow-card rounded-2xl border-0 bg-white py-0">
+                      <Card className="py-0">
                         <CardContent className="flex items-center justify-between p-4">
                           <div className="flex flex-col gap-1">
                             <p className="text-sm font-bold">{church.name}</p>

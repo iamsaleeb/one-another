@@ -2,6 +2,7 @@
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import { Empty, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
 import { HelperSummaryRow } from "./helper-summary-row";
 import type { AccessRequestStatus } from "@prisma/client";
 
@@ -53,9 +54,11 @@ export function HelpersTabs({
       <TabsContent value="requests">
         <div className="py-2">
           {pendingRequests.length === 0 ? (
-            <p className="text-muted-foreground py-10 text-center text-sm">
-              No pending requests
-            </p>
+            <Empty>
+              <EmptyHeader>
+                <EmptyTitle>No pending requests</EmptyTitle>
+              </EmptyHeader>
+            </Empty>
           ) : (
             pendingRequests.map((req) => (
               <HelperSummaryRow
@@ -75,9 +78,11 @@ export function HelpersTabs({
       <TabsContent value="members">
         <div className="py-2">
           {members.length === 0 ? (
-            <p className="text-muted-foreground py-10 text-center text-sm">
-              No approved members
-            </p>
+            <Empty>
+              <EmptyHeader>
+                <EmptyTitle>No approved members</EmptyTitle>
+              </EmptyHeader>
+            </Empty>
           ) : (
             members.map((req) => (
               <HelperSummaryRow
@@ -97,9 +102,11 @@ export function HelpersTabs({
       <TabsContent value="history">
         <div className="py-2">
           {history.length === 0 ? (
-            <p className="text-muted-foreground py-10 text-center text-sm">
-              No history yet
-            </p>
+            <Empty>
+              <EmptyHeader>
+                <EmptyTitle>No history yet</EmptyTitle>
+              </EmptyHeader>
+            </Empty>
           ) : (
             history.map((req) => (
               <HelperSummaryRow

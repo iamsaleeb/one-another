@@ -17,12 +17,17 @@ interface PhotoUploadFieldProps {
   variant: "profile" | "cover";
   value: string | undefined;
   onChange: (url: string | undefined) => void;
+  // Goes on the file input, so a label pointing at it opens the picker.
+  id?: string;
+  "aria-invalid"?: boolean;
 }
 
 export function PhotoUploadField({
   variant,
   value,
   onChange,
+  id,
+  "aria-invalid": ariaInvalid,
 }: PhotoUploadFieldProps) {
   const userId = useSession().data?.user?.id;
   const inputRef = useRef<HTMLInputElement>(null);
@@ -145,6 +150,8 @@ export function PhotoUploadField({
     <div className="flex flex-col gap-1.5">
       <input
         ref={inputRef}
+        id={id}
+        aria-invalid={ariaInvalid}
         type="file"
         accept="image/*"
         className="hidden"

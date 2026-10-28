@@ -10,7 +10,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
+import { Field, FieldError, FieldLabel } from "@/components/ui/field";
+import { Item, ItemContent, ItemMedia, ItemTitle } from "@/components/ui/item";
+import { cn } from "@/lib/utils";
 import { Paperclip, X } from "lucide-react";
 import {
   QuestionType,
@@ -92,11 +94,15 @@ export function QuestionsForm({
         if (activeIndex !== undefined && index !== activeIndex) return null;
 
         return (
-          <div key={q.id} className="flex flex-col gap-3">
-            <Label className={labelClass}>
+          <Field key={q.id}>
+            <FieldLabel
+              id={`q-${q.id}-label`}
+              htmlFor={`q-${q.id}`}
+              className={cn("block", labelClass)}
+            >
               {q.label}
               {q.required && <span className="text-destructive ml-1">*</span>}
-            </Label>
+            </FieldLabel>
 
             {q.type === QuestionType.SHORT_TEXT && (
               <Controller
@@ -106,15 +112,13 @@ export function QuestionsForm({
                   <>
                     <Input
                       {...field}
+                      id={`q-${q.id}`}
+                      aria-invalid={fieldState.invalid}
                       value={field.value ?? ""}
                       disabled={disabled}
                       placeholder="Your answer..."
                     />
-                    {fieldState.error && (
-                      <p className="text-destructive text-xs">
-                        {fieldState.error.message}
-                      </p>
-                    )}
+                    <FieldError errors={[fieldState.error]} />
                   </>
                 )}
               />
@@ -128,16 +132,14 @@ export function QuestionsForm({
                   <>
                     <Textarea
                       {...field}
+                      id={`q-${q.id}`}
+                      aria-invalid={fieldState.invalid}
                       value={field.value ?? ""}
                       disabled={disabled}
                       rows={3}
                       placeholder="Your answer..."
                     />
-                    {fieldState.error && (
-                      <p className="text-destructive text-xs">
-                        {fieldState.error.message}
-                      </p>
-                    )}
+                    <FieldError errors={[fieldState.error]} />
                   </>
                 )}
               />
@@ -149,7 +151,10 @@ export function QuestionsForm({
                 name={`responses.${q.id}.answer`}
                 render={({ field, fieldState }) => (
                   <>
-                    <div className="bg-background flex min-h-[56px] items-center justify-between gap-3 rounded-xl border px-4 py-3">
+                    <Field
+                      orientation="horizontal"
+                      className="bg-background min-h-[56px] justify-between rounded-xl border px-4 py-3"
+                    >
                       <span className="text-muted-foreground text-sm">
                         {field.value === "true"
                           ? "Yes"
@@ -158,18 +163,16 @@ export function QuestionsForm({
                             : "—"}
                       </span>
                       <Switch
+                        id={`q-${q.id}`}
+                        aria-invalid={fieldState.invalid}
                         checked={field.value === "true"}
                         disabled={disabled}
                         onCheckedChange={(checked) =>
                           field.onChange(checked ? "true" : "false")
                         }
                       />
-                    </div>
-                    {fieldState.error && (
-                      <p className="text-destructive text-xs">
-                        {fieldState.error.message}
-                      </p>
-                    )}
+                    </Field>
+                    <FieldError errors={[fieldState.error]} />
                   </>
                 )}
               />
@@ -185,28 +188,27 @@ export function QuestionsForm({
                       value={field.value ?? undefined}
                       onValueChange={field.onChange}
                       disabled={disabled}
+                      aria-labelledby={`q-${q.id}-label`}
+                      aria-invalid={fieldState.invalid}
                       className="flex flex-col gap-2"
                     >
                       {q.options.map((opt) => (
-                        <div
+                        <Field
                           key={opt}
-                          className="flex min-h-[44px] items-center gap-2.5"
+                          orientation="horizontal"
+                          className="min-h-[44px]"
                         >
                           <RadioGroupItem value={opt} id={`${q.id}-${opt}`} />
-                          <Label
+                          <FieldLabel
                             htmlFor={`${q.id}-${opt}`}
-                            className="cursor-pointer text-sm font-normal"
+                            className="font-normal"
                           >
                             {opt}
-                          </Label>
-                        </div>
+                          </FieldLabel>
+                        </Field>
                       ))}
                     </RadioGroup>
-                    {fieldState.error && (
-                      <p className="text-destructive text-xs">
-                        {fieldState.error.message}
-                      </p>
-                    )}
+                    <FieldError errors={[fieldState.error]} />
                   </>
                 )}
               />
@@ -224,6 +226,7 @@ export function QuestionsForm({
                         ref={(el) => {
                           inputRefs.current[q.id] = el;
                         }}
+                        id={`q-${q.id}`}
                         type="file"
                         className="hidden"
                         onChange={(e) => {
@@ -234,16 +237,25 @@ export function QuestionsForm({
                         }}
                       />
                       {field.value ? (
-                        <div className="bg-background flex items-center gap-2 rounded-xl border px-4 py-3">
-                          <Paperclip className="text-muted-foreground size-4 shrink-0" />
-                          <span className="flex-1 truncate text-sm">
-                            {state?.name ?? "Uploaded file"}
-                          </span>
+                        <Item
+                          variant="outline"
+                          size="sm"
+                          className="bg-background flex-nowrap gap-2 rounded-xl"
+                        >
+                          <ItemMedia>
+                            <Paperclip className="text-muted-foreground size-4" />
+                          </ItemMedia>
+                          <ItemContent className="min-w-0">
+                            <ItemTitle className="w-full truncate font-normal">
+                              {state?.name ?? "Uploaded file"}
+                            </ItemTitle>
+                          </ItemContent>
                           {!disabled && (
                             <Button
                               type="button"
                               variant="ghost"
                               size="icon"
+                              aria-label="Remove file"
                               className="size-7 shrink-0"
                               onClick={() => {
                                 field.onChange(null);
@@ -257,7 +269,7 @@ export function QuestionsForm({
                               <X className="size-3.5" />
                             </Button>
                           )}
-                        </div>
+                        </Item>
                       ) : (
                         <Button
                           type="button"
@@ -266,26 +278,18 @@ export function QuestionsForm({
                           disabled={state?.uploading || disabled}
                           onClick={() => inputRefs.current[q.id]?.click()}
                         >
-                          <Paperclip className="mr-2 size-4" />
+                          <Paperclip />
                           {state?.uploading ? "Uploading..." : "Attach file"}
                         </Button>
                       )}
-                      {state?.error && (
-                        <p className="text-destructive text-xs">
-                          {state.error}
-                        </p>
-                      )}
-                      {fieldState.error && (
-                        <p className="text-destructive text-xs">
-                          {fieldState.error.message}
-                        </p>
-                      )}
+                      {state?.error && <FieldError>{state.error}</FieldError>}
+                      <FieldError errors={[fieldState.error]} />
                     </div>
                   );
                 }}
               />
             )}
-          </div>
+          </Field>
         );
       })}
     </div>

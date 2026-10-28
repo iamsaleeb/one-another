@@ -14,6 +14,12 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  Item,
+  ItemActions,
+  ItemContent,
+  ItemTitle,
+} from "@/components/ui/item";
 import { QuestionDrawer } from "./question-drawer";
 import {
   TYPE_LABELS,
@@ -82,12 +88,14 @@ export function StepQuestions({ libraryItems, locked }: StepQuestionsProps) {
         )}
 
         {fields.map((field, index) => (
-          <div
+          <Item
             key={field.id}
-            className="bg-card flex items-start justify-between gap-2 rounded-xl border px-3 py-3"
+            variant="outline"
+            size="sm"
+            className="bg-card flex-nowrap items-start gap-2 rounded-xl px-3"
           >
-            <div className="flex min-w-0 flex-1 flex-col gap-1">
-              <p className="line-clamp-2 text-sm font-medium">{field.label}</p>
+            <ItemContent className="min-w-0">
+              <ItemTitle className="line-clamp-2">{field.label}</ItemTitle>
               <div className="flex items-center gap-1.5">
                 <Badge variant="secondary" className="text-xs">
                   {TYPE_LABELS[field.type as QuestionType]}
@@ -98,9 +106,9 @@ export function StepQuestions({ libraryItems, locked }: StepQuestionsProps) {
                   </Badge>
                 )}
               </div>
-            </div>
+            </ItemContent>
 
-            <div className="flex shrink-0 items-center gap-1">
+            <ItemActions className="gap-1">
               <Button
                 type="button"
                 variant="ghost"
@@ -145,8 +153,8 @@ export function StepQuestions({ libraryItems, locked }: StepQuestionsProps) {
               >
                 <Trash2 className="size-3.5" />
               </Button>
-            </div>
-          </div>
+            </ItemActions>
+          </Item>
         ))}
 
         {!locked && (

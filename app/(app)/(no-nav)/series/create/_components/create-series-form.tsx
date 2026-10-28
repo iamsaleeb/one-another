@@ -1,6 +1,6 @@
 "use client";
 
-import { useForm } from "react-hook-form";
+import { Controller, FormProvider, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,14 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   createSeriesSchema,
@@ -71,7 +64,7 @@ export function CreateSeriesForm({ churches }: { churches: Church[] }) {
   });
 
   return (
-    <Form {...form}>
+    <FormProvider {...form}>
       <form onSubmit={onSubmit} className="flex flex-col gap-5">
         {form.formState.errors.root && (
           <Alert variant="destructive">
@@ -82,78 +75,81 @@ export function CreateSeriesForm({ churches }: { churches: Church[] }) {
         )}
 
         {/* Cover photo — top so organisers set the visual identity first */}
-        <FormField
+        <Controller
           control={form.control}
           name="photoUrl"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Cover Photo (optional)</FormLabel>
-              <FormControl>
-                <PhotoUploadField
-                  variant="cover"
-                  value={field.value}
-                  onChange={field.onChange}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
+          render={({ field, fieldState }) => (
+            <Field data-invalid={fieldState.invalid}>
+              <FieldLabel htmlFor={field.name}>
+                Cover Photo (optional)
+              </FieldLabel>
+              <PhotoUploadField
+                id={field.name}
+                aria-invalid={fieldState.invalid}
+                variant="cover"
+                value={field.value}
+                onChange={field.onChange}
+              />
+              <FieldError errors={[fieldState.error]} />
+            </Field>
           )}
         />
 
         {/* What */}
-        <FormField
+        <Controller
           control={form.control}
           name="name"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Name</FormLabel>
-              <FormControl>
-                <Input
-                  placeholder="e.g. Alpha Course"
-                  disabled={isSubmitting}
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
+          render={({ field, fieldState }) => (
+            <Field data-invalid={fieldState.invalid}>
+              <FieldLabel htmlFor={field.name}>Name</FieldLabel>
+              <Input
+                id={field.name}
+                aria-invalid={fieldState.invalid}
+                placeholder="e.g. Alpha Course"
+                disabled={isSubmitting}
+                {...field}
+              />
+              <FieldError errors={[fieldState.error]} />
+            </Field>
           )}
         />
 
-        <FormField
+        <Controller
           control={form.control}
           name="description"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Description</FormLabel>
-              <FormControl>
-                <Textarea
-                  rows={3}
-                  placeholder="e.g. A weekly series exploring the Christian faith through discussion and community."
-                  disabled={isSubmitting}
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
+          render={({ field, fieldState }) => (
+            <Field data-invalid={fieldState.invalid}>
+              <FieldLabel htmlFor={field.name}>Description</FieldLabel>
+              <Textarea
+                id={field.name}
+                aria-invalid={fieldState.invalid}
+                rows={3}
+                placeholder="e.g. A weekly series exploring the Christian faith through discussion and community."
+                disabled={isSubmitting}
+                {...field}
+              />
+              <FieldError errors={[fieldState.error]} />
+            </Field>
           )}
         />
 
-        <FormField
+        <Controller
           control={form.control}
           name="tag"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Category</FormLabel>
+          render={({ field, fieldState }) => (
+            <Field data-invalid={fieldState.invalid}>
+              <FieldLabel htmlFor={field.name}>Category</FieldLabel>
               <Select
                 onValueChange={field.onChange}
                 defaultValue={field.value}
                 disabled={isSubmitting}
               >
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a category" />
-                  </SelectTrigger>
-                </FormControl>
+                <SelectTrigger
+                  id={field.name}
+                  aria-invalid={fieldState.invalid}
+                >
+                  <SelectValue placeholder="Select a category" />
+                </SelectTrigger>
                 <SelectContent>
                   {CATEGORY_OPTIONS.map((cat) => (
                     <SelectItem key={cat} value={cat}>
@@ -162,28 +158,29 @@ export function CreateSeriesForm({ churches }: { churches: Church[] }) {
                   ))}
                 </SelectContent>
               </Select>
-              <FormMessage />
-            </FormItem>
+              <FieldError errors={[fieldState.error]} />
+            </Field>
           )}
         />
 
         {/* Organisation */}
-        <FormField
+        <Controller
           control={form.control}
           name="churchId"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Church</FormLabel>
+          render={({ field, fieldState }) => (
+            <Field data-invalid={fieldState.invalid}>
+              <FieldLabel htmlFor={field.name}>Church</FieldLabel>
               <Select
                 onValueChange={field.onChange}
                 defaultValue={field.value}
                 disabled={isSubmitting}
               >
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a church" />
-                  </SelectTrigger>
-                </FormControl>
+                <SelectTrigger
+                  id={field.name}
+                  aria-invalid={fieldState.invalid}
+                >
+                  <SelectValue placeholder="Select a church" />
+                </SelectTrigger>
                 <SelectContent>
                   {churches.map((church) => (
                     <SelectItem key={church.id} value={church.id}>
@@ -192,28 +189,29 @@ export function CreateSeriesForm({ churches }: { churches: Church[] }) {
                   ))}
                 </SelectContent>
               </Select>
-              <FormMessage />
-            </FormItem>
+              <FieldError errors={[fieldState.error]} />
+            </Field>
           )}
         />
 
         {/* Pattern */}
-        <FormField
+        <Controller
           control={form.control}
           name="cadence"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Cadence</FormLabel>
+          render={({ field, fieldState }) => (
+            <Field data-invalid={fieldState.invalid}>
+              <FieldLabel htmlFor={field.name}>Cadence</FieldLabel>
               <Select
                 onValueChange={field.onChange}
                 defaultValue={field.value}
                 disabled={isSubmitting}
               >
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="How often does this series run?" />
-                  </SelectTrigger>
-                </FormControl>
+                <SelectTrigger
+                  id={field.name}
+                  aria-invalid={fieldState.invalid}
+                >
+                  <SelectValue placeholder="How often does this series run?" />
+                </SelectTrigger>
                 <SelectContent>
                   {CADENCE_OPTIONS.map((opt) => (
                     <SelectItem key={opt.value} value={opt.value}>
@@ -222,45 +220,45 @@ export function CreateSeriesForm({ churches }: { churches: Church[] }) {
                   ))}
                 </SelectContent>
               </Select>
-              <FormMessage />
-            </FormItem>
+              <FieldError errors={[fieldState.error]} />
+            </Field>
           )}
         />
 
         {/* Who / Where */}
-        <FormField
+        <Controller
           control={form.control}
           name="host"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Host</FormLabel>
-              <FormControl>
-                <Input
-                  placeholder="e.g. Pastor Jane Doe"
-                  disabled={isSubmitting}
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
+          render={({ field, fieldState }) => (
+            <Field data-invalid={fieldState.invalid}>
+              <FieldLabel htmlFor={field.name}>Host</FieldLabel>
+              <Input
+                id={field.name}
+                aria-invalid={fieldState.invalid}
+                placeholder="e.g. Pastor Jane Doe"
+                disabled={isSubmitting}
+                {...field}
+              />
+              <FieldError errors={[fieldState.error]} />
+            </Field>
           )}
         />
 
-        <FormField
+        <Controller
           control={form.control}
           name="location"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Location</FormLabel>
-              <FormControl>
-                <Input
-                  placeholder="e.g. Main Hall, 123 Church Street"
-                  disabled={isSubmitting}
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
+          render={({ field, fieldState }) => (
+            <Field data-invalid={fieldState.invalid}>
+              <FieldLabel htmlFor={field.name}>Location</FieldLabel>
+              <Input
+                id={field.name}
+                aria-invalid={fieldState.invalid}
+                placeholder="e.g. Main Hall, 123 Church Street"
+                disabled={isSubmitting}
+                {...field}
+              />
+              <FieldError errors={[fieldState.error]} />
+            </Field>
           )}
         />
 
@@ -268,6 +266,6 @@ export function CreateSeriesForm({ churches }: { churches: Church[] }) {
           {isSubmitting ? "Creating..." : "Create Series"}
         </Button>
       </form>
-    </Form>
+    </FormProvider>
   );
 }

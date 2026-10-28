@@ -13,7 +13,8 @@ import {
   ItemGroup,
   ItemTitle,
 } from "@/components/ui/item";
-import { Label } from "@/components/ui/label";
+import { ButtonGroup } from "@/components/ui/button-group";
+import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import {
   addOrganiserToChurchAction,
   removeOrganiserFromChurchAction,
@@ -109,25 +110,26 @@ export function AdminChurchCard({ church }: AdminChurchCardProps) {
       {/* Add organiser form */}
       <form action={addAction} className="flex flex-col gap-3">
         <input type="hidden" name="churchId" value={church.id} />
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor={`email-${church.id}`}>Add organiser by email</Label>
-          <div className="flex gap-2">
+        <Field data-invalid={!!addState.error}>
+          <FieldLabel htmlFor={`email-${church.id}`}>
+            Add organiser by email
+          </FieldLabel>
+          <ButtonGroup className="w-full">
             <Input
               id={`email-${church.id}`}
               name="email"
               type="email"
               placeholder="organiser@example.com"
               disabled={addPending}
+              aria-invalid={!!addState.error}
               required
             />
-            <Button type="submit" disabled={addPending} className="shrink-0">
+            <Button type="submit" disabled={addPending}>
               Add
             </Button>
-          </div>
-        </div>
-        {addState.error && (
-          <p className="text-destructive text-xs">{addState.error}</p>
-        )}
+          </ButtonGroup>
+          {addState.error && <FieldError>{addState.error}</FieldError>}
+        </Field>
         {addState.success && (
           <p className="text-success text-xs">{addState.success}</p>
         )}

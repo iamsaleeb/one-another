@@ -1,17 +1,11 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
+import { Controller, FormProvider, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import type { ResourceType } from "@prisma/client";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormMessage,
-} from "@/components/ui/form";
+import { Field, FieldError } from "@/components/ui/field";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { submitRequestAction } from "@/domains/access-requests/actions/requests";
@@ -57,26 +51,26 @@ export function RequestForm({ resourceType, resourceId, resourceName }: Props) {
         <span className="text-foreground font-medium">{resourceName}</span>. The
         organiser will review your request.
       </p>
-      <Form {...form}>
+      <FormProvider {...form}>
         <form
           onSubmit={form.handleSubmit(onSubmit)}
           className="flex flex-col gap-3"
         >
-          <FormField
+          <Controller
             control={form.control}
             name="message"
-            render={({ field }) => (
-              <FormItem>
-                <FormControl>
-                  <Textarea
-                    placeholder="Add an optional message… (max 280 chars)"
-                    className="resize-none"
-                    rows={3}
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
+            render={({ field, fieldState }) => (
+              <Field data-invalid={fieldState.invalid}>
+                <Textarea
+                  id={field.name}
+                  aria-invalid={fieldState.invalid}
+                  placeholder="Add an optional message… (max 280 chars)"
+                  className="resize-none"
+                  rows={3}
+                  {...field}
+                />
+                <FieldError errors={[fieldState.error]} />
+              </Field>
             )}
           />
           {form.formState.errors.root?.serverError && (
@@ -88,7 +82,7 @@ export function RequestForm({ resourceType, resourceId, resourceName }: Props) {
             {form.formState.isSubmitting ? "Sending…" : "Send request"}
           </Button>
         </form>
-      </Form>
+      </FormProvider>
     </div>
   );
 }

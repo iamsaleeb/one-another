@@ -1,6 +1,6 @@
 "use client";
 
-import { useFormContext } from "react-hook-form";
+import { Controller, useFormContext } from "react-hook-form";
 import { Repeat } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -11,13 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { PhotoUploadField } from "@/components/photo-upload-field";
 import { CATEGORY_OPTIONS } from "@/lib/types/search";
 import type { CreateEventInput } from "@/domains/events/validations/event";
@@ -59,72 +53,73 @@ export function StepBasics({
         </div>
       )}
 
-      <FormField
+      <Controller
         control={form.control}
         name="photoUrl"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Cover Photo (optional)</FormLabel>
-            <FormControl>
-              <PhotoUploadField
-                variant="cover"
-                value={field.value}
-                onChange={field.onChange}
-              />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
+        render={({ field, fieldState }) => (
+          <Field data-invalid={fieldState.invalid}>
+            <FieldLabel htmlFor={field.name}>Cover Photo (optional)</FieldLabel>
+            <PhotoUploadField
+              id={field.name}
+              aria-invalid={fieldState.invalid}
+              variant="cover"
+              value={field.value}
+              onChange={field.onChange}
+            />
+            <FieldError errors={[fieldState.error]} />
+          </Field>
         )}
       />
 
-      <FormField
+      <Controller
         control={form.control}
         name="title"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Title</FormLabel>
-            <FormControl>
-              <Input placeholder="e.g. Sunday Evening Worship" {...field} />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
+        render={({ field, fieldState }) => (
+          <Field data-invalid={fieldState.invalid}>
+            <FieldLabel htmlFor={field.name}>Title</FieldLabel>
+            <Input
+              id={field.name}
+              aria-invalid={fieldState.invalid}
+              placeholder="e.g. Sunday Evening Worship"
+              {...field}
+            />
+            <FieldError errors={[fieldState.error]} />
+          </Field>
         )}
       />
 
-      <FormField
+      <Controller
         control={form.control}
         name="description"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Description</FormLabel>
-            <FormControl>
-              <Textarea
-                rows={4}
-                placeholder="e.g. Join us for an evening of worship, prayer and community. All are welcome."
-                {...field}
-              />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
+        render={({ field, fieldState }) => (
+          <Field data-invalid={fieldState.invalid}>
+            <FieldLabel htmlFor={field.name}>Description</FieldLabel>
+            <Textarea
+              id={field.name}
+              aria-invalid={fieldState.invalid}
+              rows={4}
+              placeholder="e.g. Join us for an evening of worship, prayer and community. All are welcome."
+              {...field}
+            />
+            <FieldError errors={[fieldState.error]} />
+          </Field>
         )}
       />
 
-      <FormField
+      <Controller
         control={form.control}
         name="tag"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Category</FormLabel>
+        render={({ field, fieldState }) => (
+          <Field data-invalid={fieldState.invalid}>
+            <FieldLabel htmlFor={field.name}>Category</FieldLabel>
             <Select
               onValueChange={field.onChange}
               defaultValue={field.value}
               disabled={categoryLocked}
             >
-              <FormControl>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a category" />
-                </SelectTrigger>
-              </FormControl>
+              <SelectTrigger id={field.name} aria-invalid={fieldState.invalid}>
+                <SelectValue placeholder="Select a category" />
+              </SelectTrigger>
               <SelectContent>
                 {CATEGORY_OPTIONS.map((cat) => (
                   <SelectItem key={cat} value={cat}>
@@ -133,36 +128,37 @@ export function StepBasics({
                 ))}
               </SelectContent>
             </Select>
-            <FormMessage />
-          </FormItem>
+            <FieldError errors={[fieldState.error]} />
+          </Field>
         )}
       />
 
       {shownChurch ? (
-        <div className="grid gap-1.5">
-          <FormLabel>Church</FormLabel>
+        <Field data-disabled>
+          <FieldLabel htmlFor="church">Church</FieldLabel>
           <Select value={shownChurch.id} disabled>
-            <SelectTrigger>
+            <SelectTrigger id="church">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value={shownChurch.id}>{shownChurch.name}</SelectItem>
             </SelectContent>
           </Select>
-        </div>
+        </Field>
       ) : (
-        <FormField
+        <Controller
           control={form.control}
           name="churchId"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Church</FormLabel>
+          render={({ field, fieldState }) => (
+            <Field data-invalid={fieldState.invalid}>
+              <FieldLabel htmlFor={field.name}>Church</FieldLabel>
               <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a church" />
-                  </SelectTrigger>
-                </FormControl>
+                <SelectTrigger
+                  id={field.name}
+                  aria-invalid={fieldState.invalid}
+                >
+                  <SelectValue placeholder="Select a church" />
+                </SelectTrigger>
                 <SelectContent>
                   {churches.map((church) => (
                     <SelectItem key={church.id} value={church.id}>
@@ -171,8 +167,8 @@ export function StepBasics({
                   ))}
                 </SelectContent>
               </Select>
-              <FormMessage />
-            </FormItem>
+              <FieldError errors={[fieldState.error]} />
+            </Field>
           )}
         />
       )}

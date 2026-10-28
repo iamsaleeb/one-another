@@ -21,7 +21,20 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
+import {
+  Field,
+  FieldContent,
+  FieldDescription,
+  FieldLabel,
+  FieldLegend,
+  FieldSet,
+} from "@/components/ui/field";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupButton,
+  InputGroupInput,
+} from "@/components/ui/input-group";
 import { LibraryDrawer } from "./library-drawer";
 import {
   QuestionType,
@@ -121,18 +134,18 @@ export function QuestionDrawer({
               Pick from library
             </Button>
 
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="q-label">Question</Label>
+            <Field>
+              <FieldLabel htmlFor="q-label">Question</FieldLabel>
               <Input
                 id="q-label"
                 placeholder="e.g. Do you have any dietary requirements?"
                 value={label}
                 onChange={(e) => setLabel(e.target.value)}
               />
-            </div>
+            </Field>
 
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="q-type">Answer type</Label>
+            <Field>
+              <FieldLabel htmlFor="q-type">Answer type</FieldLabel>
               <Select
                 value={type}
                 onValueChange={(v) => setType(v as QuestionType)}
@@ -148,14 +161,17 @@ export function QuestionDrawer({
                   ))}
                 </SelectContent>
               </Select>
-            </div>
+            </Field>
 
             {type === QuestionType.MULTIPLE_CHOICE && (
-              <div className="flex flex-col gap-2">
-                <Label>Options</Label>
+              <FieldSet className="gap-2">
+                <FieldLegend variant="label" className="mb-1">
+                  Options
+                </FieldLegend>
                 {options.map((opt, i) => (
-                  <div key={opt.id} className="flex gap-2">
-                    <Input
+                  <InputGroup key={opt.id}>
+                    <InputGroupInput
+                      aria-label={`Option ${i + 1}`}
                       placeholder={`Option ${i + 1}`}
                       value={opt.value}
                       onChange={(e) =>
@@ -169,19 +185,20 @@ export function QuestionDrawer({
                       }
                     />
                     {options.length > 1 && (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="text-destructive hover:text-destructive size-10 shrink-0"
-                        onClick={() =>
-                          setOptions(options.filter((o) => o.id !== opt.id))
-                        }
-                      >
-                        <Trash2 className="size-4" />
-                      </Button>
+                      <InputGroupAddon align="inline-end">
+                        <InputGroupButton
+                          size="icon-xs"
+                          aria-label={`Remove option ${i + 1}`}
+                          className="text-destructive hover:text-destructive"
+                          onClick={() =>
+                            setOptions(options.filter((o) => o.id !== opt.id))
+                          }
+                        >
+                          <Trash2 />
+                        </InputGroupButton>
+                      </InputGroupAddon>
                     )}
-                  </div>
+                  </InputGroup>
                 ))}
                 <Button
                   type="button"
@@ -195,21 +212,28 @@ export function QuestionDrawer({
                     ])
                   }
                 >
-                  <Plus className="mr-1 size-4" />
+                  <Plus />
                   Add option
                 </Button>
-              </div>
+              </FieldSet>
             )}
 
-            <div className="bg-background flex min-h-[56px] items-center justify-between gap-3 rounded-xl border px-4 py-3">
-              <div>
-                <p className="text-sm font-medium">Required</p>
-                <p className="text-muted-foreground text-xs">
+            <Field
+              orientation="horizontal"
+              className="bg-background min-h-[56px] justify-between rounded-xl border px-4 py-3"
+            >
+              <FieldContent className="gap-0.5">
+                <FieldLabel htmlFor="q-required">Required</FieldLabel>
+                <FieldDescription className="text-xs">
                   Attendee must answer this question
-                </p>
-              </div>
-              <Switch checked={required} onCheckedChange={setRequired} />
-            </div>
+                </FieldDescription>
+              </FieldContent>
+              <Switch
+                id="q-required"
+                checked={required}
+                onCheckedChange={setRequired}
+              />
+            </Field>
           </div>
 
           <DrawerFooter>

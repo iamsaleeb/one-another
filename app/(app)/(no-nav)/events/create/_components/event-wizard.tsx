@@ -2,14 +2,18 @@
 
 import { Card } from "@/components/ui/card";
 import { useState, useEffect } from "react";
-import { useForm, useWatch, type Resolver } from "react-hook-form";
+import {
+  FormProvider,
+  useForm,
+  useWatch,
+  type Resolver,
+} from "react-hook-form";
 import { useEventAutoSave } from "./use-event-auto-save";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { CloudUpload, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Form } from "@/components/ui/form";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
@@ -364,7 +368,7 @@ export function EventWizard({
       </div>
 
       <Card className="gap-0 p-5">
-        <Form {...form}>
+        <FormProvider {...form}>
           <form className="flex flex-col gap-5">
             {renderStep()}
 
@@ -386,7 +390,7 @@ export function EventWizard({
               </div>
             )}
           </form>
-        </Form>
+        </FormProvider>
       </Card>
     </div>
   );

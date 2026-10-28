@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
-import { PageHeader } from "@/components/ui/page-header";
+import { PageHeader } from "@/components/page-header";
 import { getInboxNotifications } from "@/domains/notifications/inbox";
 import { InboxTabs } from "./_components/inbox-tabs";
 

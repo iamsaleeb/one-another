@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getSeries } from "@/domains/series/actions/data";
-import { PageHeader } from "@/components/ui/page-header";
+import { PageHeader } from "@/components/page-header";
 import { Empty, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";

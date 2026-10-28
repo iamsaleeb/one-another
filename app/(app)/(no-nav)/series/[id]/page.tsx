@@ -14,8 +14,8 @@ import {
   eventSubject,
   seriesSubject,
 } from "@/domains/roles";
-import { InfoField } from "@/components/ui/info-field";
-import { HeroBanner } from "@/components/ui/hero-banner";
+import { InfoField } from "@/components/info-field";
+import { HeroBanner } from "@/components/hero-banner";
 import { EventCard } from "@/domains/events/components/event-card";
 import { SaveEventButton } from "@/domains/events/components/save-event-button";
 import { Button } from "@/components/ui/button";

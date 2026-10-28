@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { format } from "date-fns";
 import { auth } from "@/auth";
 import { getProfileUser } from "@/domains/profile/actions/data";
-import { PageHeader } from "@/components/ui/page-header";
+import { PageHeader } from "@/components/page-header";
 import { EditProfileForm } from "./_components/edit-profile-form";
 import type { OnboardingInput } from "@/domains/profile/validations/onboarding";
 

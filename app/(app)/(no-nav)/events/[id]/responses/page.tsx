@@ -3,7 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { getEventById } from "@/domains/events/actions/data";
 import { getEventResponses } from "@/domains/events/questions/actions";
 import { getAbility, eventSubject } from "@/domains/roles";
-import { PageHeader } from "@/components/ui/page-header";
+import { PageHeader } from "@/components/page-header";
 import { ResponsesTable } from "./_components/responses-table";
 
 interface Props {

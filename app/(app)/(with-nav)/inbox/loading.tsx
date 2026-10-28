@@ -7,7 +7,7 @@ import {
   ItemMedia,
   ItemSeparator,
 } from "@/components/ui/item";
-import { PageHeader } from "@/components/ui/page-header";
+import { PageHeader } from "@/components/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 
 function NotificationRowSkeleton() {

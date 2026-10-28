@@ -1,5 +1,5 @@
 import { Card } from "@/components/ui/card";
-import { PageHeader } from "@/components/ui/page-header";
+import { PageHeader } from "@/components/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 
 function ToggleRowSkeleton() {
@@ -18,7 +18,7 @@ export default function ProfileNotificationsLoading() {
   return (
     <div className="bg-background">
       <PageHeader title="Notifications" />
-      <div className="space-y-3 px-4 pb-8">
+      <div className="flex flex-col gap-3 px-4 pb-8">
         <ToggleRowSkeleton />
         <ToggleRowSkeleton />
         <ToggleRowSkeleton />

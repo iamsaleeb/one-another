@@ -42,17 +42,17 @@ export function ServicesTab({ church }: ServicesTabProps) {
   );
 
   return (
-    <Collapsible className="space-y-5">
+    <Collapsible className="flex flex-col gap-5">
       <h2 className="text-lg font-bold">Service Schedule</h2>
 
       {Object.entries(servicesByDay).map(([day, services]) => (
         <div key={day}>
           <p className="text-foreground mb-2 text-sm font-semibold">{day}</p>
-          <div className="space-y-2">
+          <div className="flex flex-col gap-2">
             {services.slice(0, SHOW_PER_DAY).map((service) => (
               <ServiceCard key={service.id} service={service} />
             ))}
-            <CollapsibleContent className="space-y-2">
+            <CollapsibleContent className="flex flex-col gap-2">
               {services.slice(SHOW_PER_DAY).map((service) => (
                 <ServiceCard key={service.id} service={service} />
               ))}
@@ -63,7 +63,7 @@ export function ServicesTab({ church }: ServicesTabProps) {
 
       {hasMore && (
         <CollapsibleTrigger asChild>
-          <Button variant="link" className="group px-0">
+          <Button variant="link" className="group self-start px-0">
             <span className="group-data-[state=open]:hidden">See more</span>
             <span className="hidden group-data-[state=open]:inline">
               See less

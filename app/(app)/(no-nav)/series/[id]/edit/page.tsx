@@ -2,7 +2,7 @@ import { Card } from "@/components/ui/card";
 import { notFound, redirect } from "next/navigation";
 import { getSeriesById } from "@/domains/series/actions/data";
 import { getAbility, getSessionUserId, seriesSubject } from "@/domains/roles";
-import { PageHeader } from "@/components/ui/page-header";
+import { PageHeader } from "@/components/page-header";
 import { EditSeriesForm } from "./_components/edit-series-form";
 
 interface Props {

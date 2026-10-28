@@ -96,7 +96,7 @@ export function RequestTimeline({ status, createdAt, reviewedAt }: Props) {
               }`}
             >
               {status === "APPROVED" ? (
-                <Check className="size-3.5 text-white" />
+                <Check className="text-primary-foreground size-3.5" />
               ) : (
                 <X className="text-muted-foreground size-3.5" />
               )}

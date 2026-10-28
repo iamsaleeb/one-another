@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
-import { PageHeader } from "@/components/ui/page-header";
+import { PageHeader } from "@/components/page-header";
 import { getUserAttendedEventsPaged } from "@/domains/events/actions/data";
 import { getUserFollowedSeries } from "@/domains/series/actions/data";
 import { MyEventsTabs } from "./_components/my-events-tabs";

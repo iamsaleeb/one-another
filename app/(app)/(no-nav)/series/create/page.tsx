@@ -1,7 +1,7 @@
 import { Card } from "@/components/ui/card";
 import { redirect } from "next/navigation";
 import { CreateSeriesForm } from "./_components/create-series-form";
-import { PageHeader } from "@/components/ui/page-header";
+import { PageHeader } from "@/components/page-header";
 import { getChurchTargets, getSessionUserId } from "@/domains/roles";
 
 export default async function CreateSeriesPage() {

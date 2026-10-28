@@ -88,7 +88,7 @@ export function NotificationSettings({ preferences }: Props) {
   }
 
   return (
-    <div className="space-y-3">
+    <div className="flex flex-col gap-3">
       {(Object.keys(NOTIFICATION_TYPES) as NotificationTypeKey[]).map((key) => {
         const typeDef = NOTIFICATION_TYPES[key];
         const pref = optimisticPrefs[key];

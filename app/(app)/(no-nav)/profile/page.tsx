@@ -21,7 +21,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { cn, getInitials } from "@/lib/utils";
-import { InfoField } from "@/components/ui/info-field";
+import { InfoField } from "@/components/info-field";
 import {
   Item,
   ItemActions,

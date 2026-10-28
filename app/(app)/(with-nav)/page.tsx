@@ -20,7 +20,7 @@ import {
   loadMoreOtherEventsAction,
   loadMoreMySavedEventsAction,
 } from "@/domains/events/actions/pagination";
-import { PageHeader } from "@/components/ui/page-header";
+import { PageHeader } from "@/components/page-header";
 import { SaveEventButton } from "@/domains/events/components/save-event-button";
 import { WHEN_LABELS, TYPE_LABELS, type WhenFilter } from "@/lib/types/search";
 import { searchParamsSchema } from "@/lib/validations/search";

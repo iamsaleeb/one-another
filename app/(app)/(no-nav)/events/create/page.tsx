@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { EventWizard } from "./_components/event-wizard";
-import { PageHeader } from "@/components/ui/page-header";
+import { PageHeader } from "@/components/page-header";
 import { getSeriesForEvent } from "@/domains/series/actions/data";
 import { getQuestionLibraryForUser } from "@/domains/events/questions/dal";
 import {

@@ -18,12 +18,73 @@ import {
   UserCog,
   UserPen,
   UserX,
+  type LucideIcon,
 } from "lucide-react";
-import { getInitials } from "@/lib/utils";
+import { cn, getInitials } from "@/lib/utils";
 import { InfoField } from "@/components/ui/info-field";
+import {
+  Item,
+  ItemActions,
+  ItemContent,
+  ItemDescription,
+  ItemGroup,
+  ItemMedia,
+  ItemSeparator,
+  ItemTitle,
+} from "@/components/ui/item";
 import { RoleBadge, type RoleBadgeRole } from "./_components/role-badge";
 import { version } from "@/package.json";
 import { formatDateOnly } from "@/lib/datetime";
+
+function SectionHeader({
+  icon: Icon,
+  children,
+}: {
+  icon: LucideIcon;
+  children: React.ReactNode;
+}) {
+  return (
+    <Item size="sm">
+      <ItemMedia>
+        <Icon className="text-primary size-3.5" aria-hidden="true" />
+      </ItemMedia>
+      <ItemContent>
+        <ItemTitle className="font-semibold">{children}</ItemTitle>
+      </ItemContent>
+    </Item>
+  );
+}
+
+function LinkItem({
+  href,
+  icon: Icon,
+  className,
+  children,
+}: {
+  href: string;
+  icon: LucideIcon;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <Item size="sm" className="rounded-none" asChild>
+      <Link href={href}>
+        <ItemMedia>
+          <Icon
+            className={cn("text-primary size-3.5", className)}
+            aria-hidden="true"
+          />
+        </ItemMedia>
+        <ItemContent>
+          <ItemTitle className={className}>{children}</ItemTitle>
+        </ItemContent>
+        <ItemActions>
+          <ChevronRight className="text-muted-foreground size-4" />
+        </ItemActions>
+      </Link>
+    </Item>
+  );
+}
 
 export const metadata: Metadata = {
   title: "Profile — One Another",
@@ -72,120 +133,99 @@ export default async function ProfilePage() {
 
         {/* Info card — only shown when supplementary details exist */}
         {(dbUser?.phone || dbUser?.dateOfBirth) && (
-          <div className="shadow-card divide-border bg-card divide-y overflow-hidden rounded-2xl">
-            {dbUser.phone && (
-              <div className="px-4 py-3">
+          <Card className="gap-0 overflow-hidden py-0">
+            <ItemGroup>
+              {dbUser.phone && (
                 <InfoField
+                  className="px-4 py-3"
                   icon={Phone}
                   label="Phone"
-                  iconClassName="w-3.5 h-3.5 text-primary"
+                  iconClassName="text-primary size-3.5"
                 >
                   {dbUser.phone}
                 </InfoField>
-              </div>
-            )}
-            {dbUser.dateOfBirth && (
-              <div className="px-4 py-3">
+              )}
+              {dbUser.phone && dbUser.dateOfBirth && <ItemSeparator />}
+              {dbUser.dateOfBirth && (
                 <InfoField
+                  className="px-4 py-3"
                   icon={CalendarDays}
                   label="Date of birth"
-                  iconClassName="w-3.5 h-3.5 text-primary"
+                  iconClassName="text-primary size-3.5"
                 >
                   {formatDateOnly(dbUser.dateOfBirth)}
                 </InfoField>
-              </div>
-            )}
-          </div>
+              )}
+            </ItemGroup>
+          </Card>
         )}
 
         {/* Settings */}
-        <div className="shadow-card divide-border bg-card divide-y overflow-hidden rounded-2xl">
-          <div className="flex items-center gap-2 px-4 py-3">
-            <Settings className="text-primary h-3.5 w-3.5" />
-            <span className="text-sm font-semibold">Settings</span>
-          </div>
-          <Link href="/profile/edit">
-            <div className="flex items-center justify-between px-4 py-3">
-              <div className="flex items-center gap-3">
-                <UserPen className="text-primary h-3.5 w-3.5" />
-                <span className="text-sm font-medium">Edit Profile</span>
-              </div>
-              <ChevronRight className="text-muted-foreground h-4 w-4" />
-            </div>
-          </Link>
-          <Link href="/profile/notifications">
-            <div className="flex items-center justify-between px-4 py-3">
-              <div className="flex items-center gap-3">
-                <Bell className="text-primary h-3.5 w-3.5" />
-                <span className="text-sm font-medium">Notifications</span>
-              </div>
-              <ChevronRight className="text-muted-foreground h-4 w-4" />
-            </div>
-          </Link>
-        </div>
+        <Card className="gap-0 overflow-hidden py-0">
+          <ItemGroup>
+            <SectionHeader icon={Settings}>Settings</SectionHeader>
+            <ItemSeparator />
+            <LinkItem href="/profile/edit" icon={UserPen}>
+              Edit Profile
+            </LinkItem>
+            <ItemSeparator />
+            <LinkItem href="/profile/notifications" icon={Bell}>
+              Notifications
+            </LinkItem>
+          </ItemGroup>
+        </Card>
 
         {/* Legal */}
-        <div className="shadow-card divide-border bg-card divide-y overflow-hidden rounded-2xl">
-          <div className="flex items-center gap-2 px-4 py-3">
-            <ScrollText className="text-primary h-3.5 w-3.5" />
-            <span className="text-sm font-semibold">Legal</span>
-          </div>
-          <Link href="/privacy">
-            <div className="flex items-center justify-between px-4 py-3">
-              <div className="flex items-center gap-3">
-                <Shield className="text-primary h-3.5 w-3.5" />
-                <span className="text-sm font-medium">Privacy Policy</span>
-              </div>
-              <ChevronRight className="text-muted-foreground h-4 w-4" />
-            </div>
-          </Link>
-          <Link href="/terms">
-            <div className="flex items-center justify-between px-4 py-3">
-              <div className="flex items-center gap-3">
-                <ScrollText className="text-primary h-3.5 w-3.5" />
-                <span className="text-sm font-medium">Terms of Service</span>
-              </div>
-              <ChevronRight className="text-muted-foreground h-4 w-4" />
-            </div>
-          </Link>
-          <div className="px-4 py-3">
-            <span className="text-muted-foreground text-xs">
-              Version{" "}
-              <span className="text-foreground font-medium">{version}</span>
-            </span>
-          </div>
-        </div>
+        <Card className="gap-0 overflow-hidden py-0">
+          <ItemGroup>
+            <SectionHeader icon={ScrollText}>Legal</SectionHeader>
+            <ItemSeparator />
+            <LinkItem href="/privacy" icon={Shield}>
+              Privacy Policy
+            </LinkItem>
+            <ItemSeparator />
+            <LinkItem href="/terms" icon={ScrollText}>
+              Terms of Service
+            </LinkItem>
+            <ItemSeparator />
+            <Item size="sm">
+              <ItemContent>
+                <ItemDescription className="text-xs">
+                  Version{" "}
+                  <span className="text-foreground font-medium">{version}</span>
+                </ItemDescription>
+              </ItemContent>
+            </Item>
+          </ItemGroup>
+        </Card>
 
         {/* Account */}
-        <div className="shadow-card divide-border bg-card divide-y overflow-hidden rounded-2xl">
-          <div className="flex items-center gap-2 px-4 py-3">
-            <UserCog className="text-primary h-3.5 w-3.5" aria-hidden="true" />
-            <span className="text-sm font-semibold">Account</span>
-          </div>
-          <form action={signOutAction}>
-            <button
-              type="submit"
-              className="flex w-full items-center gap-3 px-4 py-3 text-left"
+        <Card className="gap-0 overflow-hidden py-0">
+          <ItemGroup>
+            <SectionHeader icon={UserCog}>Account</SectionHeader>
+            <ItemSeparator />
+            <form action={signOutAction}>
+              <Item size="sm" className="w-full rounded-none" asChild>
+                <button type="submit">
+                  <ItemMedia>
+                    <LogOut className="text-primary size-3.5" />
+                  </ItemMedia>
+                  <ItemContent>
+                    <ItemTitle>Sign out</ItemTitle>
+                  </ItemContent>
+                </button>
+              </Item>
+            </form>
+            <ItemSeparator />
+            <LinkItem
+              href="/profile/account"
+              icon={UserX}
+              className="text-destructive"
             >
-              <LogOut className="text-primary h-3.5 w-3.5" />
-              <span className="text-sm font-medium">Sign out</span>
-            </button>
-          </form>
-          <Link href="/profile/account">
-            <div className="flex items-center justify-between px-4 py-3">
-              <div className="flex items-center gap-3">
-                <UserX
-                  className="text-destructive h-3.5 w-3.5"
-                  aria-hidden="true"
-                />
-                <span className="text-destructive text-sm font-medium">
-                  Delete Account
-                </span>
-              </div>
-              <ChevronRight className="text-muted-foreground h-4 w-4" />
-            </div>
-          </Link>
-        </div>
+              Delete Account
+            </LinkItem>
+          </ItemGroup>
+        </Card>
       </div>
     </div>
   );

@@ -1,6 +1,14 @@
 "use client";
 
 import { useOptimistic, useTransition } from "react";
+import { Card } from "@/components/ui/card";
+import {
+  Field,
+  FieldContent,
+  FieldDescription,
+  FieldLabel,
+} from "@/components/ui/field";
+import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import {
   NativeSelect,
@@ -97,33 +105,39 @@ export function NotificationSettings({ preferences }: Props) {
         ).config;
 
         return (
-          <div
-            key={key}
-            className="shadow-card bg-card overflow-hidden rounded-2xl"
-          >
-            <div className="flex items-start justify-between gap-3 px-4 py-3">
-              <div className="min-w-0 flex-1">
-                <p className="text-sm leading-snug font-medium">
+          <Card key={key} className="gap-0 overflow-hidden py-0">
+            <Field orientation="horizontal" className="items-start px-4 py-3">
+              <FieldContent className="gap-0.5">
+                <FieldLabel htmlFor={`notify-${key}`}>
                   {typeDef.label}
-                </p>
-                <p className="text-muted-foreground mt-0.5 text-xs leading-snug">
+                </FieldLabel>
+                <FieldDescription className="text-xs leading-snug">
                   {typeDef.description}
-                </p>
-              </div>
+                </FieldDescription>
+              </FieldContent>
               <Switch
+                id={`notify-${key}`}
                 checked={pref.enabled}
                 onCheckedChange={(enabled) => handleToggle(key, enabled)}
-                className="mt-0.5 shrink-0"
+                className="mt-0.5"
               />
-            </div>
+            </Field>
 
             {typeConfig && pref.enabled && (
-              <div className="border-border border-t px-4 pt-3 pb-3">
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-muted-foreground text-xs">
+              <>
+                <Separator />
+                <Field
+                  orientation="horizontal"
+                  className="justify-between px-4 py-3"
+                >
+                  <FieldLabel
+                    htmlFor={`notify-${key}-hours`}
+                    className="text-muted-foreground text-xs font-normal"
+                  >
                     {typeConfig.hoursBeforeEvent.label}
-                  </span>
+                  </FieldLabel>
                   <NativeSelect
+                    id={`notify-${key}-hours`}
                     size="sm"
                     value={
                       (pref.config as { hoursBeforeEvent: number } | undefined)
@@ -147,10 +161,10 @@ export function NotificationSettings({ preferences }: Props) {
                       </NativeSelectOption>
                     ))}
                   </NativeSelect>
-                </div>
-              </div>
+                </Field>
+              </>
             )}
-          </div>
+          </Card>
         );
       })}
     </div>

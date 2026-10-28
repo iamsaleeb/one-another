@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { Fragment, useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Bell, Inbox } from "lucide-react";
 import { NotificationItem } from "@/domains/notifications/components/notification-item";
@@ -9,6 +9,7 @@ import {
   loadMoreNotificationsAction,
 } from "@/domains/notifications/actions/notifications";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import {
   Empty,
   EmptyDescription,
@@ -16,6 +17,7 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty";
+import { ItemGroup, ItemSeparator } from "@/components/ui/item";
 import { Spinner } from "@/components/ui/spinner";
 import type { InboxNotification } from "@/domains/notifications/inbox";
 import type { InboxFilter } from "./types";
@@ -98,11 +100,16 @@ export function NotificationList({
 
   return (
     <div className="flex flex-col gap-4 px-4 pb-6">
-      <div className="shadow-card divide-border bg-card divide-y overflow-hidden rounded-2xl">
-        {displayed.map((n) => (
-          <NotificationItem key={n.id} notification={n} />
-        ))}
-      </div>
+      <Card className="gap-0 overflow-hidden py-0">
+        <ItemGroup>
+          {displayed.map((n, i) => (
+            <Fragment key={n.id}>
+              {i > 0 && <ItemSeparator />}
+              <NotificationItem notification={n} />
+            </Fragment>
+          ))}
+        </ItemGroup>
+      </Card>
       {hasMore && (
         <Button
           variant="outline"

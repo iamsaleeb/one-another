@@ -1,12 +1,14 @@
+import { Fragment } from "react";
 import { Card } from "@/components/ui/card";
+import { Item, ItemGroup, ItemSeparator } from "@/components/ui/item";
 import { Skeleton } from "@/components/ui/skeleton";
 
 function RowSkeleton() {
   return (
-    <div className="flex items-center justify-between px-4 py-3">
+    <Item size="sm" className="justify-between">
       <Skeleton className="h-4 w-32" />
-      <Skeleton className="h-4 w-4 rounded" />
-    </div>
+      <Skeleton className="size-4 rounded" />
+    </Item>
   );
 }
 
@@ -21,21 +23,32 @@ export default function ProfileLoading() {
             <Skeleton className="h-4 w-44" />
           </div>
         </Card>
-        <div className="shadow-card divide-border bg-card divide-y overflow-hidden rounded-2xl">
-          <div className="px-4 py-3">
-            <Skeleton className="h-4 w-16" />
-          </div>
-          <RowSkeleton />
-          <RowSkeleton />
-          <RowSkeleton />
-        </div>
-        <div className="shadow-card divide-border bg-card divide-y overflow-hidden rounded-2xl">
-          <div className="px-4 py-3">
-            <Skeleton className="h-4 w-12" />
-          </div>
-          <RowSkeleton />
-          <RowSkeleton />
-        </div>
+        <Card className="gap-0 overflow-hidden py-0">
+          <ItemGroup>
+            <Item size="sm">
+              <Skeleton className="h-4 w-16" />
+            </Item>
+            {Array.from({ length: 3 }, (_, i) => (
+              <Fragment key={i}>
+                <ItemSeparator />
+                <RowSkeleton />
+              </Fragment>
+            ))}
+          </ItemGroup>
+        </Card>
+        <Card className="gap-0 overflow-hidden py-0">
+          <ItemGroup>
+            <Item size="sm">
+              <Skeleton className="h-4 w-12" />
+            </Item>
+            {Array.from({ length: 2 }, (_, i) => (
+              <Fragment key={i}>
+                <ItemSeparator />
+                <RowSkeleton />
+              </Fragment>
+            ))}
+          </ItemGroup>
+        </Card>
         <Skeleton className="h-11 w-full rounded-xl" />
       </div>
     </div>

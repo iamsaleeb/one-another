@@ -17,6 +17,12 @@ import {
   DrawerClose,
 } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
+import {
+  Item,
+  ItemContent,
+  ItemDescription,
+  ItemTitle,
+} from "@/components/ui/item";
 import { parseEventAttendeeMetadata } from "@/domains/events/validations/event";
 import type { getEventAttendees } from "@/domains/events/actions/data";
 import { formatDayShort } from "@/lib/datetime";
@@ -79,60 +85,67 @@ export function AttendeesDrawer({
               const selectedDays = attendeeMeta.selectedDays ?? [];
 
               return (
-                <div
+                <Item
                   key={a.id}
-                  className="bg-muted/50 flex flex-col gap-0.5 rounded-xl px-4 py-3"
+                  variant="muted"
+                  size="sm"
+                  className="rounded-xl"
                 >
-                  <p className="text-sm font-semibold">{a.user.name}</p>
-                  <p className="text-muted-foreground text-xs">
-                    {a.user.email}
-                  </p>
-                  {questionCount != null && questionCount > 0 && (
-                    <Badge
-                      variant={
-                        a._count.responses >= questionCount
-                          ? "default"
-                          : "outline"
-                      }
-                      className="w-fit text-xs"
-                    >
-                      {a._count.responses >= questionCount
-                        ? "Answered"
-                        : "Partial"}
-                    </Badge>
-                  )}
-                  {collectPhone && a.phone && (
-                    <p className="text-muted-foreground text-xs">{a.phone}</p>
-                  )}
-                  {collectNotes && a.notes && (
-                    <p className="text-foreground/70 mt-1 text-xs italic">
-                      {a.notes}
-                    </p>
-                  )}
-                  {showDays && (
-                    <div className="mt-1.5 flex flex-col gap-1">
-                      <p className="text-muted-foreground text-xs font-medium">
-                        Attending days:
+                  <ItemContent className="gap-0.5">
+                    <ItemTitle className="font-semibold">
+                      {a.user.name}
+                    </ItemTitle>
+                    <ItemDescription className="text-xs">
+                      {a.user.email}
+                    </ItemDescription>
+                    {questionCount != null && questionCount > 0 && (
+                      <Badge
+                        variant={
+                          a._count.responses >= questionCount
+                            ? "default"
+                            : "outline"
+                        }
+                        className="w-fit text-xs"
+                      >
+                        {a._count.responses >= questionCount
+                          ? "Answered"
+                          : "Partial"}
+                      </Badge>
+                    )}
+                    {collectPhone && a.phone && (
+                      <p className="text-muted-foreground text-xs">{a.phone}</p>
+                    )}
+                    {collectNotes && a.notes && (
+                      <p className="text-foreground/70 mt-1 text-xs italic">
+                        {a.notes}
                       </p>
-                      {selectedDays.length > 0 ? (
-                        <div className="flex flex-wrap gap-1">
-                          {selectedDays.sort().map((day) => (
-                            <span
-                              key={day}
-                              className="bg-primary/10 text-primary rounded-md px-2 py-0.5 text-xs font-medium"
-                            >
-                              {formatDayShort(day)}
-                            </span>
-                          ))}
-                        </div>
-                      ) : (
-                        <p className="text-muted-foreground text-xs italic">
-                          Full camp
+                    )}
+                    {showDays && (
+                      <div className="mt-1.5 flex flex-col gap-1">
+                        <p className="text-muted-foreground text-xs font-medium">
+                          Attending days:
                         </p>
-                      )}
-                    </div>
-                  )}
-                </div>
+                        {selectedDays.length > 0 ? (
+                          <div className="flex flex-wrap gap-1">
+                            {selectedDays.sort().map((day) => (
+                              <Badge
+                                key={day}
+                                variant="soft"
+                                className="rounded-md"
+                              >
+                                {formatDayShort(day)}
+                              </Badge>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-muted-foreground text-xs italic">
+                            Full camp
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </ItemContent>
+                </Item>
               );
             })
           )}

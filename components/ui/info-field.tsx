@@ -1,10 +1,19 @@
 import React from "react";
+import { cn } from "@/lib/utils";
+import {
+  Item,
+  ItemContent,
+  ItemDescription,
+  ItemMedia,
+  ItemTitle,
+} from "@/components/ui/item";
 
 interface InfoFieldProps {
   icon: React.ComponentType<{ className?: string }>;
   label: string;
   children: React.ReactNode;
   iconClassName?: string;
+  className?: string;
 }
 
 export function InfoField({
@@ -12,16 +21,17 @@ export function InfoField({
   label,
   children,
   iconClassName,
+  className,
 }: InfoFieldProps) {
   return (
-    <div className="flex items-start gap-3">
-      <Icon
-        className={iconClassName ?? "text-primary mt-0.5 h-4 w-4 shrink-0"}
-      />
-      <div className="flex flex-col gap-0.5">
-        <p className="text-muted-foreground text-xs">{label}</p>
-        <div className="text-sm font-medium">{children}</div>
-      </div>
-    </div>
+    <Item className={cn("items-start gap-3 p-0", className)}>
+      <ItemMedia>
+        <Icon className={iconClassName ?? "text-primary size-4"} />
+      </ItemMedia>
+      <ItemContent className="gap-0.5">
+        <ItemDescription className="text-xs">{label}</ItemDescription>
+        <ItemTitle>{children}</ItemTitle>
+      </ItemContent>
+    </Item>
   );
 }

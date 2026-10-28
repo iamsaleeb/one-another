@@ -5,6 +5,14 @@ import { useActionState } from "react";
 import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Item,
+  ItemActions,
+  ItemContent,
+  ItemDescription,
+  ItemGroup,
+  ItemTitle,
+} from "@/components/ui/item";
 import { Label } from "@/components/ui/label";
 import {
   addOrganiserToChurchAction,
@@ -53,43 +61,42 @@ export function AdminChurchCard({ church }: AdminChurchCardProps) {
             No organisers assigned yet.
           </p>
         ) : (
-          <ul className="flex flex-col gap-2">
+          <ItemGroup className="gap-2">
             {church.organisers.map((organiser) => (
-              <li
-                key={organiser.id}
-                className="flex items-center justify-between gap-2"
-              >
-                <div className="flex min-w-0 flex-col">
-                  <span className="truncate text-sm font-medium">
+              <Item key={organiser.id} role="listitem" className="gap-2 p-0">
+                <ItemContent className="min-w-0 gap-0">
+                  <ItemTitle className="w-full truncate">
                     {organiser.name ?? organiser.email}
-                  </span>
+                  </ItemTitle>
                   {organiser.name && (
-                    <span className="text-muted-foreground truncate text-xs">
+                    <ItemDescription className="truncate text-xs">
                       {organiser.email}
-                    </span>
+                    </ItemDescription>
                   )}
-                </div>
-                <form action={removeAction}>
-                  <input type="hidden" name="churchId" value={church.id} />
-                  <input
-                    type="hidden"
-                    name="targetUserId"
-                    value={organiser.id}
-                  />
-                  <Button
-                    type="submit"
-                    variant="ghost"
-                    size="icon"
-                    className="text-destructive hover:text-destructive size-8 shrink-0"
-                    disabled={removePending}
-                    aria-label={`Remove ${organiser.name ?? organiser.email}`}
-                  >
-                    <Trash2 className="size-4" />
-                  </Button>
-                </form>
-              </li>
+                </ItemContent>
+                <ItemActions>
+                  <form action={removeAction}>
+                    <input type="hidden" name="churchId" value={church.id} />
+                    <input
+                      type="hidden"
+                      name="targetUserId"
+                      value={organiser.id}
+                    />
+                    <Button
+                      type="submit"
+                      variant="ghost"
+                      size="icon"
+                      className="text-destructive hover:text-destructive size-8 shrink-0"
+                      disabled={removePending}
+                      aria-label={`Remove ${organiser.name ?? organiser.email}`}
+                    >
+                      <Trash2 className="size-4" />
+                    </Button>
+                  </form>
+                </ItemActions>
+              </Item>
             ))}
-          </ul>
+          </ItemGroup>
         )}
         {removeState.error && (
           <p className="text-destructive text-xs">{removeState.error}</p>

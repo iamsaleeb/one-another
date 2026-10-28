@@ -2,6 +2,14 @@ import Link from "next/link";
 import { type ElementType } from "react";
 import { Bell, CalendarX, Repeat } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+import {
+  Item,
+  ItemActions,
+  ItemContent,
+  ItemDescription,
+  ItemMedia,
+  ItemTitle,
+} from "@/components/ui/item";
 import type { InboxNotification } from "@/domains/notifications/inbox";
 
 const TYPE_ICON: Record<string, ElementType> = {
@@ -29,40 +37,43 @@ export function NotificationItem({
 
   const content = (
     <>
-      <div className="bg-primary/10 mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full">
+      <ItemMedia className="bg-primary/10 size-7 rounded-full">
         <Icon className="text-primary size-3.5" />
-      </div>
-      <div className="min-w-0 flex-1">
-        <p
-          className={`text-sm leading-snug ${isUnread ? "font-semibold" : "font-medium"}`}
-        >
+      </ItemMedia>
+      <ItemContent className="min-w-0">
+        <ItemTitle className={isUnread ? "font-semibold" : "font-medium"}>
           {notification.title}
-        </p>
-        <p className="text-muted-foreground mt-0.5 text-sm">
-          {notification.body}
-        </p>
-        <p className="text-muted-foreground/70 mt-1 text-xs">
+        </ItemTitle>
+        <ItemDescription>{notification.body}</ItemDescription>
+        <p className="text-muted-foreground/70 text-xs">
           {formatDistanceToNow(new Date(notification.sentAt), {
             addSuffix: true,
           })}
         </p>
-      </div>
+      </ItemContent>
       {isUnread && (
-        <span className="bg-primary mt-1.5 size-2 shrink-0 rounded-full" />
+        <ItemActions className="self-start pt-1.5">
+          <span className="bg-primary size-2 rounded-full" />
+        </ItemActions>
       )}
     </>
   );
 
   if (href) {
     return (
-      <Link
-        href={href}
-        className="active:bg-muted/50 flex items-start gap-3 px-4 py-3"
+      <Item
+        size="sm"
+        className="active:bg-muted/50 items-start gap-3 rounded-none"
+        asChild
       >
-        {content}
-      </Link>
+        <Link href={href}>{content}</Link>
+      </Item>
     );
   }
 
-  return <div className="flex items-start gap-3 px-4 py-3">{content}</div>;
+  return (
+    <Item size="sm" className="items-start gap-3">
+      {content}
+    </Item>
+  );
 }

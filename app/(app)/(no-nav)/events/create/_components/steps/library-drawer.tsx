@@ -14,6 +14,12 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
+  Item,
+  ItemActions,
+  ItemContent,
+  ItemTitle,
+} from "@/components/ui/item";
+import {
   TYPE_LABELS,
   type LibraryItem,
 } from "@/domains/events/questions/validations";
@@ -60,22 +66,32 @@ export function LibraryDrawer({
               </p>
             ) : (
               filtered.map((item) => (
-                <button
+                <Item
                   key={item.id}
-                  type="button"
-                  className="bg-background hover:bg-muted/50 active:bg-muted flex min-h-[56px] items-center justify-between gap-3 rounded-xl border px-4 py-3 text-left"
-                  onClick={() => {
-                    onSelect(item);
-                    onOpenChange(false);
-                  }}
+                  variant="outline"
+                  size="sm"
+                  className="bg-background hover:bg-accent/50 active:bg-muted min-h-[56px] flex-nowrap rounded-xl text-left"
+                  asChild
                 >
-                  <span className="line-clamp-2 text-sm font-medium">
-                    {item.label}
-                  </span>
-                  <Badge variant="secondary" className="shrink-0 text-xs">
-                    {TYPE_LABELS[item.type]}
-                  </Badge>
-                </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onSelect(item);
+                      onOpenChange(false);
+                    }}
+                  >
+                    <ItemContent>
+                      <ItemTitle className="line-clamp-2">
+                        {item.label}
+                      </ItemTitle>
+                    </ItemContent>
+                    <ItemActions>
+                      <Badge variant="secondary">
+                        {TYPE_LABELS[item.type]}
+                      </Badge>
+                    </ItemActions>
+                  </button>
+                </Item>
               ))
             )}
           </div>

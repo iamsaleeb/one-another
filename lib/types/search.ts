@@ -16,11 +16,31 @@ export const CATEGORY_OPTIONS = [
 
 export type Category = (typeof CATEGORY_OPTIONS)[number];
 
-export const TAG_COLORS: Record<Category, { bg: string; text: string }> = {
-  "Youth Meeting": { bg: "bg-blue-100", text: "text-blue-700" },
-  "Bible Study": { bg: "bg-purple-100", text: "text-purple-700" },
-  "Servants Meeting": { bg: "bg-emerald-100", text: "text-emerald-700" },
-  Camp: { bg: "bg-orange-100", text: "text-orange-700" },
+// `on` styles a selected filter toggle; Tailwind needs the full class names.
+export const TAG_COLORS: Record<
+  Category,
+  { bg: string; text: string; on: string }
+> = {
+  "Youth Meeting": {
+    bg: "bg-blue-100",
+    text: "text-blue-700",
+    on: "data-[state=on]:bg-blue-100 data-[state=on]:text-blue-700",
+  },
+  "Bible Study": {
+    bg: "bg-purple-100",
+    text: "text-purple-700",
+    on: "data-[state=on]:bg-purple-100 data-[state=on]:text-purple-700",
+  },
+  "Servants Meeting": {
+    bg: "bg-emerald-100",
+    text: "text-emerald-700",
+    on: "data-[state=on]:bg-emerald-100 data-[state=on]:text-emerald-700",
+  },
+  Camp: {
+    bg: "bg-orange-100",
+    text: "text-orange-700",
+    on: "data-[state=on]:bg-orange-100 data-[state=on]:text-orange-700",
+  },
 };
 
 export const TYPE_OPTIONS: Array<{ value: TypeFilter; label: string }> = [

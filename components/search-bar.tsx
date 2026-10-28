@@ -3,7 +3,15 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Search, X } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupButton,
+  InputGroupInput,
+} from "@/components/ui/input-group";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
   CATEGORY_OPTIONS,
@@ -31,55 +39,32 @@ interface SearchOverrides {
   type?: TypeFilter;
 }
 
-function FilterChip({
-  label,
-  active,
-  onClick,
-  activeClassName = "bg-primary text-primary-foreground",
-}: {
-  label: string;
-  active: boolean;
-  onClick: () => void;
-  activeClassName?: string;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
-        active
-          ? activeClassName
-          : "bg-muted text-foreground border-border hover:bg-muted/80 border"
-      }`}
-    >
-      {label}
-    </button>
-  );
-}
+// Filter chips: a selected chip is filled; selecting it again clears it.
+const chipClassName =
+  "h-auto min-w-0 shrink-0 rounded-full border px-3 py-1.5 text-xs data-[state=on]:border-transparent";
 
 function ActivePill({
   label,
   onRemove,
-  colorClassName = "bg-primary/10 text-primary",
+  className,
 }: {
   label: string;
   onRemove: () => void;
-  colorClassName?: string;
+  className?: string;
 }) {
   return (
-    <span
-      className={`inline-flex items-center gap-1 rounded-full ${colorClassName} px-2.5 py-1 text-xs font-medium`}
-    >
+    <Badge variant="soft" className={cn("gap-0.5 pr-0.5", className)}>
       {label}
-      <button
-        type="button"
+      <Button
+        variant="ghost"
+        size="icon-xs"
         onClick={onRemove}
         aria-label={`Remove ${label} filter`}
-        className="ml-0.5 opacity-70 hover:opacity-100"
+        className="size-4 rounded-full opacity-70 hover:bg-transparent hover:opacity-100"
       >
-        <X className="size-3" />
-      </button>
-    </span>
+        <X />
+      </Button>
+    </Badge>
   );
 }
 
@@ -160,16 +145,16 @@ export function SearchBar({
     router.push("/");
   }
 
-  function toggleWhen(value: WhenFilter) {
-    const next = when === value ? undefined : value;
+  // A single ToggleGroup reports "" when its selected item is pressed again.
+  function handleWhenChange(value: string) {
+    const next = (value as WhenFilter) || undefined;
     setWhen(next);
     handleNavigate({ when: next });
   }
 
-  function toggleCategory(value: string) {
-    const next = category === value ? "" : value;
-    setCategory(next);
-    handleNavigate({ category: next });
+  function handleCategoryChange(value: string) {
+    setCategory(value);
+    handleNavigate({ category: value });
   }
 
   function handleTypeChange(value: string) {
@@ -184,35 +169,38 @@ export function SearchBar({
     <div className="relative w-full">
       {/* Search input row — z-40 keeps it above the backdrop */}
       <form onSubmit={handleSubmit} className="relative z-40">
-        <div className="relative">
-          <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2" />
-          <Input
+        <InputGroup className="bg-muted/60 h-10 rounded-full border-0 shadow-none has-[[data-slot=input-group-control]:focus-visible]:ring-0">
+          <InputGroupAddon>
+            <Search />
+          </InputGroupAddon>
+          <InputGroupInput
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onFocus={() => setOpen(true)}
             placeholder="Search events & churches…"
-            className="bg-muted/60 h-10 rounded-full border-0 pr-20 pl-9 text-sm focus-visible:ring-0"
           />
-          <div className="absolute top-1/2 right-1 flex -translate-y-1/2 items-center gap-1">
+          <InputGroupAddon align="inline-end" className="pr-1">
             {(query || hasActiveFilters) && (
-              <button
-                type="button"
+              <InputGroupButton
+                size="icon-xs"
                 onClick={handleClear}
-                className="text-muted-foreground hover:text-foreground flex size-7 items-center justify-center rounded-full hover:bg-black/5"
+                className="rounded-full"
                 aria-label="Clear search"
               >
-                <X className="size-3.5" />
-              </button>
+                <X />
+              </InputGroupButton>
             )}
-            <button
+            <InputGroupButton
               type="submit"
-              className="bg-primary text-primary-foreground flex size-8 items-center justify-center rounded-full"
+              variant="default"
+              size="icon-sm"
+              className="rounded-full"
               aria-label="Search"
             >
-              <Search className="size-4" />
-            </button>
-          </div>
-        </div>
+              <Search />
+            </InputGroupButton>
+          </InputGroupAddon>
+        </InputGroup>
       </form>
 
       {/* Active filter pills */}
@@ -237,11 +225,7 @@ export function SearchBar({
                     setCategory("");
                     handleNavigate({ category: "" });
                   }}
-                  colorClassName={
-                    colors
-                      ? `${colors.bg} ${colors.text}`
-                      : "bg-primary/10 text-primary"
-                  }
+                  className={colors && `${colors.bg} ${colors.text}`}
                 />
               );
             })()}
@@ -269,22 +253,32 @@ export function SearchBar({
 
       {/* Dropdown panel */}
       {open && (
-        <div className="border-border absolute top-full right-0 left-0 z-40 mt-1 flex flex-col gap-4 rounded-2xl border bg-white p-4 shadow-lg">
+        <div className="border-border bg-popover text-popover-foreground absolute top-full right-0 left-0 z-40 mt-1 flex flex-col gap-4 rounded-2xl border p-4 shadow-lg">
           {/* When */}
           <div>
             <p className="text-muted-foreground mb-2 text-xs font-semibold tracking-wide uppercase">
               When
             </p>
-            <div className="flex gap-2 overflow-x-auto pb-0.5">
+            <ToggleGroup
+              type="single"
+              value={when ?? ""}
+              onValueChange={handleWhenChange}
+              spacing={2}
+              className="w-full overflow-x-auto pb-0.5"
+            >
               {WHEN_OPTIONS.map((opt) => (
-                <FilterChip
+                <ToggleGroupItem
                   key={opt.value}
-                  label={opt.label}
-                  active={when === opt.value}
-                  onClick={() => toggleWhen(opt.value)}
-                />
+                  value={opt.value}
+                  className={cn(
+                    chipClassName,
+                    "data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+                  )}
+                >
+                  {opt.label}
+                </ToggleGroupItem>
               ))}
-            </div>
+            </ToggleGroup>
           </div>
 
           {/* Category */}
@@ -292,20 +286,23 @@ export function SearchBar({
             <p className="text-muted-foreground mb-2 text-xs font-semibold tracking-wide uppercase">
               Category
             </p>
-            <div className="flex flex-wrap gap-2">
-              {CATEGORY_OPTIONS.map((cat) => {
-                const colors = TAG_COLORS[cat];
-                return (
-                  <FilterChip
-                    key={cat}
-                    label={cat}
-                    active={category === cat}
-                    onClick={() => toggleCategory(cat)}
-                    activeClassName={`${colors.bg} ${colors.text}`}
-                  />
-                );
-              })}
-            </div>
+            <ToggleGroup
+              type="single"
+              value={category}
+              onValueChange={handleCategoryChange}
+              spacing={2}
+              className="flex-wrap"
+            >
+              {CATEGORY_OPTIONS.map((cat) => (
+                <ToggleGroupItem
+                  key={cat}
+                  value={cat}
+                  className={cn(chipClassName, TAG_COLORS[cat].on)}
+                >
+                  {cat}
+                </ToggleGroupItem>
+              ))}
+            </ToggleGroup>
           </div>
 
           {/* Type */}

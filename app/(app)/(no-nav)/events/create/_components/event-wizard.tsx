@@ -347,13 +347,18 @@ export function EventWizard({
       <div className="flex flex-col items-center gap-1">
         {published ? (
           hasUnsavedEdits && (
-            <Badge
-              variant="warning"
-              className="border-warning/20 gap-1.5 px-3 py-1 [&>svg]:size-3.5"
-            >
-              <CircleAlert />
-              Not live until you save on the last step
-            </Badge>
+            <>
+              <Badge
+                variant="warning"
+                className="border-warning/20 gap-1.5 px-3 py-1 [&>svg]:size-3.5"
+              >
+                <CircleAlert />
+                Unsaved changes
+              </Badge>
+              <p className="text-muted-foreground text-center text-xs">
+                Tap Save Changes on the Review step to update the event
+              </p>
+            </>
           )
         ) : (
           <>

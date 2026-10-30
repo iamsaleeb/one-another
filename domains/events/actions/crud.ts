@@ -45,8 +45,9 @@ export async function uncancelEventAction(id: string): Promise<void> {
   redirect(`/events/${id}`);
 }
 
-// Every wizard save, auto-save included. Whether the Event must be complete is
-// the lifecycle's call: a draft may be partial, a published Event may not.
+// Saves a draft, auto-save included. It never writes a published Event: those
+// change only through the wizard's explicit save, so half-typed edits don't
+// go live.
 export async function saveDraftAction(
   id: string | undefined,
   data: SaveDraftInput
@@ -57,16 +58,19 @@ export async function saveDraftAction(
   if (!parsed.success)
     return { fieldErrors: parsed.error.flatten().fieldErrors };
 
-  const input = { ...parsed.data, questions: parsed.data.questions ?? [] };
+  const input = {
+    ...parsed.data,
+    questions: parsed.data.questions ?? [],
+    isDraft: true,
+  };
 
   if (!id) {
-    const result = await createEvent({ ...input, isDraft: true });
+    const result = await createEvent(input);
     if ("error" in result || "fieldErrors" in result) return result;
     return { eventId: result.id };
   }
 
-  // An omitted isDraft keeps the Event's current state; auto-save on a
-  // published Event must not unpublish it.
+  // isDraft: true makes the lifecycle refuse an Event that is already published.
   const result = await saveEvent(id, input);
   if ("error" in result || "fieldErrors" in result) return result;
   return { eventId: id };

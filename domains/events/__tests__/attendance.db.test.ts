@@ -103,6 +103,25 @@ describe("attendEvent", () => {
     expect(await pending("EVENT_REMINDER")).toEqual([]);
   });
 
+  it("refuses an Event that has ended but not one that is Live", async () => {
+    const hourAgo = new Date(Date.now() - 60 * 60_000);
+    await prisma.event.update({
+      where: { id: "e1" },
+      data: { datetime: hourAgo, endDatetime: new Date(Date.now() - 60_000) },
+    });
+
+    expect(await attendEvent("e1", {}, as("u1"))).toEqual({
+      error: "This event has ended.",
+    });
+    expect(await attendees()).toEqual([]);
+
+    await prisma.event.update({
+      where: { id: "e1" },
+      data: { endDatetime: new Date(Date.now() + 60 * 60_000) },
+    });
+    expect(await attendEvent("e1", {}, as("u1"))).toEqual({});
+  });
+
   it("adds the Attendee with a reminder at their preferred time", async () => {
     await prisma.notificationPreference.create({
       data: {
@@ -349,6 +368,26 @@ describe("attendEvent on an Event that requires registration", () => {
       const [attendee] = await attendees();
       expect(attendee.metadata).toEqual({
         selectedDays: ["2030-06-01", "2030-06-03"],
+      });
+    });
+
+    it("takes the camp's days in its timezone", async () => {
+      await makeRegistrationEvent(null, camp);
+      // 10:00 UTC on 1 June to 15:00 UTC on 3 June is 1 to 4 June in Auckland.
+      await prisma.event.update({
+        where: { id: "e1" },
+        data: { timezone: "Pacific/Auckland" },
+      });
+
+      await attendEvent(
+        "e1",
+        { selectedDays: ["2030-06-01", "2030-06-04"] },
+        as("u1")
+      );
+
+      const [attendee] = await attendees();
+      expect(attendee.metadata).toEqual({
+        selectedDays: ["2030-06-01", "2030-06-04"],
       });
     });
 

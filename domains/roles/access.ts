@@ -1,15 +1,21 @@
 import "server-only";
 
 import { revalidatePath, updateTag } from "next/cache";
-import type {
-  AccessRequestStatus,
-  ChurchRole,
-  EventRole,
-  Prisma,
-  ResourceType,
-  SeriesRole,
+import {
+  NotificationType,
+  type AccessRequestStatus,
+  type ChurchRole,
+  type EventRole,
+  type Prisma,
+  type ResourceType,
+  type SeriesRole,
 } from "@prisma/client";
 import { prisma, type Db } from "@/lib/db";
+import {
+  cancelManyNotifications,
+  queueNotification,
+  queueNotificationForUsers,
+} from "@/domains/notifications/queue";
 import { RESOURCE_PATHS } from "@/domains/access-requests/lib/constants";
 import { accessRequestTags } from "@/domains/access-requests/lib/tags";
 import {
@@ -297,7 +303,162 @@ const REQUEST = {
   seriesId: true,
   churchId: true,
   gaveGrant: true,
+  updatedAt: true,
 } as const;
+
+// ---------------------------------------------------------------------------
+// Notifications
+//
+// Whoever may review a request hears that it was made, and the requester
+// hears how it was decided. Each is queued in the change's transaction.
+
+// One asking: a request asked again after a decision is news again.
+const askingKey = (request: { id: string; updatedAt: Date }) =>
+  `${request.id}:${request.updatedAt.getTime()}`;
+
+async function nameOf(db: Db, r: AccessResource): Promise<string> {
+  switch (r.type) {
+    case "EVENT":
+      return (
+        (
+          await db.event.findUnique({
+            where: { id: r.id },
+            select: { title: true },
+          })
+        )?.title ?? "an event"
+      );
+    case "SERIES":
+      return (
+        (
+          await db.series.findUnique({
+            where: { id: r.id },
+            select: { name: true },
+          })
+        )?.name ?? "a series"
+      );
+    case "CHURCH":
+      return (
+        (
+          await db.church.findUnique({
+            where: { id: r.id },
+            select: { name: true },
+          })
+        )?.name ?? "a church"
+      );
+  }
+}
+
+// Everyone who may manage the resource's Helpers, other than the requester:
+// candidates hold a Grant on it or on the Series or Church above it, and the
+// Ability decides. Platform admins hear only when nobody else can review.
+async function reviewerIds(
+  db: Db,
+  r: AccessResource,
+  subject: Subject,
+  requesterId: string
+): Promise<string[]> {
+  const home = subject as { id: string; churchId?: string; seriesId?: string };
+  const churchId = r.type === "CHURCH" ? r.id : home.churchId;
+  const seriesId = r.type === "SERIES" ? r.id : home.seriesId;
+  const eventId = r.type === "EVENT" ? r.id : undefined;
+
+  const candidates = await db.user.findMany({
+    where: {
+      id: { not: requesterId },
+      OR: [
+        { churchMemberships: { some: { churchId } } },
+        ...(seriesId ? [{ seriesStaff: { some: { seriesId } } }] : []),
+        ...(eventId ? [{ eventStaff: { some: { eventId } } }] : []),
+      ],
+    },
+    select: { id: true },
+  });
+  const reviewers: string[] = [];
+  for (const { id } of candidates) {
+    if (buildAbility(await loadGrants(id)).can(MANAGE_HELPERS[r.type], subject))
+      reviewers.push(id);
+  }
+  if (reviewers.length > 0) return reviewers;
+
+  const admins = await db.platformRoleAssignment.findMany({
+    where: { role: "PLATFORM_ADMIN", userId: { not: requesterId } },
+    select: { userId: true },
+  });
+  return admins.map((a) => a.userId);
+}
+
+async function notifyReviewers(
+  db: Db,
+  r: AccessResource,
+  subject: Subject,
+  request: { id: string; updatedAt: Date; requesterId: string }
+) {
+  const [requester, name] = await Promise.all([
+    db.user.findUnique({
+      where: { id: request.requesterId },
+      select: { name: true },
+    }),
+    nameOf(db, r),
+  ]);
+  await queueNotificationForUsers(
+    await reviewerIds(db, r, subject, request.requesterId),
+    {
+      type: NotificationType.ROLE_REQUEST_RECEIVED,
+      title: "New helper request",
+      body: `${requester?.name ?? "Someone"} asked to help with ${name}.`,
+      data: {
+        type: "access_request",
+        url: `/${RESOURCE_PATHS[r.type]}/${r.id}/helpers/${request.id}`,
+      },
+      dedupeKey: askingKey(request),
+    },
+    db
+  );
+}
+
+// The request is no longer waiting: reviewers who have not heard yet won't.
+async function withdrawFromReviewers(
+  db: Db,
+  request: { id: string; updatedAt: Date }
+) {
+  await cancelManyNotifications(
+    {
+      type: NotificationType.ROLE_REQUEST_RECEIVED,
+      dedupeKey: askingKey(request),
+    },
+    db
+  );
+}
+
+async function notifyOutcome(
+  db: Db,
+  r: AccessResource,
+  request: { id: string; updatedAt: Date; requesterId: string },
+  decision: "APPROVED" | "DENIED"
+) {
+  const name = await nameOf(db, r);
+  await queueNotification(
+    {
+      userId: request.requesterId,
+      type: NotificationType.ROLE_REQUEST_OUTCOME,
+      ...(decision === "APPROVED"
+        ? {
+            title: "Request approved",
+            body: `You can now help with ${name}.`,
+          }
+        : {
+            title: "Request declined",
+            body: `Your request to help with ${name} was declined.`,
+          }),
+      data: {
+        type: "access_request",
+        url: `/${RESOURCE_PATHS[r.type]}/${r.id}`,
+      },
+      dedupeKey: askingKey(request),
+    },
+    db
+  );
+}
 
 // ---------------------------------------------------------------------------
 // Stale pages
@@ -356,7 +517,7 @@ export async function requestAccess(
       return { error: "You already have a pending request." };
 
     const requestedRole = REQUESTED_ROLE[resource.type];
-    await tx.accessRequest.upsert({
+    const request = await tx.accessRequest.upsert({
       where: key,
       create: {
         requesterId: userId,
@@ -373,7 +534,9 @@ export async function requestAccess(
         reviewedAt: null,
         gaveGrant: false,
       },
+      select: { id: true, updatedAt: true, requesterId: true },
     });
+    await notifyReviewers(tx, resource, subject, request);
     return { resource, userId };
   });
 }
@@ -398,6 +561,7 @@ export async function cancelAccessRequest(
       data: { status: "CANCELLED", reviewedAt: new Date() },
     });
     if (count === 0) return { error: "Request is not pending." };
+    await withdrawFromReviewers(tx, request);
 
     return { resource: resourceOf(request), userId, requestId };
   });
@@ -431,6 +595,8 @@ export async function reviewAccessRequest(
       data: { status: decision, reviewedBy: userId, reviewedAt: new Date() },
     });
     if (count === 0) return { error: "Request was already processed." };
+    await withdrawFromReviewers(tx, request);
+    await notifyOutcome(tx, resource, request, decision);
 
     if (decision === "APPROVED") {
       // Nothing to give when the requester can already do what the role is

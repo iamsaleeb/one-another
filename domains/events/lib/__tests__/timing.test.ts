@@ -1,4 +1,4 @@
-import { hasHappened, isLive } from "../timing";
+import { hasEnded, hasHappened, isLive } from "../timing";
 
 const START = new Date("2030-06-01T10:00:00.000Z");
 const END = new Date("2030-06-01T12:00:00.000Z");
@@ -36,5 +36,22 @@ describe("isLive", () => {
 
   it("is never true without an end", () => {
     expect(isLive({ ...event, endDatetime: null }, at("11:00"))).toBe(false);
+  });
+});
+
+describe("hasEnded", () => {
+  it("is true once a published Event's end has passed", () => {
+    expect(hasEnded(event, at("11:59"))).toBe(false);
+    expect(hasEnded(event, at("12:00"))).toBe(true);
+  });
+
+  it("falls back to the start without an end", () => {
+    const noEnd = { ...event, endDatetime: null };
+    expect(hasEnded(noEnd, at("09:59"))).toBe(false);
+    expect(hasEnded(noEnd, at("10:00"))).toBe(true);
+  });
+
+  it("is never true of a draft", () => {
+    expect(hasEnded({ ...event, isDraft: true }, at("13:00"))).toBe(false);
   });
 });

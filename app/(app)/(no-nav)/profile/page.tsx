@@ -4,13 +4,12 @@ import Link from "next/link";
 import { auth } from "@/auth";
 import { getProfileUser } from "@/domains/profile/actions/data";
 import { loadGrants } from "@/domains/roles/lib/grants";
-import { signOutAction } from "@/domains/auth/actions/auth";
+import { SignOutButton } from "@/domains/auth/components/sign-out-button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Bell,
   CalendarDays,
   ChevronRight,
-  LogOut,
   Phone,
   ScrollText,
   Settings,
@@ -204,18 +203,7 @@ export default async function ProfilePage() {
           <ItemGroup>
             <SectionHeader icon={UserCog}>Account</SectionHeader>
             <ItemSeparator />
-            <form action={signOutAction}>
-              <Item size="sm" className="w-full rounded-none" asChild>
-                <button type="submit">
-                  <ItemMedia>
-                    <LogOut className="text-primary size-3.5" />
-                  </ItemMedia>
-                  <ItemContent>
-                    <ItemTitle>Sign out</ItemTitle>
-                  </ItemContent>
-                </button>
-              </Item>
-            </form>
+            <SignOutButton />
             <ItemSeparator />
             <LinkItem
               href="/profile/account"

@@ -4,34 +4,16 @@ import { cacheTag, cacheLife } from "next/cache";
 import { prisma } from "@/lib/db";
 import { upcomingPublicEvents } from "@/domains/events/lib/visibility";
 import type { Prisma } from "@prisma/client";
-import { startOfDay, endOfDay, addDays, getDay } from "date-fns";
 import type { WhenFilter, TypeFilter } from "@/lib/types/search";
+import { whenRange } from "@/lib/search-range";
 
 export interface SearchFilters {
   query: string;
   type?: TypeFilter;
   category?: string;
   when?: WhenFilter;
-}
-
-function getDateRange(when: WhenFilter): { gte: Date; lte: Date } {
-  const now = new Date();
-  if (when === "today") {
-    return { gte: startOfDay(now), lte: endOfDay(now) };
-  }
-  if (when === "tomorrow") {
-    const tomorrow = addDays(now, 1);
-    return { gte: startOfDay(tomorrow), lte: endOfDay(tomorrow) };
-  }
-  // weekend: next Saturday + Sunday
-  const day = getDay(now); // 0=Sun, 6=Sat
-  let daysUntilSat: number;
-  if (day === 6) daysUntilSat = 0;
-  else if (day === 0) daysUntilSat = 6;
-  else daysUntilSat = 6 - day;
-  const saturday = addDays(now, daysUntilSat);
-  const sunday = addDays(saturday, 1);
-  return { gte: startOfDay(saturday), lte: endOfDay(sunday) };
+  // The searcher's IANA timezone, which "today" and "this weekend" are in.
+  timeZone?: string;
 }
 
 // TTL policy: profile → hours | notification preferences → minutes | search → minutes
@@ -78,8 +60,7 @@ export async function searchEventsAndChurches(filters: SearchFilters) {
     eventWhere.tag = { equals: category, mode: "insensitive" };
   }
   if (when) {
-    const { gte, lte } = getDateRange(when);
-    eventWhere.datetime = { gte, lte };
+    eventWhere.datetime = whenRange(when, filters.timeZone);
   }
 
   const churchWhere: Prisma.ChurchWhereInput = {};

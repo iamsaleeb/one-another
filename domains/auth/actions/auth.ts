@@ -4,7 +4,11 @@ import { signIn, signOut, auth } from "@/auth";
 import { AuthError } from "next-auth";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
-import { requestOtpSchema, type RequestOtpInput } from "../validations/auth";
+import {
+  emailSchema,
+  requestOtpSchema,
+  type RequestOtpInput,
+} from "../validations/auth";
 import type { ActionResult } from "@/lib/types/action";
 import { generateOtp, storeOtp, isOtpRateLimited } from "../email/otp";
 import { sendLoginOtp } from "../email/send-login-otp";
@@ -52,12 +56,13 @@ export async function verifyOtpAction(
   otp: string,
   callbackUrl?: string
 ): Promise<ActionResult> {
-  const emailParsed = z.email().safeParse(email);
+  const emailParsed = emailSchema.safeParse(email);
   if (!emailParsed.success) {
     return { error: "Invalid request." };
   }
+  const normalised = emailParsed.data;
 
-  const rateLimited = await isOtpRateLimited(`verify:${email}`, 10);
+  const rateLimited = await isOtpRateLimited(`verify:${normalised}`, 10);
   if (rateLimited) {
     return { error: "Too many requests. Please wait before trying again." };
   }
@@ -67,7 +72,11 @@ export async function verifyOtpAction(
       ? callbackUrl
       : "/";
   try {
-    await signIn("otp", { email, otp, redirectTo: safeRedirect });
+    await signIn("otp", {
+      email: normalised,
+      otp,
+      redirectTo: safeRedirect,
+    });
   } catch (error) {
     if (error instanceof AuthError) {
       return { error: "Sign-in failed. Please try again." };
@@ -78,7 +87,16 @@ export async function verifyOtpAction(
   return {};
 }
 
-export async function signOutAction() {
+// `pushToken` is this device's push token, if it has one: the device stops
+// getting the user's notifications once they have signed out of it. Their
+// other devices keep theirs.
+export async function signOutAction(pushToken?: string) {
+  const session = await auth();
+  if (session?.user?.id && typeof pushToken === "string" && pushToken) {
+    await prisma.pushToken.deleteMany({
+      where: { token: pushToken, userId: session.user.id },
+    });
+  }
   await signOut({ redirectTo: "/login" });
 }
 

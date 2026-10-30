@@ -26,6 +26,7 @@ jest.mock("@/lib/db", () => ({
       update: jest.fn(),
       delete: jest.fn(),
     },
+    pushToken: { deleteMany: jest.fn() },
   },
 }));
 
@@ -113,6 +114,16 @@ describe("requestOtpAction", () => {
       create: { email: "new@example.com" },
       update: {},
     });
+  });
+
+  it("trims and lowercases the email, so one address is one account", async () => {
+    await requestOtpAction({ email: "  New@Example.COM " });
+    expect(mockUpsert).toHaveBeenCalledWith({
+      where: { email: "new@example.com" },
+      create: { email: "new@example.com" },
+      update: {},
+    });
+    expect(mockStoreOtp).toHaveBeenCalledWith("auth:new@example.com", "123456");
   });
 
   it("stores OTP under auth: key", async () => {
@@ -211,6 +222,25 @@ describe("verifyOtpAction", () => {
     });
   });
 
+  it("signs in with the lowercased email", async () => {
+    mockSignIn.mockImplementation(() => {
+      throw Object.assign(new Error("NEXT_REDIRECT"), {
+        digest: "NEXT_REDIRECT",
+      });
+    });
+    try {
+      await verifyOtpAction("User@Example.com", "123456");
+    } catch {}
+    expect(mockIsOtpRateLimited).toHaveBeenCalledWith(
+      "verify:user@example.com",
+      10
+    );
+    expect(mockSignIn).toHaveBeenCalledWith(
+      "otp",
+      expect.objectContaining({ email: "user@example.com" })
+    );
+  });
+
   it("calls signIn with provided callbackUrl as redirectTo", async () => {
     mockSignIn.mockImplementation(() => {
       throw Object.assign(new Error("NEXT_REDIRECT"), {
@@ -258,6 +288,23 @@ describe("signOutAction", () => {
       await signOutAction();
     } catch {}
     expect(mockSignOut).toHaveBeenCalledWith({ redirectTo: "/login" });
+  });
+
+  it("withdraws this device's push token for the signed-in user", async () => {
+    mockAuth.mockResolvedValue({ user: { id: "u1" } });
+    mockSignOut.mockResolvedValue(undefined);
+    await signOutAction("device-token");
+    expect(prisma.pushToken.deleteMany).toHaveBeenCalledWith({
+      where: { token: "device-token", userId: "u1" },
+    });
+    expect(mockSignOut).toHaveBeenCalledWith({ redirectTo: "/login" });
+  });
+
+  it("touches no token without one", async () => {
+    mockAuth.mockResolvedValue({ user: { id: "u1" } });
+    mockSignOut.mockResolvedValue(undefined);
+    await signOutAction();
+    expect(prisma.pushToken.deleteMany).not.toHaveBeenCalled();
   });
 });
 

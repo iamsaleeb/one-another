@@ -15,6 +15,7 @@ import {
   makeEvent,
   makeSeries,
   makeUser,
+  pending,
 } from "@/test/db/factories";
 import {
   cancelAccessRequest,
@@ -442,5 +443,84 @@ describe("an Access request belongs to its resource", () => {
         },
       })
     ).rejects.toThrow();
+  });
+});
+
+describe("Access request notifications", () => {
+  const received = () =>
+    pending("ROLE_REQUEST_RECEIVED").then((rows) =>
+      rows.map((n) => ({ userId: n.userId, body: n.body, data: n.data }))
+    );
+
+  beforeEach(async () => {
+    await prisma.user.update({ where: { id: "u1" }, data: { name: "Ann" } });
+  });
+
+  it("tells whoever may review a request, and not the requester", async () => {
+    // u2 manages e1 itself; the Church admin manages every Event in c1.
+    await prisma.eventStaffAssignment.create({
+      data: { userId: "u2", eventId: "e1", role: "EVENT_MANAGER" },
+    });
+    const id = await pendingRequest();
+
+    expect(await received()).toEqual(
+      ["admin", "u2"].map((userId) => ({
+        userId,
+        body: "Ann asked to help with Event e1.",
+        data: { type: "access_request", url: `/events/e1/helpers/${id}` },
+      }))
+    );
+  });
+
+  it("does not tell Helpers who may not review", async () => {
+    await prisma.eventStaffAssignment.create({
+      data: { userId: "u2", eventId: "e1", role: "EVENT_EDITOR" },
+    });
+    await pendingRequest();
+
+    expect((await received()).map((n) => n.userId)).toEqual(["admin"]);
+  });
+
+  it("tells platform admins only when nobody else can review", async () => {
+    await prisma.platformRoleAssignment.create({
+      data: { userId: "u2", role: "PLATFORM_ADMIN" },
+    });
+    await pendingRequest({ type: "CHURCH", id: "c2" });
+
+    expect((await received()).map((n) => n.userId)).toEqual(["u2"]);
+  });
+
+  it("withdraws the news once the request is withdrawn", async () => {
+    const id = await pendingRequest();
+    await cancelAccessRequest(id, as("u1"));
+
+    expect(await received()).toEqual([]);
+  });
+
+  it("tells the requester the decision, and reviewers stop hearing", async () => {
+    const id = await pendingRequest();
+    await reviewAccessRequest(id, "APPROVED", admin());
+
+    expect(await received()).toEqual([]);
+    expect(await pending("ROLE_REQUEST_OUTCOME")).toMatchObject([
+      {
+        userId: "u1",
+        title: "Request approved",
+        body: "You can now help with Event e1.",
+        data: { type: "access_request", url: "/events/e1" },
+      },
+    ]);
+  });
+
+  it("tells reviewers again when a declined request is asked anew", async () => {
+    const id = await pendingRequest();
+    await reviewAccessRequest(id, "DENIED", admin());
+    expect(await pending("ROLE_REQUEST_OUTCOME")).toMatchObject([
+      { userId: "u1", title: "Request declined" },
+    ]);
+
+    await requestAccess(E1, "Please", as("u1"));
+
+    expect((await received()).map((n) => n.userId)).toEqual(["admin"]);
   });
 });

@@ -74,6 +74,8 @@ model VerificationToken {
   identifier String
   token      String
   expires    DateTime
+  // Wrong guesses at a sign-in code. The code is spent after a few.
+  attempts   Int      @default(0)
 
   @@id([identifier, token])
   @@map("verification_tokens")
@@ -153,6 +155,9 @@ model Event {
   id                   String                 @id @default(cuid())
   datetime             DateTime?
   endDatetime          DateTime?              @map("end_datetime")
+  // The IANA zone its organiser entered the dates in, e.g. Australia/Sydney.
+  // Its calendar days (a camp's days, agenda dates) are taken in this zone.
+  timezone             String?
   title                String
   location             String?
   host                 String?

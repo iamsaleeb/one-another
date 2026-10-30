@@ -3,6 +3,7 @@ import { PrismaAdapter } from "@auth/prisma-adapter";
 import Credentials from "next-auth/providers/credentials";
 import { prisma } from "@/lib/db";
 import { verifyOtp } from "@/domains/auth/email/otp";
+import { emailSchema } from "@/domains/auth/validations/auth";
 import { authConfig } from "./auth.config";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
@@ -18,9 +19,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       id: "otp",
       credentials: { email: {}, otp: {} },
       async authorize(credentials) {
-        const email = credentials?.email as string | undefined;
-        const otp = credentials?.otp as string | undefined;
-        if (!email || !otp) return null;
+        // The sign-in endpoint can be called directly, so it parses its own
+        // input rather than trusting verifyOtpAction's.
+        const parsed = emailSchema.safeParse(credentials?.email);
+        const otp = credentials?.otp;
+        if (!parsed.success || typeof otp !== "string") return null;
+        const email = parsed.data;
         const valid = await verifyOtp(`auth:${email}`, otp);
         if (!valid) return null;
         return prisma.user

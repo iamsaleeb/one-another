@@ -1,30 +1,44 @@
 import crypto from "crypto";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 
 const RATE_LIMIT_TTL_SECONDS = 60;
 
+// Wrong guesses a sign-in code takes before it is spent.
+export const MAX_OTP_ATTEMPTS = 5;
+
+// One request per identifier per window. The window is a row keyed by the
+// identifier, so of two requests at once only one can create it.
 export async function isOtpRateLimited(
   identifier: string,
   ttlSeconds = RATE_LIMIT_TTL_SECONDS
 ): Promise<boolean> {
   const key = `ratelimit:${identifier}`;
-  const existing = await prisma.verificationToken.findFirst({
-    where: { identifier: key, expires: { gt: new Date() } },
-    select: { expires: true },
+  const now = new Date();
+  await prisma.verificationToken.deleteMany({
+    where: { identifier: key, expires: { lte: now } },
   });
-  if (existing) return true;
-  const expires = new Date(Date.now() + ttlSeconds * 1000);
-  await prisma.$transaction([
-    prisma.verificationToken.deleteMany({ where: { identifier: key } }),
-    prisma.verificationToken.create({
-      data: { identifier: key, token: "rate-limit", expires },
-    }),
-  ]);
-  return false;
+  try {
+    await prisma.verificationToken.create({
+      data: {
+        identifier: key,
+        token: "rate-limit",
+        expires: new Date(now.getTime() + ttlSeconds * 1000),
+      },
+    });
+    return false;
+  } catch (err) {
+    if (
+      err instanceof Prisma.PrismaClientKnownRequestError &&
+      err.code === "P2002"
+    )
+      return true;
+    throw err;
+  }
 }
 
 export function generateOtp(): string {
-  return crypto.randomInt(100000, 999999).toString();
+  return crypto.randomInt(100000, 1000000).toString();
 }
 
 function hashOtp(otp: string): string {
@@ -47,15 +61,29 @@ export async function storeOtp(
   ]);
 }
 
+// Every caller that checks a code comes through here, the sign-in endpoint
+// included, so the attempt limit cannot be skipped.
 export async function verifyOtp(
   identifier: string,
   otp: string
 ): Promise<boolean> {
+  // Each guess claims one of the code's attempts before it is compared, so
+  // guesses sent at once cannot share an attempt.
+  const { count } = await prisma.verificationToken.updateMany({
+    where: {
+      identifier,
+      expires: { gt: new Date() },
+      attempts: { lt: MAX_OTP_ATTEMPTS },
+    },
+    data: { attempts: { increment: 1 } },
+  });
+  if (count === 0) return false;
+
   const record = await prisma.verificationToken.findFirst({
     where: { identifier },
     orderBy: { expires: "desc" },
   });
-  if (!record || record.expires < new Date()) return false;
+  if (!record) return false;
 
   // Constant-time comparison to prevent timing attacks
   const expected = Buffer.from(record.token, "hex");

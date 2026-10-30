@@ -82,14 +82,41 @@ export function parseDateOfBirth(dateStr: string): Date {
 /** Subtract hours from a Date — replaces raw getTime() arithmetic. */
 export { subHours };
 
+/** True when `timeZone` is an IANA zone this runtime knows, e.g. "Australia/Sydney". */
+export function isValidTimeZone(timeZone: string): boolean {
+  try {
+    new Intl.DateTimeFormat("en", { timeZone });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** The calendar day (YYYY-MM-DD) `date` falls on in `timeZone`. */
+export function dayInTimeZone(date: Date, timeZone: string): string {
+  // en-CA formats dates as YYYY-MM-DD.
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(date);
+}
+
 /**
  * Returns the calendar days (YYYY-MM-DD) an Event spans, from its start to its
- * end inclusive. Days are taken in UTC, so they match on server and client.
+ * end inclusive, as they fall in the Event's timezone (UTC when it has none or
+ * an unknown one). They match on server and client.
  */
-export function getEventDays(start: Date, endAt: Date): string[] {
+export function getEventDays(
+  start: Date,
+  endAt: Date,
+  timeZone?: string | null
+): string[] {
+  const zone = timeZone && isValidTimeZone(timeZone) ? timeZone : "UTC";
   const days: string[] = [];
-  const current = new Date(`${start.toISOString().slice(0, 10)}T12:00:00.000Z`);
-  const end = new Date(`${endAt.toISOString().slice(0, 10)}T12:00:00.000Z`);
+  const current = new Date(`${dayInTimeZone(start, zone)}T12:00:00.000Z`);
+  const end = new Date(`${dayInTimeZone(endAt, zone)}T12:00:00.000Z`);
   while (current <= end) {
     days.push(current.toISOString().slice(0, 10));
     current.setUTCDate(current.getUTCDate() + 1);
@@ -101,6 +128,7 @@ export function getEventDays(start: Date, endAt: Date): string[] {
 export function formatDayLabel(isoDate: string): string {
   const d = new Date(`${isoDate}T12:00:00.000Z`);
   return d.toLocaleDateString("en", {
+    timeZone: "UTC",
     weekday: "long",
     day: "numeric",
     month: "long",
@@ -111,6 +139,7 @@ export function formatDayLabel(isoDate: string): string {
 export function formatDayShort(isoDate: string): string {
   const d = new Date(`${isoDate}T12:00:00.000Z`);
   return d.toLocaleDateString("en", {
+    timeZone: "UTC",
     weekday: "short",
     day: "numeric",
     month: "short",

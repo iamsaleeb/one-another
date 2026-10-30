@@ -25,3 +25,14 @@ export function isLive(
     now < event.endDatetime
   );
 }
+
+// An Event has ended once its end has passed, or its start when it has no
+// end. From then on nobody can join it.
+export function hasEnded(
+  event: Timed & { endDatetime: Date | null },
+  now = new Date()
+): boolean {
+  if (event.isDraft) return false;
+  const end = event.endDatetime ?? event.datetime;
+  return !!end && end <= now;
+}

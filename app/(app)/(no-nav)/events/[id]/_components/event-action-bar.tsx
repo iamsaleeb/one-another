@@ -23,6 +23,8 @@ interface EventActionBarProps {
   price?: string | null;
   isCancelled?: boolean;
   isDraft?: boolean;
+  // Over: nobody can join it any more.
+  isEnded?: boolean;
   isAuthenticated: boolean;
   attendees?: Awaited<ReturnType<typeof getEventAttendees>>;
   // The days a camp open to partial attendance can be attended; empty otherwise.
@@ -48,6 +50,7 @@ export function EventActionBar({
   price,
   isCancelled,
   isDraft,
+  isEnded,
   isAuthenticated,
   attendees,
   campDays,
@@ -116,8 +119,15 @@ export function EventActionBar({
               </Button>
             )}
 
+            {!isCancelled && !isDraft && isEnded && (
+              <Button variant="outline" disabled>
+                Event ended
+              </Button>
+            )}
+
             {!isCancelled &&
               !isDraft &&
+              !isEnded &&
               (requiresRegistration ? (
                 <Button
                   onClick={handleRegisterClick}

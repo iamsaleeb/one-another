@@ -62,13 +62,13 @@ describe("saveDraftAction", () => {
     );
   });
 
-  it("saves an existing Event without choosing its draft state", async () => {
+  it("saves an existing Event as a draft, even when asked to publish", async () => {
     mocked.saveEvent.mockResolvedValue({});
 
-    const result = await saveDraftAction("evt-1", draft);
+    const result = await saveDraftAction("evt-1", { ...draft, isDraft: false });
 
     expect(result).toEqual({ eventId: "evt-1" });
-    expect(mocked.saveEvent.mock.calls[0][1].isDraft).toBeUndefined();
+    expect(mocked.saveEvent.mock.calls[0][1].isDraft).toBe(true);
   });
 
   it("passes lifecycle errors through", async () => {

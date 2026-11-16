@@ -1,4 +1,3 @@
-// lib/actions/data-questions.ts
 "use cache: remote";
 
 import { cacheTag, cacheLife } from "next/cache";

@@ -1,3 +1,4 @@
+import { z } from "zod";
 import {
   createEventSchema,
   parseEventMetadata,
@@ -34,7 +35,7 @@ describe("createEventSchema", () => {
     const result = createEventSchema.safeParse({ ...validInput, title: "" });
     expect(result.success).toBe(false);
     if (!result.success)
-      expect(result.error.flatten().fieldErrors.title).toBeDefined();
+      expect(z.flattenError(result.error).fieldErrors.title).toBeDefined();
   });
 
   it("rejects an empty date", () => {

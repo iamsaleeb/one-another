@@ -29,7 +29,7 @@ export interface LibraryItem {
 
 export const questionSchema = z.object({
   id: z.string().optional(),
-  type: z.nativeEnum(QuestionType),
+  type: z.enum(QuestionType),
   label: z.string().min(1, "Question text is required"),
   options: z.array(z.string().min(1)).default([]),
   required: z.boolean().default(false),

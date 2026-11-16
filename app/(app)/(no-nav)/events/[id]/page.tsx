@@ -24,7 +24,7 @@ import {
 import {
   getEventQuestions,
   getMyResponses,
-} from "@/domains/events/questions/actions";
+} from "@/domains/events/questions/data";
 import {
   parseEventMetadata,
   parseEventAttendeeMetadata,

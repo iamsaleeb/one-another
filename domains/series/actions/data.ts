@@ -4,8 +4,11 @@ import { cacheTag, cacheLife } from "next/cache";
 import { prisma } from "@/lib/db";
 import { upcomingPublicEvents } from "@/domains/events/lib/visibility";
 
+// Lists count upcoming Events, which change as time passes as well as on
+// writes, so they expire within minutes like the Event lists.
 export async function getSeries() {
   cacheTag("series");
+  cacheLife("minutes");
   return prisma.series.findMany({
     orderBy: { createdAt: "desc" },
     include: {
@@ -46,6 +49,7 @@ export async function getMySeriesFollow(seriesId: string, userId: string) {
 
 export async function getSeriesNotByCreator(userId: string) {
   cacheTag("series");
+  cacheLife("minutes");
   return prisma.series.findMany({
     where: {
       OR: [{ createdById: { not: userId } }, { createdById: null }],
@@ -65,6 +69,7 @@ export async function getSeriesNotByCreator(userId: string) {
 
 export async function getUserFollowedSeries(userId: string) {
   cacheTag("series", `user-series-${userId}`);
+  cacheLife("minutes");
   return prisma.series.findMany({
     where: { followers: { some: { userId } } },
     orderBy: { createdAt: "desc" },
@@ -78,8 +83,10 @@ export async function getUserFollowedSeries(userId: string) {
   });
 }
 
+// Name and Church only; edits invalidate `series-${id}`.
 export async function getSeriesForEvent(seriesId: string) {
   cacheTag("series", `series-${seriesId}`);
+  cacheLife("hours");
   return prisma.series.findUnique({
     where: { id: seriesId },
     select: {

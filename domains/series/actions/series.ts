@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { z } from "zod";
 import { getSessionUserId } from "@/domains/roles/lib/get-ability";
 import {
   createSeriesSchema,
@@ -24,7 +25,7 @@ export async function createSeriesAction(
 
   const parsed = createSeriesSchema.safeParse(data);
   if (!parsed.success)
-    return { fieldErrors: parsed.error.flatten().fieldErrors };
+    return { fieldErrors: z.flattenError(parsed.error).fieldErrors };
 
   const result = await createSeries(parsed.data);
   if ("error" in result || "fieldErrors" in result) return result;
@@ -40,7 +41,7 @@ export async function updateSeriesAction(
 
   const parsed = updateSeriesSchema.safeParse(data);
   if (!parsed.success)
-    return { fieldErrors: parsed.error.flatten().fieldErrors };
+    return { fieldErrors: z.flattenError(parsed.error).fieldErrors };
 
   const result = await saveSeries(id, parsed.data);
   if ("error" in result || "fieldErrors" in result) return result;

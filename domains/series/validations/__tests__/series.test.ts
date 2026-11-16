@@ -1,3 +1,4 @@
+import { z } from "zod";
 import { createSeriesSchema } from "@/domains/series/validations/series";
 
 const validInput = {
@@ -33,7 +34,7 @@ describe("createSeriesSchema", () => {
     const result = createSeriesSchema.safeParse(withoutChurch);
     expect(result.success).toBe(false);
     if (!result.success)
-      expect(result.error.flatten().fieldErrors.churchId).toBeDefined();
+      expect(z.flattenError(result.error).fieldErrors.churchId).toBeDefined();
   });
 
   it("rejects an empty churchId", () => {
@@ -43,14 +44,14 @@ describe("createSeriesSchema", () => {
     });
     expect(result.success).toBe(false);
     if (!result.success)
-      expect(result.error.flatten().fieldErrors.churchId).toBeDefined();
+      expect(z.flattenError(result.error).fieldErrors.churchId).toBeDefined();
   });
 
   it("rejects an empty name", () => {
     const result = createSeriesSchema.safeParse({ ...validInput, name: "" });
     expect(result.success).toBe(false);
     if (!result.success)
-      expect(result.error.flatten().fieldErrors.name).toBeDefined();
+      expect(z.flattenError(result.error).fieldErrors.name).toBeDefined();
   });
 
   it("rejects an empty description", () => {
@@ -68,7 +69,7 @@ describe("createSeriesSchema", () => {
     });
     expect(result.success).toBe(false);
     if (!result.success)
-      expect(result.error.flatten().fieldErrors.cadence).toBeDefined();
+      expect(z.flattenError(result.error).fieldErrors.cadence).toBeDefined();
   });
 
   it("rejects an empty location", () => {

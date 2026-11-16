@@ -7,7 +7,6 @@ export const NOTIFICATION_TYPES: Record<
   {
     label: string;
     description: string;
-    defaultEnabled: boolean;
     config?: {
       hoursBeforeEvent: {
         label: string;
@@ -21,7 +20,6 @@ export const NOTIFICATION_TYPES: Record<
   [NotificationType.EVENT_REMINDER]: {
     label: "Event Reminders",
     description: "Get notified before events you're attending start",
-    defaultEnabled: true,
     config: {
       hoursBeforeEvent: {
         label: "How far in advance",
@@ -40,22 +38,18 @@ export const NOTIFICATION_TYPES: Record<
     label: "New Series Sessions",
     description:
       "Get notified when a new session is added to a series you follow",
-    defaultEnabled: true,
   },
   [NotificationType.EVENT_CANCELLED]: {
     label: "Event Cancellations",
     description: "Get notified when an event you're attending is cancelled",
-    defaultEnabled: true,
   },
   [NotificationType.ROLE_REQUEST_RECEIVED]: {
     label: "Role Requests Received",
     description: "Get notified when someone requests a role in your group",
-    defaultEnabled: true,
   },
   [NotificationType.ROLE_REQUEST_OUTCOME]: {
     label: "Role Request Outcomes",
     description: "Get notified when your role request is approved or denied",
-    defaultEnabled: true,
   },
 };
 

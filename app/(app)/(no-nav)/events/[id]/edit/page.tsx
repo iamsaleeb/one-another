@@ -3,7 +3,7 @@ import { getEventById } from "@/domains/events/actions/data";
 import {
   getEventQuestions,
   hasEventResponses,
-} from "@/domains/events/questions/actions";
+} from "@/domains/events/questions/data";
 import { getQuestionLibraryForUser } from "@/domains/events/questions/dal";
 import {
   eventSubject,

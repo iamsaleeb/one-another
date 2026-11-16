@@ -56,7 +56,7 @@ export async function saveDraftAction(
 
   const parsed = saveDraftSchema.safeParse(data);
   if (!parsed.success)
-    return { fieldErrors: parsed.error.flatten().fieldErrors };
+    return { fieldErrors: z.flattenError(parsed.error).fieldErrors };
 
   const input = {
     ...parsed.data,
@@ -85,7 +85,7 @@ export async function saveEventEditsAction(
 
   const parsed = saveDraftSchema.safeParse(data);
   if (!parsed.success)
-    return { fieldErrors: parsed.error.flatten().fieldErrors };
+    return { fieldErrors: z.flattenError(parsed.error).fieldErrors };
 
   const result = await saveEvent(id, parsed.data);
   if ("error" in result || "fieldErrors" in result) return result;

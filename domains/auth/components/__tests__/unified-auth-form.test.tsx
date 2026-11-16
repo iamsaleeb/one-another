@@ -180,7 +180,7 @@ describe("UnifiedAuthForm — OTP step", () => {
       expect(mockVerifyOtpAction).toHaveBeenCalledWith(
         "user@example.com",
         "123456",
-        undefined
+        "/"
       );
       expect(mockRouterPush).toHaveBeenCalledWith("/");
     });
@@ -199,13 +199,21 @@ describe("UnifiedAuthForm — OTP step", () => {
     });
   });
 
-  it("falls back to '/' for unsafe callbackUrl", async () => {
-    await navigateToOtpStep({ callbackUrl: "https://evil.com" });
-    await userEvent.type(screen.getByTestId("otp-input"), "123456");
-    await waitFor(() => {
-      expect(mockRouterPush).toHaveBeenCalledWith("/");
-    });
-  });
+  it.each(["https://evil.com", "/\\evil.com"])(
+    "falls back to '/' for unsafe callbackUrl %s",
+    async (callbackUrl) => {
+      await navigateToOtpStep({ callbackUrl });
+      await userEvent.type(screen.getByTestId("otp-input"), "123456");
+      await waitFor(() => {
+        expect(mockVerifyOtpAction).toHaveBeenCalledWith(
+          "user@example.com",
+          "123456",
+          "/"
+        );
+        expect(mockRouterPush).toHaveBeenCalledWith("/");
+      });
+    }
+  );
 
   it("does not call router.push on verify error", async () => {
     mockVerifyOtpAction.mockResolvedValue({ error: "Invalid code" });

@@ -702,7 +702,7 @@ describe("getFollowedChurchEventsPaged", () => {
           isDraft: false,
           endDatetime: { gt: expect.any(Date) },
         }),
-        orderBy: { datetime: "asc" },
+        orderBy: [{ datetime: "asc" }, { id: "asc" }],
         take: 11,
       })
     );
@@ -893,7 +893,7 @@ describe("getMySavedEventsPaged", () => {
     expect(mockSavedEventFindMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: { userId: "user-1", event: { isDraft: false } },
-        orderBy: { createdAt: "desc" },
+        orderBy: [{ createdAt: "desc" }, { id: "desc" }],
       })
     );
   });

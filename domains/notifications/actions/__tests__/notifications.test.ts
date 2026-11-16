@@ -204,15 +204,58 @@ describe("updateNotificationPreferenceAction", () => {
     expect(mockPrefDeleteMany).not.toHaveBeenCalled();
   });
 
-  it("returns an error for an invalid notification type", async () => {
+  it.each([
+    ["an unknown type", "INVALID_TYPE", true, undefined],
+    ["an inherited property name as the type", "constructor", true, undefined],
+    ["a non-boolean enabled", "EVENT_CANCELLED", "yes", undefined],
+    [
+      "a lead time that isn't offered",
+      "EVENT_REMINDER",
+      true,
+      { hoursBeforeEvent: 3 },
+    ],
+    ["a negative lead time", "EVENT_REMINDER", true, { hoursBeforeEvent: -1 }],
+    [
+      "a non-numeric lead time",
+      "EVENT_REMINDER",
+      true,
+      { hoursBeforeEvent: "2" },
+    ],
+    [
+      "extra config keys",
+      "EVENT_REMINDER",
+      true,
+      { hoursBeforeEvent: 2, x: 1 },
+    ],
+    [
+      "config on a type that has none",
+      "EVENT_CANCELLED",
+      false,
+      { hoursBeforeEvent: 2 },
+    ],
+  ])("rejects %s and writes nothing", async (_, type, enabled, config) => {
     const result = await updateNotificationPreferenceAction(
-      "INVALID_TYPE" as never,
-      true
+      type as never,
+      enabled as never,
+      config as never
     );
 
-    expect(result.error).toBe("Invalid notification type");
+    expect(result.error).toBe("Invalid notification preference");
     expect(mockPrefUpsert).not.toHaveBeenCalled();
     expect(mockPrefDeleteMany).not.toHaveBeenCalled();
+    expect(mockReminderPreferenceChanged).not.toHaveBeenCalled();
+  });
+
+  it("accepts every lead time the settings page offers", async () => {
+    for (const hoursBeforeEvent of [1, 2, 4, 24]) {
+      const result = await updateNotificationPreferenceAction(
+        "EVENT_REMINDER",
+        false,
+        { hoursBeforeEvent }
+      );
+      expect(result).toEqual({});
+    }
+    expect(mockPrefUpsert).toHaveBeenCalledTimes(4);
   });
 });
 

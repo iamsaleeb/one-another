@@ -1,4 +1,5 @@
 import "server-only";
+import { z } from "zod";
 
 import { updateTag } from "next/cache";
 import { NotificationType, type Prisma } from "@prisma/client";
@@ -122,7 +123,7 @@ async function normalise(
   if (!isDraft) {
     const complete = createEventSchema.safeParse(input);
     if (!complete.success)
-      return { fieldErrors: complete.error.flatten().fieldErrors };
+      return { fieldErrors: z.flattenError(complete.error).fieldErrors };
     // An Event that has happened is never saved through here, so a published
     // Event is always still to come.
     if (datetime && datetime <= new Date())

@@ -15,6 +15,7 @@ import { format, parse } from "date-fns";
 import { CalendarIcon } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { safeRedirectPath } from "@/lib/app-path";
 import {
   onboardingSchema,
   type OnboardingInput,
@@ -204,10 +205,7 @@ function StepDetails() {
 
 export function OnboardingWizard({ callbackUrl }: { callbackUrl?: string }) {
   const router = useRouter();
-  const safeCallback =
-    callbackUrl?.startsWith("/") && !callbackUrl.startsWith("//")
-      ? callbackUrl
-      : "/";
+  const safeCallback = safeRedirectPath(callbackUrl);
   const { update } = useSession();
   const [currentStep, setCurrentStep] = useState(0);
   const [isAdvancing, setIsAdvancing] = useState(false);

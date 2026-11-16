@@ -10,6 +10,7 @@ import {
   type RequestOtpInput,
 } from "../validations/auth";
 import type { ActionResult } from "@/lib/types/action";
+import { safeRedirectPath } from "@/lib/app-path";
 import { generateOtp, storeOtp, isOtpRateLimited } from "../email/otp";
 import { sendLoginOtp } from "../email/send-login-otp";
 
@@ -67,15 +68,11 @@ export async function verifyOtpAction(
     return { error: "Too many requests. Please wait before trying again." };
   }
 
-  const safeRedirect =
-    callbackUrl?.startsWith("/") && !callbackUrl.startsWith("//")
-      ? callbackUrl
-      : "/";
   try {
     await signIn("otp", {
       email: normalised,
       otp,
-      redirectTo: safeRedirect,
+      redirectTo: safeRedirectPath(callbackUrl),
     });
   } catch (error) {
     if (error instanceof AuthError) {

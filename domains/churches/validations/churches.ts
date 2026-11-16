@@ -9,7 +9,7 @@ export const addOrganiserSchema = z.object({
     .trim()
     .toLowerCase()
     .min(1, "Email is required")
-    .email("Invalid email address"),
+    .pipe(z.email({ error: "Invalid email address" })),
 });
 
 export const removeOrganiserSchema = z.object({

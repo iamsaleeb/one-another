@@ -257,6 +257,24 @@ describe("verifyOtpAction", () => {
     });
   });
 
+  it.each(["https://evil.com", "//evil.com", "/\\evil.com"])(
+    "redirects home instead of to off-site callbackUrl %s",
+    async (callbackUrl) => {
+      mockSignIn.mockImplementation(() => {
+        throw Object.assign(new Error("NEXT_REDIRECT"), {
+          digest: "NEXT_REDIRECT",
+        });
+      });
+      try {
+        await verifyOtpAction("user@example.com", "123456", callbackUrl);
+      } catch {}
+      expect(mockSignIn).toHaveBeenCalledWith(
+        "otp",
+        expect.objectContaining({ redirectTo: "/" })
+      );
+    }
+  );
+
   it("re-throws NEXT_REDIRECT", async () => {
     const redirectError = Object.assign(new Error("NEXT_REDIRECT"), {
       digest: "NEXT_REDIRECT",

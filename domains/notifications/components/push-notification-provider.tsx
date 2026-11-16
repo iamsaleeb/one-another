@@ -6,7 +6,7 @@ import { Capacitor, type PluginListenerHandle } from "@capacitor/core";
 import { PushNotifications } from "@capacitor/push-notifications";
 import { FCM } from "@capacitor-community/fcm";
 import { toast } from "sonner";
-import { isAppPath } from "../lib/app-path";
+import { isAppPath } from "@/lib/app-path";
 import { rememberDeviceToken } from "../lib/device-token";
 
 export function PushNotificationProvider() {

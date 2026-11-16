@@ -59,7 +59,7 @@ export function CampAgenda({ agenda }: CampAgendaProps) {
                     <span className="text-sm font-medium">{item.title}</span>
                   </div>
                   {item.description && (
-                    <p className="text-muted-foreground text-xs leading-relaxed">
+                    <p className="text-muted-foreground text-xs leading-relaxed whitespace-pre-line">
                       {item.description}
                     </p>
                   )}

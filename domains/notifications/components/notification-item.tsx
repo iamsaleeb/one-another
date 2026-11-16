@@ -11,7 +11,7 @@ import {
   ItemTitle,
 } from "@/components/ui/item";
 import type { InboxNotification } from "@/domains/notifications/inbox";
-import { isAppPath } from "@/domains/notifications/lib/app-path";
+import { isAppPath } from "@/lib/app-path";
 
 const TYPE_ICON: Record<string, ElementType> = {
   EVENT_REMINDER: Bell,

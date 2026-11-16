@@ -154,7 +154,7 @@ jobs:
           $PREVIEW_URL
 
           <details>
-          <summary>Test accounts &mdash; password: <code>password123</code></summary>
+          <summary>Test accounts &mdash; sign in with the email, code <code>000000</code></summary>
 
           | Role | Name | Email |
           |------|------|-------|

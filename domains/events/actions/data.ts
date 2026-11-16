@@ -67,7 +67,7 @@ export async function getUserAttendedEventsPaged(
       ...upcomingPublicEvents(),
       attendees: { some: { userId } },
     },
-    orderBy: { datetime: "asc" },
+    orderBy: [{ datetime: "asc" }, { id: "asc" }],
     take: PAGE_SIZE + 1,
     ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
     include: { church: { select: { name: true } } },
@@ -92,7 +92,7 @@ export async function getEventsNotByCreatorPaged(
       ...upcomingPublicEvents(),
       OR: [{ createdById: { not: userId } }, { createdById: null }],
     },
-    orderBy: { datetime: "asc" },
+    orderBy: [{ datetime: "asc" }, { id: "asc" }],
     take: PAGE_SIZE + 1,
     ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
     include: {
@@ -118,7 +118,7 @@ export async function getFollowedChurchEventsPaged(
       church: { followers: { some: { userId } } },
       ...upcomingPublicEvents(),
     },
-    orderBy: { datetime: "asc" },
+    orderBy: [{ datetime: "asc" }, { id: "asc" }],
     take: PAGE_SIZE + 1,
     ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
     include: {
@@ -149,7 +149,7 @@ export async function getOtherChurchEventsPaged(
         church: { followers: { none: { userId } } },
         ...upcomingPublicEvents(),
       },
-      orderBy: { datetime: "asc" },
+      orderBy: [{ datetime: "asc" }, { id: "asc" }],
       take: PAGE_SIZE + 1,
       ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
       include: {
@@ -172,7 +172,7 @@ export async function getOtherChurchEventsPaged(
   cacheLife("minutes");
   const rows = await prisma.event.findMany({
     where: upcomingPublicEvents(),
-    orderBy: { datetime: "asc" },
+    orderBy: [{ datetime: "asc" }, { id: "asc" }],
     take: PAGE_SIZE + 1,
     ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
     include: { church: { select: { name: true } } },
@@ -192,7 +192,7 @@ export async function getMySavedEventsPaged(
   cacheLife("minutes");
   const rows = await prisma.savedEvent.findMany({
     where: { userId, event: publishedEvent },
-    orderBy: { createdAt: "desc" },
+    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
     take: PAGE_SIZE + 1,
     ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
     include: {

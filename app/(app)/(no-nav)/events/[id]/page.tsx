@@ -24,7 +24,7 @@ import {
 import {
   getEventQuestions,
   getMyResponses,
-} from "@/domains/events/questions/actions";
+} from "@/domains/events/questions/data";
 import {
   parseEventMetadata,
   parseEventAttendeeMetadata,
@@ -279,7 +279,7 @@ export default async function EventDetailPage({ params }: Props) {
 
         {/* Description card */}
         <Card className="gap-0 p-5">
-          <p className="text-foreground text-sm leading-relaxed">
+          <p className="text-foreground text-sm leading-relaxed whitespace-pre-line">
             {event.description}
           </p>
         </Card>

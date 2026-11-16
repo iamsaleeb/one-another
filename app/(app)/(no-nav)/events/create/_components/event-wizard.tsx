@@ -12,7 +12,7 @@ import { useEventAutoSave } from "./use-event-auto-save";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
-import { CloudUpload, Check } from "lucide-react";
+import { CloudUpload, Check, CircleAlert } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -126,17 +126,18 @@ export function EventWizard({
         },
   });
 
-  const { draftId, setDraftId, autoSaveStatus, markPublished } =
+  // Editing an Event that is already published: it stays published and keeps
+  // its Category, and its edits go live only when saved on the Review step.
+  const published = defaultValues?.isDraft === false;
+
+  const { draftId, setDraftId, autoSaveStatus, autoSaveError, markPublished } =
     useEventAutoSave({
       form,
       initialDraftId: eventId,
-      initialIsDraft: defaultValues?.isDraft ?? true,
+      enabled: !published,
       isBusy: isSaving || isPublishing,
     });
-
-  // Editing an Event that is already published: it stays published and keeps
-  // its Category.
-  const published = defaultValues?.isDraft === false;
+  const hasUnsavedEdits = form.formState.isDirty;
   const tag = useWatch({ control: form.control, name: "tag" });
   const requiresRegistration = useWatch({
     control: form.control,
@@ -200,7 +201,8 @@ export function EventWizard({
 
   const buildData = () => withInstants(form.getValues());
 
-  // Validate the current step's fields then advance — auto-save persists in the background
+  // Validate the current step's fields then advance — auto-save persists a
+  // draft in the background
   const handleNext = async () => {
     const step = activeSteps[currentStep];
     if (!step) return;
@@ -342,29 +344,65 @@ export function EventWizard({
         stepLabel={activeSteps[currentStep].label}
       />
 
-      <div className="flex justify-center">
-        <Badge
-          variant={autoSaveStatus === "saved" ? "success" : "outline"}
-          className={cn(
-            "gap-1.5 px-3 py-1 transition-colors duration-300 [&>svg]:size-3.5",
-            autoSaveStatus === "saved"
-              ? "border-success/20"
-              : "bg-muted/50 text-muted-foreground"
-          )}
-        >
-          {autoSaveStatus === "saved" ? (
-            <Check />
-          ) : autoSaveStatus === "saving" ? (
-            <Spinner />
-          ) : (
-            <CloudUpload />
-          )}
-          {autoSaveStatus === "saving"
-            ? "Saving..."
-            : autoSaveStatus === "saved"
-              ? "Progress saved"
-              : "Auto-saving progress"}
-        </Badge>
+      <div className="flex flex-col items-center gap-1">
+        {published ? (
+          hasUnsavedEdits && (
+            <>
+              <Badge
+                variant="warning"
+                className="border-warning/20 gap-1.5 px-3 py-1 [&>svg]:size-3.5"
+              >
+                <CircleAlert />
+                Unsaved changes
+              </Badge>
+              <p className="text-muted-foreground text-center text-xs">
+                Tap Save Changes on the Review step to update the event
+              </p>
+            </>
+          )
+        ) : (
+          <>
+            <Badge
+              variant={
+                autoSaveStatus === "saved"
+                  ? "success"
+                  : autoSaveStatus === "error"
+                    ? "warning"
+                    : "outline"
+              }
+              className={cn(
+                "gap-1.5 px-3 py-1 transition-colors duration-300 [&>svg]:size-3.5",
+                autoSaveStatus === "saved"
+                  ? "border-success/20"
+                  : autoSaveStatus === "error"
+                    ? "border-warning/20"
+                    : "bg-muted/50 text-muted-foreground"
+              )}
+            >
+              {autoSaveStatus === "saved" ? (
+                <Check />
+              ) : autoSaveStatus === "saving" ? (
+                <Spinner />
+              ) : autoSaveStatus === "error" ? (
+                <CircleAlert />
+              ) : (
+                <CloudUpload />
+              )}
+              {autoSaveStatus === "saving"
+                ? "Saving..."
+                : autoSaveStatus === "saved"
+                  ? "Progress saved"
+                  : autoSaveStatus === "error"
+                    ? "Couldn't save progress"
+                    : "Auto-saving progress"}
+            </Badge>
+            {autoSaveStatus === "error" && autoSaveError && (
+              <p className="text-muted-foreground text-center text-xs">
+                {autoSaveError}
+              </p>
+            )}
+          </>
+        )}
       </div>
 
       <Card className="gap-0 p-5">

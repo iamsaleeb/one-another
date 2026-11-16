@@ -7,7 +7,7 @@ import * as eventsCrud from "@/domains/events/actions/crud";
 jest.mock("@/domains/events/actions/crud", () => ({
   saveDraftAction: jest.fn(),
 }));
-jest.mock("sonner", () => ({ toast: { info: jest.fn() } }));
+jest.mock("sonner", () => ({ toast: { info: jest.fn(), error: jest.fn() } }));
 
 const saveDraftAction = eventsCrud.saveDraftAction as jest.Mock;
 
@@ -16,6 +16,7 @@ const saveDraftAction = eventsCrud.saveDraftAction as jest.Mock;
 function renderWithForm(
   opts: {
     initialDraftId?: string;
+    enabled?: boolean;
     isBusy?: boolean;
     formDefaults?: Record<string, unknown>;
     debounceMs?: number;
@@ -34,6 +35,7 @@ function renderWithForm(
     const autoSave = useEventAutoSave({
       form: form as unknown as Parameters<typeof useEventAutoSave>[0]["form"],
       initialDraftId: opts.initialDraftId,
+      enabled: opts.enabled,
       isBusy: opts.isBusy ?? false,
       debounceMs: opts.debounceMs ?? 0,
     });
@@ -170,16 +172,72 @@ describe("useEventAutoSave", () => {
     await waitFor(() => expect(result.current.autoSaveStatus).toBe("saved"));
   });
 
-  it("resets status to idle when saveDraftAction returns an error", async () => {
-    saveDraftAction.mockResolvedValue({ error: "Unauthorized." });
+  it("never auto-saves when disabled (a published Event)", async () => {
+    const { result } = renderWithForm({
+      initialDraftId: "published-1",
+      enabled: false,
+    });
+    await act(async () => {
+      result.current.form.setValue("title", "Half-typ", { shouldDirty: true });
+    });
+    await new Promise((r) => setTimeout(r, 10));
+    expect(saveDraftAction).not.toHaveBeenCalled();
+    expect(result.current.autoSaveStatus).toBe("idle");
+  });
+
+  it("shows the error when saveDraftAction returns one", async () => {
+    saveDraftAction.mockResolvedValue({ error: "Unauthorised." });
 
     const { result } = renderWithForm();
     await act(async () => {
       result.current.form.setValue("title", "Test", { shouldDirty: true });
     });
 
-    await waitFor(() => expect(result.current.autoSaveStatus).toBe("idle"));
-    expect(saveDraftAction).toHaveBeenCalled();
+    await waitFor(() => expect(result.current.autoSaveStatus).toBe("error"));
+    expect(result.current.autoSaveError).toBe("Unauthorised.");
+  });
+
+  it("shows the first field error when saveDraftAction rejects the input", async () => {
+    saveDraftAction.mockResolvedValue({
+      fieldErrors: { capacity: ["Capacity must be at least 1"] },
+    });
+
+    const { result } = renderWithForm();
+    await act(async () => {
+      result.current.form.setValue("title", "Test", { shouldDirty: true });
+    });
+
+    await waitFor(() => expect(result.current.autoSaveStatus).toBe("error"));
+    expect(result.current.autoSaveError).toBe("Capacity must be at least 1");
+  });
+
+  it("shows an error when saveDraftAction throws", async () => {
+    saveDraftAction.mockRejectedValue(new Error("offline"));
+
+    const { result } = renderWithForm();
+    await act(async () => {
+      result.current.form.setValue("title", "Test", { shouldDirty: true });
+    });
+
+    await waitFor(() => expect(result.current.autoSaveStatus).toBe("error"));
+    expect(result.current.autoSaveError).toMatch(/connection/);
+  });
+
+  it("clears the error once a later save succeeds", async () => {
+    saveDraftAction.mockResolvedValueOnce({ error: "Unauthorised." });
+    saveDraftAction.mockResolvedValue({ eventId: "draft-1" });
+
+    const { result } = renderWithForm({ initialDraftId: "draft-1" });
+    await act(async () => {
+      result.current.form.setValue("title", "First", { shouldDirty: true });
+    });
+    await waitFor(() => expect(result.current.autoSaveStatus).toBe("error"));
+
+    await act(async () => {
+      result.current.form.setValue("title", "Second", { shouldDirty: true });
+    });
+    await waitFor(() => expect(result.current.autoSaveStatus).toBe("saved"));
+    expect(result.current.autoSaveError).toBeUndefined();
   });
 
   describe("unmount toast", () => {
@@ -225,6 +283,66 @@ describe("useEventAutoSave", () => {
 
       act(() => result.current.markPublished());
       unmount();
+      expect(toast.info).not.toHaveBeenCalled();
+    });
+
+    it("reports the failure, not success, when the latest save failed", async () => {
+      saveDraftAction.mockResolvedValue({ error: "Unauthorised." });
+
+      const { result, unmount } = renderWithForm();
+      await act(async () => {
+        result.current.form.setValue("title", "My Event", {
+          shouldDirty: true,
+        });
+      });
+      await waitFor(() => expect(result.current.autoSaveStatus).toBe("error"));
+
+      unmount();
+      expect(toast.info).not.toHaveBeenCalled();
+      expect(toast.error).toHaveBeenCalledWith(
+        expect.stringContaining("Unauthorised.")
+      );
+    });
+
+    it("saves edits still waiting on the debounce, then reports", async () => {
+      saveDraftAction.mockResolvedValue({ eventId: "draft-1" });
+
+      const { result, unmount } = renderWithForm({
+        initialDraftId: "draft-1",
+        debounceMs: 60_000,
+      });
+      await act(async () => {
+        result.current.form.setValue("title", "Last edit", {
+          shouldDirty: true,
+        });
+      });
+      expect(saveDraftAction).not.toHaveBeenCalled();
+
+      unmount();
+      expect(saveDraftAction).toHaveBeenCalledWith(
+        "draft-1",
+        expect.objectContaining({ title: "Last edit" })
+      );
+      expect(toast.info).not.toHaveBeenCalled();
+      await waitFor(() =>
+        expect(toast.info).toHaveBeenCalledWith(
+          "Draft saved – you can continue where you left off"
+        )
+      );
+    });
+
+    it("says nothing when leaving a published Event", async () => {
+      const { result, unmount } = renderWithForm({
+        initialDraftId: "published-1",
+        enabled: false,
+      });
+      await act(async () => {
+        result.current.form.setValue("title", "Edited", { shouldDirty: true });
+      });
+
+      unmount();
+      await new Promise((r) => setTimeout(r, 10));
+      expect(saveDraftAction).not.toHaveBeenCalled();
       expect(toast.info).not.toHaveBeenCalled();
     });
 

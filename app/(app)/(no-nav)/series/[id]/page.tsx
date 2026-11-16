@@ -140,7 +140,7 @@ export default async function SeriesDetailPage({ params }: Props) {
 
         {/* Description card */}
         <Card className="gap-0 p-5">
-          <p className="text-foreground text-sm leading-relaxed">
+          <p className="text-foreground text-sm leading-relaxed whitespace-pre-line">
             {series.description}
           </p>
         </Card>

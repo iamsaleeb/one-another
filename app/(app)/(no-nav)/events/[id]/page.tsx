@@ -279,7 +279,7 @@ export default async function EventDetailPage({ params }: Props) {
 
         {/* Description card */}
         <Card className="gap-0 p-5">
-          <p className="text-foreground text-sm leading-relaxed">
+          <p className="text-foreground text-sm leading-relaxed whitespace-pre-line">
             {event.description}
           </p>
         </Card>

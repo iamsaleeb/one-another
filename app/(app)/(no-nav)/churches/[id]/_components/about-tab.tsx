@@ -19,7 +19,7 @@ export function AboutTab({ church }: AboutTabProps) {
       {/* Description */}
       <section>
         <h2 className="mb-2 text-lg font-bold">About</h2>
-        <p className="text-muted-foreground text-sm leading-relaxed">
+        <p className="text-muted-foreground text-sm leading-relaxed whitespace-pre-line">
           {church.description}
         </p>
       </section>

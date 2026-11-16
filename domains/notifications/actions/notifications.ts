@@ -3,13 +3,13 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
 import { updateTag, revalidatePath } from "next/cache";
-import { type Prisma } from "@prisma/client";
 import {
   NOTIFICATION_TYPES,
   NotificationType,
   type NotificationTypeKey,
 } from "../types";
 import { reminderPreferenceChanged } from "@/domains/events/lifecycle";
+import { notificationPreferenceSchema } from "../validations/preferences";
 import {
   markNotificationsRead,
   getInboxNotifications,
@@ -88,31 +88,39 @@ export async function updateNotificationPreferenceAction(
     return { error: "Unauthorized" };
   }
 
-  if (!(type in NOTIFICATION_TYPES)) {
-    return { error: "Invalid notification type" };
+  const parsed = notificationPreferenceSchema.safeParse({
+    type,
+    enabled,
+    config,
+  });
+  if (!parsed.success) {
+    return { error: "Invalid notification preference" };
   }
+  const pref = parsed.data;
 
   const userId = session.user.id;
   await prisma.$transaction(
     async (tx) => {
-      if (enabled && !config) {
+      if (pref.enabled && !pref.config) {
         // Nothing non-default to persist — delete the row so absence correctly
         // signals "enabled" (true opt-out model). deleteMany is a no-op when absent.
-        await tx.notificationPreference.deleteMany({ where: { userId, type } });
+        await tx.notificationPreference.deleteMany({
+          where: { userId, type: pref.type },
+        });
       } else {
         // Disabled, or re-enabled with a custom config (e.g. hoursBeforeEvent) that
         // needs to be remembered — persist the row.
-        const jsonConfig = config as Prisma.InputJsonValue | undefined;
+        const { type, enabled, config } = pref;
         await tx.notificationPreference.upsert({
           where: { userId_type: { userId, type } },
-          update: { enabled, config: jsonConfig },
-          create: { userId, type, enabled, config: jsonConfig },
+          update: { enabled, config },
+          create: { userId, type, enabled, config },
         });
       }
 
       // Any EVENT_REMINDER write can move the lead time, including back to the
       // default when the row is deleted. Opting out is applied at send time.
-      if (type === NotificationType.EVENT_REMINDER) {
+      if (pref.type === NotificationType.EVENT_REMINDER) {
         await reminderPreferenceChanged(tx, userId);
       }
     },

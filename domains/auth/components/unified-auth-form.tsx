@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Controller, FormProvider, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { REGEXP_ONLY_DIGITS } from "input-otp";
 import { cn } from "@/lib/utils";
+import { safeRedirectPath } from "@/lib/app-path";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -67,12 +68,9 @@ export function UnifiedAuthForm({
   const searchParamsObj = useSearchParams();
   const intent = intentProp ?? searchParamsObj.get("intent") ?? undefined;
   const label = labelProp ?? searchParamsObj.get("label") ?? undefined;
-  const rawCallback =
-    callbackUrlProp ?? searchParamsObj.get("callbackUrl") ?? undefined;
-  const safeCallback =
-    rawCallback?.startsWith("/") && !rawCallback.startsWith("//")
-      ? rawCallback
-      : "/";
+  const safeCallback = safeRedirectPath(
+    callbackUrlProp ?? searchParamsObj.get("callbackUrl")
+  );
   const intentText = intent && label ? intentBannerText(intent, label) : null;
   const [step, setStep] = useState<Step>("email");
   const [email, setEmail] = useState("");
@@ -107,7 +105,7 @@ export function UnifiedAuthForm({
   });
 
   const onOtpSubmit = otpForm.handleSubmit(async (data) => {
-    const result = await verifyOtpAction(email, data.otp, rawCallback);
+    const result = await verifyOtpAction(email, data.otp, safeCallback);
     if (result?.error) {
       otpForm.setError("root", { message: result.error });
       otpForm.resetField("otp");
@@ -118,7 +116,7 @@ export function UnifiedAuthForm({
     router.push(safeCallback);
   });
 
-  const handleResend = useCallback(async () => {
+  const handleResend = async () => {
     setResendError(null);
     const result = await requestOtpAction({ email });
     if (result?.error) {
@@ -127,7 +125,7 @@ export function UnifiedAuthForm({
       setCooldown(RESEND_COOLDOWN);
       otpForm.resetField("otp");
     }
-  }, [email, otpForm]);
+  };
 
   const handleBack = () => {
     setStep("email");
